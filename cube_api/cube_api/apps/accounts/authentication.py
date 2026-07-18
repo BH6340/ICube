@@ -44,7 +44,6 @@ class CachedJWTAuthentication(JWTAuthentication):
             return None
 
     def authenticate(self, request):
-        # 1. 调用父类方法，提取并验证 Token 是否合法（签名、是否过期等）
         header = self.get_header(request)
         if header is None:
             return None
@@ -53,15 +52,14 @@ class CachedJWTAuthentication(JWTAuthentication):
         if raw_token is None:
             return None
 
-        # 验证 Token 签名与时效，拿到验证后的 token 对象
-        validated_token = self.get_validated_token(raw_token)
+        try:
+            validated_token = self.get_validated_token(raw_token)
 
-        # 💡 【核心优化：黑名单拦截】
-        # 从解密后的载荷中拿到唯一 ID
-        jti = validated_token.get("jti")
-        if JWTCacheService.is_blacklisted(jti):
-            raise AuthenticationFailed("该 Token 已注销或已失效，请重新登录。")
+            jti = validated_token.get("jti")
+            if JWTCacheService.is_blacklisted(jti):
+                return None
 
-        # 2. 走你之前写好的 User 实例缓存逻辑（这里简写，保持原样即可）
-        user = self.get_user(validated_token)
-        return user, validated_token
+            user = self.get_user(validated_token)
+            return user, validated_token
+        except Exception:
+            return None
