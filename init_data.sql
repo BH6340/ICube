@@ -13,7 +13,7 @@ USE icube_db;
  Target Server Version : 90100
  File Encoding         : 65001
 
- Date: 17/07/2026 09:57:09
+ Date: 18/07/2026 19:04:14
 */
 
 SET NAMES utf8mb4;
@@ -43,7 +43,7 @@ CREATE TABLE `accounts_user`  (
 -- ----------------------------
 -- Records of accounts_user
 -- ----------------------------
-INSERT INTO `accounts_user` VALUES (1, 'pbkdf2_sha256$1200000$8XqaTdWaJaiaLmQP2FPYG6$oYG5XVYa5Ed8fwV8c1ef12LAVCBD2NmrT4rqnxzPbv0=', NULL, 0, 0, 1, '2026-05-11 13:04:43.160321', 'bh01@qq.com', 'bh01', '这是bh01的测试简介', 'http://localhost:8000/media/avatars/admin.png');
+INSERT INTO `accounts_user` VALUES (1, 'pbkdf2_sha256$1200000$8XqaTdWaJaiaLmQP2FPYG6$oYG5XVYa5Ed8fwV8c1ef12LAVCBD2NmrT4rqnxzPbv0=', NULL, 0, 0, 1, '2026-05-11 13:04:43.160321', 'bh01@qq.com', 'bh01', '这是bh01的测试简介', 'http://121.4.62.163/media/avatars/admin.png');
 INSERT INTO `accounts_user` VALUES (2, 'pbkdf2_sha256$1200000$r3OXdjnkCUkkD8dsYwKvYI$tVLlEmIIgIzLbEuuQK2DNcQADpHDx2dNLaFx0jBC978=', NULL, 0, 0, 1, '2026-05-11 14:58:32.159835', 'bh02@qq.com', 'bh02', '这是bh02的简介', NULL);
 INSERT INTO `accounts_user` VALUES (3, 'pbkdf2_sha256$1200000$cJ7IS2DNMwk53YoArSUDWB$09KSEoIzAND7FptTUGF69r9Wfvn58LXDiUOYaa8Uq3U=', NULL, 0, 0, 1, '2026-05-11 14:58:56.644541', 'bh03@qq.com', 'bh03', '这是bh03的简介', NULL);
 INSERT INTO `accounts_user` VALUES (4, 'pbkdf2_sha256$1200000$1U3JbJi7IJmftkdvH2cafI$KnEY+mhMfb+DHo9EadnmWPWuVq28sDswnhG/Ixxit8s=', NULL, 0, 0, 1, '2026-05-11 14:59:20.745717', 'bh04@qq.com', 'bh04', '这是bh04的简介', NULL);
@@ -52,7 +52,7 @@ INSERT INTO `accounts_user` VALUES (6, 'pbkdf2_sha256$1200000$okkHb5GNQKwfvBOnAQ
 INSERT INTO `accounts_user` VALUES (7, 'pbkdf2_sha256$1200000$RYFGlCvA1CDRxSNdklva6T$kXTRELt9ADjwvXRzQ7vBw4qlYiKkYsHbLDMtsdqHy7c=', NULL, 0, 0, 1, '2026-05-12 10:31:45.718088', 'bh06@qq.com', 'bh06', '', NULL);
 INSERT INTO `accounts_user` VALUES (8, 'pbkdf2_sha256$1200000$DnUCKmEqnGwe6dgpusKgbv$dWypTxpzl3XsLQTHMtP2kVzzgSlZGrPXhDQvoFrI04I=', NULL, 0, 0, 1, '2026-06-03 10:52:12.092033', 'bh06@163.com', 'bh06_1', '', NULL);
 INSERT INTO `accounts_user` VALUES (9, 'pbkdf2_sha256$1200000$ftzQsmKyRLAeMfinPTKybA$HhvTRYfZhcto+EM0AkQcrw40kW595wOvrUz9i6d0/dY=', NULL, 0, 0, 1, '2026-06-03 14:36:26.343585', 'bh07@qq.com', 'bh07', '', NULL);
-INSERT INTO `accounts_user` VALUES (10, 'pbkdf2_sha256$1200000$t2wU7w8mXoIaAXh7g2MDVh$Ztnkh6EGtSvN/dEIBoF50+KZCElaBTWGQui8yFb/cjo=', NULL, 0, 0, 1, '2026-06-03 14:54:47.046829', 'bh08@qq.com', 'bh08', '新的个人介绍', 'http://localhost:8000/media/avatars/bh08.png');
+INSERT INTO `accounts_user` VALUES (10, 'pbkdf2_sha256$1200000$t2wU7w8mXoIaAXh7g2MDVh$Ztnkh6EGtSvN/dEIBoF50+KZCElaBTWGQui8yFb/cjo=', NULL, 0, 0, 1, '2026-06-03 14:54:47.046829', 'bh08@qq.com', 'bh08', '新的个人介绍', 'http://121.4.62.163/media/avatars/bh08.png');
 INSERT INTO `accounts_user` VALUES (11, 'pbkdf2_sha256$1200000$HnHuO67UPNA3KGzqrdciHY$BEGRtyOatdrHIGDWKfQyC8zc2gE9HkTmxTtSBUUMtAM=', NULL, 0, 0, 1, '2026-06-05 09:55:05.648601', 'user1@example.com', '魔方小白', '魔方爱好者，欢迎交流！', NULL);
 INSERT INTO `accounts_user` VALUES (12, 'pbkdf2_sha256$1200000$K4RZs6x8mUSPOBiwKYSfpG$m1sUeywn5sSlmRjpG9NYv9v/CLItOlun+BLJpCPab9M=', NULL, 0, 0, 1, '2026-06-05 09:55:07.421317', 'user2@example.com', '速拧大神', '魔方爱好者，欢迎交流！', NULL);
 INSERT INTO `accounts_user` VALUES (13, 'pbkdf2_sha256$1200000$NUI8BH6NjcYEnrSe8l5O4V$PR0PnTdasbMdgc3gewGRKWuk6CRdEaEkyoXrzhpLxSc=', NULL, 0, 0, 1, '2026-06-05 09:55:09.104099', 'user3@example.com', '公式收藏家', '魔方爱好者，欢迎交流！', NULL);
