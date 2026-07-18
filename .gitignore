@@ -38,7 +38,6 @@ apps/shop/keys/*.pem
 # Node.js / Vue 前端
 # ==========================
 node_modules/
-dist/
 *.map
 
 # 日志
