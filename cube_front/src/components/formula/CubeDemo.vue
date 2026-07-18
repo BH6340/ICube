@@ -79,11 +79,11 @@ const parsedSteps = computed(() => {
 
 const COLOR_MAP = {
   yellow: 0xffd700,
-  white: 0xffffff,
+  white: 0xf5f5f5,
   blue: 0x1e90ff,
-  green: 0x228b22,
+  green: 0x32cd32,
   orange: 0xff8c00,
-  red: 0xb22222,
+  red: 0xdc143c,
   gray: 0x808080,
   INTERNAL: 0x111111
 }
@@ -101,6 +101,21 @@ const initThree = () => {
 
   scene = new THREE.Scene()
   scene.background = new THREE.Color('#1a1a2e')
+
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.9)
+  scene.add(ambientLight)
+
+  const pointLight1 = new THREE.PointLight(0xffffff, 1.5)
+  pointLight1.position.set(5, 5, 5)
+  scene.add(pointLight1)
+
+  const pointLight2 = new THREE.PointLight(0xffffff, 0.8)
+  pointLight2.position.set(-3, -3, -3)
+  scene.add(pointLight2)
+
+  const cameraLight = new THREE.PointLight(0xffffff, 0.6)
+  cameraLight.position.set(4, 4, 6)
+  scene.add(cameraLight)
 
   camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100)
   camera.position.set(4, 4, 6)
@@ -183,6 +198,8 @@ const buildCubeGeometry = (stateDefinition = null) => {
     U: 'yellow', D: 'white', F: 'blue', B: 'green', L: 'orange', R: 'red'
   }
 
+  const edgeMaterial = new THREE.LineBasicMaterial({ color: 0x000000 })
+
   for (let x = -1; x <= 1; x++) {
     for (let y = -1; y <= 1; y++) {
       for (let z = -1; z <= 1; z++) {
@@ -206,6 +223,10 @@ const buildCubeGeometry = (stateDefinition = null) => {
 
         const mesh = new THREE.Mesh(geometry, materials)
         mesh.position.set(x, y, z)
+
+        const edgesGeometry = new THREE.EdgesGeometry(geometry)
+        const edges = new THREE.LineSegments(edgesGeometry, edgeMaterial)
+        mesh.add(edges)
 
         cubeGroup.add(mesh)
         cubes.push(mesh)
