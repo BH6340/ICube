@@ -1,0 +1,108 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: icube_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: icube_root123
+      MYSQL_ROOT_HOST: '%'
+      MYSQL_DATABASE: icube_db
+      MYSQL_USER: icube_api
+      MYSQL_PASSWORD: icube123
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./cube_api/mysql.conf:/etc/mysql/conf.d/mysql.cnf
+      - ./init_data.sql:/docker-entrypoint-initdb.d/02_init_data.sql
+    ports:
+      - "3306:3306"
+    # 👇 新增：健康检查，确保 MySQL 真正可用
+    healthcheck:
+      # 仅使用 mysqladmin ping 检查数据库基础连通性
+      test: ["CMD-SHELL", "MYSQL_PWD=icube_root123 mysqladmin ping -h localhost -uroot || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 45s # 给 MySQL 8.0 留足数据初始化启动的时间
+    networks:
+      - icube_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: icube_redis
+    restart: always
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - icube_network
+
+  api:
+    build:
+      context: ./cube_api
+      dockerfile: Dockerfile
+    container_name: icube_api
+    restart: always
+    environment:
+      - DJANGO_SETTINGS_MODULE=cube_api.settings.prod
+      - DB_NAME=icube_db
+      - DB_USER=icube_api
+      - DB_PASSWORD=icube123
+      - DB_HOST=db
+      - DB_PORT=3306
+    volumes:
+      - ./cube_api:/app
+      - media_volume:/app/media
+      - collected_static:/app/collected_static
+    # 👇 修改：等待 db 变成 healthy 状态再启动后端 API
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - icube_network
+
+  front:
+    build:
+      context: ./cube_front
+      dockerfile: Dockerfile
+    container_name: icube_front
+    restart: always
+    volumes:
+      # - ./cube_front:/app
+      - front_dist:/app/dist
+    networks:
+      - icube_network
+
+  nginx:
+    image: nginx:latest
+    container_name: icube_nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+      - media_volume:/usr/share/nginx/html/media
+      - collected_static:/usr/share/nginx/html/static
+      - front_dist:/usr/share/nginx/html
+    depends_on:
+      - api
+      - front
+    networks:
+      - icube_network
+
+volumes:
+  mysql_data:
+  redis_data:
+  media_volume:
+  collected_static:
+  front_dist:
+
+networks:
+  icube_network:
+    driver: bridge

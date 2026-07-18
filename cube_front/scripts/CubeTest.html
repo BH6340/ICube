@@ -1,0 +1,693 @@
+<template>
+  <div class="cube-root-container">
+    <el-card class="cube-card" shadow="never">
+      <template #header>
+        <div class="card-header">
+          <span class="title">3D 魔方公式动画演示课堂</span>
+          <el-select
+            v-model="currentFormulaIdx"
+            placeholder="请选择要学习的公式"
+            @change="handleFormulaChange"
+            style="width: 240px"
+          >
+            <el-option
+              v-for="(item, index) in formulaBank"
+              :key="index"
+              :label="item.name"
+              :value="index"
+            />
+          </el-select>
+        </div>
+      </template>
+
+      <el-row :gutter="20">
+        <el-col :xs="24" :sm="14">
+          <div class="cube-visual-wrapper">
+            <div ref="canvasContainer" class="canvas-container"></div>
+
+            <div class="visual-controls">
+              <el-button-group>
+                <el-button type="info" size="small" @click="resetCamera" plain>重置视角</el-button>
+              </el-button-group>
+            </div>
+          </div>
+        </el-col>
+
+        <el-col :xs="24" :sm="10">
+          <div class="control-panel">
+            <div class="formula-info-card">
+              <h3>{{ activeFormula.name }}</h3>
+              <div class="meta-item">
+                <span class="label">前置要求:</span>
+                <el-tag size="small" type="warning">{{ activeFormula.statement }}</el-tag>
+              </div>
+              <div class="meta-item">
+                <span class="label">完整公式:</span>
+                <div class="notation-display">{{ activeFormula.notation }}</div>
+              </div>
+            </div>
+
+            <div class="steps-tracker">
+              <h4>步骤分解</h4>
+              <div class="steps-list">
+                <span
+                  v-for="(step, idx) in parsedSteps"
+                  :key="idx"
+                  class="step-span"
+                  :class="{
+                    'active-step': idx === currentStepIdx - 1,
+                    'pending-step': idx >= currentStepIdx
+                  }"
+                >
+                  {{ step }}
+                </span>
+                <span v-if="parsedSteps.length === 0" class="empty-tip">暂无拆解步骤</span>
+              </div>
+            </div>
+
+            <div class="playback-console">
+              <div class="progress-section">
+                <div class="text-info">
+                  <span>播放进度</span>
+                  <span>{{ currentStepIdx }} / {{ parsedSteps.length }}</span>
+                </div>
+                <el-progress
+                  :percentage="progressPercentage"
+                  :stroke-width="8"
+                  :show-text="false"
+                  status="success"
+                />
+              </div>
+
+              <div class="action-buttons">
+                <el-button
+                  :disabled="isAnimating || currentStepIdx === 0"
+                  @click="stepBackward"
+                >
+                  上一步
+                </el-button>
+
+                <el-button
+                  type="primary"
+                  :disabled="isAnimating || currentStepIdx >= parsedSteps.length"
+                  @click="stepForward"
+                >
+                  下一步
+                </el-button>
+
+                <el-button
+                  :type="isAutoPlaying ? 'warning' : 'success'"
+                  :disabled="parsedSteps.length === 0"
+                  @click="toggleAutoPlay"
+                >
+                  {{ isAutoPlaying ? '暂停播放' : '自动播放' }}
+                </el-button>
+
+                <el-button @click="resetToFormulaState">
+                  重置
+                </el-button>
+              </div>
+            </div>
+          </div>
+        </el-col>
+      </el-row>
+    </el-card>
+  </div>
+</template>
+
+<script setup>
+import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ElMessage } from 'element-plus'
+import * as THREE from 'three'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import TWEEN from '@tweenjs/tween.js'
+
+// ==================== 1. 内置前端测试公式库 ====================
+const formulaBank = ref([
+  {
+    name: '顶层底面十字 (FRUR\'U\'F\')',
+    statement: '前两层完成，顶层棱块呈曲尺或一字状态',
+    notation: "F R U R' U' F'",
+    setup: "F U R U' R' F'" // 其本身的逆公式，用于模拟前置未完成顶部十字状态
+  },
+  {
+    name: '顶层小鱼 1 顶位公式',
+    statement: 'OLL 状态：顶层已出十字，且左上角有一个白块',
+    notation: "R U R' U R U2 R'",
+    setup: "R U2 R' U' R U' R'"
+  },
+  {
+    name: 'PLL 经典 T 步角换',
+    statement: '整个魔方除顶层两个角块外全部还原',
+    notation: "R U R' U' R' F R2 U' R' U' R U R' F'",
+    setup: "F R U' R' U' R U R' F' R' U' R U R' U' R"
+  },
+  {
+    name: '三棱换逆时针公式 (边换)',
+    statement: 'PLL 状态：四个角块位置正确，三块棱色块错位',
+    notation: "R2 U R U R' U' R' U' R' U R'",
+    setup: "R U' R U R U R U' R' U' R2"
+  }
+])
+
+const currentFormulaIdx = ref(0)
+const activeFormula = computed(() => formulaBank.value[currentFormulaIdx.value])
+
+// ==================== 2. 状态变量 ====================
+const canvasContainer = ref(null)
+const currentStepIdx = ref(0)
+const isAnimating = ref(false)
+const isAutoPlaying = ref(false)
+let autoPlayTimer = null
+
+// 解析公式字符串为标准数组
+const parsedSteps = computed(() => {
+  if (!activeFormula.value || !activeFormula.value.notation) return []
+  return activeFormula.value.notation.split(/\s+/).filter(Boolean)
+})
+
+const progressPercentage = computed(() => {
+  if (parsedSteps.value.length === 0) return 0
+  return Math.round((currentStepIdx.value / parsedSteps.value.length) * 100)
+})
+
+// ==================== 3. Three.js 全局变量 ====================
+let scene, camera, renderer, controls
+let cubeGroup
+let cubes = [] // 存放 27 个小立方体网格
+
+// 魔方核心配色标准 (上白、下黄、前红、后橙、左绿、右蓝)
+const COLORS = {
+  U: 0xffffff, // 上 White
+  D: 0xffd700, // 下 Yellow
+  F: 0xb22222, // 前 Red
+  B: 0xff8c00, // 后 Orange
+  L: 0x228b22, // 左 Green
+  R: 0x1e90ff, // 右 Blue
+  INTERNAL: 0x111111 // 内部暗黑内核
+}
+
+// ==================== 4. 三维世界初始化 ====================
+const initThree = () => {
+  if (!canvasContainer.value) return
+
+  const width = canvasContainer.value.clientWidth || 400
+  const height = canvasContainer.value.clientHeight || 400
+
+  // 1. 场景
+  scene = new THREE.Scene()
+  scene.background = new THREE.Color('#1e1e2f')
+
+  // 2. 相机
+  camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100)
+  resetCameraPosition()
+
+  // 3. 渲染器
+  renderer = new THREE.WebGLRenderer({ antialias: true })
+  renderer.setSize(width, height)
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+  canvasContainer.value.innerHTML = ''
+  canvasContainer.value.appendChild(renderer.domElement)
+
+  // 4. 控制器
+  controls = new OrbitControls(camera, renderer.domElement)
+  controls.enableDamping = true
+  controls.dampingFactor = 0.05
+  controls.minDistance = 4
+  controls.maxDistance = 15
+
+  // 5. 组装魔方
+  buildCubeGeometry()
+
+  // 6. 启动循环渲染机制（核心修复点：持续绘制）
+  const renderLoop = () => {
+    requestAnimationFrame(renderLoop)
+    TWEEN.update() // 驱动旋转动画补间更新
+    controls.update()
+    renderer.render(scene, camera)
+  }
+  renderLoop()
+
+  window.addEventListener('resize', handleWindowResize)
+}
+
+const resetCameraPosition = () => {
+  if (!camera) return
+  camera.position.set(4.5, 4.5, 6.5)
+  if (controls) controls.target.set(0, 0, 0)
+}
+
+const resetCamera = () => {
+  resetCameraPosition()
+  if (controls) controls.reset()
+}
+
+// ==================== 5. 魔方节点矩阵构建 ====================
+const buildCubeGeometry = () => {
+  if (cubeGroup) scene.remove(cubeGroup)
+  cubeGroup = new THREE.Group()
+  scene.add(cubeGroup)
+  cubes = []
+
+  // 循环生成 3x3x3 的 27 个独立小方块
+  for (let x = -1; x <= 1; x++) {
+    for (let y = -1; y <= 1; y++) {
+      for (let z = -1; z <= 1; z++) {
+        const geometry = new THREE.BoxGeometry(0.92, 0.92, 0.92)
+        const materials = []
+
+        // 根据标准面索引分配贴纸颜色 (0:右, 1:左, 2:上, 3:下, 4:前, 5:后)
+        materials.push(new THREE.MeshBasicMaterial({ color: x === 1 ? COLORS.R : COLORS.INTERNAL }))
+        materials.push(new THREE.MeshBasicMaterial({ color: x === -1 ? COLORS.L : COLORS.INTERNAL }))
+        materials.push(new THREE.MeshBasicMaterial({ color: y === 1 ? COLORS.U : COLORS.INTERNAL }))
+        materials.push(new THREE.MeshBasicMaterial({ color: y === -1 ? COLORS.D : COLORS.INTERNAL }))
+        materials.push(new THREE.MeshBasicMaterial({ color: z === 1 ? COLORS.F : COLORS.INTERNAL }))
+        materials.push(new THREE.MeshBasicMaterial({ color: z === -1 ? COLORS.B : COLORS.INTERNAL }))
+
+        const mesh = new THREE.Mesh(geometry, materials)
+        mesh.position.set(x, y, z)
+
+        // 保存初始绝对矩阵，用于后续层级的精确追踪
+        mesh.matrixAutoUpdate = true
+
+        cubeGroup.add(mesh)
+        cubes.push(mesh)
+      }
+    }
+  }
+}
+
+// ==================== 6. 核心旋转动画动力学 ====================
+// 将公式记号映射为转动轴与位置判定条件
+const parseNotationToAxis = (notation) => {
+  const base = notation.replace("'", "").replace("2", "")
+  let axis = 'x'     // 旋转轴
+  let condition = 0  // 筛选方块的坐标条件判断
+  let angle = -Math.PI / 2 // 默认顺时针旋转角度
+
+  switch (base) {
+    case 'R': axis = 'x'; condition = 0.5; angle = -Math.PI / 2; break
+    case 'L': axis = 'x'; condition = -0.5; angle = Math.PI / 2; break
+    case 'U': axis = 'y'; condition = 0.5; angle = -Math.PI / 2; break
+    case 'D': axis = 'y'; condition = -0.5; angle = Math.PI / 2; break
+    case 'F': axis = 'z'; condition = 0.5; angle = -Math.PI / 2; break
+    case 'B': axis = 'z'; condition = -0.5; angle = Math.PI / 2; break
+  }
+
+  // 针对逆时针和双层转动微调角度
+  if (notation.includes("'")) {
+    angle = -angle
+  }
+  if (notation.includes("2")) {
+    angle = angle * 2
+  }
+
+  return { axis, condition, angle }
+}
+
+// 执行层级旋转（精细处理世界坐标与局部矩阵转换，防止丢块错位）
+const executeLayerRotation = (stepStr, duration = 180) => {
+  return new Promise((resolve) => {
+    if (!stepStr) return resolve()
+
+    const { axis, condition, angle } = parseNotationToAxis(stepStr)
+
+    // 1. 精确筛选出属于当前旋转层级的所有小方块（采用世界坐标近似值判定法）
+    const movingCubes = cubes.filter(mesh => {
+      const worldPos = new THREE.Vector3()
+      mesh.getWorldPosition(worldPos)
+      if (condition > 0) return worldPos[axis] > condition
+      if (condition < 0) return worldPos[axis] < condition
+      return Math.abs(worldPos[axis]) < 0.5
+    })
+
+    if (movingCubes.length === 0) return resolve()
+
+    // 2. 如果是无动画的静态重构（如打乱状态或快进），直接矩阵运算更新
+    if (duration === 0) {
+      movingCubes.forEach(mesh => {
+        rotateMeshAroundWorldAxis(mesh, axis, angle)
+      })
+      return resolve()
+    }
+
+    // 3. 伴随平滑过渡动画的旋转（使用 Tween 驱动）
+    isAnimating.value = true
+    const animState = { currentAngle: 0 }
+    let lastAngle = 0
+
+    new TWEEN.Tween(animState)
+      .to({ currentAngle: angle }, duration)
+      .easing(TWEEN.Easing.Quadratic.Out)
+      .onUpdate(() => {
+        const delta = animState.currentAngle - lastAngle
+        lastAngle = animState.currentAngle
+
+        // 每一帧让这组方块微量旋转
+        movingCubes.forEach(mesh => {
+          rotateMeshAroundWorldAxis(mesh, axis, delta)
+        })
+      })
+      .onComplete(() => {
+        isAnimating.value = false
+        resolve()
+      })
+      .start()
+  })
+}
+
+// 辅助函数：让独立 Mesh 绕世界坐标轴进行精确的物理矩阵变换
+const rotateMeshAroundWorldAxis = (mesh, axisStr, radians) => {
+  const uX = axisStr === 'x' ? 1 : 0
+  const uY = axisStr === 'y' ? 1 : 0
+  const uZ = axisStr === 'z' ? 1 : 0
+
+  const rotWorldMatrix = new THREE.Matrix4()
+  rotWorldMatrix.makeRotationAxis(new THREE.Vector3(uX, uY, uZ), radians)
+
+  // 将旋转矩阵混合入方块的当前位置和转角，固化坐标，不给临时组留下漂移空间
+  mesh.position.applyMatrix4(rotWorldMatrix)
+  mesh.quaternion.premultiply(new THREE.Quaternion().setFromRotationMatrix(rotWorldMatrix))
+  mesh.updateMatrixWorld(true)
+}
+
+// ==================== 7. “重置与快进重播” 状态机 ====================
+// 清空回到最初的干净状态
+const resetToBase = () => {
+  buildCubeGeometry()
+}
+
+// 核心整合：根据当前指标，完美恢复到演示公式前的 Setup 状态
+const resetToFormulaState = async () => {
+  stopAutoPlay()
+  resetToBase()
+  currentStepIdx.value = 0
+
+  // 如果配有 Setup 公式，瞬间静默执行打乱，完成前置状态的构建
+  if (activeFormula.value.setup) {
+    const setupSteps = activeFormula.value.setup.split(/\s+/).filter(Boolean)
+    for (const step of setupSteps) {
+      await executeLayerRotation(step, 0) // duration 为 0 代表瞬间重构
+    }
+  }
+}
+
+// 单步向前
+const stepForward = async () => {
+  if (isAnimating.value || currentStepIdx.value >= parsedSteps.value.length) return
+  const nextStepStr = parsedSteps.value[currentStepIdx.value]
+  currentStepIdx.value++
+  await executeLayerRotation(nextStepStr, 180)
+}
+
+// 单步向后（重置 + 瞬间重播重构法，绝不依赖显式逆公式）
+const stepBackward = async () => {
+  if (isAnimating.value || currentStepIdx.value <= 0) return
+
+  const targetStepTarget = currentStepIdx.value - 1
+  isAnimating.value = true
+
+  // 1. 物理重置为最基本的干净状态
+  resetToBase()
+
+  // 2. 瞬间静默注入前置 setup
+  if (activeFormula.value.setup) {
+    const setupSteps = activeFormula.value.setup.split(/\s+/).filter(Boolean)
+    for (const step of setupSteps) {
+      await executeLayerRotation(step, 0)
+    }
+  }
+
+  // 3. 瞬间静默快速播放直到 targetStepTarget 步
+  for (let i = 0; i < targetStepTarget; i++) {
+    await executeLayerRotation(parsedSteps.value[i], 0)
+  }
+
+  // 4. 更新指针，解除锁定
+  currentStepIdx.value = targetStepTarget
+  isAnimating.value = false
+}
+
+// 自动播放环路
+const toggleAutoPlay = () => {
+  if (isAutoPlaying.value) {
+    stopAutoPlay()
+  } else {
+    if (currentStepIdx.value >= parsedSteps.value.length) {
+      currentStepIdx.value = 0
+      resetToFormulaState().then(() => {
+        startAutoPlayLoop()
+      })
+    } else {
+      startAutoPlayLoop()
+    }
+  }
+}
+
+const startAutoPlayLoop = () => {
+  isAutoPlaying.value = true
+  const playNext = async () => {
+    if (!isAutoPlaying.value) return
+    if (currentStepIdx.value >= parsedSteps.value.length) {
+      stopAutoPlay()
+      ElMessage.success('公式动画播放完毕！')
+      return
+    }
+    await stepForward()
+    // 每步执行完毕后，间歇 350ms 再次进行下一步
+    autoPlayTimer = setTimeout(playNext, 350)
+  }
+  playNext()
+}
+
+const stopAutoPlay = () => {
+  isAutoPlaying.value = false
+  if (autoPlayTimer) {
+    clearTimeout(autoPlayTimer)
+    autoPlayTimer = null
+  }
+}
+
+// 公式下拉切换
+const handleFormulaChange = () => {
+  resetToFormulaState()
+}
+
+const handleWindowResize = () => {
+  if (!canvasContainer.value || !camera || !renderer) return
+  const width = canvasContainer.value.clientWidth
+  const height = canvasContainer.value.clientHeight
+  camera.aspect = width / height
+  camera.updateProjectionMatrix()
+  renderer.setSize(width, height)
+}
+
+// ==================== 8. 生命周期管理 ====================
+onMounted(async () => {
+  await nextTick()
+  initThree()
+  // 额外缓冲等待，确保容器节点已被完美撑开
+  setTimeout(() => {
+    handleWindowResize()
+    resetToFormulaState()
+  }, 150)
+})
+
+onBeforeUnmount(() => {
+  stopAutoPlay()
+  window.removeEventListener('resize', handleWindowResize)
+  if (renderer) renderer.dispose()
+})
+</script>
+
+<style scoped>
+.cube-root-container {
+  max-width: 1100px;
+  margin: 10px auto;
+  padding: 0 10px;
+}
+
+.cube-card {
+  border-radius: 12px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.card-header .title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.cube-visual-wrapper {
+  position: relative;
+  background-color: #1e1e2f;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+}
+
+.canvas-container {
+  width: 100%;
+  height: 480px;
+  display: block;
+}
+
+.visual-controls {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  z-index: 10;
+}
+
+.control-panel {
+  display: flex;
+  flex-direction: column;
+  height: 480px;
+  justify-content: space-between;
+}
+
+.formula-info-card {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+  border-left: 5px solid #409eff;
+}
+
+.formula-info-card h3 {
+  margin: 0 0 12px 0;
+  color: #2c3e50;
+  font-size: 18px;
+}
+
+.meta-item {
+  margin-bottom: 8px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.meta-item .label {
+  color: #909399;
+  min-width: 65px;
+}
+
+.notation-display {
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: bold;
+  font-size: 16px;
+  color: #e6a23c;
+  background: #23232e;
+  padding: 4px 10px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+.steps-tracker {
+  flex: 1;
+  margin: 16px 0;
+  background: #fff;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.steps-tracker h4 {
+  margin: 0 0 10px 0;
+  color: #606266;
+  font-size: 14px;
+}
+
+.steps-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-content: flex-start;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.step-span {
+  font-family: 'Consolas', monospace;
+  font-size: 15px;
+  font-weight: bold;
+  padding: 4px 10px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  border: 1px solid #dcdfe6;
+}
+
+/* 当前正要执行/执行完的步骤高亮 */
+.active-step {
+  background-color: #67c23a;
+  color: white;
+  border-color: #67c23a;
+  transform: scale(1.1);
+  box-shadow: 0 2px 6px rgba(103,194,58,0.4);
+}
+
+/* 尚未执行的步骤 */
+.pending-step {
+  background-color: #f4f4f5;
+  color: #909399;
+}
+
+.empty-tip {
+  color: #c0c4cc;
+  font-size: 13px;
+  font-style: italic;
+}
+
+.playback-console {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.progress-section {
+  margin-bottom: 14px;
+}
+
+.progress-section .text-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #606266;
+  margin-bottom: 6px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.action-buttons .el-button {
+  flex: 1;
+  min-width: 75px;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .cube-visual-wrapper, .control-panel {
+    height: auto;
+  }
+  .canvas-container {
+    height: 320px;
+  }
+  .control-panel {
+    margin-top: 15px;
+  }
+}
+</style>

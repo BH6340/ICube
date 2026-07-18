@@ -1,0 +1,109 @@
+{
+    "faces": {
+        "B": [
+            [
+                "gray",
+                "gray",
+                "gray"
+            ],
+            [
+                "green",
+                "green",
+                "green"
+            ],
+            [
+                "green",
+                "green",
+                "green"
+            ]
+        ],
+        "D": [
+            [
+                "white",
+                "white",
+                "white"
+            ],
+            [
+                "white",
+                "white",
+                "white"
+            ],
+            [
+                "white",
+                "white",
+                "white"
+            ]
+        ],
+        "F": [
+            [
+                "gray",
+                "gray",
+                "gray"
+            ],
+            [
+                "blue",
+                "blue",
+                "blue"
+            ],
+            [
+                "blue",
+                "blue",
+                "blue"
+            ]
+        ],
+        "L": [
+            [
+                "gray",
+                "gray",
+                "gray"
+            ],
+            [
+                "orange",
+                "orange",
+                "orange"
+            ],
+            [
+                "orange",
+                "orange",
+                "orange"
+            ]
+        ],
+        "R": [
+            [
+                "gray",
+                "gray",
+                "gray"
+            ],
+            [
+                "red",
+                "red",
+                "red"
+            ],
+            [
+                "red",
+                "red",
+                "red"
+            ]
+        ],
+        "U": [
+            [
+                "gray",
+                "gray",
+                "gray"
+            ],
+            [
+                "gray",
+                "gray",
+                "gray"
+            ],
+            [
+                "gray",
+                "gray",
+                "gray"
+            ]
+        ]
+    },
+    "description": "底层和前两层已完成，第三层和顶面为灰色"
+}
+
+

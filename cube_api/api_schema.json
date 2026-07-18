@@ -1,0 +1,2655 @@
+{
+    "openapi": "3.0.3",
+    "info": {
+        "title": "ICube API",
+        "version": "1.0.0",
+        "description": "项目接口文档"
+    },
+    "paths": {
+        "/api/forum/comments/": {
+            "get": {
+                "operationId": "forum_comments_list",
+                "description": "评论视图集",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "分页结果集中的页码。",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "security": [
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedCommentList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "forum_comments_create",
+                "description": "评论视图集",
+                "tags": [
+                    "forum"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Comment"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Comment"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Comment"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Comment"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/forum/comments/{id}/": {
+            "get": {
+                "operationId": "forum_comments_retrieve",
+                "description": "评论视图集",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "标识此 评论 的 唯一整数值。",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "security": [
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Comment"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "forum_comments_update",
+                "description": "评论视图集",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "标识此 评论 的 唯一整数值。",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Comment"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Comment"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Comment"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Comment"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "forum_comments_partial_update",
+                "description": "评论视图集",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "标识此 评论 的 唯一整数值。",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedComment"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedComment"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedComment"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Comment"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "forum_comments_destroy",
+                "description": "评论视图集",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "标识此 评论 的 唯一整数值。",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
+        "/api/forum/comments/{id}/dislike/": {
+            "post": {
+                "operationId": "forum_comments_dislike_create",
+                "description": "点踩评论",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "标识此 评论 的 唯一整数值。",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Comment"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Comment"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Comment"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Comment"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/forum/comments/{id}/like/": {
+            "post": {
+                "operationId": "forum_comments_like_create",
+                "description": "点赞评论",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "标识此 评论 的 唯一整数值。",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Comment"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Comment"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Comment"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Comment"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/forum/posts/": {
+            "get": {
+                "operationId": "forum_posts_list",
+                "description": "帖子视图集",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "is_essence",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "is_pinned",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "用于排序结果的字段。",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "分页结果集中的页码。",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "required": false,
+                        "in": "query",
+                        "description": "搜索关键词。",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "tags__name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "security": [
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedPostListList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "forum_posts_create",
+                "description": "帖子视图集",
+                "tags": [
+                    "forum"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PostCreateUpdate"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PostCreateUpdate"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PostCreateUpdate"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PostCreateUpdate"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/forum/posts/{id}/": {
+            "get": {
+                "operationId": "forum_posts_retrieve",
+                "description": "帖子视图集",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "标识此 帖子 的 唯一整数值。",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "security": [
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Post"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "forum_posts_update",
+                "description": "帖子视图集",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "标识此 帖子 的 唯一整数值。",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PostCreateUpdate"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PostCreateUpdate"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PostCreateUpdate"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PostCreateUpdate"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "forum_posts_partial_update",
+                "description": "帖子视图集",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "标识此 帖子 的 唯一整数值。",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPostCreateUpdate"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPostCreateUpdate"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPostCreateUpdate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PostCreateUpdate"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "forum_posts_destroy",
+                "description": "帖子视图集",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "标识此 帖子 的 唯一整数值。",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
+        "/api/forum/posts/{id}/collect/": {
+            "post": {
+                "operationId": "forum_posts_collect_create",
+                "description": "收藏帖子",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "标识此 帖子 的 唯一整数值。",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Post"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Post"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Post"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Post"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/forum/posts/{id}/comments/": {
+            "get": {
+                "operationId": "forum_posts_comments_retrieve",
+                "description": "获取帖子的评论（带分页）",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "标识此 帖子 的 唯一整数值。",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "security": [
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Post"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/forum/posts/{id}/like/": {
+            "post": {
+                "operationId": "forum_posts_like_create",
+                "description": "切换帖子点赞状态，已点赞则取消，未点赞则点赞",
+                "summary": "点赞帖子",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "帖子ID",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Post"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Post"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Post"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "liked": {
+                                            "type": "boolean",
+                                            "description": "点赞后的状态"
+                                        },
+                                        "like_count": {
+                                            "type": "integer",
+                                            "description": "当前点赞数"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/forum/posts/collected/": {
+            "get": {
+                "operationId": "forum_posts_collected_retrieve",
+                "description": "我收藏的帖子",
+                "tags": [
+                    "forum"
+                ],
+                "security": [
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Post"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/forum/posts/hot/": {
+            "get": {
+                "operationId": "forum_posts_hot_retrieve",
+                "description": "热门帖子",
+                "tags": [
+                    "forum"
+                ],
+                "security": [
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Post"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/forum/posts/my_posts/": {
+            "get": {
+                "operationId": "forum_posts_my_posts_retrieve",
+                "description": "我的帖子",
+                "tags": [
+                    "forum"
+                ],
+                "security": [
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Post"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/forum/reports/": {
+            "get": {
+                "operationId": "forum_reports_list",
+                "description": "举报视图集",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "分页结果集中的页码。",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedReportList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "forum_reports_create",
+                "description": "举报视图集",
+                "tags": [
+                    "forum"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Report"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Report"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Report"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Report"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/forum/reports/{id}/": {
+            "get": {
+                "operationId": "forum_reports_retrieve",
+                "description": "举报视图集",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "标识此 举报 的 唯一整数值。",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Report"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "forum_reports_update",
+                "description": "举报视图集",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "标识此 举报 的 唯一整数值。",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Report"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Report"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Report"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Report"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "forum_reports_partial_update",
+                "description": "举报视图集",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "标识此 举报 的 唯一整数值。",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedReport"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedReport"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedReport"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Report"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "forum_reports_destroy",
+                "description": "举报视图集",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "标识此 举报 的 唯一整数值。",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
+        "/api/forum/tags/": {
+            "get": {
+                "operationId": "forum_tags_list",
+                "description": "标签视图集（只读）",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "分页结果集中的页码。",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "required": false,
+                        "in": "query",
+                        "description": "搜索关键词。",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "security": [
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedTagList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/forum/tags/{id}/": {
+            "get": {
+                "operationId": "forum_tags_retrieve",
+                "description": "标签视图集（只读）",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "标识此 标签 的 唯一整数值。",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "security": [
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Tag"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/profiles": {
+            "get": {
+                "operationId": "profiles_list",
+                "description": "处理 Profiles 列表和详情，以及关注逻辑",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "分页结果集中的页码。",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "profiles"
+                ],
+                "security": [
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedProfileList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/profiles/{username}": {
+            "get": {
+                "operationId": "profiles_retrieve",
+                "description": "处理 Profiles 列表和详情，以及关注逻辑",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "username",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "profiles"
+                ],
+                "security": [
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Profile"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/profiles/{username}/follow": {
+            "post": {
+                "operationId": "profiles_follow_create",
+                "description": "处理 Profiles 列表和详情，以及关注逻辑",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "username",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "profiles"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Profile"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Profile"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Profile"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Profile"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "profiles_follow_destroy",
+                "description": "处理 Profiles 列表和详情，以及关注逻辑",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "username",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "profiles"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
+        "/api/profiles/{username}/followers": {
+            "get": {
+                "operationId": "profiles_followers_retrieve",
+                "description": "获取关注该用户的人的列表（粉丝列表）\nURL: GET /api/profiles/{username}/followers",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "username",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "profiles"
+                ],
+                "security": [
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProfileList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/profiles/{username}/following": {
+            "get": {
+                "operationId": "profiles_following_retrieve",
+                "description": "获取该用户关注的人的列表\nURL: GET /api/profiles/{username}/following",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "username",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "profiles"
+                ],
+                "security": [
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProfileList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/users/info": {
+            "get": {
+                "operationId": "users_info_retrieve",
+                "description": "处理 GET /api/user 和 PUT /api/user",
+                "tags": [
+                    "users"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/User"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "users_info_update",
+                "description": "处理 GET /api/user 和 PUT /api/user",
+                "tags": [
+                    "users"
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UserUpdate"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UserUpdate"
+                            }
+                        },
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UserUpdate"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserUpdate"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "users_info_partial_update",
+                "description": "处理 GET /api/user 和 PUT /api/user",
+                "tags": [
+                    "users"
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedUserUpdate"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedUserUpdate"
+                            }
+                        },
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedUserUpdate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserUpdate"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/users/login": {
+            "post": {
+                "operationId": "users_login_create",
+                "description": "使用邮箱和密码登录",
+                "summary": "用户登录",
+                "tags": [
+                    "users"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "user": {
+                                        "type": "object",
+                                        "properties": {
+                                            "email": {
+                                                "type": "string",
+                                                "format": "email"
+                                            },
+                                            "password": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "required": [
+                                            "email",
+                                            "password"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "type": "integer"
+                                        },
+                                        "msg": {
+                                            "type": "string"
+                                        },
+                                        "user": {
+                                            "type": "object",
+                                            "properties": {
+                                                "username": {
+                                                    "type": "string"
+                                                },
+                                                "email": {
+                                                    "type": "string"
+                                                },
+                                                "token": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "登录成功"
+                    },
+                    "401": {
+                        "description": "邮箱或密码错误"
+                    }
+                }
+            }
+        },
+        "/api/users/logout": {
+            "post": {
+                "operationId": "users_logout_create",
+                "description": "退出登录：将当前使用的 Token 强行注入 Redis 黑名单",
+                "tags": [
+                    "users"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/User"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/User"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/User"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/User"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/users/register": {
+            "post": {
+                "operationId": "users_register_create",
+                "description": "仅包含登录与注册动作的 ViewSet",
+                "tags": [
+                    "users"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "application/json": {
+                                    "type": "object",
+                                    "properties": {
+                                        "user": {
+                                            "type": "object",
+                                            "properties": {
+                                                "email": {
+                                                    "type": "string",
+                                                    "format": "email"
+                                                },
+                                                "password": {
+                                                    "type": "string"
+                                                },
+                                                "username": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "email",
+                                                "password"
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "application/json": {
+                                    "type": "object",
+                                    "properties": {
+                                        "user": {
+                                            "type": "object",
+                                            "properties": {
+                                                "email": {
+                                                    "type": "string",
+                                                    "format": "email"
+                                                },
+                                                "password": {
+                                                    "type": "string"
+                                                },
+                                                "username": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "email",
+                                                "password"
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "application/json": {
+                                    "type": "object",
+                                    "properties": {
+                                        "user": {
+                                            "type": "object",
+                                            "properties": {
+                                                "email": {
+                                                    "type": "string",
+                                                    "format": "email"
+                                                },
+                                                "password": {
+                                                    "type": "string"
+                                                },
+                                                "username": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "email",
+                                                "password"
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {}
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/User"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "注册失败"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Comment": {
+                "type": "object",
+                "description": "评论序列化器",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "post": {
+                        "type": "integer",
+                        "title": "所属帖子"
+                    },
+                    "author": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ProfileList"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "parent": {
+                        "type": "integer",
+                        "nullable": true,
+                        "title": "父评论"
+                    },
+                    "content": {
+                        "type": "string",
+                        "title": "内容",
+                        "minLength": 2,
+                        "maxLength": 1000
+                    },
+                    "like_count": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "title": "点赞数"
+                    },
+                    "dislike_count": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "title": "点踩数"
+                    },
+                    "is_deleted": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "title": "是否删除"
+                    },
+                    "is_hidden": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "title": "是否隐藏（被举报）"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "title": "创建时间"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "title": "更新时间"
+                    },
+                    "replies": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "reply_count": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "is_liked": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "is_disliked": {
+                        "type": "boolean",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "author",
+                    "content",
+                    "created_at",
+                    "dislike_count",
+                    "id",
+                    "is_deleted",
+                    "is_disliked",
+                    "is_hidden",
+                    "is_liked",
+                    "like_count",
+                    "post",
+                    "replies",
+                    "reply_count",
+                    "updated_at"
+                ]
+            },
+            "ContentTypeEnum": {
+                "enum": [
+                    "post",
+                    "comment"
+                ],
+                "type": "string",
+                "description": "* `post` - 帖子\n* `comment` - 评论"
+            },
+            "PaginatedCommentList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Comment"
+                        }
+                    }
+                }
+            },
+            "PaginatedPostListList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PostList"
+                        }
+                    }
+                }
+            },
+            "PaginatedProfileList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Profile"
+                        }
+                    }
+                }
+            },
+            "PaginatedReportList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Report"
+                        }
+                    }
+                }
+            },
+            "PaginatedTagList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Tag"
+                        }
+                    }
+                }
+            },
+            "PatchedComment": {
+                "type": "object",
+                "description": "评论序列化器",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "post": {
+                        "type": "integer",
+                        "title": "所属帖子"
+                    },
+                    "author": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ProfileList"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "parent": {
+                        "type": "integer",
+                        "nullable": true,
+                        "title": "父评论"
+                    },
+                    "content": {
+                        "type": "string",
+                        "title": "内容",
+                        "minLength": 2,
+                        "maxLength": 1000
+                    },
+                    "like_count": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "title": "点赞数"
+                    },
+                    "dislike_count": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "title": "点踩数"
+                    },
+                    "is_deleted": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "title": "是否删除"
+                    },
+                    "is_hidden": {
+                        "type": "boolean",
+                        "readOnly": true,
+                        "title": "是否隐藏（被举报）"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "title": "创建时间"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "title": "更新时间"
+                    },
+                    "replies": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "reply_count": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "is_liked": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "is_disliked": {
+                        "type": "boolean",
+                        "readOnly": true
+                    }
+                }
+            },
+            "PatchedPostCreateUpdate": {
+                "type": "object",
+                "description": "创建/更新帖子的序列化器",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "title": "标题",
+                        "maxLength": 200,
+                        "minLength": 5
+                    },
+                    "content": {
+                        "type": "string",
+                        "title": "正文"
+                    },
+                    "content_md": {
+                        "type": "string",
+                        "title": "Markdown源码",
+                        "description": "支持上传.md文件"
+                    },
+                    "content_file": {
+                        "type": "string",
+                        "format": "uri",
+                        "writeOnly": true,
+                        "description": "上传.md文件"
+                    },
+                    "tag_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "writeOnly": true
+                    }
+                }
+            },
+            "PatchedReport": {
+                "type": "object",
+                "description": "举报序列化器",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "content_type": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ContentTypeEnum"
+                            }
+                        ],
+                        "title": "内容类型"
+                    },
+                    "object_id": {
+                        "type": "integer",
+                        "maximum": 2147483647,
+                        "minimum": -2147483648,
+                        "title": "内容ID"
+                    },
+                    "reporter": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ProfileList"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "reason": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ReasonEnum"
+                            }
+                        ],
+                        "title": "举报原因"
+                    },
+                    "description": {
+                        "type": "string",
+                        "title": "详细描述"
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ReportStatusEnum"
+                            }
+                        ],
+                        "readOnly": true,
+                        "title": "处理状态"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                }
+            },
+            "PatchedUserUpdate": {
+                "type": "object",
+                "description": "专门用于用户资料更新的序列化器，严格限制可修改字段",
+                "properties": {
+                    "username": {
+                        "type": "string",
+                        "maxLength": 60
+                    },
+                    "bio": {
+                        "type": "string"
+                    },
+                    "image": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    }
+                }
+            },
+            "Post": {
+                "type": "object",
+                "description": "帖子详情序列化器",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "title": {
+                        "type": "string",
+                        "title": "标题",
+                        "maxLength": 200,
+                        "minLength": 5
+                    },
+                    "content": {
+                        "type": "string",
+                        "title": "正文"
+                    },
+                    "content_md": {
+                        "type": "string",
+                        "title": "Markdown源码",
+                        "description": "支持上传.md文件"
+                    },
+                    "author": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ProfileList"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "view_count": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "title": "浏览量"
+                    },
+                    "like_count": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "title": "点赞数"
+                    },
+                    "comment_count": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "title": "评论数"
+                    },
+                    "collect_count": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "title": "收藏数"
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Tag"
+                        },
+                        "readOnly": true
+                    },
+                    "tag_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "writeOnly": true,
+                        "description": "标签ID列表"
+                    },
+                    "is_pinned": {
+                        "type": "boolean",
+                        "title": "置顶"
+                    },
+                    "is_essence": {
+                        "type": "boolean",
+                        "title": "精华"
+                    },
+                    "is_closed": {
+                        "type": "boolean",
+                        "title": "关闭评论"
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PostStatusEnum"
+                            }
+                        ],
+                        "readOnly": true,
+                        "title": "状态"
+                    },
+                    "report_count": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "title": "举报数"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "title": "创建时间"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "title": "更新时间"
+                    },
+                    "is_liked": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "is_collected": {
+                        "type": "boolean",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "author",
+                    "collect_count",
+                    "comment_count",
+                    "content",
+                    "created_at",
+                    "id",
+                    "is_collected",
+                    "is_liked",
+                    "like_count",
+                    "report_count",
+                    "status",
+                    "tags",
+                    "title",
+                    "updated_at",
+                    "view_count"
+                ]
+            },
+            "PostCreateUpdate": {
+                "type": "object",
+                "description": "创建/更新帖子的序列化器",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "title": "标题",
+                        "maxLength": 200,
+                        "minLength": 5
+                    },
+                    "content": {
+                        "type": "string",
+                        "title": "正文"
+                    },
+                    "content_md": {
+                        "type": "string",
+                        "title": "Markdown源码",
+                        "description": "支持上传.md文件"
+                    },
+                    "content_file": {
+                        "type": "string",
+                        "format": "uri",
+                        "writeOnly": true,
+                        "description": "上传.md文件"
+                    },
+                    "tag_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "writeOnly": true
+                    }
+                },
+                "required": [
+                    "content",
+                    "title"
+                ]
+            },
+            "PostList": {
+                "type": "object",
+                "description": "帖子列表序列化器（轻量级）",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "title": {
+                        "type": "string",
+                        "title": "标题",
+                        "maxLength": 200,
+                        "minLength": 5
+                    },
+                    "author": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ProfileList"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "view_count": {
+                        "type": "integer",
+                        "maximum": 2147483647,
+                        "minimum": -2147483648,
+                        "title": "浏览量"
+                    },
+                    "like_count": {
+                        "type": "integer",
+                        "maximum": 2147483647,
+                        "minimum": -2147483648,
+                        "title": "点赞数"
+                    },
+                    "comment_count": {
+                        "type": "integer",
+                        "maximum": 2147483647,
+                        "minimum": -2147483648,
+                        "title": "评论数"
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Tag"
+                        },
+                        "readOnly": true
+                    },
+                    "is_pinned": {
+                        "type": "boolean",
+                        "title": "置顶"
+                    },
+                    "is_essence": {
+                        "type": "boolean",
+                        "title": "精华"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "title": "创建时间"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "title": "更新时间"
+                    }
+                },
+                "required": [
+                    "author",
+                    "created_at",
+                    "id",
+                    "tags",
+                    "title",
+                    "updated_at"
+                ]
+            },
+            "PostStatusEnum": {
+                "enum": [
+                    "published",
+                    "deleted",
+                    "draft"
+                ],
+                "type": "string",
+                "description": "* `published` - 已发布\n* `deleted` - 已删除\n* `draft` - 草稿"
+            },
+            "Profile": {
+                "type": "object",
+                "properties": {
+                    "username": {
+                        "type": "string",
+                        "maxLength": 60
+                    },
+                    "bio": {
+                        "type": "string"
+                    },
+                    "image": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true,
+                        "maxLength": 200
+                    },
+                    "following": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "followers_count": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "following_count": {
+                        "type": "integer",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "followers_count",
+                    "following",
+                    "following_count",
+                    "username"
+                ]
+            },
+            "ProfileList": {
+                "type": "object",
+                "description": "专门用于关注/粉丝列表展示的轻量级序列化器（去除了计数相关字段）",
+                "properties": {
+                    "username": {
+                        "type": "string",
+                        "maxLength": 60
+                    },
+                    "bio": {
+                        "type": "string"
+                    },
+                    "image": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true,
+                        "maxLength": 200
+                    },
+                    "following": {
+                        "type": "boolean",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "following",
+                    "username"
+                ]
+            },
+            "ReasonEnum": {
+                "enum": [
+                    "spam",
+                    "violence",
+                    "harassment",
+                    "illegal",
+                    "other"
+                ],
+                "type": "string",
+                "description": "* `spam` - 垃圾广告\n* `violence` - 暴力内容\n* `harassment` - 人身攻击\n* `illegal` - 违法违规\n* `other` - 其他"
+            },
+            "Report": {
+                "type": "object",
+                "description": "举报序列化器",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "content_type": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ContentTypeEnum"
+                            }
+                        ],
+                        "title": "内容类型"
+                    },
+                    "object_id": {
+                        "type": "integer",
+                        "maximum": 2147483647,
+                        "minimum": -2147483648,
+                        "title": "内容ID"
+                    },
+                    "reporter": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ProfileList"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "reason": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ReasonEnum"
+                            }
+                        ],
+                        "title": "举报原因"
+                    },
+                    "description": {
+                        "type": "string",
+                        "title": "详细描述"
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ReportStatusEnum"
+                            }
+                        ],
+                        "readOnly": true,
+                        "title": "处理状态"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "content_type",
+                    "created_at",
+                    "id",
+                    "object_id",
+                    "reason",
+                    "reporter",
+                    "status"
+                ]
+            },
+            "ReportStatusEnum": {
+                "enum": [
+                    "pending",
+                    "approved",
+                    "rejected"
+                ],
+                "type": "string",
+                "description": "* `pending` - 待处理\n* `approved` - 已处理\n* `rejected` - 已驳回"
+            },
+            "Tag": {
+                "type": "object",
+                "description": "标签序列化器",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "name": {
+                        "type": "string",
+                        "title": "标签名",
+                        "maxLength": 30
+                    },
+                    "color": {
+                        "type": "string",
+                        "title": "颜色",
+                        "description": "十六进制颜色码",
+                        "maxLength": 7
+                    },
+                    "use_count": {
+                        "type": "integer",
+                        "maximum": 2147483647,
+                        "minimum": -2147483648,
+                        "title": "使用次数"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name"
+                ]
+            },
+            "User": {
+                "type": "object",
+                "properties": {
+                    "username": {
+                        "type": "string",
+                        "maxLength": 60
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "title": "Email Address",
+                        "maxLength": 254
+                    },
+                    "password": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "title": "密码",
+                        "maxLength": 128
+                    },
+                    "bio": {
+                        "type": "string"
+                    },
+                    "image": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true,
+                        "maxLength": 200
+                    }
+                },
+                "required": [
+                    "email",
+                    "password",
+                    "username"
+                ]
+            },
+            "UserUpdate": {
+                "type": "object",
+                "description": "专门用于用户资料更新的序列化器，严格限制可修改字段",
+                "properties": {
+                    "username": {
+                        "type": "string",
+                        "maxLength": 60
+                    },
+                    "bio": {
+                        "type": "string"
+                    },
+                    "image": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "username"
+                ]
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "users",
+            "description": "用户管理"
+        },
+        {
+            "name": "profiles",
+            "description": "用户资料浏览"
+        },
+        {
+            "name": "forum",
+            "description": "论坛帖子管理"
+        },
+        {
+            "name": "comments",
+            "description": "评论系统"
+        },
+        {
+            "name": "tags",
+            "description": "标签管理"
+        },
+        {
+            "name": "reports",
+            "description": "举报管理"
+        }
+    ]
+}
