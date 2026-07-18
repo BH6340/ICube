@@ -4,10 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # ICube — 魔方学习平台
 
-基于 Django + Vue 3 的魔方学习交流平台，提供公式库、3D可视化、论坛、商城等功能。使用 Docker Compose 进行容器化部署。
+基于 Django + Vue 3 的魔方学习交流平台，提供公式库、3D 可视化、论坛、商城等功能。使用 Docker Compose 进行容器化部署。
+
+> 子目录 `cube_api/` 和 `cube_front/` 各有独立的 CLAUDE.md，包含各自领域的详细约定。
 
 ## 技术栈
-- 后端：Django 6.0 + DRF + MySQL 8.0 + Redis 6.x
+- 后端：Django 6.0 + DRF + MySQL 8.0 + Redis 7
 - 前端：Vue 3.5 + Vite 8.0 + Element Plus 2.14 + Three.js 0.184
 - 部署：Docker Compose + Nginx
 
@@ -31,11 +33,15 @@ sudo docker compose exec api python manage.py migrate
 # 创建超级用户
 sudo docker compose exec api python manage.py createsuperuser
 
-# 运行测试（测试模式自动使用 SQLite + 模拟 Redis）
+# 运行全部测试（自动切换到 SQLite 内存库 + Mock Redis + 禁用限流 + MD5 哈希）
 sudo docker compose exec api python manage.py test
+
+# 运行单个测试模块
+sudo docker compose exec api python manage.py test apps.forum.tests.test_models
 
 # 本地开发：后端
 cd cube_api && python manage.py runserver 8000 --settings=cube_api.settings.dev
+
 # 本地开发：前端（自动代理 /api → 127.0.0.1:8000）
 cd cube_front && npm run dev
 ```
@@ -47,6 +53,7 @@ ICube/
 │   ├── Dockerfile
 │   ├── manage.py
 │   ├── requirements.txt
+│   ├── CLAUDE.md                # 后端专属约定
 │   └── cube_api/                # Django 项目根目录
 │       ├── settings/
 │       │   ├── dev.py           # 开发配置（prod.py 通过 from .dev import * 继承）
@@ -58,34 +65,66 @@ ICube/
 │       │   ├── formula/         # 公式分类、公式管理、3D 状态数据
 │       │   ├── shop/            # 商品、购物车、订单、支付宝支付
 │       │   └── home/            # 首页菜单、轮播图
-│       └── utils/               # 统一响应、异常处理、分页
+│       └── utils/               # 统一响应 (APIResponse)、异常处理、分页
 ├── cube_front/                  # Vue 3 前端
-├── nginx/conf.d/                # Nginx 站点配置
+│   ├── CLAUDE.md                # 前端专属约定
+│   ├── vite.config.js           # Vite 配置 + /api 代理
+│   └── src/
+│       ├── api/                 # 按模块封装的接口（user.js, posts.js, shop.js 等）
+│       ├── http/request.js      # Axios 实例 + 统一拦截器
+│       ├── stores/              # Pinia 状态管理
+│       └── components/formula/CubeDemo.vue  # Three.js 3D 魔方组件
+├── nginx/conf.d/icube.conf      # Nginx 路由配置
+├── init_data.sql                # 数据库初始化种子数据（MySQL 容器启动时自动执行）
 └── docker-compose.yml
 ```
+
+## 请求流转路径
+
+理解请求在各服务间的走向，是排查问题的关键：
+
+```
+浏览器
+  │
+  ├─ /api/*   → Nginx → proxy_pass → icube_api:8000（Django/DRF）
+  ├─ /media/* → Nginx → alias → media_volume（Docker 共享卷）
+  ├─ /static/*→ Nginx → alias → collected_static（Docker 共享卷）
+  └─ /*       → Nginx → try_files → front_dist（Vue 构建产物，SPA 回退到 index.html）
+```
+
+本地开发时，Vite dev server 接管前端，`/api` 请求通过 `vite.config.js` 中的 proxy 转发到 `127.0.0.1:8000`。
 
 ## 关键架构约定
 
 ### 后端
-- **sys.path 注入**：`dev.py` 将 `apps/` 和父目录插入 `sys.path`，所以应用导入为 `apps.accounts` 而不是 `cube_api.apps.accounts`
-- **API 响应**：所有视图必须使用 `utils/common_response.py` 中的 `APIResponse`，成功时 `code=100`。前端拦截器期望 `code !== 100` 表示错误
-- **日志**：严格禁止使用 `logging` 模块。只能使用 `from loguru import logger`。`logger_conf.py` 通过 `InterceptHandler` 拦截所有第三方库日志
-- **设置继承**：`prod.py` 从 `dev.py` 导入所有内容（`from .dev import *`），然后覆盖数据库/Redis/缓存/CORS 设置
-- **认证**：`CachedJWTAuthentication` 通过 Redis 缓存用户实例，并支持 JWT 黑名单（注销时使用）
-- **测试模式**：通过 `if 'test' in sys.argv` 检测。切换到 SQLite 内存数据库、模拟 Redis、禁用限流、使用 MD5 密码哈希
-- **支付宝沙箱**：密钥存储在 `apps/shop/keys/`（不能提交）。`alipay_config.py` 配置沙箱网关
+- **sys.path 注入**：`dev.py` 将 `apps/` 和父目录插入 `sys.path`，应用导入为 `apps.accounts` 而非 `cube_api.apps.accounts`
+- **API 响应格式**：所有视图必须使用 `utils/common_response.py` 中的 `APIResponse`，成功时 `code=100`。前端拦截器将 `code !== 100` 视为错误
+- **日志**：严格禁止 `logging` 模块，只能使用 `from loguru import logger`。`logger_conf.py` 通过 `InterceptHandler` 拦截所有第三方库日志。注意：`prod.py` 中目前存在一个遗留的 `LOGGING` dict，这是不规范的，应当移除
+- **设置继承**：`prod.py` 从 `dev.py` 导入全部内容（`from .dev import *`），然后覆盖 DB/Redis/CORS/DEBUG 等生产配置
+- **认证**：`CachedJWTAuthentication` 通过 Redis 缓存用户实例（key: `user_instance_cache_{user_id}`，TTL 1h），支持 JWT 黑名单（注销时 jti 入黑名单）。Token 前缀为 `Token`，非标准 `Bearer`
+- **测试模式**：通过 `if 'test' in sys.argv` 检测，自动切换到 SQLite 内存库、Mock Redis、禁用限流、MD5 哈希
 
 ### 前端
-- **自动导入**：`unplugin-auto-import` 自动导入 Vue、Vue Router、Pinia。`unplugin-vue-components` 自动导入 Element Plus 组件。无需手动导入
-- **Vite 代理**：开发模式下 `/api` 请求代理到 `http://127.0.0.1:8000`
-- **Three.js 清理**：`CubeDemo.vue` 必须在 `onBeforeUnmount` 中执行 `geometry.dispose()`、`material.dispose()`、`renderer.dispose()` 并取消 `requestAnimationFrame`
+- **自动导入**：`unplugin-auto-import` 自动导入 Vue/Vue Router/Pinia API，`unplugin-vue-components` 自动导入 Element Plus 组件，无需手动 import
+- **路由结构**：`HomeView` 是父布局路由，其余页面均为其子路由
+- **Three.js 清理**：`CubeDemo.vue` 必须在 `onBeforeUnmount` 中执行 `geometry.dispose()`、`material.dispose()`、`renderer.dispose()` 并取消 `requestAnimationFrame`，否则内存泄漏
+
+### Nginx 路由规则（icube.conf）
+| 路径 | 处理方式 |
+|------|---------|
+| `/api/*` | `proxy_pass` 到 `icube_api:8000`，保留 `/api/` 前缀 |
+| `/media/*` | `alias` 到共享卷，30天缓存 |
+| `/static/*` | `alias` 到共享卷，30天缓存 |
+| `/*` | SPA 回退：`try_files $uri $uri/ /index.html` |
 
 ### 服务依赖关系
 - nginx 依赖 api 和 front
-- api 依赖 db（需健康检查通过）和 redis
-- front 独立构建，产物由 nginx 提供静态服务
+- api 依赖 db（需健康检查通过，`start_period: 45s`）和 redis
+- front 独立构建，产物通过 `front_dist` 卷共享给 nginx
 
 ## 注意事项
-- 前端代码中禁止硬编码 localhost:8000，API 请求通过 /api 代理，媒体文件通过 /media/ 访问
-- 修改 cube_api/mysql.conf 可能影响数据库初始化，需谨慎
-- docker-compose.yml 中的 version 字段已过时，可移除避免告警
+- 前端代码中禁止硬编码 `localhost:8000`，API 请求通过 `/api` 代理，媒体文件通过 `/media/` 访问
+- 修改 `cube_api/mysql.conf` 可能影响数据库初始化，需谨慎
+- `docker-compose.yml` 中的 `version` 字段已过时，可移除避免告警
+- `prod.py` 中硬编码的服务器 IP（`121.4.62.163`）应改为通过环境变量读取
+- `init_data.sql` 在 MySQL 容器首次启动时自动执行，修改会影响初始数据
