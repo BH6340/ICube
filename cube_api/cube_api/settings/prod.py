@@ -6,16 +6,21 @@ DEBUG = False
 SECRET_KEY = os.getenv('SECRET_KEY', SECRET_KEY)
 
 ALLOWED_HOSTS = [
-    '121.4.62.163',
-    'localhost',
-    '127.0.0.1',
-    'icube_api',
-    'api',
+    h for h in [
+        os.getenv('ALLOWED_HOSTS', ''),
+        'localhost',
+        '127.0.0.1',
+        'icube_api',
+        'api',
+    ] if h
 ]
 
+_allowed_origin = os.getenv('ALLOWED_ORIGIN', '')
 CORS_ALLOWED_ORIGINS = [
-    "http://121.4.62.163",
-    "https://121.4.62.163",
+    f"{scheme}://{_allowed_origin}"
+    for scheme in ['http', 'https']
+    if _allowed_origin
+] + [
     "http://localhost",
     "https://localhost",
 ]
@@ -47,22 +52,3 @@ CACHES = {
 }
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'collected_static')
-
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'django.log'),
-        },
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['file'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-    },
-}

@@ -99,7 +99,7 @@ ICube/
 ### 后端
 - **sys.path 注入**：`dev.py` 将 `apps/` 和父目录插入 `sys.path`，应用导入为 `apps.accounts` 而非 `cube_api.apps.accounts`
 - **API 响应格式**：所有视图必须使用 `utils/common_response.py` 中的 `APIResponse`，成功时 `code=100`。前端拦截器将 `code !== 100` 视为错误
-- **日志**：严格禁止 `logging` 模块，只能使用 `from loguru import logger`。`logger_conf.py` 通过 `InterceptHandler` 拦截所有第三方库日志。注意：`prod.py` 中目前存在一个遗留的 `LOGGING` dict，这是不规范的，应当移除
+- **日志**：严格禁止 `logging` 模块，只能使用 `from loguru import logger`。`logger_conf.py` 通过 `InterceptHandler` 拦截所有第三方库日志，`dev.py` 中 `LOGGING_CONFIG = None` 彻底禁用 Django 默认日志系统
 - **设置继承**：`prod.py` 从 `dev.py` 导入全部内容（`from .dev import *`），然后覆盖 DB/Redis/CORS/DEBUG 等生产配置
 - **认证**：`CachedJWTAuthentication` 通过 Redis 缓存用户实例（key: `user_instance_cache_{user_id}`，TTL 1h），支持 JWT 黑名单（注销时 jti 入黑名单）。Token 前缀为 `Token`，非标准 `Bearer`
 - **测试模式**：通过 `if 'test' in sys.argv` 检测，自动切换到 SQLite 内存库、Mock Redis、禁用限流、MD5 哈希
@@ -126,5 +126,5 @@ ICube/
 - 前端代码中禁止硬编码 `localhost:8000`，API 请求通过 `/api` 代理，媒体文件通过 `/media/` 访问
 - 修改 `cube_api/mysql.conf` 可能影响数据库初始化，需谨慎
 - `docker-compose.yml` 中的 `version` 字段已过时，可移除避免告警
-- `prod.py` 中硬编码的服务器 IP（`121.4.62.163`）应改为通过环境变量读取
+- 生产环境需通过环境变量配置：`ALLOWED_HOSTS`（服务器公网 IP/域名）、`ALLOWED_ORIGIN`（前端 CORS 来源）、`SERVER_HOST`（支付宝回调地址），均在 `docker-compose.yml` 中通过 `${VAR:-}` 语法支持 `.env` 文件或系统环境变量传入
 - `init_data.sql` 在 MySQL 容器首次启动时自动执行，修改会影响初始数据

@@ -52,6 +52,9 @@ services:
       - DB_PASSWORD=icube123
       - DB_HOST=db
       - DB_PORT=3306
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-}
+      - ALLOWED_ORIGIN=${ALLOWED_ORIGIN:-}
+      - SERVER_HOST=${SERVER_HOST:-localhost}
     volumes:
       - ./cube_api:/app
       - media_volume:/app/media

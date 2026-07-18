@@ -7,8 +7,8 @@ ALIPAY_CONFIG = {
     'app_id': '9021000162660623',
     'app_private_key_path': os.path.join(BASE_DIR, 'keys', 'app_private_key.pem'),
     'alipay_public_key_path': os.path.join(BASE_DIR, 'keys', 'alipay_public_key.pem'),
-    'notify_url': 'http://121.4.62.163/api/shop/orders/notify/',
-    'return_url': 'http://121.4.62.163/shop/pay/callback',
+    'notify_url': f"http://{os.getenv('SERVER_HOST', 'localhost')}/api/shop/orders/notify/",
+    'return_url': f"http://{os.getenv('SERVER_HOST', 'localhost')}/shop/pay/callback",
     'debug': True,
 }
 
