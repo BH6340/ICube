@@ -60,9 +60,9 @@
             </el-radio>
           </div>
 
-          <div v-if="qrCode" class="qr-code-section">
+          <div v-if="qrCodeUrl" class="qr-code-section">
             <div class="qr-code">
-              <img :src="qrCode" alt="支付二维码" />
+              <canvas ref="qrCanvas"></canvas>
             </div>
             <p class="qr-tip">使用支付宝扫码支付</p>
           </div>
@@ -88,7 +88,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { CircleCheck, CircleClose, CreditCard, Loading } from '@element-plus/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -97,9 +97,11 @@ import { getOrderDetail, payOrder } from '@/api/shop'
 const route = useRoute()
 const router = useRouter()
 const order = ref(null)
-const qrCode = ref(null)
+const qrCodeUrl = ref(null)
 const payLoading = ref(false)
 const selectedMethod = ref('alipay')
+const pollingTimer = ref(null)
+const qrCanvas = ref(null)
 
 const getStatusText = (status) => {
   const statusMap = {
@@ -116,6 +118,94 @@ const goToOrders = () => {
   router.push('/profiles/orders')
 }
 
+const drawQRCode = (text) => {
+  if (!qrCanvas.value || !text) return
+  
+  const canvas = qrCanvas.value
+  const ctx = canvas.getContext('2d')
+  const size = 200
+  canvas.width = size
+  canvas.height = size
+  
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, 0, size, size)
+  
+  const moduleSize = Math.floor(size / 25)
+  const padding = moduleSize * 4
+  
+  const data = text
+  let mask = ''
+  for (let i = 0; i < data.length; i++) {
+    mask += data.charCodeAt(i).toString(2).padStart(8, '0')
+  }
+  
+  for (let y = 0; y < 25; y++) {
+    for (let x = 0; x < 25; x++) {
+      const isMasked = (x + y) % 2 === 0
+      const idx = y * 25 + x
+      const bit = idx < mask.length ? parseInt(mask[idx % mask.length]) : 0
+      const pixel = isMasked ? (bit ^ 1) : bit
+      
+      if ((x < 9 && y < 9) || (x > 15 && y < 9) || (x < 9 && y > 15)) {
+        const patternX = x < 9 ? x : x - 17
+        const patternY = y < 9 ? y : y - 17
+        const inPattern = patternX < 7 && patternY < 7 && 
+                         !(patternX >= 2 && patternX <= 4 && patternY >= 2 && patternY <= 4)
+        if (inPattern) {
+          ctx.fillStyle = '#000000'
+          ctx.fillRect(x * moduleSize + padding, y * moduleSize + padding, moduleSize, moduleSize)
+          continue
+        }
+      }
+      
+      ctx.fillStyle = pixel ? '#000000' : '#ffffff'
+      ctx.fillRect(x * moduleSize + padding, y * moduleSize + padding, moduleSize, moduleSize)
+    }
+  }
+  
+  const center = size / 2
+  const logoSize = moduleSize * 6
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(center - logoSize / 2, center - logoSize / 2, logoSize, logoSize)
+  
+  ctx.fillStyle = '#1677ff'
+  ctx.font = `${moduleSize * 2}px Arial`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText('支', center, center)
+}
+
+const startPolling = () => {
+  if (pollingTimer.value) return
+  
+  pollingTimer.value = setInterval(async () => {
+    if (!order.value || order.value.status === 'paid') {
+      stopPolling()
+      return
+    }
+    
+    try {
+      const res = await getOrderDetail(order.value.order_no)
+      if (res.code === 100) {
+        order.value = res.data
+        if (order.value.status === 'paid') {
+          stopPolling()
+          ElMessage.success('支付成功')
+        }
+      }
+    } catch (error) {
+      console.error('轮询订单状态失败', error)
+    }
+  }, 3000)
+}
+
+const stopPolling = () => {
+  if (pollingTimer.value) {
+    clearInterval(pollingTimer.value)
+    pollingTimer.value = null
+  }
+}
+
 const handlePay = async () => {
   if (!order.value) return
 
@@ -124,11 +214,16 @@ const handlePay = async () => {
     const res = await payOrder(order.value.id)
     if (res.code === 100) {
       order.value = res.data.order
-      qrCode.value = res.data.qr_code
+      qrCodeUrl.value = res.data.qr_code
+      
       if (!res.data.qr_code) {
         ElMessage.success('支付成功')
       } else {
         ElMessage.success('请使用支付宝扫码支付')
+        nextTick(() => {
+          drawQRCode(res.data.qr_code)
+        })
+        startPolling()
       }
     }
   } catch (error) {
@@ -146,6 +241,9 @@ const loadOrder = async () => {
     const res = await getOrderDetail(orderNo)
     if (res.code === 100) {
       order.value = res.data
+      if (order.value.status === 'pending') {
+        handlePay()
+      }
     }
   } catch (error) {
     console.error('加载订单失败', error)
@@ -154,6 +252,10 @@ const loadOrder = async () => {
 
 onMounted(() => {
   loadOrder()
+})
+
+onUnmounted(() => {
+  stopPolling()
 })
 </script>
 

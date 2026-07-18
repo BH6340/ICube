@@ -66,8 +66,10 @@
 import { ref, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ShoppingBag } from '@element-plus/icons-vue'
-import { getOrders, payOrder, cancelOrder, completeOrder } from '@/api/shop'
+import { useRouter } from 'vue-router'
+import { getOrders, cancelOrder, completeOrder } from '@/api/shop'
 
+const router = useRouter()
 const activeTab = ref('all')
 const orderList = ref([])
 
@@ -99,16 +101,8 @@ const formatSpec = (spec) => {
   return Object.entries(spec).map(([k, v]) => `${k}: ${v}`).join(' / ')
 }
 
-const handlePay = async (order) => {
-  try {
-    const res = await payOrder(order.id)
-    if (res.code === 100) {
-      ElMessage.success('支付成功')
-      loadOrders()
-    }
-  } catch (error) {
-    ElMessage.error('支付失败')
-  }
+const handlePay = (order) => {
+  router.push(`/shop/pay/${order.order_no}`)
 }
 
 const handleCancel = async (order) => {

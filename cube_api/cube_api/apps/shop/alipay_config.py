@@ -184,16 +184,22 @@ def generate_alipay_qr_code(order_no, total_amount, subject):
     if not alipay:
         return None
 
-    result = alipay.api_alipay_trade_precreate(
-        out_trade_no=order_no,
-        total_amount=str(total_amount),
-        subject=subject,
-        notify_url=ALIPAY_CONFIG['notify_url'],
-    )
+    try:
+        result = alipay.api_alipay_trade_precreate(
+            out_trade_no=order_no,
+            total_amount=str(total_amount),
+            subject=subject,
+            notify_url=ALIPAY_CONFIG['notify_url'],
+        )
 
-    if result.get('code') == '10000':
-        return result.get('qr_code')
-    return None
+        if result.get('code') == '10000':
+            return result.get('qr_code')
+        else:
+            print(f"支付宝API返回错误: {result}")
+            return None
+    except Exception as e:
+        print(f"支付宝API调用异常: {str(e)}")
+        return None
 
 
 def verify_alipay_notify(data):
