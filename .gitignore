@@ -59,6 +59,7 @@ pnpm-debug.log*
 # IDE / 编辑器
 .vscode/
 .idea/
+.trae/
 *.iml
 *.swp
 *.swo
