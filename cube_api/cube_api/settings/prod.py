@@ -6,14 +6,8 @@ DEBUG = False
 SECRET_KEY = os.getenv('SECRET_KEY', SECRET_KEY)
 
 ALLOWED_HOSTS = [
-    h for h in [
-        os.getenv('ALLOWED_HOSTS', ''),
-        'localhost',
-        '127.0.0.1',
-        'icube_api',
-        'api',
-    ] if h
-]
+    h.strip() for h in os.getenv('ALLOWED_HOSTS', '').split(',') if h.strip()
+] + ['localhost', '127.0.0.1', 'icube_api', 'api']
 
 _allowed_origin = os.getenv('ALLOWED_ORIGIN', '')
 CORS_ALLOWED_ORIGINS = [
