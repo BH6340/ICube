@@ -13,7 +13,7 @@ USE icube_db;
  Target Server Version : 90100
  File Encoding         : 65001
 
- Date: 18/07/2026 19:04:14
+ Date: 19/07/2026 16:34:55
 */
 
 SET NAMES utf8mb4;
@@ -43,7 +43,7 @@ CREATE TABLE `accounts_user`  (
 -- ----------------------------
 -- Records of accounts_user
 -- ----------------------------
-INSERT INTO `accounts_user` VALUES (1, 'pbkdf2_sha256$1200000$8XqaTdWaJaiaLmQP2FPYG6$oYG5XVYa5Ed8fwV8c1ef12LAVCBD2NmrT4rqnxzPbv0=', NULL, 0, 0, 1, '2026-05-11 13:04:43.160321', 'bh01@qq.com', 'bh01', '这是bh01的测试简介', 'http://121.4.62.163/media/avatars/admin.png');
+INSERT INTO `accounts_user` VALUES (1, 'pbkdf2_sha256$1200000$8XqaTdWaJaiaLmQP2FPYG6$oYG5XVYa5Ed8fwV8c1ef12LAVCBD2NmrT4rqnxzPbv0=', NULL, 0, 0, 1, '2026-05-11 13:04:43.160321', 'bh01@qq.com', 'bh01', '这是bh01的测试简介', '/media/avatars/admin_OjCNYde.png');
 INSERT INTO `accounts_user` VALUES (2, 'pbkdf2_sha256$1200000$r3OXdjnkCUkkD8dsYwKvYI$tVLlEmIIgIzLbEuuQK2DNcQADpHDx2dNLaFx0jBC978=', NULL, 0, 0, 1, '2026-05-11 14:58:32.159835', 'bh02@qq.com', 'bh02', '这是bh02的简介', NULL);
 INSERT INTO `accounts_user` VALUES (3, 'pbkdf2_sha256$1200000$cJ7IS2DNMwk53YoArSUDWB$09KSEoIzAND7FptTUGF69r9Wfvn58LXDiUOYaa8Uq3U=', NULL, 0, 0, 1, '2026-05-11 14:58:56.644541', 'bh03@qq.com', 'bh03', '这是bh03的简介', NULL);
 INSERT INTO `accounts_user` VALUES (4, 'pbkdf2_sha256$1200000$1U3JbJi7IJmftkdvH2cafI$KnEY+mhMfb+DHo9EadnmWPWuVq28sDswnhG/Ixxit8s=', NULL, 0, 0, 1, '2026-05-11 14:59:20.745717', 'bh04@qq.com', 'bh04', '这是bh04的简介', NULL);
@@ -52,7 +52,7 @@ INSERT INTO `accounts_user` VALUES (6, 'pbkdf2_sha256$1200000$okkHb5GNQKwfvBOnAQ
 INSERT INTO `accounts_user` VALUES (7, 'pbkdf2_sha256$1200000$RYFGlCvA1CDRxSNdklva6T$kXTRELt9ADjwvXRzQ7vBw4qlYiKkYsHbLDMtsdqHy7c=', NULL, 0, 0, 1, '2026-05-12 10:31:45.718088', 'bh06@qq.com', 'bh06', '', NULL);
 INSERT INTO `accounts_user` VALUES (8, 'pbkdf2_sha256$1200000$DnUCKmEqnGwe6dgpusKgbv$dWypTxpzl3XsLQTHMtP2kVzzgSlZGrPXhDQvoFrI04I=', NULL, 0, 0, 1, '2026-06-03 10:52:12.092033', 'bh06@163.com', 'bh06_1', '', NULL);
 INSERT INTO `accounts_user` VALUES (9, 'pbkdf2_sha256$1200000$ftzQsmKyRLAeMfinPTKybA$HhvTRYfZhcto+EM0AkQcrw40kW595wOvrUz9i6d0/dY=', NULL, 0, 0, 1, '2026-06-03 14:36:26.343585', 'bh07@qq.com', 'bh07', '', NULL);
-INSERT INTO `accounts_user` VALUES (10, 'pbkdf2_sha256$1200000$t2wU7w8mXoIaAXh7g2MDVh$Ztnkh6EGtSvN/dEIBoF50+KZCElaBTWGQui8yFb/cjo=', NULL, 0, 0, 1, '2026-06-03 14:54:47.046829', 'bh08@qq.com', 'bh08', '新的个人介绍', 'http://121.4.62.163/media/avatars/bh08.png');
+INSERT INTO `accounts_user` VALUES (10, 'pbkdf2_sha256$1200000$t2wU7w8mXoIaAXh7g2MDVh$Ztnkh6EGtSvN/dEIBoF50+KZCElaBTWGQui8yFb/cjo=', NULL, 0, 0, 1, '2026-06-03 14:54:47.046829', 'bh08@qq.com', 'bh08', '新的个人介绍', '/media/avatars/bh01_1GoeGXq.png');
 INSERT INTO `accounts_user` VALUES (11, 'pbkdf2_sha256$1200000$HnHuO67UPNA3KGzqrdciHY$BEGRtyOatdrHIGDWKfQyC8zc2gE9HkTmxTtSBUUMtAM=', NULL, 0, 0, 1, '2026-06-05 09:55:05.648601', 'user1@example.com', '魔方小白', '魔方爱好者，欢迎交流！', NULL);
 INSERT INTO `accounts_user` VALUES (12, 'pbkdf2_sha256$1200000$K4RZs6x8mUSPOBiwKYSfpG$m1sUeywn5sSlmRjpG9NYv9v/CLItOlun+BLJpCPab9M=', NULL, 0, 0, 1, '2026-06-05 09:55:07.421317', 'user2@example.com', '速拧大神', '魔方爱好者，欢迎交流！', NULL);
 INSERT INTO `accounts_user` VALUES (13, 'pbkdf2_sha256$1200000$NUI8BH6NjcYEnrSe8l5O4V$PR0PnTdasbMdgc3gewGRKWuk6CRdEaEkyoXrzhpLxSc=', NULL, 0, 0, 1, '2026-06-05 09:55:09.104099', 'user3@example.com', '公式收藏家', '魔方爱好者，欢迎交流！', NULL);
@@ -274,6 +274,10 @@ INSERT INTO `auth_permission` VALUES (101, 'Can add product category', 26, 'add_
 INSERT INTO `auth_permission` VALUES (102, 'Can change product category', 26, 'change_productcategory');
 INSERT INTO `auth_permission` VALUES (103, 'Can delete product category', 26, 'delete_productcategory');
 INSERT INTO `auth_permission` VALUES (104, 'Can view product category', 26, 'view_productcategory');
+INSERT INTO `auth_permission` VALUES (105, 'Can add 帖子图片', 27, 'add_postimage');
+INSERT INTO `auth_permission` VALUES (106, 'Can change 帖子图片', 27, 'change_postimage');
+INSERT INTO `auth_permission` VALUES (107, 'Can delete 帖子图片', 27, 'delete_postimage');
+INSERT INTO `auth_permission` VALUES (108, 'Can view 帖子图片', 27, 'view_postimage');
 
 -- ----------------------------
 -- Table structure for django_admin_log
@@ -330,6 +334,7 @@ INSERT INTO `django_content_type` VALUES (7, 'forum', 'comment');
 INSERT INTO `django_content_type` VALUES (8, 'forum', 'commentlike');
 INSERT INTO `django_content_type` VALUES (9, 'forum', 'post');
 INSERT INTO `django_content_type` VALUES (10, 'forum', 'postcollect');
+INSERT INTO `django_content_type` VALUES (27, 'forum', 'postimage');
 INSERT INTO `django_content_type` VALUES (11, 'forum', 'postlike');
 INSERT INTO `django_content_type` VALUES (14, 'forum', 'posttag');
 INSERT INTO `django_content_type` VALUES (12, 'forum', 'report');
@@ -381,6 +386,8 @@ INSERT INTO `django_migrations` VALUES (22, 'forum', '0001_initial', '2026-06-05
 INSERT INTO `django_migrations` VALUES (23, 'home', '0001_initial', '2026-06-12 08:55:10.574877');
 INSERT INTO `django_migrations` VALUES (24, 'formula', '0001_initial', '2026-07-07 10:04:53.917022');
 INSERT INTO `django_migrations` VALUES (25, 'shop', '0001_initial', '2026-07-08 15:18:25.853418');
+INSERT INTO `django_migrations` VALUES (26, 'forum', '0002_postimage', '2026-07-19 15:05:26.253983');
+INSERT INTO `django_migrations` VALUES (27, 'forum', '0003_alter_postimage_post', '2026-07-19 15:20:50.664031');
 
 -- ----------------------------
 -- Table structure for django_session
@@ -934,7 +941,7 @@ INSERT INTO `forum_comment` VALUES (5, '有问题', 0, 0, 0, 0, '2026-06-07 10:5
 INSERT INTO `forum_comment` VALUES (6, '@bh08 修复好了', 0, 0, 0, 0, '2026-06-07 11:05:17.263818', '2026-06-07 11:05:17.263878', 10, 2, 2);
 INSERT INTO `forum_comment` VALUES (7, '评论1', 1, 0, 0, 0, '2026-06-07 11:06:55.287366', '2026-06-07 11:06:55.287414', 10, NULL, 2);
 INSERT INTO `forum_comment` VALUES (8, '评论评论的评论', 0, 0, 0, 0, '2026-06-07 11:13:45.186605', '2026-06-07 11:13:45.187359', 10, 2, 2);
-INSERT INTO `forum_comment` VALUES (9, '评论1', 0, 0, 0, 0, '2026-06-10 08:48:40.548613', '2026-06-10 08:48:40.549955', 10, NULL, 4);
+INSERT INTO `forum_comment` VALUES (9, '评论1', 0, 1, 0, 0, '2026-06-10 08:48:40.548613', '2026-06-10 08:48:40.549955', 10, NULL, 4);
 INSERT INTO `forum_comment` VALUES (10, '@bh08 三级评论', 0, 0, 0, 0, '2026-06-10 15:01:49.730104', '2026-06-10 15:01:49.731232', 10, 3, 2);
 INSERT INTO `forum_comment` VALUES (11, '@bh08 还是有问题', 0, 0, 0, 0, '2026-06-10 15:14:38.564634', '2026-06-10 15:14:38.564761', 10, 5, 2);
 INSERT INTO `forum_comment` VALUES (12, '二级评论1', 0, 0, 0, 0, '2026-06-10 15:46:12.260231', '2026-06-10 15:46:12.260288', 10, 7, 2);
@@ -967,6 +974,7 @@ INSERT INTO `forum_comment_like` VALUES (38, 1, '2026-06-10 15:48:20.216659', 7,
 INSERT INTO `forum_comment_like` VALUES (39, 1, '2026-06-10 15:51:02.905028', 4, 10);
 INSERT INTO `forum_comment_like` VALUES (40, 1, '2026-06-10 15:51:13.022254', 14, 10);
 INSERT INTO `forum_comment_like` VALUES (41, 1, '2026-06-10 15:51:22.942431', 15, 10);
+INSERT INTO `forum_comment_like` VALUES (42, 0, '2026-07-19 15:31:36.696956', 9, 10);
 
 -- ----------------------------
 -- Table structure for forum_post
@@ -1003,9 +1011,9 @@ CREATE TABLE `forum_post`  (
 -- ----------------------------
 INSERT INTO `forum_post` VALUES (1, '【新手必看】三阶魔方零基础入门教程', '# 三阶魔方零基础入门教程\n\n## 前言\n魔方并不难，只要掌握了方法，任何人都可以学会还原三阶魔方。\n\n## 第一步：底层十字\n在底面拼出一个白色十字，且棱块侧面颜色与中心块对齐。\n\n## 第二步：底层角块\n完成白色面，同时底层四周颜色对齐。\n\n## 第三步：中层棱块\n还原第二层（中间层）的四个棱块。\n\n## 第四步：顶层十字\n在顶层拼出黄色十字。\n\n## 第五步：顶层面位\n将顶层全部变成黄色。\n\n## 第六步：顶层角块归位\n调整顶层角块位置。\n\n## 第七步：顶层棱块归位\n最后一步，完成整个魔方！\n\n祝大家早日学会魔方！🎉', '', 0, 0, 1, 0, 1, 1, 0, 'published', 0, '2026-06-05 09:55:10.802878', '2026-06-05 09:55:10.802918', 11);
 INSERT INTO `forum_post` VALUES (2, 'CFOP速拧教程 - F2L理解法', '# CFOP进阶教程：F2L理解法\n\n## 什么是F2L？\nF2L（First Two Layers）是CFOP速拧法的第二步，指同时还原前两层。\n\n## 核心思想\nF2L的本质是把一对\"角块+棱块\"组合起来放入正确的位置。\n\n## 常用F2L公式\n\n| 情况 | 公式 |\n|------|------|\n| 角棱相连 | `U R U\' R\'` |\n| 角棱分离 | `R U R\'` |\n| 角棱背面 | `R U2 R\' U R U R\'` |\n\n## 练习技巧\n1. 慢速练习，理解原理\n2. 找规律，观察相对位置\n3. 预判下一组\n\nF2L熟练后，成绩可轻松进入30秒！💪', '', 49, 1, 10, 1, 0, 1, 0, 'published', 0, '2026-06-05 09:55:10.823840', '2026-06-05 09:55:10.823875', 11);
-INSERT INTO `forum_post` VALUES (3, '魔方公式记忆技巧分享', '# 魔方公式记忆技巧\n\n## 肌肉记忆法\n不要死记硬背公式字母，而是通过反复练习形成肌肉记忆。\n\n## 分段记忆\n将长公式分成几个小段，逐段练习后连接。\n\n## 镜像对称\n很多公式是左右对称的，记住一个就能推导出另一个。\n\n## 故事联想\n为公式中的转动编一个故事，帮助记忆。\n\n## 每天10分钟\n坚持每天练习，比一次性练很久效果更好。\n\n大家有什么好的记忆方法？欢迎分享！', '', 10, 1, 3, 1, 0, 0, 0, 'published', 0, '2026-06-05 09:55:10.841141', '2026-06-05 09:55:10.841164', 11);
-INSERT INTO `forum_post` VALUES (4, '三阶魔方CFOP教程新标题', '这是教程内容，使用Markdown格式...', '', 15, 1, 1, 0, 0, 0, 0, 'published', 0, '2026-06-05 09:56:27.071163', '2026-06-05 11:19:39.584308', 10);
-INSERT INTO `forum_post` VALUES (5, '发布新帖子', '# 魔方\r\n## 标题二\r\n### 标题三\r\n```\r\n公式如下\r\npython\r\n```', '', 24, 0, 0, 0, 0, 0, 0, 'published', 0, '2026-06-12 10:08:08.741039', '2026-06-12 10:52:53.080432', 10);
+INSERT INTO `forum_post` VALUES (3, '魔方公式记忆技巧分享', '# 魔方公式记忆技巧\n\n## 肌肉记忆法\n不要死记硬背公式字母，而是通过反复练习形成肌肉记忆。\n\n## 分段记忆\n将长公式分成几个小段，逐段练习后连接。\n\n## 镜像对称\n很多公式是左右对称的，记住一个就能推导出另一个。\n\n## 故事联想\n为公式中的转动编一个故事，帮助记忆。\n\n## 每天10分钟\n坚持每天练习，比一次性练很久效果更好。\n\n大家有什么好的记忆方法？欢迎分享！', '', 12, 1, 3, 1, 0, 0, 0, 'published', 0, '2026-06-05 09:55:10.841141', '2026-06-05 09:55:10.841164', 11);
+INSERT INTO `forum_post` VALUES (4, '三阶魔方CFOP教程新标题', '这是教程内容，使用Markdown格式\r\n![bh01](http://127.0.0.1:8000/media/forum/posts/2026/07/bh01.png)', '', 24, 1, 1, 0, 0, 0, 0, 'published', 0, '2026-06-05 09:56:27.071163', '2026-07-19 15:29:33.899742', 10);
+INSERT INTO `forum_post` VALUES (5, '发布新帖子', '# 魔方\r\n## 标题二\r\n### 标题三\r\n```\r\n公式如下\r\npython\r\n```', '', 25, 0, 0, 0, 0, 0, 0, 'published', 0, '2026-06-12 10:08:08.741039', '2026-06-12 10:52:53.080432', 10);
 INSERT INTO `forum_post` VALUES (6, '再发一篇新帖子（修改）', '# CFOP 速拧学习方法\r\n\r\n## 什么是 CFOP？\r\n\r\nCFOP 是目前最主流的魔方速拧解法，由四个步骤组成：\r\n\r\n1. **C（Cross）**——底面十字\r\n2. **F（F2L）**——前两层\r\n3. **O（OLL）**——顶面朝向\r\n4. **P（PLL）**——顶层排列\r\n\r\n## 学习顺序建议\r\n\r\n| 阶段 | 内容                                 | 目标时间 |\r\n| ---- | ------------------------------------ | -------- |\r\n| 入门 | C + 4个基本公式                      | 60秒     |\r\n| 进阶 | F2L理解法 + 7个十字OLL + 4个PLL      | 30秒     |\r\n| 熟练 | F2L 41种情况 + 全部OLL(57) + PLL(21) | 15秒内   |\r\n\r\n## 实用技巧\r\n\r\n- **C**：八步内完成十字，学会盲拧预判\r\n- **F2L**：先理解“藏角藏棱”原理，不建议死记公式\r\n- **OLL**：先学十字后的7条，其他慢慢补充\r\n- **PLL**：优先学三棱换、三角换、邻角对棱换等高频公式\r\n\r\n## 资源推荐\r\n\r\n- 网站：`algdb.net` 公式库\r\n- 视频：J Perm 教学频道\r\n- App：Cube Station 计时练习\r\n\r\n> 每天练习20分钟，两个月基本可以进30秒。公式不是越多越好，**指法流畅**比记全更重要。', '', 4, 0, 0, 0, 0, 0, 0, 'deleted', 0, '2026-06-12 10:25:11.426914', '2026-06-12 10:47:10.140862', 10);
 INSERT INTO `forum_post` VALUES (7, '返回格式测试', '这是教程内容，使用Markdown格式...', '', 1, 0, 0, 0, 0, 0, 0, 'deleted', 0, '2026-06-12 10:28:11.697133', '2026-06-12 10:28:11.697157', 10);
 INSERT INTO `forum_post` VALUES (8, '再发一篇新帖子2修改', '# CFOP 速拧学习方法\r\n\r\n## 什么是 CFOP？\r\n\r\nCFOP 是目前最主流的魔方速拧解法，由四个步骤组成：\r\n\r\n1. **C（Cross）**——底面十字\r\n2. **F（F2L）**——前两层\r\n3. **O（OLL）**——顶面朝向\r\n4. **P（PLL）**——顶层排列\r\n\r\n## 学习顺序建议\r\n\r\n| 阶段 | 内容                                 | 目标时间 |\r\n| ---- | ------------------------------------ | -------- |\r\n| 入门 | C + 4个基本公式                      | 60秒     |\r\n| 进阶 | F2L理解法 + 7个十字OLL + 4个PLL      | 30秒     |\r\n| 熟练 | F2L 41种情况 + 全部OLL(57) + PLL(21) | 15秒内   |\r\n\r\n## 实用技巧\r\n\r\n- **C**：八步内完成十字，学会盲拧预判\r\n- **F2L**：先理解“藏角藏棱”原理，不建议死记公式\r\n- **OLL**：先学十字后的7条，其他慢慢补充\r\n- **PLL**：优先学三棱换、三角换、邻角对棱换等高频公式\r\n\r\n## 资源推荐\r\n\r\n- 网站：`algdb.net` 公式库\r\n- 视频：J Perm 教学频道\r\n- App：Cube Station 计时练习\r\n\r\n> 每天练习20分钟，两个月基本可以进30秒。公式不是越多越好，**指法流畅**比记全更重要。', '', 5, 0, 0, 0, 0, 0, 0, 'deleted', 0, '2026-06-12 10:33:13.469010', '2026-06-12 10:34:08.659699', 10);
@@ -1034,6 +1042,27 @@ INSERT INTO `forum_post_collect` VALUES (6, '2026-06-07 10:37:12.153830', 2, 10)
 INSERT INTO `forum_post_collect` VALUES (8, '2026-06-21 10:59:24.454375', 3, 10);
 
 -- ----------------------------
+-- Table structure for forum_post_image
+-- ----------------------------
+DROP TABLE IF EXISTS `forum_post_image`;
+CREATE TABLE `forum_post_image`  (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `image` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `alt` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `order` int NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `post_id` bigint NULL DEFAULT NULL,
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `forum_post_image_post_id_95977176_fk_forum_post_id`(`post_id` ASC) USING BTREE,
+  CONSTRAINT `forum_post_image_post_id_95977176_fk_forum_post_id` FOREIGN KEY (`post_id`) REFERENCES `forum_post` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of forum_post_image
+-- ----------------------------
+INSERT INTO `forum_post_image` VALUES (1, 'forum/posts/2026/07/bh01.png', 'bh01_png', 0, '2026-07-19 15:26:43.578009', 4);
+
+-- ----------------------------
 -- Table structure for forum_post_like
 -- ----------------------------
 DROP TABLE IF EXISTS `forum_post_like`;
@@ -1052,9 +1081,9 @@ CREATE TABLE `forum_post_like`  (
 -- ----------------------------
 -- Records of forum_post_like
 -- ----------------------------
-INSERT INTO `forum_post_like` VALUES (6, '2026-06-10 08:43:13.715015', 4, 10);
 INSERT INTO `forum_post_like` VALUES (8, '2026-06-12 08:17:06.543084', 2, 10);
 INSERT INTO `forum_post_like` VALUES (9, '2026-06-21 10:59:23.514748', 3, 10);
+INSERT INTO `forum_post_like` VALUES (10, '2026-07-19 15:31:22.531791', 4, 10);
 
 -- ----------------------------
 -- Table structure for forum_post_tags
