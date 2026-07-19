@@ -9,10 +9,16 @@ from .services import ProfileCacheService
 
 
 class UserSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = ('username', 'email', 'password', 'bio', 'image')
         extra_kwargs = {'password': {'write_only': True}}
+
+    def get_image(self, obj):
+        from cube_api.utils.image_url import build_image_url
+        return build_image_url(obj.image)
 
     def create(self, validated_data):
         # 使用 Manager 中定义的 create_user 确保逻辑统一
@@ -32,26 +38,10 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         fields = ('username', 'bio', 'image')
 
     def update(self, instance: User, validated_data):
-        # 💡 1. 核心处理：如果前端传了新头像文件
         image_file = validated_data.pop('image', None)
         if image_file:
-            # 自动根据 settings.py 中的 MEDIA_ROOT 规定，将文件保存到 media 文件夹下
-            # default_storage.save 会自动处理重名文件，返回相对路径（如 "avatars/my_avatar.jpg"）
             saved_path = default_storage.save(f"avatars/{image_file.name}", image_file)
-
-            # 💡 核心修改：利用序列化器的 context 获取当前的 request 对象
-            request = self.context.get('request')
-            if request is not None:
-                # build_absolute_uri 会根据当前请求自动拼出完整域名，例如：
-                # 传入 "/media/avatars/bh01.png" -> 自动变成 "http://localhost:8000/media/avatars/bh01.png"
-                # 这样做的好处是：以后你项目部署到线上，它会自动变成 "http://你的真实域名/media/avatars/bh01.png"
-                relative_url = f"{settings.MEDIA_URL}{saved_path}"
-                full_url = request.build_absolute_uri(relative_url)
-                instance.image = full_url
-            else:
-                # 备用方案：如果由于某种原因拿不到 request，则拼接本地测试的绝对路径
-                instance.image = f"http://localhost:8000{settings.MEDIA_URL}{saved_path}"
-        # 1. 批量更新允许的字段（username, bio, image）
+            instance.image = f"{settings.MEDIA_URL}{saved_path}"
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()

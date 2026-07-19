@@ -24,6 +24,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+# 站点域名配置，用于生成绝对URL（图片、文件等）
+# 开发环境使用本地地址，生产环境通过环境变量配置
+SITE_DOMAIN = os.getenv('SITE_DOMAIN', 'http://localhost:8000')
+
 # Application definition
 
 INSTALLED_APPS = [

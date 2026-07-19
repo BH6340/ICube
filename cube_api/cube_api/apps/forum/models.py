@@ -238,3 +238,32 @@ class Report(models.Model):
         verbose_name = '举报'
         verbose_name_plural = '举报'
         unique_together = ['content_type', 'object_id', 'reporter']  # 同一用户对同一内容只能举报一次
+
+
+class PostImage(models.Model):
+    """帖子图片模型"""
+    post = models.ForeignKey(
+        'Post',
+        on_delete=models.CASCADE,
+        related_name='images',
+        verbose_name='所属帖子',
+        null=True,
+        blank=True
+    )
+    image = models.ImageField(
+        upload_to='forum/posts/%Y/%m/',
+        verbose_name='图片'
+    )
+    alt = models.CharField('图片描述', max_length=200, blank=True)
+    order = models.IntegerField('排序', default=0)
+    created_at = models.DateTimeField('创建时间', auto_now_add=True)
+
+    class Meta:
+        app_label = 'forum'
+        db_table = 'forum_post_image'
+        verbose_name = '帖子图片'
+        verbose_name_plural = '帖子图片'
+        ordering = ['order', 'created_at']
+
+    def __str__(self):
+        return f'{self.post.title} - {self.id}'

@@ -6,10 +6,10 @@ from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnl
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import F, Count
 
-from .models import Post, Tag, Comment, Report, PostCollect
+from .models import Post, Tag, Comment, Report, PostCollect, PostImage
 from .serializers import (
     PostSerializer, PostListSerializer, PostCreateUpdateSerializer,
-    TagSerializer, CommentSerializer, ReportSerializer
+    TagSerializer, CommentSerializer, ReportSerializer, PostImageSerializer
 )
 from .services import PostCacheService, PostInteractionService, HotPostService
 from utils.common_response import APIResponse
@@ -19,7 +19,7 @@ from apps.accounts.permissions import IsOwnerOrReadOnly
 class PostViewSet(viewsets.ModelViewSet):
     """帖子视图集"""
 
-    queryset = Post.objects.filter(status='published').select_related('author').prefetch_related('tags')
+    queryset = Post.objects.filter(status='published').select_related('author').prefetch_related('tags', 'images')
     permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
     search_fields = ['title', 'content']
@@ -134,7 +134,7 @@ class PostViewSet(viewsets.ModelViewSet):
         return APIResponse(**result)
 
     # 💡 标注修改：帖子详情内的 comments 动作也必须加 parent=None 限制
-    @action(detail=True, methods=['GET'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['GET'], permission_classes=[IsAuthenticatedOrReadOnly])
     def comments(self, request, pk=None):
         """获取帖子的评论（带分页）"""
         post = self.get_object()
@@ -194,6 +194,29 @@ class PostViewSet(viewsets.ModelViewSet):
         posts = HotPostService.get_hot_posts(days, limit)
         serializer = PostListSerializer(posts, many=True, context={'request': request})
         return APIResponse(posts=serializer.data)
+
+    @action(detail=False, methods=['POST'], permission_classes=[IsAuthenticated])
+    def upload_image(self, request):
+        """上传图片，返回图片URL"""
+        image_file = request.FILES.get('image')
+        if not image_file:
+            return APIResponse(code=400, msg='请选择图片文件')
+
+        valid_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+        if image_file.content_type not in valid_types:
+            return APIResponse(code=400, msg='不支持的图片格式')
+
+        if image_file.size > 5 * 1024 * 1024:
+            return APIResponse(code=400, msg='图片大小不能超过5MB')
+
+        post_image = PostImage(
+            image=image_file,
+            alt=image_file.name.replace('.', '_')
+        )
+        post_image.save()
+
+        serializer = PostImageSerializer(post_image, context={'request': request})
+        return APIResponse(image=serializer.data)
 
 
 class CommentViewSet(viewsets.ModelViewSet):

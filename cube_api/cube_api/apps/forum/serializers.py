@@ -1,7 +1,7 @@
 # forum/serializers.py
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
-from .models import Post, Tag, Comment, PostLike, CommentLike, PostCollect, Report
+from .models import Post, Tag, Comment, PostLike, CommentLike, PostCollect, Report, PostImage
 from apps.accounts.serializers import ProfileListSerializer, UserSerializer
 
 
@@ -11,6 +11,22 @@ class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ('id', 'name', 'color', 'use_count')
+
+
+class PostImageSerializer(serializers.ModelSerializer):
+    """帖子图片序列化器"""
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PostImage
+        fields = ('id', 'image', 'image_url', 'alt', 'order', 'created_at')
+        read_only_fields = ('id', 'created_at')
+
+    def get_image_url(self, obj):
+        from cube_api.utils.image_url import build_image_url
+        if obj.image:
+            return build_image_url(obj.image.url)
+        return ''
 
 
 class PostListSerializer(serializers.ModelSerializer):
@@ -31,6 +47,7 @@ class PostSerializer(serializers.ModelSerializer):
     """帖子详情序列化器"""
     author = ProfileListSerializer(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
+    images = PostImageSerializer(many=True, read_only=True)
     is_liked = serializers.SerializerMethodField()
     is_collected = serializers.SerializerMethodField()
     tag_ids = serializers.ListField(
@@ -44,7 +61,7 @@ class PostSerializer(serializers.ModelSerializer):
         model = Post
         fields = (
             'id', 'title', 'content', 'content_md', 'author', 'view_count', 'like_count',
-            'comment_count', 'collect_count', 'tags', 'tag_ids', 'is_pinned', 'is_essence',
+            'comment_count', 'collect_count', 'tags', 'images', 'tag_ids', 'is_pinned', 'is_essence',
             'is_closed', 'status', 'report_count', 'created_at', 'updated_at',
             'is_liked', 'is_collected'
         )
@@ -97,11 +114,16 @@ class PostCreateUpdateSerializer(serializers.ModelSerializer):
         required=False
     )
     content_file = serializers.FileField(write_only=True, required=False, help_text='上传.md文件')
+    images = serializers.ListField(
+        child=serializers.ImageField(),
+        write_only=True,
+        required=False,
+        help_text='上传图片列表'
+    )
 
     class Meta:
         model = Post
-        fields = ('id', 'title', 'content', 'content_md', 'content_file', 'tag_ids', 'tags')
-        # 💡 确保 id 是只读的，防止作为接口输入参数
+        fields = ('id', 'title', 'content', 'content_md', 'content_file', 'tag_ids', 'tags', 'images')
         read_only_fields = ('id',)
 
     def validate_title(self, value):
@@ -127,6 +149,7 @@ class PostCreateUpdateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         tag_ids = validated_data.pop('tag_ids', [])
         content_file = validated_data.pop('content_file', None)
+        images = validated_data.pop('images', [])
 
         # 处理文件上传
         if content_file:
@@ -140,15 +163,62 @@ class PostCreateUpdateSerializer(serializers.ModelSerializer):
         if tag_ids:
             post.tags.set(tag_ids)
 
+        # 处理直接上传的图片
+        for idx, image in enumerate(images):
+            PostImage.objects.create(
+                post=post,
+                image=image,
+                alt=f'图片{idx + 1}',
+                order=idx
+            )
+
+        # 关联之前上传但未关联帖子的图片
+        self._associate_uploaded_images(post, validated_data.get('content', ''))
+
         return post
+
+    def _associate_uploaded_images(self, post, content):
+        """从内容中提取图片URL，关联之前上传的图片"""
+        import re
+        image_urls = re.findall(r'!\[.*?\]\((.*?)\)', content)
+        
+        for url in image_urls:
+            if '/media/forum/posts/' in url:
+                image_path = url.split('/media/')[-1]
+                try:
+                    post_image = PostImage.objects.get(image=image_path, post__isnull=True)
+                    post_image.post = post
+                    post_image.save()
+                except PostImage.DoesNotExist:
+                    pass
 
     # 💡 ✨ 修复核心：重写 update 方法，确保更新标签后能重新加载关联的 tags 对象
     def update(self, instance, validated_data):
         tag_ids = validated_data.pop('tag_ids', None)
+        images = validated_data.pop('images', [])
+        content_file = validated_data.pop('content_file', None)
+
+        if content_file:
+            content = content_file.read().decode('utf-8')
+            validated_data['content'] = content
+            validated_data['content_md'] = content
+
         post = super().update(instance, validated_data)
 
         if tag_ids is not None:
             post.tags.set(tag_ids)
+
+        # 处理直接上传的图片
+        for idx, image in enumerate(images):
+            PostImage.objects.create(
+                post=post,
+                image=image,
+                alt=f'图片{idx + 1}',
+                order=idx
+            )
+
+        # 关联之前上传但未关联帖子的图片
+        self._associate_uploaded_images(post, validated_data.get('content', ''))
 
         return post
 

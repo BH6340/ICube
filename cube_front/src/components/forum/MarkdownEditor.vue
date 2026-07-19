@@ -16,7 +16,10 @@
         <el-button size="small" @click="insertMarkdown('- ', '')" title="无序列表">列表</el-button>
         <el-button size="small" @click="insertMarkdown('1. ', '')" title="有序列表">1.</el-button>
         <el-button size="small" @click="insertMarkdown('[', '](url)')" title="链接">链接</el-button>
-        <el-button size="small" @click="insertMarkdown('![', '](url)')" title="图片">图片</el-button>
+        <el-button size="small" @click="triggerImageUpload" title="上传图片">
+            <el-icon><Picture /></el-icon>
+            图片
+          </el-button>
         <el-button size="small" @click="insertMarkdown('```\n', '\n```')" title="代码块">&lt;/&gt;</el-button>
         <el-button size="small" @click="insertMarkdown('> ', '')" title="引用">引用</el-button>
         <el-button size="small" @click="insertMarkdown('---', '')" title="分隔线">—</el-button>
@@ -34,6 +37,15 @@
             上传 .md
           </el-button>
         </el-upload>
+
+        <input
+          ref="imageInputRef"
+          type="file"
+          accept="image/*"
+          multiple
+          style="display: none;"
+          @change="handleImageSelect"
+        />
 
         <el-button size="small" @click="togglePreview">
           <el-icon><View /></el-icon>
@@ -84,11 +96,12 @@
 
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue'
-import { Upload, View } from '@element-plus/icons-vue'
+import { Upload, View, Picture } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { marked } from 'marked'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
+import { uploadImage } from '@/api/posts'
 
 const props = defineProps({
   modelValue: {
@@ -102,6 +115,7 @@ const emit = defineEmits(['update:modelValue'])
 const content = ref(props.modelValue)
 const textareaRef = ref(null)
 const showPreview = ref(false)
+const imageInputRef = ref(null)
 
 // 配置 marked
 marked.setOptions({
@@ -179,6 +193,60 @@ const handleFileUpload = (file) => {
 
 const togglePreview = () => {
   showPreview.value = !showPreview.value
+}
+
+const triggerImageUpload = () => {
+  imageInputRef.value?.click()
+}
+
+const handleImageSelect = async (event) => {
+  const files = Array.from(event.target.files || [])
+  if (files.length === 0) return
+
+  const validFiles = files.filter(file => {
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+    if (!validTypes.includes(file.type)) {
+      ElMessage.warning(`文件 ${file.name} 不是有效图片格式`)
+      return false
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      ElMessage.warning(`文件 ${file.name} 超过 5MB 限制`)
+      return false
+    }
+    return true
+  })
+
+  if (validFiles.length === 0) {
+    ElMessage.error('没有有效的图片文件')
+    return
+  }
+
+  const loading = ref(true)
+  
+  for (let index = 0; index < validFiles.length; index++) {
+    const file = validFiles[index]
+    try {
+      const res = await uploadImage(file)
+      if (res.code === 100 && res.image && res.image.image_url) {
+        const fileName = file.name.replace(/\.[^/.]+$/, '')
+        const imageMarkdown = `![${fileName}](${res.image.image_url})\n`
+        
+        if (index === 0) {
+          insertMarkdown('', imageMarkdown)
+        } else {
+          content.value += imageMarkdown
+        }
+      } else {
+        ElMessage.error(`图片 ${file.name} 上传失败`)
+      }
+    } catch (error) {
+      console.error('图片上传失败:', error)
+      ElMessage.error(`图片 ${file.name} 上传失败`)
+    }
+  }
+
+  ElMessage.success(`成功添加 ${validFiles.length} 张图片`)
+  event.target.value = ''
 }
 </script>
 

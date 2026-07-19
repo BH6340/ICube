@@ -37,6 +37,7 @@ class FormulaListSerializer(serializers.ModelSerializer):
     category = CubeCategorySerializer(read_only=True)
     target_state = CubeStateSerializer(read_only=True)
     tags = FormulaTagSerializer(many=True, read_only=True)
+    thumbnail = serializers.SerializerMethodField()
 
     class Meta:
         model = Formula
@@ -45,12 +46,17 @@ class FormulaListSerializer(serializers.ModelSerializer):
             'difficulty', 'thumbnail', 'is_custom', 'tags', 'created_at'
         )
 
+    def get_thumbnail(self, obj):
+        from cube_api.utils.image_url import build_image_url
+        return build_image_url(obj.thumbnail)
+
 
 class FormulaSerializer(serializers.ModelSerializer):
     category = CubeCategorySerializer(read_only=True)
     target_state = CubeStateSerializer(read_only=True)
     tags = FormulaTagSerializer(many=True, read_only=True)
     pre_state = serializers.SerializerMethodField()
+    thumbnail = serializers.SerializerMethodField()
     tag_ids = serializers.ListField(
         child=serializers.IntegerField(),
         write_only=True,
@@ -71,6 +77,10 @@ class FormulaSerializer(serializers.ModelSerializer):
     def get_pre_state(self, obj):
         return obj.get_pre_state()
 
+    def get_thumbnail(self, obj):
+        from cube_api.utils.image_url import build_image_url
+        return build_image_url(obj.thumbnail)
+
     def validate_pre_state_definition(self, value):
         if value:
             errors = CubeStateService.validate_state_definition(value)
@@ -89,10 +99,7 @@ class FormulaSerializer(serializers.ModelSerializer):
 
         if thumbnail_file:
             saved_path = default_storage.save(f"formula_thumbnails/{thumbnail_file.name}", thumbnail_file)
-            if request:
-                relative_url = f"{settings.MEDIA_URL}{saved_path}"
-                full_url = request.build_absolute_uri(relative_url)
-                validated_data['thumbnail'] = full_url
+            validated_data['thumbnail'] = f"{settings.MEDIA_URL}{saved_path}"
 
         formula = super().create(validated_data)
 
@@ -110,10 +117,7 @@ class FormulaSerializer(serializers.ModelSerializer):
 
         if thumbnail_file:
             saved_path = default_storage.save(f"formula_thumbnails/{thumbnail_file.name}", thumbnail_file)
-            if request:
-                relative_url = f"{settings.MEDIA_URL}{saved_path}"
-                full_url = request.build_absolute_uri(relative_url)
-                validated_data['thumbnail'] = full_url
+            validated_data['thumbnail'] = f"{settings.MEDIA_URL}{saved_path}"
 
         formula = super().update(instance, validated_data)
 
