@@ -43,7 +43,7 @@ class FormulaListSerializer(serializers.ModelSerializer):
         model = Formula
         fields = (
             'id', 'name', 'notation', 'inverse_notation', 'category', 'target_state',
-            'difficulty', 'thumbnail', 'is_custom', 'tags', 'created_at'
+            'difficulty', 'thumbnail', 'is_custom', 'tags', 'view_count', 'created_at'
         )
 
     def get_thumbnail(self, obj):
@@ -69,9 +69,9 @@ class FormulaSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'name', 'notation', 'inverse_notation', 'category', 'target_state',
             'pre_state_definition', 'pre_state', 'thumbnail', 'difficulty', 'description',
-            'is_custom', 'tags', 'tag_ids', 'created_at'
+            'is_custom', 'tags', 'tag_ids', 'view_count', 'created_at'
         )
-        read_only_fields = ('inverse_notation', 'created_at', 'is_custom')
+        read_only_fields = ('inverse_notation', 'created_at', 'is_custom', 'view_count')
 
     @extend_schema_field(serializers.JSONField)
     def get_pre_state(self, obj):

@@ -134,7 +134,7 @@
 <script setup>import { ref, computed, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import { Picture, Star } from '@element-plus/icons-vue';
-import { getFormulaCategories, getFormulaList, getMyCollections, addCollection, removeCollection } from '../../api/formula';
+import { getFormulaCategories, getFormulaList, getFormulaDetail, getMyCollections, addCollection, removeCollection } from '../../api/formula';
 import CubeDemo from './CubeDemo.vue';
 const categoryList = ref([]);
 const categoryTree = ref([]);
@@ -204,9 +204,18 @@ const handlePageChange = (page) => {
   currentPage.value = page;
   loadFormulas();
 };
-const handleFormulaClick = (formula) => {
-  selectedFormula.value = formula;
-  showDetailDialog.value = true;
+const handleFormulaClick = async (formula) => {
+  try {
+    const res = await getFormulaDetail(formula.id);
+    if (res.code === 100) {
+      selectedFormula.value = res.data;
+      showDetailDialog.value = true;
+    }
+  } catch (error) {
+    console.error('加载公式详情失败', error);
+    selectedFormula.value = formula;
+    showDetailDialog.value = true;
+  }
 };
 const isCollected = (formulaId) => {
   return collectedFormulaIds.value.includes(formulaId);

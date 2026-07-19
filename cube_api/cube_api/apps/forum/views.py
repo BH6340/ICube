@@ -25,7 +25,7 @@ class PostViewSet(viewsets.ModelViewSet):
     search_fields = ['title', 'content']
     ordering_fields = ['created_at', 'view_count', 'like_count', 'comment_count', 'is_pinned', 'is_essence']
     ordering = ['-is_pinned', '-is_essence', '-created_at']
-    filterset_fields = ['tags__name', 'is_pinned', 'is_essence']
+    filterset_fields = ['tags__name', 'is_pinned', 'is_essence', 'created_at']
 
     def get_serializer_class(self):
         if self.action == 'list':

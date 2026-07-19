@@ -3,6 +3,7 @@ from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import F
 
 from .models import CubeCategory, CubeState, Formula, FormulaTag, FormulaCollection
 from .serializers import (
@@ -96,7 +97,7 @@ class FormulaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly, IsAdminOrCustomCreator]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
     search_fields = ['name', 'notation', 'description']
-    ordering_fields = ['category', 'difficulty', 'created_at']
+    ordering_fields = ['category', 'difficulty', 'created_at', 'view_count']
     ordering = ['category', 'name']
     filterset_class = FormulaFilter
 
@@ -118,6 +119,8 @@ class FormulaViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
+        Formula.objects.filter(id=instance.id).update(view_count=F('view_count') + 1)
+        instance.refresh_from_db()
         serializer = self.get_serializer(instance, context={'request': request})
         return APIResponse(data=serializer.data)
 

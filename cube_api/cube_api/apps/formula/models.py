@@ -74,6 +74,7 @@ class Formula(models.Model):
     )
     difficulty = models.IntegerField('难度等级', default=1)
     description = models.TextField('描述', blank=True)
+    view_count = models.IntegerField('浏览次数', default=0)
 
     is_custom = models.BooleanField('是否自定义', default=False)
     created_by = models.ForeignKey(
