@@ -47,7 +47,8 @@ INSTALLED_APPS = [
     'apps.accounts',
     'apps.forum',
     'apps.formula',
-    'apps.shop'
+    'apps.shop',
+    'apps.timer'
 ]
 
 MIDDLEWARE = [

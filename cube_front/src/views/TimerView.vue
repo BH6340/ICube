@@ -7,6 +7,12 @@
           <el-option label="二阶魔方" value="2x2" />
           <el-option label="四阶魔方" value="4x4" />
         </el-select>
+        <el-select v-model="method" placeholder="还原方法" style="width: 120px">
+          <el-option label="层先法" value="layer" />
+          <el-option label="CFOP" value="cfop" />
+          <el-option label="桥式" value="roux" />
+          <el-option label="ZBLL" value="zbll" />
+        </el-select>
         <el-button type="primary" link @click="generateScramble">刷新打乱</el-button>
       </div>
       <div class="scramble-text">{{ currentScramble }}</div>
@@ -64,10 +70,12 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
+import { createTimerRecord } from '@/api/timer'
 
 // --- 状态定义 ---
 const timerPage = ref(null)
 const cubeType = ref('3x3')
+const method = ref('layer')
 const currentScramble = ref('')
 const history = ref(JSON.parse(localStorage.getItem('icube_timer_history') || '[]'))
 
@@ -172,18 +180,22 @@ const stopTimer = () => {
   clearInterval(timerInterval.value)
   timerState.value = 'idle'
 
-  // 记录本次成绩
   const newRecord = {
     id: Date.now(),
     time: elapsedTime.value,
     scramble: currentScramble.value,
     date: new Date().toLocaleDateString()
   }
-  // csTimer 新成绩压入到最前面
   history.value.unshift(newRecord)
   saveToLocalStorage()
 
-  // 自动刷新下一把打乱
+  createTimerRecord({
+    cube_type: cubeType.value,
+    method: method.value,
+    time_ms: Math.round(elapsedTime.value),
+    scramble: currentScramble.value
+  }).catch(() => {})
+
   generateScramble()
 }
 

@@ -26,6 +26,7 @@ urlpatterns = [
     path('api/forum/', include('apps.forum.urls')),
     path('api/formula/', include('apps.formula.urls')),
     path('api/shop/', include('apps.shop.urls')),
+    path('api/timer/', include('apps.timer.urls')),
 ]
 
 # 💡 核心追加：只有在开发阶段（DEBUG = True）时，让 Django 充当文件服务器来映射媒体文件

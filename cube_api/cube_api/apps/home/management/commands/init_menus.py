@@ -32,8 +32,8 @@ class Command(BaseCommand):
              "match_paths": ["/profiles/info"]},
             {"index": "p-3", "label": "公式收藏", "path": "/profiles/collections", "category": "profile",
              "sort_order": 30, "match_paths": ["/profiles/collections"]},
-            {"index": "p-4", "label": "我的数据", "path": "/profiles/datas", "category": "profile", "sort_order": 40,
-             "match_paths": ["/profiles/datas"]},
+            {"index": "p-4", "label": "我的数据", "path": "/profiles/data", "category": "profile", "sort_order": 40,
+             "match_paths": ["/profiles/data"]},
             {"index": "p-5", "label": "我的帖子", "path": "/profiles/posts", "category": "profile", "sort_order": 50,
              "match_paths": ["/profiles/posts"]},
         ]

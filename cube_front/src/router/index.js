@@ -95,6 +95,11 @@ const router = createRouter({
                     path: 'profiles/posts', // 匹配 /profiles/posts
                     name: 'profilePosts',
                     component: () => import('@/views/profiles/MyPostsView.vue')
+                },
+                {
+                    path: 'profiles/data', // 匹配 /profiles/data
+                    name: 'profileData',
+                    component: () => import('@/views/profiles/MyDataView.vue')
                 }
             ]
         },

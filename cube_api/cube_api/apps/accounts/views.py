@@ -4,7 +4,7 @@ from rest_framework import status, viewsets, generics
 from django.contrib.auth import authenticate
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly, AllowAny
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly, AllowAny
 
 from .models import User
 from .serializers import UserSerializer, ProfileSerializer, UserUpdateSerializer, ProfileListSerializer
@@ -112,7 +112,7 @@ class AuthViewSet(viewsets.GenericViewSet):
             401: OpenApiResponse(description='邮箱或密码错误')
         }
     )
-    @action(detail=False, methods=['POST'])
+    @action(detail=False, methods=['POST'], permission_classes=[AllowAny])
     def login(self, request):
         user_data = request.data.get('user', {})
         user = authenticate(
