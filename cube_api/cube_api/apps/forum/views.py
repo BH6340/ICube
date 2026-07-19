@@ -152,7 +152,7 @@ class PostViewSet(viewsets.ModelViewSet):
         serializer = CommentSerializer(comments, many=True, context={'request': request})
         return APIResponse(comments=serializer.data)
 
-    @action(detail=False, methods=['GET'])
+    @action(detail=False, methods=['GET'], permission_classes=[IsAuthenticated])
     def my_posts(self, request):
         """我的帖子"""
         posts = self.get_queryset().filter(author=request.user)

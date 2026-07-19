@@ -23,7 +23,7 @@ export const useMenuStore = defineStore('menu', () => {
         isLoaded.value = true
       }
     } catch (err) {
-      print.error('动态菜单加载失败:', err)
+      console.error('动态菜单加载失败:', err)
     }
   }
 

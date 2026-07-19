@@ -54,17 +54,19 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
-    # 1. 保持原有的自定义动态关注状态
     following = serializers.SerializerMethodField()
-
-    # 💡 方案微调：改用 SerializerMethodField 显式控制，确保一定能在 JSON 中显示
     followers_count = serializers.SerializerMethodField()
     following_count = serializers.SerializerMethodField()
     collection_count = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = ('username', 'bio', 'image', 'following', 'followers_count', 'following_count', 'collection_count')
+
+    def get_image(self, obj):
+        from cube_api.utils.image_url import build_image_url
+        return build_image_url(obj.image)
 
     @extend_schema_field(serializers.BooleanField)
     def get_following(self, obj):
@@ -94,13 +96,16 @@ class ProfileListSerializer(serializers.ModelSerializer):
     """
     专门用于关注/粉丝列表展示的轻量级序列化器（去除了计数相关字段）
     """
-    # 保持原有的自定义动态关注状态，方便列表页展示“回关”或“已关注”按钮
     following = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        # 💡 核心：这里只保留列表需要的 4 个字段
         fields = ('username', 'bio', 'image', 'following')
+
+    def get_image(self, obj):
+        from cube_api.utils.image_url import build_image_url
+        return build_image_url(obj.image)
 
     @extend_schema_field(serializers.BooleanField)
     def get_following(self, obj):

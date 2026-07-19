@@ -90,6 +90,11 @@ const router = createRouter({
                     path: 'profiles/orders', // 匹配 /profiles/orders
                     name: 'profileOrders',
                     component: () => import('@/views/profiles/OrderView.vue')
+                },
+                {
+                    path: 'profiles/posts', // 匹配 /profiles/posts
+                    name: 'profilePosts',
+                    component: () => import('@/views/profiles/MyPostsView.vue')
                 }
             ]
         },

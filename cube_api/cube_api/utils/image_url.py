@@ -14,10 +14,16 @@ def build_image_url(relative_path):
     if not relative_path:
         return ''
     
+    if hasattr(relative_path, 'path'):
+        relative_path = str(relative_path)
+    
     if relative_path.startswith('http://') or relative_path.startswith('https://'):
         return relative_path
     
     if not relative_path.startswith('/'):
         relative_path = '/' + relative_path
+    
+    if not relative_path.startswith('/media/'):
+        relative_path = '/media' + relative_path
     
     return settings.SITE_DOMAIN.rstrip('/') + relative_path

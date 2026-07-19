@@ -49,32 +49,38 @@
 
         <el-divider style="margin: 20px 0 15px 0;" />
 
-        <el-row class="stats-row">
-          <el-col :span="isMe ? 6 : 8" class="stats-item" @click="activeTab = 'following'">
+        <div class="stats-row">
+          <div class="stats-item" @click="activeTab = 'following'">
             <div class="stats-num" :class="{ 'active-num': activeTab === 'following' }">
               {{ profileData.following_count }}
             </div>
             <div class="stats-label">{{ isMe ? '我的关注' : '他的关注' }}</div>
-          </el-col>
-          <el-col :span="isMe ? 6 : 8" class="stats-item" @click="activeTab = 'followers'">
+          </div>
+          <div class="stats-item" @click="activeTab = 'followers'">
             <div class="stats-num" :class="{ 'active-num': activeTab === 'followers' }">
               {{ profileData.followers_count }}
             </div>
             <div class="stats-label">{{ isMe ? '我的粉丝' : '他的粉丝' }}</div>
-          </el-col>
-          <el-col v-if="isMe" :span="6" class="stats-item" @click="goToCollections">
+          </div>
+          <div v-if="isMe" class="stats-item" @click="goToCollections">
             <div class="stats-num">
               {{ profileData.collection_count || 0 }}
             </div>
             <div class="stats-label">公式收藏</div>
-          </el-col>
-          <el-col v-if="isMe" :span="6" class="stats-item" @click="goToOrders">
+          </div>
+          <div v-if="isMe" class="stats-item" @click="goToPosts">
+            <div class="stats-num">
+              {{ postCount }}
+            </div>
+            <div class="stats-label">我的帖子</div>
+          </div>
+          <div v-if="isMe" class="stats-item" @click="goToOrders">
             <div class="stats-num">
               {{ orderCount }}
             </div>
             <div class="stats-label">我的订单</div>
-          </el-col>
-        </el-row>
+          </div>
+        </div>
       </el-card>
 
       <el-card class="relation-card" shadow="never">
@@ -214,6 +220,7 @@ import {
   updateProfileApi
 } from '@/api/user'
 import { getOrders } from '@/api/shop'
+import { getMyPosts } from '@/api/posts'
 import { ElMessage } from 'element-plus'
 import defaultAvatar from '@/assets/default_avatar.svg'
 
@@ -238,6 +245,7 @@ const profileData = ref({
   following_count: 0
 })
 const orderCount = ref(0)
+const postCount = ref(0)
 
 // 关注、粉丝列表响应式存储
 const followingList = ref([])
@@ -432,6 +440,11 @@ const goToOrders = () => {
   router.push('/profiles/orders')
 }
 
+// 跳转到我的帖子页面
+const goToPosts = () => {
+  router.push('/profiles/posts')
+}
+
 const loadOrderCount = async () => {
   if (!isMe.value) return
   try {
@@ -444,16 +457,30 @@ const loadOrderCount = async () => {
   }
 }
 
+const loadPostCount = async () => {
+  if (!isMe.value) return
+  try {
+    const res = await getMyPosts({ page_size: 1 })
+    if (res.code === 100) {
+      postCount.value = res.data.count || 0
+    }
+  } catch (error) {
+    console.error('加载帖子数量失败', error)
+  }
+}
+
 // 💡 侦听器关键：由于是同一个组件内切路由（比如从看自己切到看别人的列表），组件不会重新销毁挂载。
 // 必须通过监听 query.username 的变化，来重新触发数据抓取。
 watch(() => route.query.username, () => {
   fetchUserProfileChain()
   loadOrderCount()
+  loadPostCount()
 }, { deep: true })
 
 onMounted(() => {
   fetchUserProfileChain()
   loadOrderCount()
+  loadPostCount()
 })
 </script>
 
@@ -506,18 +533,21 @@ onMounted(() => {
   margin: 0;
 }
 .stats-row {
+  display: flex;
   text-align: center;
 }
 .stats-item {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   user-select: none;
-}
-.stats-item:first-child {
   border-right: 1px solid #ebeef5;
+}
+.stats-item:last-child {
+  border-right: none;
 }
 .stats-num {
   font-size: 24px;
