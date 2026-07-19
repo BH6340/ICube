@@ -21,6 +21,36 @@ const router = createRouter({
                     component:()=> import('@/views/TutorialView.vue')
                 },
                 {
+                    path: 'tutorial/beginner',
+                    name: 'beginnerTutorial',
+                    component: () => import('@/views/tutorial/BeginnerTutorial.vue')
+                },
+                {
+                    path: 'tutorial/cfop',
+                    name: 'cfopTutorial',
+                    component: () => import('@/views/tutorial/CFOPTutorial.vue')
+                },
+                {
+                    path: 'tutorial/oll-essentials',
+                    name: 'ollEssentials',
+                    component: () => import('@/views/tutorial/OLLEssentials.vue')
+                },
+                {
+                    path: 'tutorial/pll-essentials',
+                    name: 'pllEssentials',
+                    component: () => import('@/views/tutorial/PLLEssentials.vue')
+                },
+                {
+                    path: 'tutorial/complete-oll',
+                    name: 'completeOLL',
+                    component: () => import('@/views/tutorial/CompleteOLL.vue')
+                },
+                {
+                    path: 'tutorial/complete-pll',
+                    name: 'completePLL',
+                    component: () => import('@/views/tutorial/CompletePLL.vue')
+                },
+                {
                     path: 'formulas', // 匹配 /formulas
                     name: 'formulas',
                     component:()=> import('@/views/FormulaView.vue')

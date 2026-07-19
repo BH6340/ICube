@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { getPosts } from '@/api/posts'
 import { getFormulaList, getFormulaCategories } from '@/api/formula'
 
@@ -87,6 +88,18 @@ const goToFormulaList = (cubeType) => {
     router.push('/formulas')
   } else {
     router.push(`/formulas?cube_type=${cubeType}`)
+  }
+}
+
+const goToBeginnerTutorial = () => {
+  router.push('/tutorial/beginner')
+}
+
+const goToTutorial = (type) => {
+  if (type === 'cfop') {
+    router.push('/tutorial/cfop')
+  } else {
+    ElMessage.info('桥式教程即将推出，敬请期待！')
   }
 }
 
@@ -189,7 +202,7 @@ onMounted(() => {
           </template>
           <el-row :gutter="20">
             <el-col :span="8">
-              <div class="tutorial-card">
+              <div class="tutorial-card" @click="goToBeginnerTutorial">
                 <div class="tutorial-icon">📚</div>
                 <div class="tutorial-info">
                   <h4>层先法教程</h4>
@@ -199,7 +212,7 @@ onMounted(() => {
               </div>
             </el-col>
             <el-col :span="8">
-              <div class="tutorial-card">
+              <div class="tutorial-card" @click="goToTutorial('cfop')">
                 <div class="tutorial-icon">⚡</div>
                 <div class="tutorial-info">
                   <h4>CFOP教程</h4>
@@ -209,7 +222,7 @@ onMounted(() => {
               </div>
             </el-col>
             <el-col :span="8">
-              <div class="tutorial-card">
+              <div class="tutorial-card" @click="goToTutorial('roux')">
                 <div class="tutorial-icon">🏆</div>
                 <div class="tutorial-info">
                   <h4>桥式教程</h4>
