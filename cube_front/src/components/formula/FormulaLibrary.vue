@@ -132,10 +132,12 @@
 </template>
 
 <script setup>import { ref, computed, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { Picture, Star } from '@element-plus/icons-vue';
 import { getFormulaCategories, getFormulaList, getFormulaDetail, getMyCollections, addCollection, removeCollection } from '../../api/formula';
 import CubeDemo from './CubeDemo.vue';
+const route = useRoute();
 const categoryList = ref([]);
 const categoryTree = ref([]);
 const formulaList = ref([]);
@@ -292,10 +294,27 @@ const loadFormulas = async () => {
     ElMessage.error('加载公式失败');
   }
 };
+const openFormulaById = async (formulaId) => {
+  try {
+    const res = await getFormulaDetail(formulaId);
+    if (res.code === 100) {
+      selectedFormula.value = res.data;
+      showDetailDialog.value = true;
+    }
+  } catch (error) {
+    console.error('加载公式详情失败', error);
+  }
+};
+
 onMounted(() => {
   loadCategories();
   loadFormulas();
   loadCollections();
+  
+  const formulaId = route.query.formula_id;
+  if (formulaId) {
+    openFormulaById(formulaId);
+  }
 });
 </script>
 

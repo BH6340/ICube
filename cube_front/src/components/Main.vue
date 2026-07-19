@@ -22,13 +22,7 @@ banners.value = Object.keys(bannerModules).map(path => ({
   name: path.split('/').pop().replace('.png', '')
 }))
 
-const cubeTypes = [
-  { name: '2x2', icon: '🎲', color: 'primary' },
-  { name: '3x3', icon: '🎲', color: 'success' },
-  { name: '4x4', icon: '🎲', color: 'warning' },
-  { name: '5x5', icon: '🎲', color: 'danger' },
-  { name: '更多', icon: '🧩', color: 'info' }
-]
+
 
 const loadHotPosts = async () => {
   loadingPosts.value = true
@@ -80,15 +74,7 @@ const goToPost = (id) => {
 }
 
 const goToFormula = (id) => {
-  router.push(`/formulas?formula_id=${id}`)
-}
-
-const goToFormulaList = (cubeType) => {
-  if (cubeType === '更多') {
-    router.push('/formulas')
-  } else {
-    router.push(`/formulas?cube_type=${cubeType}`)
-  }
+  router.push({ path: '/formulas', query: { formula_id: id } })
 }
 
 const goToBeginnerTutorial = () => {
@@ -119,15 +105,6 @@ onMounted(() => {
             <img :src="banner.url" class="carousel-image" :alt="banner.name">
           </el-carousel-item>
         </el-carousel>
-      </el-col>
-    </el-row>
-
-    <el-row :gutter="12" style="margin-top: 30px;">
-      <el-col :span="4" v-for="cube in cubeTypes" :key="cube.name">
-        <el-card class="cube-nav-card" shadow="hover" @click="goToFormulaList(cube.name)">
-          <div class="cube-nav-icon">{{ cube.icon }}</div>
-          <div class="cube-nav-name">{{ cube.name }}</div>
-        </el-card>
       </el-col>
     </el-row>
 
@@ -272,27 +249,6 @@ onMounted(() => {
   height: 100%;
   object-fit: cover;
   border-radius: 8px;
-}
-
-.cube-nav-card {
-  text-align: center;
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.cube-nav-card:hover {
-  transform: translateY(-4px);
-}
-
-.cube-nav-icon {
-  font-size: 32px;
-  margin-bottom: 8px;
-}
-
-.cube-nav-name {
-  font-size: 16px;
-  font-weight: bold;
-  color: #303133;
 }
 
 .section-card {
