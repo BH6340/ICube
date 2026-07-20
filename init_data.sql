@@ -13,7 +13,7 @@ USE icube_db;
  Target Server Version : 90100
  File Encoding         : 65001
 
- Date: 19/07/2026 16:34:55
+ Date: 20/07/2026 08:55:54
 */
 
 SET NAMES utf8mb4;
@@ -52,7 +52,7 @@ INSERT INTO `accounts_user` VALUES (6, 'pbkdf2_sha256$1200000$okkHb5GNQKwfvBOnAQ
 INSERT INTO `accounts_user` VALUES (7, 'pbkdf2_sha256$1200000$RYFGlCvA1CDRxSNdklva6T$kXTRELt9ADjwvXRzQ7vBw4qlYiKkYsHbLDMtsdqHy7c=', NULL, 0, 0, 1, '2026-05-12 10:31:45.718088', 'bh06@qq.com', 'bh06', '', NULL);
 INSERT INTO `accounts_user` VALUES (8, 'pbkdf2_sha256$1200000$DnUCKmEqnGwe6dgpusKgbv$dWypTxpzl3XsLQTHMtP2kVzzgSlZGrPXhDQvoFrI04I=', NULL, 0, 0, 1, '2026-06-03 10:52:12.092033', 'bh06@163.com', 'bh06_1', '', NULL);
 INSERT INTO `accounts_user` VALUES (9, 'pbkdf2_sha256$1200000$ftzQsmKyRLAeMfinPTKybA$HhvTRYfZhcto+EM0AkQcrw40kW595wOvrUz9i6d0/dY=', NULL, 0, 0, 1, '2026-06-03 14:36:26.343585', 'bh07@qq.com', 'bh07', '', NULL);
-INSERT INTO `accounts_user` VALUES (10, 'pbkdf2_sha256$1200000$t2wU7w8mXoIaAXh7g2MDVh$Ztnkh6EGtSvN/dEIBoF50+KZCElaBTWGQui8yFb/cjo=', NULL, 0, 0, 1, '2026-06-03 14:54:47.046829', 'bh08@qq.com', 'bh08', '新的个人介绍', '/media/avatars/bh01_1GoeGXq.png');
+INSERT INTO `accounts_user` VALUES (10, 'pbkdf2_sha256$1200000$jp60Dr1nt6eO4OfAqfD5Qv$yGPq7Od8NvPd5UZXv/PytTyviaCqWLBGPZFgB5vR06E=', NULL, 0, 0, 1, '2026-06-03 14:54:47.046829', 'bh08@qq.com', 'bh08', '新的个人介绍', '/media/avatars/admin_L3Lh7Ue.png');
 INSERT INTO `accounts_user` VALUES (11, 'pbkdf2_sha256$1200000$HnHuO67UPNA3KGzqrdciHY$BEGRtyOatdrHIGDWKfQyC8zc2gE9HkTmxTtSBUUMtAM=', NULL, 0, 0, 1, '2026-06-05 09:55:05.648601', 'user1@example.com', '魔方小白', '魔方爱好者，欢迎交流！', NULL);
 INSERT INTO `accounts_user` VALUES (12, 'pbkdf2_sha256$1200000$K4RZs6x8mUSPOBiwKYSfpG$m1sUeywn5sSlmRjpG9NYv9v/CLItOlun+BLJpCPab9M=', NULL, 0, 0, 1, '2026-06-05 09:55:07.421317', 'user2@example.com', '速拧大神', '魔方爱好者，欢迎交流！', NULL);
 INSERT INTO `accounts_user` VALUES (13, 'pbkdf2_sha256$1200000$NUI8BH6NjcYEnrSe8l5O4V$PR0PnTdasbMdgc3gewGRKWuk6CRdEaEkyoXrzhpLxSc=', NULL, 0, 0, 1, '2026-06-05 09:55:09.104099', 'user3@example.com', '公式收藏家', '魔方爱好者，欢迎交流！', NULL);
@@ -165,7 +165,7 @@ CREATE TABLE `auth_permission`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `auth_permission_content_type_id_codename_01ab375a_uniq`(`content_type_id` ASC, `codename` ASC) USING BTREE,
   CONSTRAINT `auth_permission_content_type_id_2f476e4b_fk_django_co` FOREIGN KEY (`content_type_id`) REFERENCES `django_content_type` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 105 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 113 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of auth_permission
@@ -278,6 +278,10 @@ INSERT INTO `auth_permission` VALUES (105, 'Can add 帖子图片', 27, 'add_post
 INSERT INTO `auth_permission` VALUES (106, 'Can change 帖子图片', 27, 'change_postimage');
 INSERT INTO `auth_permission` VALUES (107, 'Can delete 帖子图片', 27, 'delete_postimage');
 INSERT INTO `auth_permission` VALUES (108, 'Can view 帖子图片', 27, 'view_postimage');
+INSERT INTO `auth_permission` VALUES (109, 'Can add timer record', 28, 'add_timerrecord');
+INSERT INTO `auth_permission` VALUES (110, 'Can change timer record', 28, 'change_timerrecord');
+INSERT INTO `auth_permission` VALUES (111, 'Can delete timer record', 28, 'delete_timerrecord');
+INSERT INTO `auth_permission` VALUES (112, 'Can view timer record', 28, 'view_timerrecord');
 
 -- ----------------------------
 -- Table structure for django_admin_log
@@ -314,7 +318,7 @@ CREATE TABLE `django_content_type`  (
   `model` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `django_content_type_app_label_model_76bd3d3b_uniq`(`app_label` ASC, `model` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 27 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 29 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of django_content_type
@@ -346,6 +350,7 @@ INSERT INTO `django_content_type` VALUES (23, 'shop', 'order');
 INSERT INTO `django_content_type` VALUES (24, 'shop', 'orderitem');
 INSERT INTO `django_content_type` VALUES (25, 'shop', 'product');
 INSERT INTO `django_content_type` VALUES (26, 'shop', 'productcategory');
+INSERT INTO `django_content_type` VALUES (28, 'timer', 'timerrecord');
 
 -- ----------------------------
 -- Table structure for django_migrations
@@ -357,7 +362,7 @@ CREATE TABLE `django_migrations`  (
   `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `applied` datetime(6) NOT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 26 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 30 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of django_migrations
@@ -388,6 +393,8 @@ INSERT INTO `django_migrations` VALUES (24, 'formula', '0001_initial', '2026-07-
 INSERT INTO `django_migrations` VALUES (25, 'shop', '0001_initial', '2026-07-08 15:18:25.853418');
 INSERT INTO `django_migrations` VALUES (26, 'forum', '0002_postimage', '2026-07-19 15:05:26.253983');
 INSERT INTO `django_migrations` VALUES (27, 'forum', '0003_alter_postimage_post', '2026-07-19 15:20:50.664031');
+INSERT INTO `django_migrations` VALUES (28, 'timer', '0001_initial', '2026-07-19 18:40:31.903171');
+INSERT INTO `django_migrations` VALUES (29, 'formula', '0002_formula_view_count', '2026-07-19 23:46:56.922994');
 
 -- ----------------------------
 -- Table structure for django_session
@@ -471,6 +478,7 @@ CREATE TABLE `formula_formula`  (
   `category_id` bigint NULL DEFAULT NULL,
   `created_by_id` bigint NULL DEFAULT NULL,
   `target_state_id` bigint NULL DEFAULT NULL,
+  `view_count` int NOT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `formula_formula_category_id_2d7b2936_fk_formula_cube_category_id`(`category_id` ASC) USING BTREE,
   INDEX `formula_formula_created_by_id_8d6b77d2_fk_accounts_user_id`(`created_by_id` ASC) USING BTREE,
@@ -483,125 +491,125 @@ CREATE TABLE `formula_formula`  (
 -- ----------------------------
 -- Records of formula_formula
 -- ----------------------------
-INSERT INTO `formula_formula` VALUES (239, 'F2L-01', 'd\' L\' U L', 'L\' U\' L d', NULL, 'formulas/F2L_Images/F2L_001.png', 1, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.457998', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (240, 'F2L-02', 'U R U\' R\'', 'R U R\' U\'', NULL, 'formulas/F2L_Images/F2L_002.png', 1, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.490123', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (241, 'F2L-03', 'R U R\'', 'R U\' R\'', NULL, 'formulas/F2L_Images/F2L_003.png', 1, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.513833', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (242, 'F2L-04', 'y L\' U\' L', 'L\' U L y\'', NULL, 'formulas/F2L_Images/F2L_004.png', 1, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.537867', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (243, 'F2L-05', 'U\' R U R\' U R U R\'', 'R U\' R\' U\' R U\' R\' U', NULL, 'formulas/F2L_Images/F2L_005.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.560667', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (244, 'F2L-06', 'U\' R U\' R\' U y\' R\' U\' R', 'R\' U R y U\' R U R\' U', NULL, 'formulas/F2L_Images/F2L_006.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.590151', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (245, 'F2L-07', 'd R\' U\' R U\'2 R\' U R', 'R\' U\' R U\'2 R\' U R d\'', NULL, 'formulas/F2L_Images/F2L_007.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.615940', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (246, 'F2L-08', 'U\' R U R\' U2 R U\' R\'', 'R U R\' U2 R U\' R\' U', NULL, 'formulas/F2L_Images/F2L_008.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.639613', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (247, 'F2L-09', 'd R\' U\'2 R U\'2 R\' U R', 'R\' U\' R U\'2 R\' U\'2 R d\'', NULL, 'formulas/F2L_Images/F2L_009.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.663288', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (248, 'F2L-10', 'U\' R U2 R\' U2 R U\' R\'', 'R U R\' U2 R U2 R\' U', NULL, 'formulas/F2L_Images/F2L_010.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.687714', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (249, 'F2L-11', 'd\' L\' U2 L U\' L\' U L', 'L\' U\' L U L\' U2 L d', NULL, 'formulas/F2L_Images/F2L_011.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.712758', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (250, 'F2L-12', 'U R U\'2 R\' U R U\' R\'', 'R U R\' U\' R U\'2 R\' U\'', NULL, 'formulas/F2L_Images/F2L_012.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.739282', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (251, 'F2L-13', 'U\'2 R U R\' U R U\' R\'', 'R U R\' U\' R U\' R\' U\'2', NULL, 'formulas/F2L_Images/F2L_013.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.764307', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (252, 'F2L-14', 'U2 y L\' U\' L U\' L\' U L', 'L\' U\' L U L\' U L y\' U2', NULL, 'formulas/F2L_Images/F2L_014.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.787948', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (253, 'F2L-15', 'U R U R\' U\'2 R U R\'', 'R U\' R\' U\'2 R U\' R\' U\'', NULL, 'formulas/F2L_Images/F2L_015.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.814302', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (254, 'F2L-16', '(y) R\' D R U\' R\' D\' R', 'R\' D R U R\' D\' R (y)', NULL, 'formulas/F2L_Images/F2L_016.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.838066', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (255, 'F2L-17', 'U y\' R\' U\' R d\' R U R\'', 'R U\' R\' d R\' U R y U\'', NULL, 'formulas/F2L_Images/F2L_017.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.862327', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (256, 'F2L-18', 'U M\' U R U\' M U\' R\'', 'R U M\' U R\' U\' M U\'', NULL, 'formulas/F2L_Images/F2L_018.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.886176', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (257, 'F2L-19', 'U R U\' R\' U R U\' R\' U R U\' R\'', 'R U R\' U\' R U R\' U\' R U R\' U\'', NULL, 'formulas/F2L_Images/F2L_019.png', 3, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.908505', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (258, 'F2L-20', 'U\' R\' F R F\' R U\' R\'', 'R U R\' F R\' F\' R U', NULL, 'formulas/F2L_Images/F2L_020.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.933695', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (259, 'F2L-21', 'd\' L\' U L U L\' U\' L U L\' U\' L', 'L\' U L U\' L\' U L U\' L\' U\' L d', NULL, 'formulas/F2L_Images/F2L_021.png', 3, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.956637', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (260, 'F2L-22', 'd R\' U R U\' R\' U\' R', 'R\' U R U R\' U\' R d\'', NULL, 'formulas/F2L_Images/F2L_022.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.982995', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (261, 'F2L-23', 'U R U\' R\' U\' R U R\' U\' R U R\'', 'R U\' R\' U R U\' R\' U R U R\' U\'', NULL, 'formulas/F2L_Images/F2L_023.png', 3, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.008466', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (262, 'F2L-24', 'U\' R U\' R\' U R U R\'', 'R U\' R\' U\' R U R\' U', NULL, 'formulas/F2L_Images/F2L_024.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.033772', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (263, 'F2L-25', 'R U R\' U\'2 R U\' R\' U R U\' R\'', 'R U R\' U\' R U R\' U\'2 R U\' R\'', NULL, 'formulas/F2L_Images/F2L_025.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.058387', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (264, 'F2L-26', 'U F R\' F\' R2 U\' R\' U2 R U\' R\'', 'R U R\' U2 R U R2 F R F\' U\'', NULL, 'formulas/F2L_Images/F2L_026.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.084672', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (265, 'F2L-27', 'R U R\' U\'2 R U\' R\' U R U R\'', 'R U\' R\' U\' R U R\' U\'2 R U\' R\'', NULL, 'formulas/F2L_Images/F2L_027.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.108187', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (266, 'F2L-28', 'R U R\' U\' R U2 R\' U\' R U R\'', 'R U\' R\' U R U2 R\' U R U\' R\'', NULL, 'formulas/F2L_Images/F2L_028.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.132742', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (267, 'F2L-29', 'R U\' M\' U\' r\' U\'2 r U r\'', 'r U\' r\' U\'2 r U M U R\'', NULL, 'formulas/F2L_Images/F2L_029.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.156001', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (268, 'F2L-30', 'r U\' r\' U\'2 r U M U R\'', 'R U\' M\' U\' r\' U\'2 r U r\'', NULL, 'formulas/F2L_Images/F2L_030.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.179353', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (269, 'F2L-31', 'L D R\' F R F\' R U\' R\' U D\' L\'', 'L D U\' R U R\' F R\' F\' R D\' L\'', NULL, 'formulas/F2L_Images/F2L_031.png', 3, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.204262', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (270, 'F2L-32', 'y\' R\' U R U R\' U R U\' R\' U\' R', 'R\' U R U R\' U\' R U\' R\' U\' R y', NULL, 'formulas/F2L_Images/F2L_032.png', 3, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.227837', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (271, 'F2L-33', 'R U\' R\' U\' R U\' R\' U R U R\'', 'R U\' R\' U\' R U R\' U R U R\'', NULL, 'formulas/F2L_Images/F2L_033.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.252616', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (272, 'F2L-34', 'y\' R\' U\'2 R U R\' U\' R', 'R\' U R U\' R\' U\'2 R y', NULL, 'formulas/F2L_Images/F2L_034.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.278801', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (273, 'F2L-35', 'R U R\' U\'2 R U R\' U\' R U R\'', 'R U\' R\' U R U\' R\' U\'2 R U\' R\'', NULL, 'formulas/F2L_Images/F2L_035.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.302506', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (274, 'F2L-36', 'R U2 R\' U\' R U R\'', 'R U\' R\' U R U2 R\'', NULL, 'formulas/F2L_Images/F2L_036.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.327577', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (275, 'F2L-37', 'F U R U\' R\' F\' R U\' R\'', 'R U R\' F R U R\' U\' F\'', NULL, 'formulas/F2L_Images/F2L_037.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.350824', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (276, 'F2L-38', 'y L\' U L U\' L\' U L', 'L\' U\' L U L\' U\' L y\'', NULL, 'formulas/F2L_Images/F2L_038.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.374128', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (277, 'F2L-39', 'R U R\' U\' R U R\'', 'R U\' R\' U R U\' R\'', NULL, 'formulas/F2L_Images/F2L_039.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.398335', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (278, 'F2L-40', 'R U\' R\' U R U\' R\'', 'R U R\' U\' R U R\'', NULL, 'formulas/F2L_Images/F2L_040.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.422076', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (279, 'F2L-41', 'y L\' U\' L U L\' U\' L', 'L\' U L U\' L\' U L y\'', NULL, 'formulas/F2L_Images/F2L_041.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.445118', 4, NULL, 1);
-INSERT INTO `formula_formula` VALUES (280, 'OLL-01', 'R\' U2 R U R\' U R', 'R\' U\' R U\' R\' U2 R', NULL, 'formulas/OLL_Images/OLL_001.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.471855', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (281, 'OLL-02', 'R U\' U\' R\' U\' R U\' R\'', 'R U R\' U R U U R\'', NULL, 'formulas/OLL_Images/OLL_002.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.495499', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (282, 'OLL-03', 'r U R\' U\' r\' F R F\'', 'F R\' F\' r U R U\' r\'', NULL, 'formulas/OLL_Images/OLL_003.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.519951', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (283, 'OLL-04', 'F\' r U R\' U\' r\' F R', 'R\' F\' r U R U\' r\' F', NULL, 'formulas/OLL_Images/OLL_004.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.544489', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (284, 'OLL-05', 'R2 D\' R U\' U\' R\' D R U\' U\' R', 'R\' U U R\' D\' R U U R\' D R2', NULL, 'formulas/OLL_Images/OLL_005.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.568181', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (285, 'OLL-06', 'R U U R\' U\' R U R\' U\' R U\' R\'', 'R U R\' U R U\' R\' U R U\' U\' R\'', NULL, 'formulas/OLL_Images/OLL_006.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.594840', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (286, 'OLL-07', 'R U\' U\' R2\' U\' R2 U\' R2\' U2 R', 'R\' U2 R2\' U R2 U R2\' U U R\'', NULL, 'formulas/OLL_Images/OLL_007.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.618263', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (287, 'OLL-08', 'F R U R\' U\' F\'', 'F U R U\' R\' F\'', NULL, 'formulas/OLL_Images/OLL_008.png', 1, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.642901', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (288, 'OLL-09', 'f R U R\' U\' f\'', 'f U R U\' R\' f\'', NULL, 'formulas/OLL_Images/OLL_009.png', 1, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.667501', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (289, 'OLL-10', 'B\' U\' R\' U R B', 'B\' R\' U\' R U B', NULL, 'formulas/OLL_Images/OLL_010.png', 1, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.693348', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (290, 'OLL-11', 'R U R\' U\' R\' F R F\'', 'F R\' F\' R U R U\' R\'', NULL, 'formulas/OLL_Images/OLL_011.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.719952', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (291, 'OLL-12', 'F R U R\' U\'2 F\'', 'F U\'2 R U\' R\' F\'', NULL, 'formulas/OLL_Images/OLL_012.png', 1, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.745035', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (292, 'OLL-13', 'F\' L\' U\' L U2 F', 'F\' U2 L\' U L F', NULL, 'formulas/OLL_Images/OLL_013.png', 1, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.770396', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (293, 'OLL-14', 'f R U R\' U\'2 f\'', 'f U\'2 R U\' R\' f\'', NULL, 'formulas/OLL_Images/OLL_014.png', 1, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.796676', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (294, 'OLL-15', 'F R U R\' U\' F\' f R U R\' U\' f\'', 'f U R U\' R\' f\' F U R U\' R\' F\'', NULL, 'formulas/OLL_Images/OLL_015.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.821571', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (295, 'OLL-16', 'f R U R\' U\' f\' U\' F R U R\' U\' F\'', 'F U R U\' R\' F\' U f U R U\' R\' f\'', NULL, 'formulas/OLL_Images/OLL_016.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.847151', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (296, 'OLL-17', 'f R U R\' U\' f\' U F R U R\' U\' F\'', 'F U R U\' R\' F\' U\' f U R U\' R\' f\'', NULL, 'formulas/OLL_Images/OLL_017.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.871964', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (297, 'OLL-18', 'R U\' U\' R2\' F R F\' U2 R\' F R F\'', 'F R\' F\' R U2 F R\' F\' R2\' U U R\'', NULL, 'formulas/OLL_Images/OLL_018.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.896113', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (298, 'OLL-19', 'r\' U2 R U R\' U r', 'r\' U\' R U\' R\' U2 r', NULL, 'formulas/OLL_Images/OLL_019.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.922978', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (299, 'OLL-20', 'r U\' U\' R\' U\' R U\' r\'', 'r U R\' U R U U r\'', NULL, 'formulas/OLL_Images/OLL_020.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.947916', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (300, 'OLL-21', 'r U R\' U R U U r\'', 'r U\' U\' R\' U\' R U\' r\'', NULL, 'formulas/OLL_Images/OLL_021.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.972274', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (301, 'OLL-22', 'r\' U\' R U\' R\' U2 r', 'r\' U2 R U R\' U r', NULL, 'formulas/OLL_Images/OLL_022.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.997822', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (302, 'OLL-23', 'F R U\' R\' U\' R U R\' F\'', 'F R U\' R\' U R U R\' F\'', NULL, 'formulas/OLL_Images/OLL_023.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.022701', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (303, 'OLL-24', 'R U\' U\' R2\' F R F\' R U\' U\' R\'', 'R U U R\' F R\' F\' R2\' U U R\'', NULL, 'formulas/OLL_Images/OLL_024.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.047647', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (304, 'OLL-25', 'R B\' R2 F R2 B R2 F\' R', 'R\' F R2 B\' R2 F\' R2 B R\'', NULL, 'formulas/OLL_Images/OLL_025.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.071970', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (305, 'OLL-26', 'R\' F R2 B\' R2 F\' R2 B R\'', 'R B\' R2 F R2 B R2 F\' R', NULL, 'formulas/OLL_Images/OLL_026.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.096366', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (306, 'OLL-27', 'r\' U2 R U R\' U\' R U R\' U r', 'r\' U\' R U\' R\' U R U\' R\' U2 r', NULL, 'formulas/OLL_Images/OLL_027.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.121666', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (307, 'OLL-28', 'r U R\' U R U\'2 U\' r\'', 'r U U\'2 R\' U\' R U\' r\'', NULL, 'formulas/OLL_Images/OLL_028.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.146607', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (308, 'OLL-29', 'R U R\' U R\' F R F\' U2 R\' F R F\'', 'F R\' F\' R U2 F R\' F\' R U\' R U\' R\'', NULL, 'formulas/OLL_Images/OLL_029.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.171188', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (309, 'OLL-30', 'F R U R\' U y\' R\' U2 R\' F R F\'', 'F R\' F\' R U2 R y U\' R U\' R\' F\'', NULL, 'formulas/OLL_Images/OLL_030.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.197033', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (310, 'OLL-31', 'M下 U R U R\' U\' M上 R\' F R F\'', 'F R\' F\' R M上 U R U\' R\' U\' M下', NULL, 'formulas/OLL_Images/OLL_031.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.222481', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (311, 'OLL-32', 'R U R\' U\' R\' F R2 U R\' U\' F\'', 'F U R U\' R2 F\' R U R U\' R\'', NULL, 'formulas/OLL_Images/OLL_032.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.400894', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (312, 'OLL-33', 'R U R\' U R\' F R F\' R U\' U\' R\'', 'R U U R\' F R\' F\' R U\' R U\' R\'', NULL, 'formulas/OLL_Images/OLL_033.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.425549', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (313, 'OLL-34', 'r U R\' U\' r\' R U R U\' R\'', 'R U R\' U\' R\' r U R U\' r\'', NULL, 'formulas/OLL_Images/OLL_034.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.449391', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (314, 'OLL-35', 'R U R\' U\' r R\' U R U\' r\'', 'r U R\' U\' R r\' U R U\' R\'', NULL, 'formulas/OLL_Images/OLL_035.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.475651', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (315, 'OLL-36', 'R\' U\' R\' F R F\' U R', 'R\' U\' F R\' F\' R U R', NULL, 'formulas/OLL_Images/OLL_036.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.500355', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (316, 'OLL-37', 'R U R\' U\' x D\' R\' U R E\'', 'E R\' U\' R D x\' U R U\' R\'', NULL, 'formulas/OLL_Images/OLL_037.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.525317', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (317, 'OLL-38', 'R U R\' U R U\' R\' U\' R\' F R F\'', 'F R\' F\' R U R U R\' U\' R U\' R\'', NULL, 'formulas/OLL_Images/OLL_038.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.551326', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (318, 'OLL-39', 'R\' U\' R U\' R\' U R U l U\' R\' U', 'U\' R U l\' U\' R\' U\' R U R\' U R', NULL, 'formulas/OLL_Images/OLL_039.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.577062', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (319, 'OLL-40', 'F R U R\' U\' F\' U F R U R\' U\' F\'', 'F U R U\' R\' F\' U\' F U R U\' R\' F\'', NULL, 'formulas/OLL_Images/OLL_040.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.604400', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (320, 'OLL-41', 'r U R\' U R\' F R F\' R U2 r\'', 'r U2 R\' F R\' F\' R U\' R U\' r\'', NULL, 'formulas/OLL_Images/OLL_041.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.628991', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (321, 'OLL-42', 'R U B\' U\' R\' U R B R\'', 'R B\' R\' U\' R U B U\' R\'', NULL, 'formulas/OLL_Images/OLL_042.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.653055', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (322, 'OLL-43', 'R\' U\' F U R U\' R\' F\' R', 'R\' F R U R\' U\' F\' U R', NULL, 'formulas/OLL_Images/OLL_043.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.679334', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (323, 'OLL-44', 'R\' F R U R\' U\' F\' U R', 'R\' U\' F U R U\' R\' F\' R', NULL, 'formulas/OLL_Images/OLL_044.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.706333', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (324, 'OLL-45', 'L F\' L\' U\' L U F U\' L\'', 'L U F\' U\' L\' U L F L\'', NULL, 'formulas/OLL_Images/OLL_045.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.733863', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (325, 'OLL-46', 'R U R\' U R U2 R\' F R U R\' U\' F\'', 'F U R U\' R\' F\' R U2 R\' U\' R U\' R\'', NULL, 'formulas/OLL_Images/OLL_046.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.759797', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (326, 'OLL-47', 'R\' U\' R U\' R\' U2 R F R U R\' U\' F\'', 'F U R U\' R\' F\' R\' U2 R U R\' U R', NULL, 'formulas/OLL_Images/OLL_047.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.783965', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (327, 'OLL-48', 'r\' U2 R U R\' U r R U2 R\' U\' R U\' R\'', 'R U R\' U R U2 R\' r\' U\' R U\' R\' U2 r', NULL, 'formulas/OLL_Images/OLL_048.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.809238', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (328, 'OLL-49', 'r U2 R\' U\' R U\' r\' R\' U2 R U R\' U R', 'R\' U\' R U\' R\' U2 R r U R\' U R U2 r\'', NULL, 'formulas/OLL_Images/OLL_049.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.834973', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (329, 'OLL-50', 'r U r\' R U R\' U\' r U\' r\'', 'r U r\' U R U\' R\' r U\' r\'', NULL, 'formulas/OLL_Images/OLL_050.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.860147', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (330, 'OLL-51', 'l\' U\' l L\' U\' L U l\' U l', 'l\' U\' l U\' L\' U L l\' U l', NULL, 'formulas/OLL_Images/OLL_051.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.885634', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (331, 'OLL-52', 'R\' F R U R\' F\' R y\' R U\' R\'', 'R U R\' y R\' F R U\' R\' F\' R', NULL, 'formulas/OLL_Images/OLL_052.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.910330', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (332, 'OLL-53', 'F U R U\' R2\' F\' R U R U\' R\'', 'R U R\' U\' R\' F R2\' U R\' U\' F\'', NULL, 'formulas/OLL_Images/OLL_053.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.935872', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (333, 'OLL-54', 'R\' U\' R U\' R\' U y\' R\' U R B', 'B\' R\' U\' R y U\' R U R\' U R', NULL, 'formulas/OLL_Images/OLL_054.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.961488', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (334, 'OLL-55', 'r U r\' U R U\' R\'2 r U\' r\'', 'r U r\' R\'2 U R\' U\' r U\' r\'', NULL, 'formulas/OLL_Images/OLL_055.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.986595', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (335, 'OLL-56', 'R\' F U R U\' R2\' F\' R2 U R\' U\' R', 'R\' U R U\' R2 F R2\' U R\' U\' F\' R', NULL, 'formulas/OLL_Images/OLL_056.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:03.012450', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (336, 'OLL-57', 'r\' R U R U R\' U\' r2 R2\' U R U\' r\'', 'r U R\' U\' R2\' r2 U R U\' R\' U\' R\' r', NULL, 'formulas/OLL_Images/OLL_057.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:03.037768', 5, NULL, 2);
-INSERT INTO `formula_formula` VALUES (337, 'PLL-01', 'R U\' R U R U R U\' R\' U\' R2', 'R2 U R U R\' U\' R\' U\' R\' U R\'', NULL, 'formulas/PLL_Images/PLL_001.png', 2, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.063289', 6, NULL, 3);
-INSERT INTO `formula_formula` VALUES (338, 'PLL-02', 'R2\' U R U R\' U\' R\' U\' R\' U R\'', 'R U\' R U R U R U\' R\' U\' R2\'', NULL, 'formulas/PLL_Images/PLL_002.png', 2, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.088700', 6, NULL, 3);
-INSERT INTO `formula_formula` VALUES (339, 'PLL-03', 'M2 U M2 U2 M2 U M2', 'M2 U\' M2 U2 M2 U\' M2', NULL, 'formulas/PLL_Images/PLL_003.png', 2, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.113706', 6, NULL, 3);
-INSERT INTO `formula_formula` VALUES (340, 'PLL-04', 'M2 U M2 U M上 U2 M2 U2 M上 U2', 'U2 M上 U2 M2 U2 M上 U\' M2 U\' M2', NULL, 'formulas/PLL_Images/PLL_004.png', 2, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.137423', 6, NULL, 3);
-INSERT INTO `formula_formula` VALUES (341, 'PLL-05', 'R2 D2 R\' U\' R D2 R\' U R\'', 'R U\' R D2 R\' U R D2 R2', NULL, 'formulas/PLL_Images/PLL_005.png', 2, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.161096', 6, NULL, 3);
-INSERT INTO `formula_formula` VALUES (342, 'PLL-06', 'R U\' R D2 R\' U R D2 R2', 'R2 D2 R\' U\' R D2 R\' U R\'', NULL, 'formulas/PLL_Images/PLL_006.png', 2, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.185743', 6, NULL, 3);
-INSERT INTO `formula_formula` VALUES (343, 'PLL-07', 'R2 U R\' U\' y R U R\' U\'2 R U R\' y\' R U\' R2', 'R2 U R\' y R U\' R\' U\'2 R U\' R\' y\' U R U\' R2', NULL, 'formulas/PLL_Images/PLL_007.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.211944', 6, NULL, 3);
-INSERT INTO `formula_formula` VALUES (344, 'PLL-08', 'R U R\' U\' R\' F R2 U\' R\' U\' R U R\' F\'', 'F R U\' R\' U R U R2 F\' R U R U\' R\'', NULL, 'formulas/PLL_Images/PLL_008.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.236281', 6, NULL, 3);
-INSERT INTO `formula_formula` VALUES (345, 'PLL-09', 'R U R\' F\' R U R\' U\' R\' F R2 U\' R\' U\'', 'U R U R2 F\' R U R U\' R\' F R U\' R\'', NULL, 'formulas/PLL_Images/PLL_009.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.260731', 6, NULL, 3);
-INSERT INTO `formula_formula` VALUES (346, 'PLL-10', 'z U\' R D\' R2 U R\' U\' R2 U D R\'', 'R D\' U\' R2 U R U\' R2 D R\' U z\'', NULL, 'formulas/PLL_Images/PLL_010.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.286508', 6, NULL, 3);
-INSERT INTO `formula_formula` VALUES (347, 'PLL-11', 'F R U\' R\' U\' R U R\' F\' R U R\' U\' R\' F R F\'', 'F R\' F\' R U R U\' R\' F R U\' R\' U R U R\' F\'', NULL, 'formulas/PLL_Images/PLL_011.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.311161', 6, NULL, 3);
-INSERT INTO `formula_formula` VALUES (348, 'PLL-12', 'U\' R\' U R U\' R2\' b\' x R\' U R y\' R U R\' U\' R2', 'R2 U R U\' R\' y R\' U\' R x\' b R2\' U R\' U\' R U', NULL, 'formulas/PLL_Images/PLL_012.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.337153', 6, NULL, 3);
-INSERT INTO `formula_formula` VALUES (349, 'PLL-13', 'R\' U R\' d\' R\' F\' R2 U\' R\' U R\' F R F', 'F\' R\' F\' R U\' R U R2 F R d R U\' R', NULL, 'formulas/PLL_Images/PLL_013.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.362022', 6, NULL, 3);
-INSERT INTO `formula_formula` VALUES (350, 'PLL-14', 'R U\' U\' R\' U2 R B\' R\' U\' R U R B R2\' U', 'U\' R2\' B\' R\' U\' R\' U R B R\' U2 R U U R\'', NULL, 'formulas/PLL_Images/PLL_014.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.387408', 6, NULL, 3);
-INSERT INTO `formula_formula` VALUES (351, 'PLL-15', 'R\' U2 R U\' U\' R\' F R U R\' U\' R\' F\' R2 U\'', 'U R2 F R U R U\' R\' F\' R U U R\' U2 R', NULL, 'formulas/PLL_Images/PLL_015.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.412579', 6, NULL, 3);
-INSERT INTO `formula_formula` VALUES (352, 'PLL-16', 'z R\' U R\' z\' R U2 L\' U R\' z U R\' z\' R U2 L\' U R\'', 'R U\' L U2 R\' z R U\' z\' R U\' L U2 R\' z R U\' R z\'', NULL, 'formulas/PLL_Images/PLL_016.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.435580', 6, NULL, 3);
-INSERT INTO `formula_formula` VALUES (353, 'PLL-17', 'z U\' R D\' R2 U R\' U\' z\' R U R\' z R2 U R\' D R\'', 'R D\' R U\' R2 z\' R U\' R\' z U R U\' R2 D R\' U z\'', NULL, 'formulas/PLL_Images/PLL_017.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.460190', 6, NULL, 3);
-INSERT INTO `formula_formula` VALUES (354, 'PLL-18', 'R2\' u\' R U\' R U R\' u R2\' y R U\' R\'', 'R U R\' y\' R2\' u\' R U\' R\' U R\' u R2\'', NULL, 'formulas/PLL_Images/PLL_018.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.486181', 6, NULL, 3);
-INSERT INTO `formula_formula` VALUES (355, 'PLL-19', 'R U R\' y\' R2\' u\' R U\' R\' U R\' u R2', 'R2 u\' R U\' R U R\' u R2\' y R U\' R\'', NULL, 'formulas/PLL_Images/PLL_019.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.511134', 6, NULL, 3);
-INSERT INTO `formula_formula` VALUES (356, 'PLL-20', 'R2\' u R\' U R\' U\' R u\' R2\' y\' R\' U R', 'R\' U\' R y R2\' u R\' U R U\' R u\' R2\'', NULL, 'formulas/PLL_Images/PLL_020.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.537408', 6, NULL, 3);
-INSERT INTO `formula_formula` VALUES (357, 'PLL-21', 'R\' d\' F R2\' u R\' U R U\' R u\' R2', 'R2 u R\' U R\' U\' R u\' R2\' F\' d R', NULL, 'formulas/PLL_Images/PLL_021.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.561603', 6, NULL, 3);
+INSERT INTO `formula_formula` VALUES (239, 'F2L-01', 'd\' L\' U L', 'L\' U\' L d', NULL, 'formulas/F2L_Images/F2L_001.png', 1, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.457998', 4, NULL, 1, 4);
+INSERT INTO `formula_formula` VALUES (240, 'F2L-02', 'U R U\' R\'', 'R U R\' U\'', NULL, 'formulas/F2L_Images/F2L_002.png', 1, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.490123', 4, NULL, 1, 1);
+INSERT INTO `formula_formula` VALUES (241, 'F2L-03', 'R U R\'', 'R U\' R\'', NULL, 'formulas/F2L_Images/F2L_003.png', 1, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.513833', 4, NULL, 1, 3);
+INSERT INTO `formula_formula` VALUES (242, 'F2L-04', 'y L\' U\' L', 'L\' U L y\'', NULL, 'formulas/F2L_Images/F2L_004.png', 1, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.537867', 4, NULL, 1, 1);
+INSERT INTO `formula_formula` VALUES (243, 'F2L-05', 'U\' R U R\' U R U R\'', 'R U\' R\' U\' R U\' R\' U', NULL, 'formulas/F2L_Images/F2L_005.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.560667', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (244, 'F2L-06', 'U\' R U\' R\' U y\' R\' U\' R', 'R\' U R y U\' R U R\' U', NULL, 'formulas/F2L_Images/F2L_006.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.590151', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (245, 'F2L-07', 'd R\' U\' R U\'2 R\' U R', 'R\' U\' R U\'2 R\' U R d\'', NULL, 'formulas/F2L_Images/F2L_007.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.615940', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (246, 'F2L-08', 'U\' R U R\' U2 R U\' R\'', 'R U R\' U2 R U\' R\' U', NULL, 'formulas/F2L_Images/F2L_008.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.639613', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (247, 'F2L-09', 'd R\' U\'2 R U\'2 R\' U R', 'R\' U\' R U\'2 R\' U\'2 R d\'', NULL, 'formulas/F2L_Images/F2L_009.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.663288', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (248, 'F2L-10', 'U\' R U2 R\' U2 R U\' R\'', 'R U R\' U2 R U2 R\' U', NULL, 'formulas/F2L_Images/F2L_010.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.687714', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (249, 'F2L-11', 'd\' L\' U2 L U\' L\' U L', 'L\' U\' L U L\' U2 L d', NULL, 'formulas/F2L_Images/F2L_011.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.712758', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (250, 'F2L-12', 'U R U\'2 R\' U R U\' R\'', 'R U R\' U\' R U\'2 R\' U\'', NULL, 'formulas/F2L_Images/F2L_012.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.739282', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (251, 'F2L-13', 'U\'2 R U R\' U R U\' R\'', 'R U R\' U\' R U\' R\' U\'2', NULL, 'formulas/F2L_Images/F2L_013.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.764307', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (252, 'F2L-14', 'U2 y L\' U\' L U\' L\' U L', 'L\' U\' L U L\' U L y\' U2', NULL, 'formulas/F2L_Images/F2L_014.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.787948', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (253, 'F2L-15', 'U R U R\' U\'2 R U R\'', 'R U\' R\' U\'2 R U\' R\' U\'', NULL, 'formulas/F2L_Images/F2L_015.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.814302', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (254, 'F2L-16', '(y) R\' D R U\' R\' D\' R', 'R\' D R U R\' D\' R (y)', NULL, 'formulas/F2L_Images/F2L_016.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.838066', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (255, 'F2L-17', 'U y\' R\' U\' R d\' R U R\'', 'R U\' R\' d R\' U R y U\'', NULL, 'formulas/F2L_Images/F2L_017.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.862327', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (256, 'F2L-18', 'U M\' U R U\' M U\' R\'', 'R U M\' U R\' U\' M U\'', NULL, 'formulas/F2L_Images/F2L_018.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.886176', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (257, 'F2L-19', 'U R U\' R\' U R U\' R\' U R U\' R\'', 'R U R\' U\' R U R\' U\' R U R\' U\'', NULL, 'formulas/F2L_Images/F2L_019.png', 3, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.908505', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (258, 'F2L-20', 'U\' R\' F R F\' R U\' R\'', 'R U R\' F R\' F\' R U', NULL, 'formulas/F2L_Images/F2L_020.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.933695', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (259, 'F2L-21', 'd\' L\' U L U L\' U\' L U L\' U\' L', 'L\' U L U\' L\' U L U\' L\' U\' L d', NULL, 'formulas/F2L_Images/F2L_021.png', 3, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.956637', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (260, 'F2L-22', 'd R\' U R U\' R\' U\' R', 'R\' U R U R\' U\' R d\'', NULL, 'formulas/F2L_Images/F2L_022.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.982995', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (261, 'F2L-23', 'U R U\' R\' U\' R U R\' U\' R U R\'', 'R U\' R\' U R U\' R\' U R U R\' U\'', NULL, 'formulas/F2L_Images/F2L_023.png', 3, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.008466', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (262, 'F2L-24', 'U\' R U\' R\' U R U R\'', 'R U\' R\' U\' R U R\' U', NULL, 'formulas/F2L_Images/F2L_024.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.033772', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (263, 'F2L-25', 'R U R\' U\'2 R U\' R\' U R U\' R\'', 'R U R\' U\' R U R\' U\'2 R U\' R\'', NULL, 'formulas/F2L_Images/F2L_025.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.058387', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (264, 'F2L-26', 'U F R\' F\' R2 U\' R\' U2 R U\' R\'', 'R U R\' U2 R U R2 F R F\' U\'', NULL, 'formulas/F2L_Images/F2L_026.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.084672', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (265, 'F2L-27', 'R U R\' U\'2 R U\' R\' U R U R\'', 'R U\' R\' U\' R U R\' U\'2 R U\' R\'', NULL, 'formulas/F2L_Images/F2L_027.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.108187', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (266, 'F2L-28', 'R U R\' U\' R U2 R\' U\' R U R\'', 'R U\' R\' U R U2 R\' U R U\' R\'', NULL, 'formulas/F2L_Images/F2L_028.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.132742', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (267, 'F2L-29', 'R U\' M\' U\' r\' U\'2 r U r\'', 'r U\' r\' U\'2 r U M U R\'', NULL, 'formulas/F2L_Images/F2L_029.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.156001', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (268, 'F2L-30', 'r U\' r\' U\'2 r U M U R\'', 'R U\' M\' U\' r\' U\'2 r U r\'', NULL, 'formulas/F2L_Images/F2L_030.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.179353', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (269, 'F2L-31', 'L D R\' F R F\' R U\' R\' U D\' L\'', 'L D U\' R U R\' F R\' F\' R D\' L\'', NULL, 'formulas/F2L_Images/F2L_031.png', 3, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.204262', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (270, 'F2L-32', 'y\' R\' U R U R\' U R U\' R\' U\' R', 'R\' U R U R\' U\' R U\' R\' U\' R y', NULL, 'formulas/F2L_Images/F2L_032.png', 3, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.227837', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (271, 'F2L-33', 'R U\' R\' U\' R U\' R\' U R U R\'', 'R U\' R\' U\' R U R\' U R U R\'', NULL, 'formulas/F2L_Images/F2L_033.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.252616', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (272, 'F2L-34', 'y\' R\' U\'2 R U R\' U\' R', 'R\' U R U\' R\' U\'2 R y', NULL, 'formulas/F2L_Images/F2L_034.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.278801', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (273, 'F2L-35', 'R U R\' U\'2 R U R\' U\' R U R\'', 'R U\' R\' U R U\' R\' U\'2 R U\' R\'', NULL, 'formulas/F2L_Images/F2L_035.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.302506', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (274, 'F2L-36', 'R U2 R\' U\' R U R\'', 'R U\' R\' U R U2 R\'', NULL, 'formulas/F2L_Images/F2L_036.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.327577', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (275, 'F2L-37', 'F U R U\' R\' F\' R U\' R\'', 'R U R\' F R U R\' U\' F\'', NULL, 'formulas/F2L_Images/F2L_037.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.350824', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (276, 'F2L-38', 'y L\' U L U\' L\' U L', 'L\' U\' L U L\' U\' L y\'', NULL, 'formulas/F2L_Images/F2L_038.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.374128', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (277, 'F2L-39', 'R U R\' U\' R U R\'', 'R U\' R\' U R U\' R\'', NULL, 'formulas/F2L_Images/F2L_039.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.398335', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (278, 'F2L-40', 'R U\' R\' U R U\' R\'', 'R U R\' U\' R U R\'', NULL, 'formulas/F2L_Images/F2L_040.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.422076', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (279, 'F2L-41', 'y L\' U\' L U L\' U\' L', 'L\' U L U\' L\' U L y\'', NULL, 'formulas/F2L_Images/F2L_041.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.445118', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (280, 'OLL-01', 'R\' U2 R U R\' U R', 'R\' U\' R U\' R\' U2 R', NULL, 'formulas/OLL_Images/OLL_001.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.471855', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (281, 'OLL-02', 'R U\' U\' R\' U\' R U\' R\'', 'R U R\' U R U U R\'', NULL, 'formulas/OLL_Images/OLL_002.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.495499', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (282, 'OLL-03', 'r U R\' U\' r\' F R F\'', 'F R\' F\' r U R U\' r\'', NULL, 'formulas/OLL_Images/OLL_003.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.519951', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (283, 'OLL-04', 'F\' r U R\' U\' r\' F R', 'R\' F\' r U R U\' r\' F', NULL, 'formulas/OLL_Images/OLL_004.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.544489', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (284, 'OLL-05', 'R2 D\' R U\' U\' R\' D R U\' U\' R', 'R\' U U R\' D\' R U U R\' D R2', NULL, 'formulas/OLL_Images/OLL_005.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.568181', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (285, 'OLL-06', 'R U U R\' U\' R U R\' U\' R U\' R\'', 'R U R\' U R U\' R\' U R U\' U\' R\'', NULL, 'formulas/OLL_Images/OLL_006.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.594840', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (286, 'OLL-07', 'R U\' U\' R2\' U\' R2 U\' R2\' U2 R', 'R\' U2 R2\' U R2 U R2\' U U R\'', NULL, 'formulas/OLL_Images/OLL_007.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.618263', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (287, 'OLL-08', 'F R U R\' U\' F\'', 'F U R U\' R\' F\'', NULL, 'formulas/OLL_Images/OLL_008.png', 1, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.642901', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (288, 'OLL-09', 'f R U R\' U\' f\'', 'f U R U\' R\' f\'', NULL, 'formulas/OLL_Images/OLL_009.png', 1, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.667501', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (289, 'OLL-10', 'B\' U\' R\' U R B', 'B\' R\' U\' R U B', NULL, 'formulas/OLL_Images/OLL_010.png', 1, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.693348', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (290, 'OLL-11', 'R U R\' U\' R\' F R F\'', 'F R\' F\' R U R U\' R\'', NULL, 'formulas/OLL_Images/OLL_011.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.719952', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (291, 'OLL-12', 'F R U R\' U\'2 F\'', 'F U\'2 R U\' R\' F\'', NULL, 'formulas/OLL_Images/OLL_012.png', 1, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.745035', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (292, 'OLL-13', 'F\' L\' U\' L U2 F', 'F\' U2 L\' U L F', NULL, 'formulas/OLL_Images/OLL_013.png', 1, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.770396', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (293, 'OLL-14', 'f R U R\' U\'2 f\'', 'f U\'2 R U\' R\' f\'', NULL, 'formulas/OLL_Images/OLL_014.png', 1, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.796676', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (294, 'OLL-15', 'F R U R\' U\' F\' f R U R\' U\' f\'', 'f U R U\' R\' f\' F U R U\' R\' F\'', NULL, 'formulas/OLL_Images/OLL_015.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.821571', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (295, 'OLL-16', 'f R U R\' U\' f\' U\' F R U R\' U\' F\'', 'F U R U\' R\' F\' U f U R U\' R\' f\'', NULL, 'formulas/OLL_Images/OLL_016.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.847151', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (296, 'OLL-17', 'f R U R\' U\' f\' U F R U R\' U\' F\'', 'F U R U\' R\' F\' U\' f U R U\' R\' f\'', NULL, 'formulas/OLL_Images/OLL_017.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.871964', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (297, 'OLL-18', 'R U\' U\' R2\' F R F\' U2 R\' F R F\'', 'F R\' F\' R U2 F R\' F\' R2\' U U R\'', NULL, 'formulas/OLL_Images/OLL_018.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.896113', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (298, 'OLL-19', 'r\' U2 R U R\' U r', 'r\' U\' R U\' R\' U2 r', NULL, 'formulas/OLL_Images/OLL_019.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.922978', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (299, 'OLL-20', 'r U\' U\' R\' U\' R U\' r\'', 'r U R\' U R U U r\'', NULL, 'formulas/OLL_Images/OLL_020.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.947916', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (300, 'OLL-21', 'r U R\' U R U U r\'', 'r U\' U\' R\' U\' R U\' r\'', NULL, 'formulas/OLL_Images/OLL_021.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.972274', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (301, 'OLL-22', 'r\' U\' R U\' R\' U2 r', 'r\' U2 R U R\' U r', NULL, 'formulas/OLL_Images/OLL_022.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.997822', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (302, 'OLL-23', 'F R U\' R\' U\' R U R\' F\'', 'F R U\' R\' U R U R\' F\'', NULL, 'formulas/OLL_Images/OLL_023.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.022701', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (303, 'OLL-24', 'R U\' U\' R2\' F R F\' R U\' U\' R\'', 'R U U R\' F R\' F\' R2\' U U R\'', NULL, 'formulas/OLL_Images/OLL_024.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.047647', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (304, 'OLL-25', 'R B\' R2 F R2 B R2 F\' R', 'R\' F R2 B\' R2 F\' R2 B R\'', NULL, 'formulas/OLL_Images/OLL_025.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.071970', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (305, 'OLL-26', 'R\' F R2 B\' R2 F\' R2 B R\'', 'R B\' R2 F R2 B R2 F\' R', NULL, 'formulas/OLL_Images/OLL_026.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.096366', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (306, 'OLL-27', 'r\' U2 R U R\' U\' R U R\' U r', 'r\' U\' R U\' R\' U R U\' R\' U2 r', NULL, 'formulas/OLL_Images/OLL_027.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.121666', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (307, 'OLL-28', 'r U R\' U R U\'2 U\' r\'', 'r U U\'2 R\' U\' R U\' r\'', NULL, 'formulas/OLL_Images/OLL_028.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.146607', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (308, 'OLL-29', 'R U R\' U R\' F R F\' U2 R\' F R F\'', 'F R\' F\' R U2 F R\' F\' R U\' R U\' R\'', NULL, 'formulas/OLL_Images/OLL_029.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.171188', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (309, 'OLL-30', 'F R U R\' U y\' R\' U2 R\' F R F\'', 'F R\' F\' R U2 R y U\' R U\' R\' F\'', NULL, 'formulas/OLL_Images/OLL_030.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.197033', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (310, 'OLL-31', 'M下 U R U R\' U\' M上 R\' F R F\'', 'F R\' F\' R M上 U R U\' R\' U\' M下', NULL, 'formulas/OLL_Images/OLL_031.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.222481', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (311, 'OLL-32', 'R U R\' U\' R\' F R2 U R\' U\' F\'', 'F U R U\' R2 F\' R U R U\' R\'', NULL, 'formulas/OLL_Images/OLL_032.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.400894', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (312, 'OLL-33', 'R U R\' U R\' F R F\' R U\' U\' R\'', 'R U U R\' F R\' F\' R U\' R U\' R\'', NULL, 'formulas/OLL_Images/OLL_033.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.425549', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (313, 'OLL-34', 'r U R\' U\' r\' R U R U\' R\'', 'R U R\' U\' R\' r U R U\' r\'', NULL, 'formulas/OLL_Images/OLL_034.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.449391', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (314, 'OLL-35', 'R U R\' U\' r R\' U R U\' r\'', 'r U R\' U\' R r\' U R U\' R\'', NULL, 'formulas/OLL_Images/OLL_035.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.475651', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (315, 'OLL-36', 'R\' U\' R\' F R F\' U R', 'R\' U\' F R\' F\' R U R', NULL, 'formulas/OLL_Images/OLL_036.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.500355', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (316, 'OLL-37', 'R U R\' U\' x D\' R\' U R E\'', 'E R\' U\' R D x\' U R U\' R\'', NULL, 'formulas/OLL_Images/OLL_037.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.525317', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (317, 'OLL-38', 'R U R\' U R U\' R\' U\' R\' F R F\'', 'F R\' F\' R U R U R\' U\' R U\' R\'', NULL, 'formulas/OLL_Images/OLL_038.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.551326', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (318, 'OLL-39', 'R\' U\' R U\' R\' U R U l U\' R\' U', 'U\' R U l\' U\' R\' U\' R U R\' U R', NULL, 'formulas/OLL_Images/OLL_039.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.577062', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (319, 'OLL-40', 'F R U R\' U\' F\' U F R U R\' U\' F\'', 'F U R U\' R\' F\' U\' F U R U\' R\' F\'', NULL, 'formulas/OLL_Images/OLL_040.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.604400', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (320, 'OLL-41', 'r U R\' U R\' F R F\' R U2 r\'', 'r U2 R\' F R\' F\' R U\' R U\' r\'', NULL, 'formulas/OLL_Images/OLL_041.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.628991', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (321, 'OLL-42', 'R U B\' U\' R\' U R B R\'', 'R B\' R\' U\' R U B U\' R\'', NULL, 'formulas/OLL_Images/OLL_042.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.653055', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (322, 'OLL-43', 'R\' U\' F U R U\' R\' F\' R', 'R\' F R U R\' U\' F\' U R', NULL, 'formulas/OLL_Images/OLL_043.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.679334', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (323, 'OLL-44', 'R\' F R U R\' U\' F\' U R', 'R\' U\' F U R U\' R\' F\' R', NULL, 'formulas/OLL_Images/OLL_044.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.706333', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (324, 'OLL-45', 'L F\' L\' U\' L U F U\' L\'', 'L U F\' U\' L\' U L F L\'', NULL, 'formulas/OLL_Images/OLL_045.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.733863', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (325, 'OLL-46', 'R U R\' U R U2 R\' F R U R\' U\' F\'', 'F U R U\' R\' F\' R U2 R\' U\' R U\' R\'', NULL, 'formulas/OLL_Images/OLL_046.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.759797', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (326, 'OLL-47', 'R\' U\' R U\' R\' U2 R F R U R\' U\' F\'', 'F U R U\' R\' F\' R\' U2 R U R\' U R', NULL, 'formulas/OLL_Images/OLL_047.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.783965', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (327, 'OLL-48', 'r\' U2 R U R\' U r R U2 R\' U\' R U\' R\'', 'R U R\' U R U2 R\' r\' U\' R U\' R\' U2 r', NULL, 'formulas/OLL_Images/OLL_048.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.809238', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (328, 'OLL-49', 'r U2 R\' U\' R U\' r\' R\' U2 R U R\' U R', 'R\' U\' R U\' R\' U2 R r U R\' U R U2 r\'', NULL, 'formulas/OLL_Images/OLL_049.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.834973', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (329, 'OLL-50', 'r U r\' R U R\' U\' r U\' r\'', 'r U r\' U R U\' R\' r U\' r\'', NULL, 'formulas/OLL_Images/OLL_050.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.860147', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (330, 'OLL-51', 'l\' U\' l L\' U\' L U l\' U l', 'l\' U\' l U\' L\' U L l\' U l', NULL, 'formulas/OLL_Images/OLL_051.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.885634', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (331, 'OLL-52', 'R\' F R U R\' F\' R y\' R U\' R\'', 'R U R\' y R\' F R U\' R\' F\' R', NULL, 'formulas/OLL_Images/OLL_052.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.910330', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (332, 'OLL-53', 'F U R U\' R2\' F\' R U R U\' R\'', 'R U R\' U\' R\' F R2\' U R\' U\' F\'', NULL, 'formulas/OLL_Images/OLL_053.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.935872', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (333, 'OLL-54', 'R\' U\' R U\' R\' U y\' R\' U R B', 'B\' R\' U\' R y U\' R U R\' U R', NULL, 'formulas/OLL_Images/OLL_054.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.961488', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (334, 'OLL-55', 'r U r\' U R U\' R\'2 r U\' r\'', 'r U r\' R\'2 U R\' U\' r U\' r\'', NULL, 'formulas/OLL_Images/OLL_055.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:02.986595', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (335, 'OLL-56', 'R\' F U R U\' R2\' F\' R2 U R\' U\' R', 'R\' U R U\' R2 F R2\' U R\' U\' F\' R', NULL, 'formulas/OLL_Images/OLL_056.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:03.012450', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (336, 'OLL-57', 'r\' R U R U R\' U\' r2 R2\' U R U\' r\'', 'r U R\' U\' R2\' r2 U R U\' R\' U\' R\' r', NULL, 'formulas/OLL_Images/OLL_057.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:03.037768', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (337, 'PLL-01', 'R U\' R U R U R U\' R\' U\' R2', 'R2 U R U R\' U\' R\' U\' R\' U R\'', NULL, 'formulas/PLL_Images/PLL_001.png', 2, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.063289', 6, NULL, 3, 0);
+INSERT INTO `formula_formula` VALUES (338, 'PLL-02', 'R2\' U R U R\' U\' R\' U\' R\' U R\'', 'R U\' R U R U R U\' R\' U\' R2\'', NULL, 'formulas/PLL_Images/PLL_002.png', 2, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.088700', 6, NULL, 3, 0);
+INSERT INTO `formula_formula` VALUES (339, 'PLL-03', 'M2 U M2 U2 M2 U M2', 'M2 U\' M2 U2 M2 U\' M2', NULL, 'formulas/PLL_Images/PLL_003.png', 2, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.113706', 6, NULL, 3, 0);
+INSERT INTO `formula_formula` VALUES (340, 'PLL-04', 'M2 U M2 U M上 U2 M2 U2 M上 U2', 'U2 M上 U2 M2 U2 M上 U\' M2 U\' M2', NULL, 'formulas/PLL_Images/PLL_004.png', 2, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.137423', 6, NULL, 3, 0);
+INSERT INTO `formula_formula` VALUES (341, 'PLL-05', 'R2 D2 R\' U\' R D2 R\' U R\'', 'R U\' R D2 R\' U R D2 R2', NULL, 'formulas/PLL_Images/PLL_005.png', 2, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.161096', 6, NULL, 3, 0);
+INSERT INTO `formula_formula` VALUES (342, 'PLL-06', 'R U\' R D2 R\' U R D2 R2', 'R2 D2 R\' U\' R D2 R\' U R\'', NULL, 'formulas/PLL_Images/PLL_006.png', 2, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.185743', 6, NULL, 3, 0);
+INSERT INTO `formula_formula` VALUES (343, 'PLL-07', 'R2 U R\' U\' y R U R\' U\'2 R U R\' y\' R U\' R2', 'R2 U R\' y R U\' R\' U\'2 R U\' R\' y\' U R U\' R2', NULL, 'formulas/PLL_Images/PLL_007.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.211944', 6, NULL, 3, 0);
+INSERT INTO `formula_formula` VALUES (344, 'PLL-08', 'R U R\' U\' R\' F R2 U\' R\' U\' R U R\' F\'', 'F R U\' R\' U R U R2 F\' R U R U\' R\'', NULL, 'formulas/PLL_Images/PLL_008.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.236281', 6, NULL, 3, 0);
+INSERT INTO `formula_formula` VALUES (345, 'PLL-09', 'R U R\' F\' R U R\' U\' R\' F R2 U\' R\' U\'', 'U R U R2 F\' R U R U\' R\' F R U\' R\'', NULL, 'formulas/PLL_Images/PLL_009.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.260731', 6, NULL, 3, 0);
+INSERT INTO `formula_formula` VALUES (346, 'PLL-10', 'z U\' R D\' R2 U R\' U\' R2 U D R\'', 'R D\' U\' R2 U R U\' R2 D R\' U z\'', NULL, 'formulas/PLL_Images/PLL_010.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.286508', 6, NULL, 3, 0);
+INSERT INTO `formula_formula` VALUES (347, 'PLL-11', 'F R U\' R\' U\' R U R\' F\' R U R\' U\' R\' F R F\'', 'F R\' F\' R U R U\' R\' F R U\' R\' U R U R\' F\'', NULL, 'formulas/PLL_Images/PLL_011.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.311161', 6, NULL, 3, 0);
+INSERT INTO `formula_formula` VALUES (348, 'PLL-12', 'U\' R\' U R U\' R2\' b\' x R\' U R y\' R U R\' U\' R2', 'R2 U R U\' R\' y R\' U\' R x\' b R2\' U R\' U\' R U', NULL, 'formulas/PLL_Images/PLL_012.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.337153', 6, NULL, 3, 0);
+INSERT INTO `formula_formula` VALUES (349, 'PLL-13', 'R\' U R\' d\' R\' F\' R2 U\' R\' U R\' F R F', 'F\' R\' F\' R U\' R U R2 F R d R U\' R', NULL, 'formulas/PLL_Images/PLL_013.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.362022', 6, NULL, 3, 0);
+INSERT INTO `formula_formula` VALUES (350, 'PLL-14', 'R U\' U\' R\' U2 R B\' R\' U\' R U R B R2\' U', 'U\' R2\' B\' R\' U\' R\' U R B R\' U2 R U U R\'', NULL, 'formulas/PLL_Images/PLL_014.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.387408', 6, NULL, 3, 0);
+INSERT INTO `formula_formula` VALUES (351, 'PLL-15', 'R\' U2 R U\' U\' R\' F R U R\' U\' R\' F\' R2 U\'', 'U R2 F R U R U\' R\' F\' R U U R\' U2 R', NULL, 'formulas/PLL_Images/PLL_015.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.412579', 6, NULL, 3, 0);
+INSERT INTO `formula_formula` VALUES (352, 'PLL-16', 'z R\' U R\' z\' R U2 L\' U R\' z U R\' z\' R U2 L\' U R\'', 'R U\' L U2 R\' z R U\' z\' R U\' L U2 R\' z R U\' R z\'', NULL, 'formulas/PLL_Images/PLL_016.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.435580', 6, NULL, 3, 0);
+INSERT INTO `formula_formula` VALUES (353, 'PLL-17', 'z U\' R D\' R2 U R\' U\' z\' R U R\' z R2 U R\' D R\'', 'R D\' R U\' R2 z\' R U\' R\' z U R U\' R2 D R\' U z\'', NULL, 'formulas/PLL_Images/PLL_017.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.460190', 6, NULL, 3, 0);
+INSERT INTO `formula_formula` VALUES (354, 'PLL-18', 'R2\' u\' R U\' R U R\' u R2\' y R U\' R\'', 'R U R\' y\' R2\' u\' R U\' R\' U R\' u R2\'', NULL, 'formulas/PLL_Images/PLL_018.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.486181', 6, NULL, 3, 0);
+INSERT INTO `formula_formula` VALUES (355, 'PLL-19', 'R U R\' y\' R2\' u\' R U\' R\' U R\' u R2', 'R2 u\' R U\' R U R\' u R2\' y R U\' R\'', NULL, 'formulas/PLL_Images/PLL_019.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.511134', 6, NULL, 3, 0);
+INSERT INTO `formula_formula` VALUES (356, 'PLL-20', 'R2\' u R\' U R\' U\' R u\' R2\' y\' R\' U R', 'R\' U\' R y R2\' u R\' U R U\' R u\' R2\'', NULL, 'formulas/PLL_Images/PLL_020.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.537408', 6, NULL, 3, 0);
+INSERT INTO `formula_formula` VALUES (357, 'PLL-21', 'R\' d\' F R2\' u R\' U R U\' R u\' R2', 'R2 u R\' U R\' U\' R u\' R2\' F\' d R', NULL, 'formulas/PLL_Images/PLL_021.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.561603', 6, NULL, 3, 0);
 
 -- ----------------------------
 -- Table structure for formula_formula_collection
@@ -617,12 +625,20 @@ CREATE TABLE `formula_formula_collection`  (
   INDEX `formula_formula_coll_formula_id_81ad47ba_fk_formula_f`(`formula_id` ASC) USING BTREE,
   CONSTRAINT `formula_formula_coll_formula_id_81ad47ba_fk_formula_f` FOREIGN KEY (`formula_id`) REFERENCES `formula_formula` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `formula_formula_collection_user_id_0acb4f8b_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of formula_formula_collection
 -- ----------------------------
 INSERT INTO `formula_formula_collection` VALUES (1, '2026-07-08 13:56:42.438514', 239, 1);
+INSERT INTO `formula_formula_collection` VALUES (3, '2026-07-19 19:19:44.505921', 337, 10);
+INSERT INTO `formula_formula_collection` VALUES (4, '2026-07-19 19:19:45.873494', 338, 10);
+INSERT INTO `formula_formula_collection` VALUES (5, '2026-07-19 19:19:47.114288', 339, 10);
+INSERT INTO `formula_formula_collection` VALUES (6, '2026-07-19 19:19:47.914235', 340, 10);
+INSERT INTO `formula_formula_collection` VALUES (7, '2026-07-19 19:19:50.986141', 280, 10);
+INSERT INTO `formula_formula_collection` VALUES (8, '2026-07-19 19:19:51.870941', 281, 10);
+INSERT INTO `formula_formula_collection` VALUES (9, '2026-07-19 19:19:52.917981', 283, 10);
+INSERT INTO `formula_formula_collection` VALUES (10, '2026-07-19 19:19:53.676831', 282, 10);
 
 -- ----------------------------
 -- Table structure for formula_formula_tag
@@ -964,7 +980,7 @@ CREATE TABLE `forum_comment_like`  (
   INDEX `forum_comment_like_user_id_d8a40fcd_fk_accounts_user_id`(`user_id` ASC) USING BTREE,
   CONSTRAINT `forum_comment_like_comment_id_b7b768e7_fk_forum_comment_id` FOREIGN KEY (`comment_id`) REFERENCES `forum_comment` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `forum_comment_like_user_id_d8a40fcd_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 42 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 43 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of forum_comment_like
@@ -1009,11 +1025,11 @@ CREATE TABLE `forum_post`  (
 -- ----------------------------
 -- Records of forum_post
 -- ----------------------------
-INSERT INTO `forum_post` VALUES (1, '【新手必看】三阶魔方零基础入门教程', '# 三阶魔方零基础入门教程\n\n## 前言\n魔方并不难，只要掌握了方法，任何人都可以学会还原三阶魔方。\n\n## 第一步：底层十字\n在底面拼出一个白色十字，且棱块侧面颜色与中心块对齐。\n\n## 第二步：底层角块\n完成白色面，同时底层四周颜色对齐。\n\n## 第三步：中层棱块\n还原第二层（中间层）的四个棱块。\n\n## 第四步：顶层十字\n在顶层拼出黄色十字。\n\n## 第五步：顶层面位\n将顶层全部变成黄色。\n\n## 第六步：顶层角块归位\n调整顶层角块位置。\n\n## 第七步：顶层棱块归位\n最后一步，完成整个魔方！\n\n祝大家早日学会魔方！🎉', '', 0, 0, 1, 0, 1, 1, 0, 'published', 0, '2026-06-05 09:55:10.802878', '2026-06-05 09:55:10.802918', 11);
-INSERT INTO `forum_post` VALUES (2, 'CFOP速拧教程 - F2L理解法', '# CFOP进阶教程：F2L理解法\n\n## 什么是F2L？\nF2L（First Two Layers）是CFOP速拧法的第二步，指同时还原前两层。\n\n## 核心思想\nF2L的本质是把一对\"角块+棱块\"组合起来放入正确的位置。\n\n## 常用F2L公式\n\n| 情况 | 公式 |\n|------|------|\n| 角棱相连 | `U R U\' R\'` |\n| 角棱分离 | `R U R\'` |\n| 角棱背面 | `R U2 R\' U R U R\'` |\n\n## 练习技巧\n1. 慢速练习，理解原理\n2. 找规律，观察相对位置\n3. 预判下一组\n\nF2L熟练后，成绩可轻松进入30秒！💪', '', 49, 1, 10, 1, 0, 1, 0, 'published', 0, '2026-06-05 09:55:10.823840', '2026-06-05 09:55:10.823875', 11);
+INSERT INTO `forum_post` VALUES (1, '【新手必看】三阶魔方零基础入门教程', '# 三阶魔方零基础入门教程\n\n## 前言\n魔方并不难，只要掌握了方法，任何人都可以学会还原三阶魔方。\n\n## 第一步：底层十字\n在底面拼出一个白色十字，且棱块侧面颜色与中心块对齐。\n\n## 第二步：底层角块\n完成白色面，同时底层四周颜色对齐。\n\n## 第三步：中层棱块\n还原第二层（中间层）的四个棱块。\n\n## 第四步：顶层十字\n在顶层拼出黄色十字。\n\n## 第五步：顶层面位\n将顶层全部变成黄色。\n\n## 第六步：顶层角块归位\n调整顶层角块位置。\n\n## 第七步：顶层棱块归位\n最后一步，完成整个魔方！\n\n祝大家早日学会魔方！🎉', '', 1, 1, 1, 0, 1, 1, 0, 'published', 0, '2026-06-05 09:55:10.802878', '2026-06-05 09:55:10.802918', 11);
+INSERT INTO `forum_post` VALUES (2, 'CFOP速拧教程 - F2L理解法', '# CFOP进阶教程：F2L理解法\n\n## 什么是F2L？\nF2L（First Two Layers）是CFOP速拧法的第二步，指同时还原前两层。\n\n## 核心思想\nF2L的本质是把一对\"角块+棱块\"组合起来放入正确的位置。\n\n## 常用F2L公式\n\n| 情况 | 公式 |\n|------|------|\n| 角棱相连 | `U R U\' R\'` |\n| 角棱分离 | `R U R\'` |\n| 角棱背面 | `R U2 R\' U R U R\'` |\n\n## 练习技巧\n1. 慢速练习，理解原理\n2. 找规律，观察相对位置\n3. 预判下一组\n\nF2L熟练后，成绩可轻松进入30秒！💪', '', 50, 2, 10, 1, 0, 1, 0, 'published', 0, '2026-06-05 09:55:10.823840', '2026-06-05 09:55:10.823875', 11);
 INSERT INTO `forum_post` VALUES (3, '魔方公式记忆技巧分享', '# 魔方公式记忆技巧\n\n## 肌肉记忆法\n不要死记硬背公式字母，而是通过反复练习形成肌肉记忆。\n\n## 分段记忆\n将长公式分成几个小段，逐段练习后连接。\n\n## 镜像对称\n很多公式是左右对称的，记住一个就能推导出另一个。\n\n## 故事联想\n为公式中的转动编一个故事，帮助记忆。\n\n## 每天10分钟\n坚持每天练习，比一次性练很久效果更好。\n\n大家有什么好的记忆方法？欢迎分享！', '', 12, 1, 3, 1, 0, 0, 0, 'published', 0, '2026-06-05 09:55:10.841141', '2026-06-05 09:55:10.841164', 11);
-INSERT INTO `forum_post` VALUES (4, '三阶魔方CFOP教程新标题', '这是教程内容，使用Markdown格式\r\n![bh01](http://127.0.0.1:8000/media/forum/posts/2026/07/bh01.png)', '', 24, 1, 1, 0, 0, 0, 0, 'published', 0, '2026-06-05 09:56:27.071163', '2026-07-19 15:29:33.899742', 10);
-INSERT INTO `forum_post` VALUES (5, '发布新帖子', '# 魔方\r\n## 标题二\r\n### 标题三\r\n```\r\n公式如下\r\npython\r\n```', '', 25, 0, 0, 0, 0, 0, 0, 'published', 0, '2026-06-12 10:08:08.741039', '2026-06-12 10:52:53.080432', 10);
+INSERT INTO `forum_post` VALUES (4, '三阶魔方CFOP教程新标题', '这是教程内容，使用Markdown格式\r\n![bh01](http://127.0.0.1:8000/media/forum/posts/2026/07/bh01.png)', '', 26, 2, 1, 0, 0, 0, 0, 'published', 0, '2026-06-05 09:56:27.071163', '2026-07-19 15:29:33.899742', 10);
+INSERT INTO `forum_post` VALUES (5, '发布新帖子', '# 魔方\r\n## 标题二\r\n### 标题三\r\n```\r\n公式如下\r\npython\r\n```', '', 27, 1, 0, 0, 0, 0, 0, 'published', 0, '2026-06-12 10:08:08.741039', '2026-06-12 10:52:53.080432', 10);
 INSERT INTO `forum_post` VALUES (6, '再发一篇新帖子（修改）', '# CFOP 速拧学习方法\r\n\r\n## 什么是 CFOP？\r\n\r\nCFOP 是目前最主流的魔方速拧解法，由四个步骤组成：\r\n\r\n1. **C（Cross）**——底面十字\r\n2. **F（F2L）**——前两层\r\n3. **O（OLL）**——顶面朝向\r\n4. **P（PLL）**——顶层排列\r\n\r\n## 学习顺序建议\r\n\r\n| 阶段 | 内容                                 | 目标时间 |\r\n| ---- | ------------------------------------ | -------- |\r\n| 入门 | C + 4个基本公式                      | 60秒     |\r\n| 进阶 | F2L理解法 + 7个十字OLL + 4个PLL      | 30秒     |\r\n| 熟练 | F2L 41种情况 + 全部OLL(57) + PLL(21) | 15秒内   |\r\n\r\n## 实用技巧\r\n\r\n- **C**：八步内完成十字，学会盲拧预判\r\n- **F2L**：先理解“藏角藏棱”原理，不建议死记公式\r\n- **OLL**：先学十字后的7条，其他慢慢补充\r\n- **PLL**：优先学三棱换、三角换、邻角对棱换等高频公式\r\n\r\n## 资源推荐\r\n\r\n- 网站：`algdb.net` 公式库\r\n- 视频：J Perm 教学频道\r\n- App：Cube Station 计时练习\r\n\r\n> 每天练习20分钟，两个月基本可以进30秒。公式不是越多越好，**指法流畅**比记全更重要。', '', 4, 0, 0, 0, 0, 0, 0, 'deleted', 0, '2026-06-12 10:25:11.426914', '2026-06-12 10:47:10.140862', 10);
 INSERT INTO `forum_post` VALUES (7, '返回格式测试', '这是教程内容，使用Markdown格式...', '', 1, 0, 0, 0, 0, 0, 0, 'deleted', 0, '2026-06-12 10:28:11.697133', '2026-06-12 10:28:11.697157', 10);
 INSERT INTO `forum_post` VALUES (8, '再发一篇新帖子2修改', '# CFOP 速拧学习方法\r\n\r\n## 什么是 CFOP？\r\n\r\nCFOP 是目前最主流的魔方速拧解法，由四个步骤组成：\r\n\r\n1. **C（Cross）**——底面十字\r\n2. **F（F2L）**——前两层\r\n3. **O（OLL）**——顶面朝向\r\n4. **P（PLL）**——顶层排列\r\n\r\n## 学习顺序建议\r\n\r\n| 阶段 | 内容                                 | 目标时间 |\r\n| ---- | ------------------------------------ | -------- |\r\n| 入门 | C + 4个基本公式                      | 60秒     |\r\n| 进阶 | F2L理解法 + 7个十字OLL + 4个PLL      | 30秒     |\r\n| 熟练 | F2L 41种情况 + 全部OLL(57) + PLL(21) | 15秒内   |\r\n\r\n## 实用技巧\r\n\r\n- **C**：八步内完成十字，学会盲拧预判\r\n- **F2L**：先理解“藏角藏棱”原理，不建议死记公式\r\n- **OLL**：先学十字后的7条，其他慢慢补充\r\n- **PLL**：优先学三棱换、三角换、邻角对棱换等高频公式\r\n\r\n## 资源推荐\r\n\r\n- 网站：`algdb.net` 公式库\r\n- 视频：J Perm 教学频道\r\n- App：Cube Station 计时练习\r\n\r\n> 每天练习20分钟，两个月基本可以进30秒。公式不是越多越好，**指法流畅**比记全更重要。', '', 5, 0, 0, 0, 0, 0, 0, 'deleted', 0, '2026-06-12 10:33:13.469010', '2026-06-12 10:34:08.659699', 10);
@@ -1076,7 +1092,7 @@ CREATE TABLE `forum_post_like`  (
   INDEX `forum_post_like_user_id_8bb1cc47_fk_accounts_user_id`(`user_id` ASC) USING BTREE,
   CONSTRAINT `forum_post_like_post_id_d9d17230_fk_forum_post_id` FOREIGN KEY (`post_id`) REFERENCES `forum_post` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `forum_post_like_user_id_8bb1cc47_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 15 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of forum_post_like
@@ -1084,6 +1100,10 @@ CREATE TABLE `forum_post_like`  (
 INSERT INTO `forum_post_like` VALUES (8, '2026-06-12 08:17:06.543084', 2, 10);
 INSERT INTO `forum_post_like` VALUES (9, '2026-06-21 10:59:23.514748', 3, 10);
 INSERT INTO `forum_post_like` VALUES (10, '2026-07-19 15:31:22.531791', 4, 10);
+INSERT INTO `forum_post_like` VALUES (11, '2026-07-19 23:28:46.715352', 2, 1);
+INSERT INTO `forum_post_like` VALUES (12, '2026-07-19 23:28:52.110702', 5, 1);
+INSERT INTO `forum_post_like` VALUES (13, '2026-07-19 23:28:56.340475', 4, 1);
+INSERT INTO `forum_post_like` VALUES (14, '2026-07-20 00:17:43.252321', 1, 1);
 
 -- ----------------------------
 -- Table structure for forum_post_tags
@@ -1194,22 +1214,22 @@ CREATE TABLE `home_navigationmenu`  (
   `match_paths` json NOT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `index`(`index` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 23 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of home_navigationmenu
 -- ----------------------------
-INSERT INTO `home_navigationmenu` VALUES (1, '1', '首页', '/', 'main', 10, '[\"/home\"]');
-INSERT INTO `home_navigationmenu` VALUES (2, '2', '教程', '/tutorials', 'main', 20, '[\"/tutorials\"]');
-INSERT INTO `home_navigationmenu` VALUES (3, '3', '公式库', '/formulas', 'main', 30, '[\"/formulas\"]');
-INSERT INTO `home_navigationmenu` VALUES (4, '4', '计时器', '/timer', 'main', 40, '[\"/timer\"]');
-INSERT INTO `home_navigationmenu` VALUES (5, '5', '交流论坛', '/forum', 'main', 50, '[\"/forum\"]');
-INSERT INTO `home_navigationmenu` VALUES (6, '6', '魔方商店', '/shop', 'main', 60, '[\"/shop\"]');
-INSERT INTO `home_navigationmenu` VALUES (7, 'p-1', '返回首页', '/', 'profile', 10, '[]');
-INSERT INTO `home_navigationmenu` VALUES (8, 'p-2', '个人信息', '/profiles/info', 'profile', 20, '[\"/profiles/info\"]');
-INSERT INTO `home_navigationmenu` VALUES (9, 'p-3', '公式收藏', '/profiles/collections', 'profile', 30, '[\"/profiles/collections\"]');
-INSERT INTO `home_navigationmenu` VALUES (10, 'p-4', '我的数据', '/profiles/datas', 'profile', 40, '[\"/profiles/datas\"]');
-INSERT INTO `home_navigationmenu` VALUES (11, 'p-5', '我的帖子', '/profiles/posts', 'profile', 50, '[\"/profiles/posts\"]');
+INSERT INTO `home_navigationmenu` VALUES (12, '1', '首页', '/', 'main', 10, '[\"/home\"]');
+INSERT INTO `home_navigationmenu` VALUES (13, '2', '教程', '/tutorials', 'main', 20, '[\"/tutorials\"]');
+INSERT INTO `home_navigationmenu` VALUES (14, '3', '公式库', '/formulas', 'main', 30, '[\"/formulas\"]');
+INSERT INTO `home_navigationmenu` VALUES (15, '4', '计时器', '/timer', 'main', 40, '[\"/timer\"]');
+INSERT INTO `home_navigationmenu` VALUES (16, '5', '交流论坛', '/forum', 'main', 50, '[\"/forum\"]');
+INSERT INTO `home_navigationmenu` VALUES (17, '6', '魔方商店', '/shop', 'main', 60, '[\"/shop\"]');
+INSERT INTO `home_navigationmenu` VALUES (18, 'p-1', '返回首页', '/', 'profile', 10, '[]');
+INSERT INTO `home_navigationmenu` VALUES (19, 'p-2', '个人信息', '/profiles/info', 'profile', 20, '[\"/profiles/info\"]');
+INSERT INTO `home_navigationmenu` VALUES (20, 'p-3', '公式收藏', '/profiles/collections', 'profile', 30, '[\"/profiles/collections\"]');
+INSERT INTO `home_navigationmenu` VALUES (21, 'p-4', '我的数据', '/profiles/data', 'profile', 40, '[\"/profiles/data\"]');
+INSERT INTO `home_navigationmenu` VALUES (22, 'p-5', '我的帖子', '/profiles/posts', 'profile', 50, '[\"/profiles/posts\"]');
 
 -- ----------------------------
 -- Table structure for shop_cart
@@ -1350,5 +1370,28 @@ INSERT INTO `shop_product_category` VALUES (3, '五阶及以上', '', 3, '', '20
 INSERT INTO `shop_product_category` VALUES (4, '异形魔方', '', 4, '', '2026-07-08 15:23:43.486117', NULL);
 INSERT INTO `shop_product_category` VALUES (5, '魔方配件', '', 5, '', '2026-07-08 15:23:43.493028', NULL);
 INSERT INTO `shop_product_category` VALUES (6, '比赛专用', '', 6, '', '2026-07-08 15:23:43.500671', NULL);
+
+-- ----------------------------
+-- Table structure for timer_record
+-- ----------------------------
+DROP TABLE IF EXISTS `timer_record`;
+CREATE TABLE `timer_record`  (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `cube_type` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `method` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `time_ms` int NOT NULL,
+  `scramble` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `user_id` bigint NOT NULL,
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `timer_record_user_id_eedfa320_fk_accounts_user_id`(`user_id` ASC) USING BTREE,
+  CONSTRAINT `timer_record_user_id_eedfa320_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of timer_record
+-- ----------------------------
+INSERT INTO `timer_record` VALUES (1, '3x3', 'layer', 6781, 'U\' L\' U2 R2 L2 F U\' D2 B\' U2 R\' U2 D\' F\' U\' R U2 D\' U\' D R', '2026-07-19 19:16:21.537969', 10);
+INSERT INTO `timer_record` VALUES (3, '3x3', 'cfop', 19541, 'U\' F2 L2 D B\' U\' B R\' B D\' L D2 L\' B2 L\' U\' F\' R\' F\' D2 R\'', '2026-07-19 20:04:39.390944', 1);
 
 SET FOREIGN_KEY_CHECKS = 1;
