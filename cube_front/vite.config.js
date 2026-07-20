@@ -32,12 +32,27 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     proxy: {
-      // 匹配所有以 /api 开头的请求
       '/api': {
-        target: 'http://127.0.0.1:8000', // 后端真实地址
-        changeOrigin: true,             // 允许跨域
-        // 如果后端接口本身不带 /api 前缀，则需要重写路径
-        // rewrite: (path) => path.replace(/^\/api/, '')
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/media': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      }
+    }
+  },
+  preview: {
+    host: '0.0.0.0',
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/media': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
       }
     }
   }
