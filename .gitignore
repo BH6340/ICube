@@ -91,7 +91,6 @@ nginx/ssl/*.key
 # ==========================
 
 # 媒体文件和静态文件（本地开发）
-media/
 collected_static/
 
 # Docker 数据卷（本地）
