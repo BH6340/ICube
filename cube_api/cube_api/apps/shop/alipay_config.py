@@ -166,7 +166,7 @@ def generate_alipay_url(order_no, total_amount, subject, return_url=None):
         return None
 
     if ALIPAY_CONFIG['debug']:
-        gateway = 'https://openapi-sandbox.dl.alipaydev.com/gateway.do'
+        gateway = 'http://openapi-sandbox.dl.alipaydev.com/gateway.do'
     else:
         gateway = 'https://openapi.alipay.com/gateway.do'
 
