@@ -27,3 +27,4 @@ components.d.ts
 cube_api/media/
 files/
 .trae/
+init_data.sql
