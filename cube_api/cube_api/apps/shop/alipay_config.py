@@ -220,4 +220,12 @@ def verify_alipay_notify(data):
     if not alipay:
         return False
 
-    return alipay.verify(data)
+    # DRF QueryDict 的 value 是列表，转换为普通字符串字典
+    data_dict = {k: v[0] if isinstance(v, list) else v for k, v in data.items()}
+    sign = data_dict.pop('sign', None)
+    sign_type = data_dict.pop('sign_type', 'RSA2')
+
+    if not sign:
+        return False
+
+    return alipay.verify(data_dict, sign)
