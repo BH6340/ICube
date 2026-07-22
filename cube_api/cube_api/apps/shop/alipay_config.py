@@ -210,7 +210,7 @@ def generate_alipay_qr_code(order_no, total_amount, subject):
             logger.error(f"QR码生成失败 - 订单 {order_no}: 支付宝返回 {result}")
             return None
     except Exception as e:
-        logger.error(f"QR码生成异常 - 订单 {order_no}: {str(e)}")
+        logger.error(f"QR码生成异常 - 订单 {order_no}: type={type(e).__name__}, msg={e}, args={e.args}")
         return None
 
 
