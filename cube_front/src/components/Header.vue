@@ -50,7 +50,8 @@
 <script setup>
 import {ref, watch, nextTick, onMounted} from 'vue'
 import {useUserStore} from '@/stores/user'
-import {useMenuStore} from '@/stores/menu' // 💡 引入菜单仓库
+import {useMenuStore} from '@/stores/menu'
+import {useCartRefresh} from '@/stores/cart'
 import {useRouter, useRoute} from 'vue-router'
 import {ElMessage} from 'element-plus'
 import {ArrowDown, ShoppingCart} from '@element-plus/icons-vue'
@@ -60,6 +61,7 @@ import {getCart} from "@/api/shop.js"
 
 const userStore = useUserStore()
 const menuStore = useMenuStore()
+const { cartVersion } = useCartRefresh()
 const router = useRouter()
 const route = useRoute()
 
@@ -134,6 +136,11 @@ onMounted(async () => {
   // 2. 拉取完成后立刻校准高亮
   updateNavigation(route.path)
   // 3. 加载购物车数量
+  loadCartCount()
+})
+
+// 监听购物车变化，自动刷新数量
+watch(cartVersion, () => {
   loadCartCount()
 })
 

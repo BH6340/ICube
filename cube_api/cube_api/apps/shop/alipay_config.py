@@ -10,7 +10,7 @@ ALIPAY_CONFIG = {
     'app_private_key_path': os.path.join(BASE_DIR, 'keys', 'app_private_key.pem'),
     'alipay_public_key_path': os.path.join(BASE_DIR, 'keys', 'alipay_public_key.pem'),
     'notify_url': f"http://{os.getenv('SERVER_HOST', 'localhost')}/api/shop/orders/notify/",
-    'return_url': f"http://{os.getenv('SERVER_HOST', 'localhost')}/shop/pay/callback",
+    'return_url_prefix': f"http://{os.getenv('SERVER_HOST', 'localhost')}/shop/pay",
     'debug': True,
 }
 
@@ -174,7 +174,7 @@ def generate_alipay_url(order_no, total_amount, subject, return_url=None):
         out_trade_no=order_no,
         total_amount=str(total_amount),
         subject=subject,
-        return_url=return_url or ALIPAY_CONFIG['return_url'],
+        return_url=return_url or f"{ALIPAY_CONFIG['return_url_prefix']}/{order_no}",
         notify_url=ALIPAY_CONFIG['notify_url'],
     )
 

@@ -64,8 +64,10 @@ import { ElMessage } from 'element-plus'
 import { ShoppingBag } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { getCart, updateCart, deleteCartItem } from '@/api/shop'
+import { useCartRefresh } from '@/stores/cart'
 
 const router = useRouter()
+const { bumpCartVersion } = useCartRefresh()
 const cartList = ref([])
 const selectedCartIds = ref([])
 
@@ -99,6 +101,7 @@ const formatSpec = (spec) => {
 const handleQuantityChange = async (item) => {
   try {
     await updateCart(item.id, { quantity: item.quantity })
+    bumpCartVersion()
   } catch (error) {
     ElMessage.error('更新数量失败')
   }
@@ -109,6 +112,7 @@ const handleDelete = async (item) => {
     await deleteCartItem(item.id)
     cartList.value = cartList.value.filter(c => c.id !== item.id)
     selectedCartIds.value = selectedCartIds.value.filter(id => id !== item.id)
+    bumpCartVersion()
     ElMessage.success('删除成功')
   } catch (error) {
     ElMessage.error('删除失败')

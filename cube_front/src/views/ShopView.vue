@@ -162,8 +162,10 @@ import { ElMessage } from 'element-plus'
 import { ShoppingBag, ShoppingCart } from '@element-plus/icons-vue'
 import { getCategories, getProducts, getProductDetail, addToCart } from '@/api/shop'
 import { useUserStore } from '@/stores/user'
+import { useCartRefresh } from '@/stores/cart'
 
 const userStore = useUserStore()
+const { bumpCartVersion } = useCartRefresh()
 
 const categoryTree = ref([])
 const productList = ref([])
@@ -253,6 +255,7 @@ const handleAddToCart = async (product) => {
     const res = await addToCart(data)
     if (res.code === 100) {
       ElMessage.success('添加购物车成功')
+      bumpCartVersion()
       showDetailDialog.value = false
       loadProducts()
     }

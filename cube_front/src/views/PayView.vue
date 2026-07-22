@@ -65,9 +65,9 @@
 
 
             <div v-if="payUrl" class="pay-redirect">
-              <p class="redirect-tip">支付页面已在新窗口打开，完成支付后自动刷新</p>
-              <el-button type="primary" size="large" @click="() => window.open(payUrl, '_blank')">
-                重新打开支付页面
+              <p class="redirect-tip">即将跳转到支付宝支付，支付完成后自动返回</p>
+              <el-button type="primary" size="large" @click="goToPayPage">
+                前往支付宝支付
               </el-button>
             </div>
 
@@ -135,6 +135,12 @@ const getStatusText = (status) => {
 
 const goToOrders = () => {
   router.push('/profiles/orders')
+}
+
+const goToPayPage = () => {
+  if (payUrl.value) {
+    window.location.href = payUrl.value
+  }
 }
 
 const drawQRCode = (text) => {
@@ -210,8 +216,7 @@ const handlePay = async () => {
       // 优先：网页支付跳转
       if (res.data.pay_url) {
         payUrl.value = res.data.pay_url
-        window.open(res.data.pay_url, '_blank')
-        startPolling()
+        window.location.href = res.data.pay_url
         return
       }
 

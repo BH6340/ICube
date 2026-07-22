@@ -100,6 +100,11 @@ const router = createRouter({
                     meta: { requiresAuth: true }
                 },
                 {
+                    path: 'shop/pay/callback', // 支付宝同步回调降级
+                    name: 'shopPayCallback',
+                    component: () => import('@/views/PayCallbackView.vue')
+                },
+                {
                     path: 'shop/pay/:orderNo', // 匹配 /shop/pay/xxx
                     name: 'shopPay',
                     component: () => import('@/views/PayView.vue'),
