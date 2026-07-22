@@ -222,10 +222,11 @@ def verify_alipay_notify(data):
 
     # DRF QueryDict 的 value 是列表，转换为普通字符串字典
     data_dict = {k: v[0] if isinstance(v, list) else v for k, v in data.items()}
-    sign = data_dict.pop('sign', None)
-    sign_type = data_dict.pop('sign_type', 'RSA2')
-
+    sign = data_dict.get('sign', '')
     if not sign:
         return False
 
-    return alipay.verify(data_dict, sign)
+    # SDK 内部会自己去掉 sign 和 sign_type，传完整 data 即可
+    result = alipay.verify(data_dict, sign)
+    logger.info(f"签名验证结果: {result}")
+    return result
