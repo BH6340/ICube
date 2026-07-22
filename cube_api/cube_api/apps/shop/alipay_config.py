@@ -1,6 +1,8 @@
 from alipay import AliPay
 import os
 
+from loguru import logger
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 ALIPAY_CONFIG = {
@@ -176,7 +178,14 @@ def generate_alipay_url(order_no, total_amount, subject, return_url=None):
         notify_url=ALIPAY_CONFIG['notify_url'],
     )
 
-    return f'{gateway}?{order_string}'
+    # python-alipay-sdk 3.x 某些版本返回完整 URL，某些版本只返回参数字符串，统一处理
+    if order_string.startswith('http'):
+        pay_url = order_string
+    else:
+        pay_url = f'{gateway}?{order_string}'
+
+    logger.info(f"生成支付宝支付链接 - 订单 {order_no}, URL: {pay_url[:100]}...")
+    return pay_url
 
 
 def generate_alipay_qr_code(order_no, total_amount, subject):
