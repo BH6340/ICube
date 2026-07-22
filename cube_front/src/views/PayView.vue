@@ -82,6 +82,7 @@
             <p class="polling-hint">
               <el-icon><Loading /></el-icon>
               等待支付结果...
+              <el-button size="small" text type="primary" @click="checkOrderStatus">手动刷新状态</el-button>
             </p>
           </div>
 
@@ -135,6 +136,24 @@ const getStatusText = (status) => {
 
 const goToOrders = () => {
   router.push('/profiles/orders')
+}
+
+const checkOrderStatus = async () => {
+  if (!order.value) return
+  try {
+    const res = await getOrderDetail(order.value.order_no)
+    if (res.code === 100) {
+      order.value = res.data
+      if (order.value.status === 'paid') {
+        stopPolling()
+        ElMessage.success('支付成功')
+      } else if (order.value.status === 'pending') {
+        ElMessage.info('订单仍在等待付款，请确认已支付')
+      }
+    }
+  } catch (error) {
+    ElMessage.error('刷新失败')
+  }
 }
 
 const goToPayPage = () => {
@@ -240,7 +259,20 @@ const loadOrder = async () => {
     const res = await getOrderDetail(orderNo)
     if (res.code === 100) {
       order.value = res.data
-      if (order.value.status === 'pending') {
+
+      // 已支付/已取消 → 直接展示结果，无需继续
+      if (order.value.status === 'paid' || order.value.status === 'cancelled') {
+        return
+      }
+
+      const fromAlipay = !!route.query.out_trade_no
+
+      if (fromAlipay) {
+        // 支付宝回调回来的：不重复请求支付，直接轮询等待异步通知更新状态
+        ElMessage.info('支付完成，等待确认...')
+        startPolling()
+      } else {
+        // 首次进入支付页：发起支付
         handlePay()
       }
     }
