@@ -184,7 +184,7 @@ def generate_alipay_url(order_no, total_amount, subject, return_url=None):
     else:
         pay_url = f'{gateway}?{order_string}'
 
-    logger.info(f"生成支付宝支付链接 - 订单 {order_no}\n  gateway: {gateway}\n  notify_url: {ALIPAY_CONFIG['notify_url']}\n  return_url: {ALIPAY_CONFIG['return_url']}\n  full_url: {pay_url}")
+    logger.info(f"生成支付宝支付链接 - 订单 {order_no}\n  gateway: {gateway}\n  notify_url: {ALIPAY_CONFIG['notify_url']}\n  full_url: {pay_url}")
     return pay_url
 
 
