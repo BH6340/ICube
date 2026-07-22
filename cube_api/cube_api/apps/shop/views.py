@@ -198,16 +198,8 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         subject = f'魔方商城订单-{order.order_no}'
 
-        # 优先尝试网页支付（PC 端跳转）
-        pay_url = generate_alipay_url(order.order_no, order.total_amount, subject)
-        if pay_url:
-            return APIResponse(data={
-                'order': OrderSerializer(order).data,
-                'pay_url': pay_url,
-                'qr_code': None,
-            }, msg='获取支付链接成功')
-
-        # 降级：尝试生成扫码支付
+        # 网页支付支付宝沙箱有 Mixed Content 问题（CDN HTTP/HTTPS 混用）
+        # 沙箱环境改用扫码支付（返回 QR 码 URL，不受浏览器安全策略影响）
         qr_code = generate_alipay_qr_code(order.order_no, order.total_amount, subject)
         if qr_code:
             return APIResponse(data={
@@ -215,6 +207,15 @@ class OrderViewSet(viewsets.ModelViewSet):
                 'pay_url': None,
                 'qr_code': qr_code,
             }, msg='获取支付二维码成功')
+
+        # 降级：网页支付
+        pay_url = generate_alipay_url(order.order_no, order.total_amount, subject)
+        if pay_url:
+            return APIResponse(data={
+                'order': OrderSerializer(order).data,
+                'pay_url': pay_url,
+                'qr_code': None,
+            }, msg='获取支付链接成功')
 
         # 支付宝配置失败
         logger.warning(f"支付宝支付失败 - 订单 {order.order_no}: SDK 初始化异常, return_url 或 notify_url 不可用")
