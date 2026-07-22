@@ -65,9 +65,9 @@
 
 
             <div v-if="payUrl" class="pay-redirect">
-              <p class="redirect-tip">即将跳转到支付宝支付，支付完成后自动返回</p>
-              <el-button type="primary" size="large" @click="goToPayPage">
-                前往支付宝支付
+              <p class="redirect-tip">扫码支付最稳定，也可点击按钮在新窗口支付</p>
+              <el-button type="default" @click="goToPayPage">
+                在浏览器中打开支付页面
               </el-button>
             </div>
 
@@ -139,7 +139,7 @@ const goToOrders = () => {
 
 const goToPayPage = () => {
   if (payUrl.value) {
-    window.location.href = payUrl.value
+    window.open(payUrl.value, '_blank')
   }
 }
 
@@ -212,20 +212,13 @@ const handlePay = async () => {
     const res = await payOrder(order.value.id)
     if (res.code === 100) {
       order.value = res.data.order
-
-      // 优先：网页支付跳转
-      if (res.data.pay_url) {
-        payUrl.value = res.data.pay_url
-        window.location.href = res.data.pay_url
-        return
-      }
-
-      // 降级：扫码支付
+      payUrl.value = res.data.pay_url
       qrCodeUrl.value = res.data.qr_code
-      if (res.data.qr_code) {
-        ElMessage.success('请使用支付宝扫码支付')
+
+      if (res.data.pay_url || res.data.qr_code) {
+        ElMessage.success('请扫描二维码或点击按钮支付')
         nextTick(() => {
-          drawQRCode(res.data.qr_code)
+          if (res.data.qr_code) drawQRCode(res.data.qr_code)
         })
         startPolling()
       } else {

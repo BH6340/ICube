@@ -211,6 +211,7 @@ def generate_alipay_qr_code(order_no, total_amount, subject):
             return None
     except Exception as e:
         logger.error(f"QR码生成异常 - 订单 {order_no}: type={type(e).__name__}, msg={e}, args={e.args}")
+        logger.error(f"  异常详情: dir={[a for a in dir(e) if not a.startswith('_')]}")
         return None
 
 
