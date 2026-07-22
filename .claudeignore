@@ -26,3 +26,4 @@ package-lock.json
 components.d.ts
 cube_api/media/
 files/
+.trae/
