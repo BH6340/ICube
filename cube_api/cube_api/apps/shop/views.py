@@ -1,5 +1,6 @@
 from rest_framework import viewsets, status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from django.db import transaction
 from django.db.models import F
@@ -9,8 +10,9 @@ from .serializers import (
     ProductCategorySerializer, ProductListSerializer, ProductDetailSerializer,
     CartSerializer, CartCreateSerializer, OrderSerializer, OrderCreateSerializer
 )
-from .alipay_config import generate_alipay_qr_code, verify_alipay_notify
+from .alipay_config import generate_alipay_qr_code, generate_alipay_url, verify_alipay_notify
 from utils.common_response import APIResponse
+from loguru import logger
 
 
 class ProductCategoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -195,15 +197,28 @@ class OrderViewSet(viewsets.ModelViewSet):
             return APIResponse(code=400, msg='订单状态不正确')
 
         subject = f'魔方商城订单-{order.order_no}'
-        qr_code = generate_alipay_qr_code(order.order_no, order.total_amount, subject)
 
+        # 优先尝试网页支付（PC 端跳转）
+        pay_url = generate_alipay_url(order.order_no, order.total_amount, subject)
+        if pay_url:
+            return APIResponse(data={
+                'order': OrderSerializer(order).data,
+                'pay_url': pay_url,
+                'qr_code': None,
+            }, msg='获取支付链接成功')
+
+        # 降级：尝试生成扫码支付
+        qr_code = generate_alipay_qr_code(order.order_no, order.total_amount, subject)
         if qr_code:
-            return APIResponse(data={'order': OrderSerializer(order).data, 'qr_code': qr_code}, msg='获取支付二维码成功')
-        else:
-            order.status = 'paid'
-            order.paid_at = timezone.now()
-            order.save()
-            return APIResponse(data={'order': OrderSerializer(order).data, 'qr_code': None}, msg='支付宝配置未完成，已模拟支付成功')
+            return APIResponse(data={
+                'order': OrderSerializer(order).data,
+                'pay_url': None,
+                'qr_code': qr_code,
+            }, msg='获取支付二维码成功')
+
+        # 支付宝配置失败
+        logger.warning(f"支付宝支付失败 - 订单 {order.order_no}: SDK 初始化异常, return_url 或 notify_url 不可用")
+        return APIResponse(code=503, msg='支付宝支付接口配置异常，请稍后重试')
 
     def cancel(self, request, pk=None):
         order = self.get_object()
@@ -220,6 +235,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         return APIResponse(data=OrderSerializer(order).data, msg='取消成功')
 
+    @transaction.atomic
     def complete(self, request, pk=None):
         order = self.get_object()
         if order.status != 'shipped':
@@ -231,21 +247,27 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         return APIResponse(data=OrderSerializer(order).data, msg='确认收货成功')
 
-    def notify(self, request):
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='notify')
+    def alipay_notify(self, request):
+        """支付宝异步回调 - 无需登录认证"""
         data = request.data
         if not verify_alipay_notify(data):
+            logger.warning(f"支付宝回调签名验证失败: {data.get('out_trade_no', 'unknown')}")
             return Response('fail')
 
         order_no = data.get('out_trade_no')
         trade_status = data.get('trade_status')
+        logger.info(f"支付宝回调 - 订单 {order_no}, 状态 {trade_status}")
 
         try:
-            order = Order.objects.get(order_no=order_no)
-            if trade_status == 'TRADE_SUCCESS' or trade_status == 'TRADE_FINISHED':
+            order = Order.objects.select_for_update().get(order_no=order_no)
+            if trade_status in ('TRADE_SUCCESS', 'TRADE_FINISHED'):
                 if order.status == 'pending':
                     order.status = 'paid'
                     order.paid_at = timezone.now()
                     order.save()
+                    logger.info(f"订单 {order_no} 已标记为已支付")
             return Response('success')
         except Order.DoesNotExist:
+            logger.error(f"支付宝回调 - 订单 {order_no} 不存在")
             return Response('fail')

@@ -13,5 +13,4 @@ urlpatterns = [
     path('orders/<int:pk>/pay/', OrderViewSet.as_view({'put': 'pay'}), name='order-pay'),
     path('orders/<int:pk>/cancel/', OrderViewSet.as_view({'put': 'cancel'}), name='order-cancel'),
     path('orders/<int:pk>/complete/', OrderViewSet.as_view({'put': 'complete'}), name='order-complete'),
-    path('orders/notify/', OrderViewSet.as_view({'post': 'notify'}), name='order-notify'),
 ]

@@ -60,24 +60,42 @@
             </el-radio>
           </div>
 
-          <div v-if="qrCodeUrl" class="qr-code-section">
-            <div class="qr-code">
-              <canvas ref="qrCanvas"></canvas>
+          <div v-if="payUrl || qrCodeUrl" class="payment-section">
+            <!-- 网页支付 -->
+
+
+            <div v-if="payUrl" class="pay-redirect">
+              <p class="redirect-tip">支付页面已在新窗口打开，完成支付后自动刷新</p>
+              <el-button type="primary" size="large" @click="() => window.open(payUrl, '_blank')">
+                重新打开支付页面
+              </el-button>
             </div>
-            <p class="qr-tip">使用支付宝扫码支付</p>
+
+            <!-- 扫码支付 -->
+            <div v-if="qrCodeUrl" class="qr-code-section">
+              <div class="qr-code">
+                <canvas ref="qrCanvas"></canvas>
+              </div>
+              <p class="qr-tip">使用支付宝扫码支付</p>
+            </div>
+
+            <p class="polling-hint">
+              <el-icon><Loading /></el-icon>
+              等待支付结果...
+            </p>
           </div>
 
           <div v-else class="no-alipay">
             <el-alert
-              title="支付宝沙箱环境未配置"
-              description="当前使用模拟支付，点击下方按钮完成支付"
-              type="info"
+              title="支付接口异常"
+              description="支付宝支付接口暂时不可用，请稍后重试"
+              type="error"
               show-icon
             />
           </div>
 
           <div class="pay-actions">
-            <el-button type="primary" size="large" :loading="payLoading" @click="handlePay">
+            <el-button type="primary" size="large" :loading="payLoading" @click="handlePay" :disabled="!!(payUrl || qrCodeUrl)">
               {{ payLoading ? '支付中...' : '立即支付' }}
             </el-button>
           </div>
@@ -98,6 +116,7 @@ const route = useRoute()
 const router = useRouter()
 const order = ref(null)
 const qrCodeUrl = ref(null)
+const payUrl = ref(null)
 const payLoading = ref(false)
 const selectedMethod = ref('alipay')
 const pollingTimer = ref(null)
@@ -120,59 +139,32 @@ const goToOrders = () => {
 
 const drawQRCode = (text) => {
   if (!qrCanvas.value || !text) return
-  
+
   const canvas = qrCanvas.value
   const ctx = canvas.getContext('2d')
   const size = 200
   canvas.width = size
   canvas.height = size
-  
-  ctx.fillStyle = '#ffffff'
-  ctx.fillRect(0, 0, size, size)
-  
-  const moduleSize = Math.floor(size / 25)
-  const padding = moduleSize * 4
-  
-  const data = text
-  let mask = ''
-  for (let i = 0; i < data.length; i++) {
-    mask += data.charCodeAt(i).toString(2).padStart(8, '0')
+
+  // 使用 qrserver API 生成真实 QR 码图片
+  const img = new Image()
+  img.crossOrigin = 'anonymous'
+  img.onload = () => {
+    ctx.clearRect(0, 0, size, size)
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, size, size)
+    ctx.drawImage(img, 0, 0, size, size)
   }
-  
-  for (let y = 0; y < 25; y++) {
-    for (let x = 0; x < 25; x++) {
-      const isMasked = (x + y) % 2 === 0
-      const idx = y * 25 + x
-      const bit = idx < mask.length ? parseInt(mask[idx % mask.length]) : 0
-      const pixel = isMasked ? (bit ^ 1) : bit
-      
-      if ((x < 9 && y < 9) || (x > 15 && y < 9) || (x < 9 && y > 15)) {
-        const patternX = x < 9 ? x : x - 17
-        const patternY = y < 9 ? y : y - 17
-        const inPattern = patternX < 7 && patternY < 7 && 
-                         !(patternX >= 2 && patternX <= 4 && patternY >= 2 && patternY <= 4)
-        if (inPattern) {
-          ctx.fillStyle = '#000000'
-          ctx.fillRect(x * moduleSize + padding, y * moduleSize + padding, moduleSize, moduleSize)
-          continue
-        }
-      }
-      
-      ctx.fillStyle = pixel ? '#000000' : '#ffffff'
-      ctx.fillRect(x * moduleSize + padding, y * moduleSize + padding, moduleSize, moduleSize)
-    }
+  img.onerror = () => {
+    ctx.fillStyle = '#f0f0f0'
+    ctx.fillRect(0, 0, size, size)
+    ctx.fillStyle = '#999'
+    ctx.font = '14px Arial'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText('二维码加载失败', size / 2, size / 2)
   }
-  
-  const center = size / 2
-  const logoSize = moduleSize * 6
-  ctx.fillStyle = '#ffffff'
-  ctx.fillRect(center - logoSize / 2, center - logoSize / 2, logoSize, logoSize)
-  
-  ctx.fillStyle = '#1677ff'
-  ctx.font = `${moduleSize * 2}px Arial`
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.fillText('支', center, center)
+  img.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(text)}`
 }
 
 const startPolling = () => {
@@ -214,20 +206,29 @@ const handlePay = async () => {
     const res = await payOrder(order.value.id)
     if (res.code === 100) {
       order.value = res.data.order
+
+      // 优先：网页支付跳转
+      if (res.data.pay_url) {
+        payUrl.value = res.data.pay_url
+        window.open(res.data.pay_url, '_blank')
+        startPolling()
+        return
+      }
+
+      // 降级：扫码支付
       qrCodeUrl.value = res.data.qr_code
-      
-      if (!res.data.qr_code) {
-        ElMessage.success('支付成功')
-      } else {
+      if (res.data.qr_code) {
         ElMessage.success('请使用支付宝扫码支付')
         nextTick(() => {
           drawQRCode(res.data.qr_code)
         })
         startPolling()
+      } else {
+        ElMessage.error('支付接口暂时不可用')
       }
     }
   } catch (error) {
-    ElMessage.error('支付失败')
+    ElMessage.error('支付失败，请稍后重试')
   } finally {
     payLoading.value = false
   }
@@ -389,6 +390,34 @@ onUnmounted(() => {
   margin: 12px 0 0;
   color: #909399;
   font-size: 14px;
+}
+
+.payment-section {
+  text-align: center;
+}
+
+.pay-redirect {
+  padding: 20px;
+  background: #f0f5ff;
+  border: 1px dashed #1677ff;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.redirect-tip {
+  color: #1677ff;
+  font-size: 14px;
+  margin: 0 0 16px;
+}
+
+.polling-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #909399;
+  font-size: 14px;
+  margin: 16px 0 0;
 }
 
 .no-alipay {
