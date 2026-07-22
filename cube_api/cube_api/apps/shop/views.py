@@ -243,13 +243,21 @@ class OrderViewSet(viewsets.ModelViewSet):
     def alipay_notify(self, request):
         """支付宝异步回调 - 无需登录认证"""
         data = request.data
-        if not verify_alipay_notify(data):
+        logger.info(f"支付宝回调原始数据: {dict(data)}")
+
+        try:
+            verified = verify_alipay_notify(data)
+        except Exception as e:
+            logger.error(f"支付宝回调签名验证异常: {e}")
+            return Response('fail')
+
+        if not verified:
             logger.warning(f"支付宝回调签名验证失败: {data.get('out_trade_no', 'unknown')}")
             return Response('fail')
 
         order_no = data.get('out_trade_no')
         trade_status = data.get('trade_status')
-        logger.info(f"支付宝回调 - 订单 {order_no}, 状态 {trade_status}")
+        logger.info(f"支付宝回调验证通过 - 订单 {order_no}, 状态 {trade_status}")
 
         try:
             order = Order.objects.select_for_update().get(order_no=order_no)
