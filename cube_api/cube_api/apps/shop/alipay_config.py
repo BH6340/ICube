@@ -191,6 +191,7 @@ def generate_alipay_url(order_no, total_amount, subject, return_url=None):
 def generate_alipay_qr_code(order_no, total_amount, subject):
     alipay = get_alipay_client()
     if not alipay:
+        logger.warning(f"QR码生成失败 - 订单 {order_no}: get_alipay_client() 返回 None (检查密钥文件)")
         return None
 
     try:
@@ -202,12 +203,14 @@ def generate_alipay_qr_code(order_no, total_amount, subject):
         )
 
         if result.get('code') == '10000':
-            return result.get('qr_code')
+            qr_code = result.get('qr_code')
+            logger.info(f"QR码生成成功 - 订单 {order_no}")
+            return qr_code
         else:
-            print(f"支付宝API返回错误: {result}")
+            logger.error(f"QR码生成失败 - 订单 {order_no}: 支付宝返回 {result}")
             return None
     except Exception as e:
-        print(f"支付宝API调用异常: {str(e)}")
+        logger.error(f"QR码生成异常 - 订单 {order_no}: {str(e)}")
         return None
 
 

@@ -28,4 +28,4 @@ COPY . .
 EXPOSE 8000
 
 # 4. 启动命令
-CMD ["gunicorn", "cube_api.wsgi:application", "--env", "DJANGO_SETTINGS_MODULE=cube_api.settings.prod", "--bind", "0.0.0.0:8000", "--workers", "3"]
+CMD ["gunicorn", "cube_api.wsgi:application", "--env", "DJANGO_SETTINGS_MODULE=cube_api.settings.prod", "--bind", "0.0.0.0:8000", "--workers", "3", "--reload"]
