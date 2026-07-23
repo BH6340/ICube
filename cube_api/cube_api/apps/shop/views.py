@@ -198,20 +198,19 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         subject = f'魔方商城订单-{order.order_no}'
 
-        # 生成网页支付 URL（已验证签名可用），同时作为二维码源
-        # 沙箱环境存在 Mixed Content 问题，优先扫码支付绕过浏览器限制
+        # 生成网页支付 URL
         pay_url = generate_alipay_url(order.order_no, order.total_amount, subject)
         if pay_url:
             return APIResponse(data={
                 'order': OrderSerializer(order).data,
                 'pay_url': pay_url,
-                'qr_code': pay_url,  # page_pay URL 扫码同样可用
-            }, msg='请扫码或跳转支付')
+            }, msg='获取支付链接成功')
 
         # 支付宝配置失败
         logger.warning(f"支付宝支付失败 - 订单 {order.order_no}: SDK 初始化异常, return_url 或 notify_url 不可用")
         return APIResponse(code=503, msg='支付宝支付接口配置异常，请稍后重试')
 
+    @transaction.atomic
     def cancel(self, request, pk=None):
         order = self.get_object()
         if order.status not in ['pending', 'paid']:
@@ -240,23 +239,24 @@ class OrderViewSet(viewsets.ModelViewSet):
         return APIResponse(data=OrderSerializer(order).data, msg='确认收货成功')
 
     @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='notify')
+    @transaction.atomic
     def alipay_notify(self, request):
         """支付宝异步回调 - 无需登录认证"""
-        data = request.data
-        logger.info(f"支付宝回调原始数据: {dict(data)}")
+        raw_data = {k: v[0] if isinstance(v, list) else v for k, v in request.data.items()}
+        logger.info(f"支付宝回调原始数据: {raw_data}")
 
         try:
-            verified = verify_alipay_notify(data)
+            verified = verify_alipay_notify(request.data)
         except Exception as e:
             logger.error(f"支付宝回调签名验证异常: {e}")
             return Response('fail')
 
         if not verified:
-            logger.warning(f"支付宝回调签名验证失败: {data.get('out_trade_no', 'unknown')}")
+            logger.warning(f"支付宝回调签名验证失败: {raw_data.get('out_trade_no', 'unknown')}")
             return Response('fail')
 
-        order_no = data.get('out_trade_no')
-        trade_status = data.get('trade_status')
+        order_no = raw_data.get('out_trade_no')
+        trade_status = raw_data.get('trade_status')
         logger.info(f"支付宝回调验证通过 - 订单 {order_no}, 状态 {trade_status}")
 
         try:
