@@ -95,13 +95,35 @@
 </template>
 
 <script setup>
+/**
+ * MarkdownEditor.vue - Markdown 编辑器组件
+ * 
+ * 核心职责：
+ * 1. 提供 Markdown 语法编辑功能（工具栏快捷插入）
+ * 2. 实时预览 Markdown 渲染效果
+ * 3. 支持代码高亮（highlight.js）
+ * 4. 支持图片上传并自动插入 Markdown 格式
+ * 5. 支持 .md 文件导入
+ * 6. 编辑/预览模式切换
+ * 
+ * 技术栈：
+ * - marked：Markdown 解析库
+ * - highlight.js：代码高亮库
+ * 
+ * 设计要点：
+ * - 使用 v-model 双向绑定实现数据同步
+ * - 工具栏按钮通过 insertMarkdown 函数插入语法标记
+ * - 图片上传成功后自动生成 ![alt](url) 格式
+ * - 上下布局：编辑区在上，预览区在下
+ */
+
 import { ref, computed, watch, nextTick } from 'vue'
 import { Upload, View, Picture } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { marked } from 'marked'
-import hljs from 'highlight.js'
-import 'highlight.js/styles/github.css'
-import { uploadImage } from '@/api/posts'
+import { marked } from 'marked'           // Markdown 解析库
+import hljs from 'highlight.js'           // 代码高亮库
+import 'highlight.js/styles/github.css'   // GitHub 风格代码高亮样式
+import { uploadImage } from '@/api/posts' // 图片上传 API
 
 const props = defineProps({
   modelValue: {

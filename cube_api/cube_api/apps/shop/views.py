@@ -1,3 +1,21 @@
+# -*- coding: utf-8 -*-
+"""
+商城模块视图集
+
+该模块处理商品、购物车、订单的完整业务逻辑，包括：
+    - 商品分类与搜索
+    - 购物车增删改查
+    - 订单创建与状态流转
+    - 支付宝支付集成
+    - 库存管理与并发控制
+
+设计特点：
+    - **事务原子性**：订单创建、库存扣减、购物车删除使用 @transaction.atomic 保证一致性
+    - **库存并发控制**：使用 F 表达式避免并发超卖问题
+    - **订单状态流转**：pending → paid → shipped → completed / cancelled
+    - **幂等性保证**：支付宝回调使用 select_for_update 防止重复处理
+"""
+
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -16,6 +34,15 @@ from loguru import logger
 
 
 class ProductCategoryViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    商品分类视图集
+
+    提供商品分类的树形结构查询，仅支持只读操作。
+
+    设计要点：
+        - **树形结构查询**：只查询顶级分类（parent__isnull=True），子分类通过 SerializerMethodField 递归获取
+        - **无分页**：分类数据量较小，直接返回全部
+    """
     queryset = ProductCategory.objects.filter(parent__isnull=True)
     serializer_class = ProductCategorySerializer
     pagination_class = None
@@ -27,10 +54,30 @@ class ProductCategoryViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class ProductViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    商品视图集
+
+    提供商品列表和详情查询，支持分类过滤、价格区间、关键词搜索和排序。
+
+    设计要点：
+        - **双重序列化器**：列表页使用轻量的 ProductListSerializer，详情页使用完整的 ProductDetailSerializer
+        - **分类递归查询**：查询子分类商品时，同时包含父分类和子分类的商品
+        - **多条件过滤**：支持分类、价格区间、关键词搜索和排序
+    """
     queryset = Product.objects.filter(is_on_sale=True)
     serializer_class = ProductListSerializer
 
     def get_queryset(self):
+        """
+        获取商品查询集，支持多条件过滤
+
+        过滤参数：
+            - category: 分类 ID（包含子分类）
+            - price_min: 最低价格
+            - price_max: 最高价格
+            - keyword: 商品名称关键词
+            - sort: 排序字段（默认 -created_at）
+        """
         queryset = super().get_queryset()
         category = self.request.query_params.get('category')
         if category:
@@ -55,20 +102,39 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         return queryset
 
     def retrieve(self, request, *args, **kwargs):
+        """获取商品详情，使用完整序列化器"""
         instance = self.get_object()
         serializer = ProductDetailSerializer(instance)
         return APIResponse(data=serializer.data)
 
 
 class CartViewSet(viewsets.ModelViewSet):
+    """
+    购物车视图集
+
+    处理用户购物车的增删改查操作，仅登录用户可访问。
+
+    设计要点：
+        - **购物车合并逻辑**：相同商品相同规格合并数量，使用 F 表达式原子更新
+        - **权限控制**：用户只能访问自己的购物车
+        - **数量边界处理**：数量 <= 0 时自动删除，数量 > 库存时拒绝更新
+    """
     queryset = Cart.objects.all()
     serializer_class = CartSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        """过滤当前用户的购物车"""
         return super().get_queryset().filter(user=self.request.user)
 
     def create(self, request, *args, **kwargs):
+        """
+        添加商品到购物车
+
+        合并逻辑：
+            1. 如果购物车已存在相同商品且规格相同，数量累加（使用 F 表达式）
+            2. 如果不存在或规格不同，创建新的购物车记录
+        """
         serializer = CartCreateSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
 
@@ -96,6 +162,13 @@ class CartViewSet(viewsets.ModelViewSet):
         return APIResponse(data=CartSerializer(cart).data, msg='添加成功')
 
     def update(self, request, *args, **kwargs):
+        """
+        更新购物车数量
+
+        特殊处理：
+            - 数量 <= 0：删除购物车记录
+            - 数量 > 库存：拒绝更新，返回错误
+        """
         instance = self.get_object()
         quantity = request.data.get('quantity')
         if quantity is not None:
@@ -109,17 +182,35 @@ class CartViewSet(viewsets.ModelViewSet):
         return APIResponse(data=CartSerializer(instance).data)
 
     def destroy(self, request, *args, **kwargs):
+        """删除购物车记录"""
         instance = self.get_object()
         instance.delete()
         return APIResponse(msg='删除成功')
 
 
 class OrderViewSet(viewsets.ModelViewSet):
+    """
+    订单视图集
+
+    处理订单的完整生命周期，包括创建、支付、取消、完成和支付宝回调。
+
+    订单状态流转：
+        pending（待付款）→ paid（已付款）→ shipped（已发货）→ completed（已完成）
+                          ↘ cancelled（已取消）
+                          ↗ cancelled（已取消）← paid
+
+    自定义动作：
+        - pay: 获取支付链接
+        - cancel: 取消订单（库存回滚）
+        - complete: 确认收货
+        - alipay_notify: 支付宝异步回调（无需认证）
+    """
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        """过滤当前用户的订单，支持状态筛选"""
         queryset = super().get_queryset().filter(user=self.request.user)
         status_param = self.request.query_params.get('status')
         if status_param:
@@ -127,6 +218,13 @@ class OrderViewSet(viewsets.ModelViewSet):
         return queryset
 
     def retrieve(self, request, *args, **kwargs):
+        """
+        获取订单详情
+
+        支持两种查询方式：
+            1. 通过订单号查询（优先）
+            2. 通过 ID 查询（兼容）
+        """
         pk = kwargs.get('pk')
         try:
             order = Order.objects.get(order_no=pk, user=request.user)
@@ -140,6 +238,22 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
+        """
+        创建订单（核心业务逻辑）
+
+        事务流程：
+            1. 验证购物车商品存在且属于当前用户
+            2. 遍历购物车，检查库存是否充足
+            3. 使用 F 表达式扣减库存、增加销量（原子操作）
+            4. 删除购物车记录
+            5. 生成订单号并创建订单
+            6. 创建订单明细（OrderItem）
+
+        设计要点：
+            - **事务原子性**：使用 @transaction.atomic 确保所有操作要么全部成功，要么全部回滚
+            - **库存并发控制**：使用 F('stock') - quantity 避免并发超卖
+            - **订单号生成**：时间戳 + UUID 保证唯一性
+        """
         serializer = OrderCreateSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
 
@@ -192,13 +306,21 @@ class OrderViewSet(viewsets.ModelViewSet):
         return APIResponse(data=OrderSerializer(order).data, msg='下单成功')
 
     def pay(self, request, pk=None):
+        """
+        获取支付宝支付链接
+
+        仅待付款状态的订单可发起支付，生成网页支付 URL 返回给前端。
+
+        异常处理：
+            - 订单状态不正确：返回错误
+            - 支付宝配置失败：记录日志并返回服务不可用
+        """
         order = self.get_object()
         if order.status != 'pending':
             return APIResponse(code=400, msg='订单状态不正确')
 
         subject = f'魔方商城订单-{order.order_no}'
 
-        # 生成网页支付 URL
         pay_url = generate_alipay_url(order.order_no, order.total_amount, subject)
         if pay_url:
             return APIResponse(data={
@@ -206,12 +328,20 @@ class OrderViewSet(viewsets.ModelViewSet):
                 'pay_url': pay_url,
             }, msg='获取支付链接成功')
 
-        # 支付宝配置失败
         logger.warning(f"支付宝支付失败 - 订单 {order.order_no}: SDK 初始化异常, return_url 或 notify_url 不可用")
         return APIResponse(code=503, msg='支付宝支付接口配置异常，请稍后重试')
 
     @transaction.atomic
     def cancel(self, request, pk=None):
+        """
+        取消订单
+
+        仅待付款和已付款状态的订单可取消，取消后库存回滚。
+
+        回滚逻辑：
+            1. 将订单状态改为 cancelled
+            2. 使用 F 表达式恢复库存、减少销量
+        """
         order = self.get_object()
         if order.status not in ['pending', 'paid']:
             return APIResponse(code=400, msg='订单状态不允许取消')
@@ -228,6 +358,11 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     @transaction.atomic
     def complete(self, request, pk=None):
+        """
+        确认收货
+
+        仅已发货状态的订单可确认收货，确认后订单状态改为 completed。
+        """
         order = self.get_object()
         if order.status != 'shipped':
             return APIResponse(code=400, msg='订单状态不正确')
@@ -241,7 +376,23 @@ class OrderViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='notify')
     @transaction.atomic
     def alipay_notify(self, request):
-        """支付宝异步回调 - 无需登录认证"""
+        """
+        支付宝异步回调接口
+
+        无需登录认证，支付宝服务器直接调用此接口通知支付结果。
+
+        处理流程：
+            1. 解析回调数据（DRF QueryDict 转换）
+            2. 验证签名（双重验签：SDK + 手动 RSA2）
+            3. 查询订单并加锁（select_for_update 防止并发处理）
+            4. 根据 trade_status 更新订单状态
+            5. 返回 'success' 或 'fail'
+
+        幂等性保证：
+            - 使用 select_for_update 锁定订单记录
+            - 仅在订单状态为 pending 时更新为 paid
+            - 返回 'success' 表示已处理，支付宝不再重试
+        """
         raw_data = {k: v[0] if isinstance(v, list) else v for k, v in request.data.items()}
         logger.info(f"支付宝回调原始数据: {raw_data}")
 

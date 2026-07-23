@@ -1,16 +1,42 @@
+/**
+ * 用户模块 API 接口
+ *
+ * 定义用户认证和个人信息相关的 API 调用，包括：
+ *   - 登录/注册/退出登录
+ *   - 获取用户信息
+ *   - 关注/取消关注
+ *   - 更新个人资料
+ *
+ * 所有接口均使用项目统一封装的 request 实例，自动处理 Token 注入和响应格式化。
+ */
+
 import request from '@/http/request'
 
-
-// 登录
+/**
+ * 用户登录
+ *
+ * @param {Object} data - 登录表单数据
+ * @param {string} data.username - 用户名
+ * @param {string} data.password - 密码
+ * @returns {Promise<Object>} 响应数据，包含用户信息和 Token
+ */
 export function loginApi(data) {
   return request({
-    url: '/api/users/login', // 替换为你真实的 URL
+    url: '/api/users/login',
     method: 'post',
     data
   })
 }
 
-// 注册
+/**
+ * 用户注册
+ *
+ * @param {Object} data - 注册表单数据
+ * @param {string} data.username - 用户名
+ * @param {string} data.email - 邮箱
+ * @param {string} data.password - 密码
+ * @returns {Promise<Object>} 响应数据，包含用户信息和 Token
+ */
 export function registerApi(data) {
   return request({
     url: '/api/users/register',
@@ -19,7 +45,13 @@ export function registerApi(data) {
   })
 }
 
-// 退出登录
+/**
+ * 用户退出登录
+ *
+ * 清除服务端 Token（加入黑名单），前端需配合清除 localStorage。
+ *
+ * @returns {Promise<Object>} 响应数据
+ */
 export function logoutApi() {
   return request({
     url: '/api/users/logout',
@@ -27,17 +59,24 @@ export function logoutApi() {
   })
 }
 
-// 获取用户信息
+/**
+ * 获取指定用户的个人信息
+ *
+ * @param {string} username - 目标用户的用户名
+ * @returns {Promise<Object>} 响应数据，包含用户详细信息
+ */
 export function getProfileApi(username) {
   return request({
-    url: `/api/profiles/${username}`, // 根据后端实际路由前缀微调，比如 /api/profiles/
+    url: `/api/profiles/${username}`,
     method: 'get'
   })
 }
 
 /**
  * 获取指定用户的关注列表
+ *
  * @param {string} username - 目标用户的用户名
+ * @returns {Promise<Object>} 响应数据，包含关注用户列表
  */
 export function getFollowingListApi(username) {
   return request({
@@ -48,7 +87,9 @@ export function getFollowingListApi(username) {
 
 /**
  * 获取指定用户的粉丝列表
+ *
  * @param {string} username - 目标用户的用户名
+ * @returns {Promise<Object>} 响应数据，包含粉丝列表
  */
 export function getFollowersListApi(username) {
   return request({
@@ -57,28 +98,47 @@ export function getFollowersListApi(username) {
   })
 }
 
-// 4. 关注某个用户
+/**
+ * 关注某个用户
+ *
+ * @param {string} username - 要关注的用户名
+ * @returns {Promise<Object>} 响应数据
+ */
 export function followUserApi(username) {
   return request({
-    url: `/api/profiles/${username}/follow`, // 或者是你后端定义的实际关注 URL
+    url: `/api/profiles/${username}/follow`,
     method: 'post'
   })
 }
 
-// 5. 取消关注某个用户
+/**
+ * 取消关注某个用户
+ *
+ * @param {string} username - 要取消关注的用户名
+ * @returns {Promise<Object>} 响应数据
+ */
 export function unfollowUserApi(username) {
   return request({
-    url: `/api/profiles/${username}/follow`, // 或者是通过 delete 方法：method: 'delete'
+    url: `/api/profiles/${username}/follow`,
     method: 'delete'
   })
 }
 
-// 6. 更新个人资料 (支持修改简介和上传头像)
+/**
+ * 更新个人资料
+ *
+ * 支持修改简介和上传头像，使用 PATCH 方法进行局部更新。
+ * 如果包含 File 对象（头像文件），Axios 会自动设置 multipart/form-data 头。
+ *
+ * @param {Object} data - 更新数据
+ * @param {string} [data.bio] - 个人简介
+ * @param {File} [data.image] - 头像文件
+ * @returns {Promise<Object>} 响应数据，包含更新后的用户信息
+ */
 export function updateProfileApi(data) {
   return request({
-    url: `/api/users/info`, // 对齐你的 Django 个人资料路由
-    method: 'patch', // 使用 patch 进行局部更新
+    url: `/api/users/info`,
+    method: 'patch',
     data: data,
-    // 如果你要传原生 File 对象(头像文件)，Axios 会自动帮你把 headers 设为 multipart/form-data
   })
 }

@@ -54,24 +54,59 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { Tween, Group, Easing } from '@tweenjs/tween.js'
+/**
+ * CubeDemo.vue - 魔方 3D 动画演示组件
+ * 
+ * 核心职责：
+ * 1. 使用 Three.js 渲染三阶魔方的 3D 模型
+ * 2. 根据公式记号（notation）逐步骤播放魔方转动动画
+ * 3. 支持手动单步播放（上一步/下一步）和自动播放
+ * 4. 根据公式的 target_state 初始化魔方状态
+ * 5. 支持鼠标拖拽旋转视角和滚轮缩放
+ * 
+ * 技术栈：
+ * - Three.js：3D 渲染引擎
+ * - OrbitControls：相机轨道控制
+ * - Tween.js：动画缓动库
+ * 
+ * 设计要点：
+ * - 将魔方拆分为 27 个小方块（3x3x3），每个方块独立渲染
+ * - 使用世界坐标系旋转，而非局部坐标系，确保旋转正确性
+ * - 公式记号解析支持标准魔方符号（R/L/U/D/F/B/r/l/u/d/f/b/M/E/S/x/y/z）
+ * - 动画状态管理防止重复触发
+ */
 
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import * as THREE from 'three'                                          // Three.js 3D 渲染引擎
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'  // 相机轨道控制
+import { Tween, Group, Easing } from '@tweenjs/tween.js'               // 动画缓动库
+
+// 组件属性定义
 const props = defineProps({
   formula: {
     type: Object,
-    required: true
+    required: true,
+    description: '公式对象，包含 notation（公式记号）和 target_state（目标状态）'
   }
 })
 
-const canvasContainer = ref(null)
-const currentStepIdx = ref(0)
-const isAnimating = ref(false)
-const isAutoPlaying = ref(false)
-let autoPlayTimer = null
+// 响应式状态
+const canvasContainer = ref(null)    // 3D 画布容器引用
+const currentStepIdx = ref(0)        // 当前播放步骤索引（0 表示初始状态）
+const isAnimating = ref(false)       // 是否正在播放动画（防止重复触发）
+const isAutoPlaying = ref(false)     // 是否自动播放模式
+let autoPlayTimer = null             // 自动播放定时器
 
+/**
+ * 解析公式记号为步骤数组
+ * 
+ * @returns {Array} - 步骤字符串数组
+ * 
+ * 逻辑：
+ * 1. 将公式记号按空格分割
+ * 2. 过滤空字符串
+ * 3. 例如："R U R'" → ["R", "U", "R'"]
+ */
 const parsedSteps = computed(() => {
   if (!props.formula || !props.formula.notation) return []
   return props.formula.notation.split(/\s+/).filter(Boolean)

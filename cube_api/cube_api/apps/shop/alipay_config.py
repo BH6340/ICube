@@ -1,3 +1,20 @@
+# -*- coding: utf-8 -*-
+"""
+支付宝配置与支付集成模块
+
+该模块负责处理支付宝支付的核心逻辑，包括：
+    - 支付宝客户端初始化
+    - 支付链接生成（网页支付）
+    - 二维码生成（扫码支付）
+    - 异步回调签名验证
+
+设计特点：
+    - **双重验签机制**：SDK 验签 + 手动 RSA2 验签，确保支付安全
+    - **沙箱/生产环境隔离**：通过 debug 参数自动切换网关
+    - **密钥文件动态加载**：支持路径配置和文件存在性检查
+    - **公钥指纹校验**：启动时打印公钥指纹，便于与支付宝后台对比
+"""
+
 from alipay import AliPay
 import os
 
@@ -6,11 +23,17 @@ from loguru import logger
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 ALIPAY_CONFIG = {
+    # 应用 ID：支付宝开放平台创建的应用唯一标识
     'app_id': '9021000162660623',
+    # 应用私钥路径：用于对请求进行签名，必须妥善保管，不可泄露
     'app_private_key_path': os.path.join(BASE_DIR, 'keys', 'app_private_key.pem'),
+    # 支付宝公钥路径：用于验证支付宝返回数据的签名，由支付宝生成
     'alipay_public_key_path': os.path.join(BASE_DIR, 'keys', 'alipay_public_key.pem'),
+    # 异步回调地址：支付宝支付成功后主动通知的接口，必须是公网可访问的 POST 接口
     'notify_url': f"http://{os.getenv('SERVER_HOST', 'localhost')}/api/shop/orders/notify/",
+    # 同步回调地址前缀：用户支付完成后跳转的页面地址
     'return_url_prefix': f"http://{os.getenv('SERVER_HOST', 'localhost')}/shop/pay",
+    # 调试模式：True 表示使用沙箱环境，上线前必须改为 False
     'debug': True,
 }
 
@@ -42,8 +65,8 @@ ALIPAY_CONFIG = {
    - 签名算法：RSA2（推荐）
 
 3. 生成后会得到：
-   - 应用私钥（APP PRIVATE KEY）
-   - 应用公钥（APP PUBLIC KEY）
+   - 应用私钥（APP PRIVATE KEY）：由开发者保管，用于签名请求
+   - 应用公钥（APP PUBLIC KEY）：上传到支付宝后台
 
 4. 将应用私钥粘贴到文件：
    keys/app_private_key.pem
@@ -65,11 +88,11 @@ ALIPAY_CONFIG = {
 1. notify_url（异步回调）：
    - 格式: http://你的公网地址/api/shop/orders/notify/
    - 必须是公网可访问的 POST 接口
-   - 用于支付宝通知支付结果
+   - 用于支付宝通知支付结果，可靠性更高
 
 2. return_url（同步回调）：
    - 格式: http://你的公网地址/shop/pay/callback
-   - 用户支付完成后跳转的页面
+   - 用户支付完成后跳转的页面，可能被用户拦截
 
 【第七步】本地开发公网访问（重要！）
 支付宝回调需要公网地址，本地开发需要使用内网穿透工具：
@@ -128,6 +151,19 @@ ALIPAY_CONFIG = {
 
 
 def get_alipay_client():
+    """
+    获取支付宝客户端实例
+
+    初始化 AliPay SDK 客户端，处理密钥加载和配置验证。
+
+    返回值：
+        AliPay | None: 配置成功返回客户端实例，否则返回 None
+
+    设计要点：
+        - **密钥文件动态加载**：支持路径配置和文件存在性检查
+        - **公钥指纹校验**：启动时打印公钥模数前60位，便于与支付宝后台对比
+        - **使用 RSA2 算法**：安全性更高，是支付宝推荐的标准算法
+    """
     app_id = ALIPAY_CONFIG['app_id']
     app_private_key_path = ALIPAY_CONFIG['app_private_key_path']
     alipay_public_key_path = ALIPAY_CONFIG['alipay_public_key_path']
@@ -171,6 +207,22 @@ def get_alipay_client():
 
 
 def generate_alipay_url(order_no, total_amount, subject, return_url=None):
+    """
+    生成支付宝网页支付 URL
+
+    Args:
+        order_no: 订单号（唯一标识）
+        total_amount: 支付金额（Decimal 或 float）
+        subject: 订单标题（显示在支付页面）
+        return_url: 支付完成后跳转地址（可选，默认为配置的前缀 + 订单号）
+
+    返回值：
+        str | None: 支付 URL 或 None（配置失败时）
+
+    设计要点：
+        - **沙箱/生产环境自动切换**：根据 debug 参数选择不同网关
+        - **URL 兼容性处理**：python-alipay-sdk 3.x 版本返回格式不一致，统一处理
+    """
     alipay = get_alipay_client()
     if not alipay:
         return None
@@ -199,6 +251,21 @@ def generate_alipay_url(order_no, total_amount, subject, return_url=None):
 
 
 def generate_alipay_qr_code(order_no, total_amount, subject):
+    """
+    生成支付宝扫码支付二维码
+
+    Args:
+        order_no: 订单号（唯一标识）
+        total_amount: 支付金额（Decimal 或 float）
+        subject: 订单标题
+
+    返回值：
+        str | None: 二维码内容（URL）或 None（配置失败时）
+
+    设计要点：
+        - **使用预下单接口**：api_alipay_trade_precreate 返回二维码内容
+        - **异常详细记录**：捕获异常时记录完整信息，便于排查问题
+    """
     alipay = get_alipay_client()
     if not alipay:
         logger.warning(f"QR码生成失败 - 订单 {order_no}: get_alipay_client() 返回 None (检查密钥文件)")
@@ -226,6 +293,28 @@ def generate_alipay_qr_code(order_no, total_amount, subject):
 
 
 def verify_alipay_notify(data):
+    """
+    验证支付宝回调数据的签名
+
+    Args:
+        data: 支付宝回调的原始数据（DRF QueryDict 或普通 dict）
+
+    返回值：
+        bool: 验签通过返回 True，否则返回 False
+
+    设计要点：
+        - **双重验签机制**：优先使用 SDK 验签，失败时降级到手动 RSA2 验签
+        - **数据格式转换**：DRF QueryDict 的 value 是列表，需转换为普通字符串
+        - **SDK 版本兼容**：手动验签绕过 SDK 版本差异导致的验签失败问题
+
+    验签流程：
+        1. 使用 SDK 的 verify 方法进行标准验签
+        2. SDK 验签失败时，手动实现 RSA2 验签：
+           - 读取支付宝公钥
+           - 移除 sign 和 sign_type 字段
+           - 按键名排序后拼接字符串
+           - 使用 RSA2 + SHA256 验证签名
+    """
     alipay = get_alipay_client()
     if not alipay:
         return False
@@ -237,7 +326,7 @@ def verify_alipay_notify(data):
         return False
 
     # 方法一：使用 SDK verify（传递原始 dict）
-    test_dict = dict(data_dict)  # 复制一份，因为 SDK 会 mutate
+    test_dict = dict(data_dict)
     sdk_ok = alipay.verify(test_dict, sign_b64)
     logger.info(f"SDK 验签结果: {sdk_ok}")
     if sdk_ok:
@@ -250,9 +339,6 @@ def verify_alipay_notify(data):
         from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.asymmetric import padding, rsa
         from cryptography.hazmat.primitives.serialization import load_pem_public_key
-
-        # 读支付宝公钥（文件路径）
-
 
         key_path = ALIPAY_CONFIG['alipay_public_key_path']
         if not os.path.exists(key_path):
@@ -268,9 +354,7 @@ def verify_alipay_notify(data):
         verify_data = {k: v for k, v in data_dict.items() if k not in ('sign', 'sign_type')}
         sorted_items = sorted(verify_data.items())
 
-        # key1=value1&key2=value2...（值需要按支付宝规范编码；已解码的值应能用 _build_sign_string）
-        # 直接用 SDK 的 _ordered_data 或手动拼
-        # 简单方案：直接信任 SDK internal API 或直接对比明文
+        # key1=value1&key2=value2...（值需要按支付宝规范编码）
         message = urlencode(sorted_items, doseq=False)
         logger.info(f"手动验签 message[:200]: {message[:200]}")
 

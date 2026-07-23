@@ -192,6 +192,24 @@
 </template>
 
 <script setup>
+/**
+ * CommentSection.vue - 评论区组件
+ * 
+ * 核心职责：
+ * 1. 展示帖子的评论列表（支持嵌套回复）
+ * 2. 支持发表评论和回复功能
+ * 3. 支持点赞/点踩操作
+ * 4. 支持删除评论（作者和管理员）
+ * 5. 分页加载评论数据
+ * 6. 展开更多回复功能
+ * 
+ * 设计要点：
+ * - 使用 flattenReplies 递归打平深层嵌套回复，简化渲染逻辑
+ * - 使用 replyUserMap 缓存用户名，解决多级回复中"回复谁"的显示问题
+ * - 通过 _reactionLoading 属性防止重复操作点赞/点踩
+ * - 支持多级回复（评论 → 回复 → 回复的回复）
+ */
+
 import {ref, computed, onMounted} from 'vue'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {CaretBottom, CaretTop, More} from '@element-plus/icons-vue'

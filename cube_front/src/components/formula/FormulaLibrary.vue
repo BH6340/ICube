@@ -131,27 +131,48 @@
   </div>
 </template>
 
-<script setup>import { ref, computed, onMounted } from 'vue';
+<script setup>
+/**
+ * FormulaLibrary.vue - 公式库组件
+ * 
+ * 核心职责：
+ * 1. 展示公式分类树形结构（按方法/阶段分组）
+ * 2. 支持多维度筛选（分类、难度、搜索关键词）
+ * 3. 支持排序（默认、难度升序、难度降序）
+ * 4. 分页展示公式列表
+ * 5. 公式详情弹窗（包含 3D 动画演示）
+ * 6. 公式收藏/取消收藏功能
+ * 
+ * 设计要点：
+ * - 分类数据通过 buildCategoryTree 转换为树形结构，便于展示
+ * - 收藏状态通过 collectedFormulaIds 数组管理，避免频繁 API 查询
+ * - 支持 URL query 参数预加载指定公式详情
+ */
+
+import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { Picture, Star } from '@element-plus/icons-vue';
 import { getFormulaCategories, getFormulaList, getFormulaDetail, getMyCollections, addCollection, removeCollection } from '../../api/formula';
 import CubeDemo from './CubeDemo.vue';
+
 const route = useRoute();
-const categoryList = ref([]);
-const categoryTree = ref([]);
-const formulaList = ref([]);
-const total = ref(0);
-const currentPage = ref(1);
-const pageSize = ref(12);
-const selectedCategory = ref(null);
-const selectedDifficulties = ref([]);
-const searchKeyword = ref('');
-const sortBy = ref('default');
-const showDetailDialog = ref(false);
-const selectedFormula = ref(null);
-const collectedFormulaIds = ref([]);
-const collectionMap = ref({});
+
+// 响应式状态
+const categoryList = ref([]);           // 分类列表（原始数据）
+const categoryTree = ref([]);           // 分类树（树形结构）
+const formulaList = ref([]);            // 公式列表
+const total = ref(0);                   // 公式总数
+const currentPage = ref(1);             // 当前页码
+const pageSize = ref(12);               // 每页数量
+const selectedCategory = ref(null);     // 选中的分类 ID
+const selectedDifficulties = ref([]);   // 选中的难度级别
+const searchKeyword = ref('');          // 搜索关键词
+const sortBy = ref('default');          // 排序方式
+const showDetailDialog = ref(false);    // 是否显示详情弹窗
+const selectedFormula = ref(null);      // 选中的公式对象
+const collectedFormulaIds = ref([]);    // 已收藏的公式 ID 列表
+const collectionMap = ref({});          // 收藏映射表（备用）
 const difficultyLabel = (level) => {
   if (level === 1) return '基础';
   if (level === 2) return '进阶';
