@@ -149,6 +149,15 @@ def get_alipay_client():
         logger.warning(f"密钥文件缺失: private={bool(app_private_key)}, alipay_public={bool(alipay_public_key)}")
         return None
 
+    # 启动时打印公钥指纹，方便与支付宝后台对比
+    try:
+        from cryptography.hazmat.primitives.serialization import load_pem_public_key
+        pub = load_pem_public_key(alipay_public_key.encode())
+        nums = pub.public_numbers()
+        logger.info(f"已加载支付宝公钥, modulus 前60位: {str(nums.n)[:60]}")
+    except Exception:
+        pass
+
     alipay = AliPay(
         appid=app_id,
         app_notify_url=ALIPAY_CONFIG['notify_url'],
