@@ -146,6 +146,7 @@ def get_alipay_client():
             alipay_public_key = f.read()
 
     if not app_private_key or not alipay_public_key:
+        logger.warning(f"密钥文件缺失: private={bool(app_private_key)}, alipay_public={bool(alipay_public_key)}")
         return None
 
     alipay = AliPay(
@@ -222,11 +223,57 @@ def verify_alipay_notify(data):
 
     # DRF QueryDict 的 value 是列表，转换为普通字符串字典
     data_dict = {k: v[0] if isinstance(v, list) else v for k, v in data.items()}
-    sign = data_dict.get('sign', '')
-    if not sign:
+    sign_b64 = data_dict.get('sign', '')
+    if not sign_b64:
         return False
 
-    # SDK 内部会自己去掉 sign 和 sign_type，传完整 data 即可
-    result = alipay.verify(data_dict, sign)
-    logger.info(f"签名验证结果: {result}")
-    return result
+    # 方法一：使用 SDK verify（传递原始 dict）
+    test_dict = dict(data_dict)  # 复制一份，因为 SDK 会 mutate
+    sdk_ok = alipay.verify(test_dict, sign_b64)
+    logger.info(f"SDK 验签结果: {sdk_ok}")
+    if sdk_ok:
+        return True
+
+    # 方法二：手动 RSA2 验签（绕过 SDK 版本差异）
+    try:
+        from urllib.parse import urlencode
+        import base64
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding, rsa
+        from cryptography.hazmat.primitives.serialization import load_pem_public_key
+
+        # 读支付宝公钥（文件路径）
+
+
+        key_path = ALIPAY_CONFIG['alipay_public_key_path']
+        if not os.path.exists(key_path):
+            logger.error(f"支付宝公钥文件不存在: {key_path}")
+            return False
+
+        with open(key_path, 'r') as f:
+            pub_key_pem = f.read()
+
+        pub_key = load_pem_public_key(pub_key_pem.encode())
+
+        # 去掉 sign 和 sign_type，排序后构建验签字符串
+        verify_data = {k: v for k, v in data_dict.items() if k not in ('sign', 'sign_type')}
+        sorted_items = sorted(verify_data.items())
+
+        # key1=value1&key2=value2...（值需要按支付宝规范编码；已解码的值应能用 _build_sign_string）
+        # 直接用 SDK 的 _ordered_data 或手动拼
+        # 简单方案：直接信任 SDK internal API 或直接对比明文
+        message = urlencode(sorted_items, doseq=False)
+        logger.info(f"手动验签 message[:200]: {message[:200]}")
+
+        signature_bytes = base64.b64decode(sign_b64)
+        pub_key.verify(
+            signature_bytes,
+            message.encode('utf-8'),
+            padding.PKCS1v15(),
+            hashes.SHA256()
+        )
+        logger.info("手动 RSA2 验签通过")
+        return True
+    except Exception as e:
+        logger.error(f"手动 RSA2 验签异常: {type(e).__name__}: {e}")
+        return False
