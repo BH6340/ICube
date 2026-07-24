@@ -393,11 +393,12 @@ class OrderViewSet(viewsets.ModelViewSet):
             - 仅在订单状态为 pending 时更新为 paid
             - 返回 'success' 表示已处理，支付宝不再重试
         """
+        raw_body = request.body  # 先于 request.data 读取，否则流被消耗
         raw_data = {k: v[0] if isinstance(v, list) else v for k, v in request.data.items()}
         logger.info(f"支付宝回调原始数据: {raw_data}")
 
         try:
-            verified = verify_alipay_notify(request.data, request.body)
+            verified = verify_alipay_notify(request.data, raw_body)
         except Exception as e:
             logger.error(f"支付宝回调签名验证异常: {e}")
             return Response('fail')
