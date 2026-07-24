@@ -12,7 +12,7 @@ USE icube_db;
  Target Server Version : 90100
  File Encoding         : 65001
 
- Date: 24/07/2026 15:10:20
+ Date: 24/07/2026 17:46:43
 */
 
 SET NAMES utf8mb4;
@@ -42,7 +42,7 @@ CREATE TABLE `accounts_user`  (
 -- ----------------------------
 -- Records of accounts_user
 -- ----------------------------
-INSERT INTO `accounts_user` VALUES (1, 'pbkdf2_sha256$1200000$8XqaTdWaJaiaLmQP2FPYG6$oYG5XVYa5Ed8fwV8c1ef12LAVCBD2NmrT4rqnxzPbv0=', NULL, 0, 0, 1, '2026-05-11 13:04:43.160321', 'bh01@qq.com', 'bh01', '这是bh01的测试简介', 'avatars/avatar_1_7bdc084e_JjZyEAY.svg');
+INSERT INTO `accounts_user` VALUES (1, 'pbkdf2_sha256$1200000$8XqaTdWaJaiaLmQP2FPYG6$oYG5XVYa5Ed8fwV8c1ef12LAVCBD2NmrT4rqnxzPbv0=', NULL, 0, 0, 1, '2026-05-11 13:04:43.160321', 'bh01@qq.com', 'bh01', '这是bh01的测试简介', '/media/avatars/admin_TvFlaQx.png');
 INSERT INTO `accounts_user` VALUES (2, 'pbkdf2_sha256$1200000$r3OXdjnkCUkkD8dsYwKvYI$tVLlEmIIgIzLbEuuQK2DNcQADpHDx2dNLaFx0jBC978=', NULL, 0, 0, 1, '2026-05-11 14:58:32.159835', 'bh02@qq.com', 'bh02', '这是bh02的简介', 'avatars/avatar_2_d43037d8_kARyCpc.svg');
 INSERT INTO `accounts_user` VALUES (3, 'pbkdf2_sha256$1200000$cJ7IS2DNMwk53YoArSUDWB$09KSEoIzAND7FptTUGF69r9Wfvn58LXDiUOYaa8Uq3U=', NULL, 0, 0, 1, '2026-05-11 14:58:56.644541', 'bh03@qq.com', 'bh03', '这是bh03的简介', 'avatars/avatar_3_599f7828_JWU26XE.svg');
 INSERT INTO `accounts_user` VALUES (4, 'pbkdf2_sha256$1200000$1U3JbJi7IJmftkdvH2cafI$KnEY+mhMfb+DHo9EadnmWPWuVq28sDswnhG/Ixxit8s=', NULL, 0, 0, 1, '2026-05-11 14:59:20.745717', 'bh04@qq.com', 'bh04', '这是bh04的简介', 'avatars/avatar_4_07eddaaf_WeeKHJx.svg');
@@ -55,6 +55,7 @@ INSERT INTO `accounts_user` VALUES (10, 'pbkdf2_sha256$1200000$jp60Dr1nt6eO4OfAq
 INSERT INTO `accounts_user` VALUES (11, 'pbkdf2_sha256$1200000$HnHuO67UPNA3KGzqrdciHY$BEGRtyOatdrHIGDWKfQyC8zc2gE9HkTmxTtSBUUMtAM=', NULL, 0, 0, 1, '2026-06-05 09:55:05.648601', 'user1@example.com', '魔方小白', '魔方爱好者，欢迎交流！', 'avatars/avatar_11_50d05158_tAG2QVH.svg');
 INSERT INTO `accounts_user` VALUES (12, 'pbkdf2_sha256$1200000$K4RZs6x8mUSPOBiwKYSfpG$m1sUeywn5sSlmRjpG9NYv9v/CLItOlun+BLJpCPab9M=', NULL, 0, 0, 1, '2026-06-05 09:55:07.421317', 'user2@example.com', '速拧大神', '魔方爱好者，欢迎交流！', 'avatars/avatar_12_23b2b646_RidBlom.svg');
 INSERT INTO `accounts_user` VALUES (13, 'pbkdf2_sha256$1200000$NUI8BH6NjcYEnrSe8l5O4V$PR0PnTdasbMdgc3gewGRKWuk6CRdEaEkyoXrzhpLxSc=', NULL, 0, 0, 1, '2026-06-05 09:55:09.104099', 'user3@example.com', '公式收藏家', '魔方爱好者，欢迎交流！', 'avatars/avatar_13_61701999_4yQ9tw8.svg');
+INSERT INTO `accounts_user` VALUES (15, 'pbkdf2_sha256$1200000$AWyslHhILW6eJAhu7XQPXC$HrQbn7QsET2D7UZvcwIY3sipNk/CDeMV8lIzNnAR1+M=', NULL, 0, 0, 1, '2026-07-24 17:37:27.677024', 'test@test.com', 'testuser', '', '');
 
 -- ----------------------------
 -- Table structure for accounts_user_followers
@@ -285,6 +286,10 @@ INSERT INTO `auth_permission` VALUES (113, 'Can add 轮播图', 29, 'add_banner'
 INSERT INTO `auth_permission` VALUES (114, 'Can change 轮播图', 29, 'change_banner');
 INSERT INTO `auth_permission` VALUES (115, 'Can delete 轮播图', 29, 'delete_banner');
 INSERT INTO `auth_permission` VALUES (116, 'Can view 轮播图', 29, 'view_banner');
+INSERT INTO `auth_permission` VALUES (117, 'Can add 收货地址', 30, 'add_address');
+INSERT INTO `auth_permission` VALUES (118, 'Can change 收货地址', 30, 'change_address');
+INSERT INTO `auth_permission` VALUES (119, 'Can delete 收货地址', 30, 'delete_address');
+INSERT INTO `auth_permission` VALUES (120, 'Can view 收货地址', 30, 'view_address');
 
 -- ----------------------------
 -- Table structure for django_admin_log
@@ -351,6 +356,7 @@ INSERT INTO `django_content_type` VALUES (13, 'forum', 'tag');
 INSERT INTO `django_content_type` VALUES (29, 'home', 'banner');
 INSERT INTO `django_content_type` VALUES (15, 'home', 'navigationmenu');
 INSERT INTO `django_content_type` VALUES (5, 'sessions', 'session');
+INSERT INTO `django_content_type` VALUES (30, 'shop', 'address');
 INSERT INTO `django_content_type` VALUES (22, 'shop', 'cart');
 INSERT INTO `django_content_type` VALUES (23, 'shop', 'order');
 INSERT INTO `django_content_type` VALUES (24, 'shop', 'orderitem');
@@ -407,6 +413,7 @@ INSERT INTO `django_migrations` VALUES (32, 'forum', '0004_alter_commentlike_opt
 INSERT INTO `django_migrations` VALUES (33, 'home', '0002_banner', '2026-07-24 14:05:11.091319');
 INSERT INTO `django_migrations` VALUES (34, 'shop', '0002_alter_cart_options_alter_order_options_and_more', '2026-07-24 14:05:11.168692');
 INSERT INTO `django_migrations` VALUES (35, 'timer', '0002_alter_timerrecord_options', '2026-07-24 14:05:11.194775');
+INSERT INTO `django_migrations` VALUES (36, 'shop', '0003_address', '2026-07-24 16:24:47.401734');
 
 -- ----------------------------
 -- Table structure for django_session
@@ -1266,6 +1273,33 @@ INSERT INTO `home_navigationmenu` VALUES (19, 'p-2', '个人信息', '/profiles/
 INSERT INTO `home_navigationmenu` VALUES (20, 'p-3', '公式收藏', '/profiles/collections', 'profile', 30, '[\"/profiles/collections\"]');
 INSERT INTO `home_navigationmenu` VALUES (21, 'p-4', '我的数据', '/profiles/data', 'profile', 40, '[\"/profiles/data\"]');
 INSERT INTO `home_navigationmenu` VALUES (22, 'p-5', '我的帖子', '/profiles/posts', 'profile', 50, '[\"/profiles/posts\"]');
+
+-- ----------------------------
+-- Table structure for shop_address
+-- ----------------------------
+DROP TABLE IF EXISTS `shop_address`;
+CREATE TABLE `shop_address`  (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `phone` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `province` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `city` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `district` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `detail` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `is_default` tinyint(1) NOT NULL,
+  `sort_order` int NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `user_id` bigint NOT NULL,
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `shop_address_user_id_3edd3b17_fk_accounts_user_id`(`user_id` ASC) USING BTREE,
+  CONSTRAINT `shop_address_user_id_3edd3b17_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of shop_address
+-- ----------------------------
+INSERT INTO `shop_address` VALUES (1, '01', '13900001111', '四川省', '成都', '郫都区', '四川 成都 四川省成都市郫都犀安路999号', 1, 0, '2026-07-24 16:49:16.534284', '2026-07-24 16:49:16.536256', 1);
 
 -- ----------------------------
 -- Table structure for shop_cart
