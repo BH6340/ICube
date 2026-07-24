@@ -117,8 +117,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         if image_file:
             # 保存头像到 media/avatars/ 目录
             saved_path = default_storage.save(f"avatars/{image_file.name}", image_file)
-            # 更新用户的头像 URL
-            instance.image = f"{settings.MEDIA_URL}{saved_path}"
+            # 更新用户的头像路径（只存储相对路径，与 Django ImageField 默认行为一致）
+            instance.image = saved_path
 
         # 更新其他字段
         for key, value in validated_data.items():
