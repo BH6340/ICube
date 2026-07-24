@@ -335,7 +335,16 @@ def verify_alipay_notify(data, raw_body=None):
             verify_data = {k: v for k, v in data_dict.items() if k not in ('sign', 'sign_type')}
             message = urlencode(sorted(verify_data.items()), doseq=False)
 
-        logger.info(f"验签 message[:300]: {message[:300]}")
+        # 完整输出到日志 + 文件，方便 openssl 命令行独立验证
+        logger.info(f"验签 message 全文:\n{message}")
+        logger.info(f"sign(base64): {sign_b64[:80]}...")
+        msg_path = '/tmp/alipay_verify_msg.txt'
+        sig_path = '/tmp/alipay_verify_sig.bin'
+        with open(msg_path, 'w', encoding='utf-8') as f:
+            f.write(message)
+        with open(sig_path, 'wb') as f:
+            f.write(base64.b64decode(sign_b64))
+        logger.info(f"openssl dgst -sha256 -verify {key_path} -signature {sig_path} {msg_path}")
 
         signature_bytes = base64.b64decode(sign_b64)
         pub_key.verify(signature_bytes, message.encode('utf-8'), padding.PKCS1v15(), hashes.SHA256())
