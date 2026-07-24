@@ -16,18 +16,32 @@
             <template #header>
               <span>价格区间</span>
             </template>
-            <el-form :inline="true" class="price-form">
-              <el-form-item>
-                <el-input v-model="priceMin" placeholder="最低价" size="small" />
-              </el-form-item>
-              <span>-</span>
-              <el-form-item>
-                <el-input v-model="priceMax" placeholder="最高价" size="small" />
-              </el-form-item>
-              <el-form-item>
-                <el-button type="primary" size="small" @click="handlePriceFilter">筛选</el-button>
-              </el-form-item>
+            <el-form :inline="false" class="price-form">
+              <div class="price-input-row">
+                <el-form-item>
+                  <el-input v-model="priceMin" placeholder="最低价" size="small" type="number" />
+                </el-form-item>
+                <span class="price-separator">-</span>
+                <el-form-item>
+                  <el-input v-model="priceMax" placeholder="最高价" size="small" type="number" />
+                </el-form-item>
+                <el-form-item>
+                  <el-button type="primary" size="small" @click="handlePriceFilter">筛选</el-button>
+                </el-form-item>
+                <el-form-item>
+                  <el-button size="small" @click="resetPriceFilter">重置</el-button>
+                </el-form-item>
+              </div>
             </el-form>
+            <div class="price-tags">
+              <el-tag
+                v-for="tag in priceTags"
+                :key="tag.key"
+                :type="selectedPriceTag === tag.key ? 'primary' : 'info'"
+                :effect="selectedPriceTag === tag.key ? 'dark' : 'light'"
+                @click="selectPriceTag(tag)"
+              >{{ tag.label }}</el-tag>
+            </div>
           </el-card>
 
           <el-card shadow="never" class="search-card">
@@ -177,6 +191,14 @@ const searchKeyword = ref('')
 const sortBy = ref('default')
 const priceMin = ref('')
 const priceMax = ref('')
+const selectedPriceTag = ref(null)
+const priceTags = ref([
+  { key: '0-50', label: '0-50元', min: 0, max: 50 },
+  { key: '50-100', label: '50-100元', min: 50, max: 100 },
+  { key: '100-200', label: '100-200元', min: 100, max: 200 },
+  { key: '200-500', label: '200-500元', min: 200, max: 500 },
+  { key: '500+', label: '500元以上', min: 500, max: null },
+])
 const showDetailDialog = ref(false)
 const selectedProduct = ref(null)
 const quantity = ref(1)
@@ -199,6 +221,27 @@ const handleCategoryClick = (data) => {
 }
 
 const handlePriceFilter = () => {
+  currentPage.value = 1
+  selectedPriceTag.value = null
+  loadProducts()
+}
+
+const resetPriceFilter = () => {
+  priceMin.value = ''
+  priceMax.value = ''
+  selectedPriceTag.value = null
+  currentPage.value = 1
+  loadProducts()
+}
+
+const selectPriceTag = (tag) => {
+  if (selectedPriceTag.value === tag.key) {
+    resetPriceFilter()
+    return
+  }
+  priceMin.value = tag.min
+  priceMax.value = tag.max || ''
+  selectedPriceTag.value = tag.key
   currentPage.value = 1
   loadProducts()
 }
@@ -337,8 +380,38 @@ onMounted(() => {
 
 .price-form {
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.price-input-row {
+  display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+}
+
+.price-separator {
+  color: #909399;
+  font-size: 14px;
+}
+
+.price-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e4e7ed;
+}
+
+.price-tags .el-tag {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.price-tags .el-tag:hover {
+  transform: translateY(-1px);
 }
 
 .toolbar {
