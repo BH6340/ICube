@@ -16,7 +16,7 @@ from django.utils import timezone
 from unfold.admin import ModelAdmin
 from unfold.decorators import display, action
 
-from .models import ProductCategory, Product, Cart, Order, OrderItem
+from .models import ProductCategory, Product, Cart, Order, OrderItem, Address
 
 
 @admin.register(ProductCategory)
@@ -366,3 +366,59 @@ class OrderItemAdmin(ModelAdmin):
     # raw_id_fields: 外键弹窗选择字段配置
     # 为什么这样配：order 和 product 表数据量大，下拉框加载性能差，改为弹窗搜索选择
     raw_id_fields = ['order', 'product']
+
+
+@admin.register(Address)
+class AddressAdmin(ModelAdmin):
+    """
+    收货地址后台管理
+
+    用于查看和管理用户的收货地址，支持默认地址标识和列表页编辑。
+    """
+
+    # list_display: 列表页展示字段配置
+    # 为什么这样配：展示用户、收货人、电话、完整地址、默认状态、创建时间
+    # 默认地址 Badge 让默认地址一目了然，便于客服核对用户地址
+    list_display = [
+        'user',
+        'name',
+        'phone',
+        'full_address_display',
+        'is_default',
+        'sort_order',
+        'created_at',
+    ]
+
+    # search_fields: 搜索框可搜索字段配置
+    # 为什么这样配：按收货人姓名和电话搜索便于快速定位用户地址
+    search_fields = ['name', 'phone']
+
+    # list_filter: 列表页侧边筛选器配置
+    # 为什么这样配：按默认状态筛选便于查看用户的默认地址
+    list_filter = ['is_default']
+
+    # list_editable: 列表页可直接编辑字段配置
+    # 为什么这样配：sort_order 和 is_default 需要频繁调整，列表内编辑提升效率
+    list_editable = ['sort_order', 'is_default']
+
+    # readonly_fields: 只读字段配置
+    # 为什么这样配：created_at 和 updated_at 为系统时间戳，由数据库自动维护
+    readonly_fields = ['created_at', 'updated_at']
+
+    # raw_id_fields: 外键弹窗选择字段配置
+    # 为什么这样配：user 表数据量大，下拉框加载性能差，改为弹窗搜索选择
+    raw_id_fields = ['user']
+
+    @display(description="完整地址", ordering=None)
+    def full_address_display(self, obj):
+        """
+        完整地址展示：在列表页展示省市区+详细地址的完整地址字符串
+        """
+        return obj.full_address
+
+    @display(description="默认", boolean=True, ordering="is_default")
+    def is_default_badge(self, obj):
+        """
+        默认地址 Badge：直观展示地址是否为默认地址
+        """
+        return obj.is_default

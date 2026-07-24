@@ -68,6 +68,70 @@
             </div>
             <div class="stats-label">我的订单</div>
           </div>
+          <div v-if="isMe" class="stats-item" @click="goToAddresses">
+            <div class="stats-num">
+              {{ addressCount }}
+            </div>
+            <div class="stats-label">收货地址</div>
+          </div>
+        </div>
+      </el-card>
+
+      <el-card v-if="isMe" class="quick-entry-card" shadow="never">
+        <template #header>
+          <span>快捷入口</span>
+        </template>
+        <div class="quick-entry-grid">
+          <div class="quick-entry-item" @click="goToOrders">
+            <div class="entry-icon order-icon">
+              <el-icon size="24" color="#e6a23c">
+                <ShoppingCart />
+              </el-icon>
+            </div>
+            <span class="entry-label">我的订单</span>
+            <el-tag v-if="orderCount > 0" size="small" type="danger">{{ orderCount }}</el-tag>
+          </div>
+          <div class="quick-entry-item" @click="goToAddresses">
+            <div class="entry-icon address-icon">
+              <el-icon size="24" color="#67c23a">
+                <MapLocation />
+              </el-icon>
+            </div>
+            <span class="entry-label">收货地址</span>
+            <el-tag v-if="addressCount > 0" size="small" type="primary">{{ addressCount }}</el-tag>
+          </div>
+          <div class="quick-entry-item" @click="goToCollections">
+            <div class="entry-icon collection-icon">
+              <el-icon size="24" color="#f56c6c">
+                <Star />
+              </el-icon>
+            </div>
+            <span class="entry-label">我的收藏</span>
+          </div>
+          <div class="quick-entry-item" @click="goToPosts">
+            <div class="entry-icon post-icon">
+              <el-icon size="24" color="#909399">
+                <Document />
+              </el-icon>
+            </div>
+            <span class="entry-label">我的帖子</span>
+          </div>
+          <div class="quick-entry-item" @click="goToData">
+            <div class="entry-icon data-icon">
+              <el-icon size="24" color="#b37feb">
+                <TrendCharts />
+              </el-icon>
+            </div>
+            <span class="entry-label">数据统计</span>
+          </div>
+          <div class="quick-entry-item" @click="openEditDialog">
+            <div class="entry-icon edit-icon">
+              <el-icon size="24" color="#409EFF">
+                <User />
+              </el-icon>
+            </div>
+            <span class="entry-label">修改资料</span>
+          </div>
         </div>
       </el-card>
 
@@ -199,17 +263,17 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { useRoute, useRouter } from 'vue-router'
 // 💡 一举打包引入你前期做好的全部业务关联接口（含修改、看别人、看自己、关注、取关）
-import {
-  getProfileApi,
+import { getProfileApi,
   getFollowingListApi,
   getFollowersListApi,
   followUserApi,
   unfollowUserApi,
   updateProfileApi
 } from '@/api/user'
-import { getOrders } from '@/api/shop'
+import { getOrders, getAddresses } from '@/api/shop'
 
 import { ElMessage } from 'element-plus'
+import { ShoppingCart, MapLocation, Star, Document, TrendCharts, User } from '@element-plus/icons-vue'
 import defaultAvatar from '@/assets/default_avatar.svg'
 
 const userStore = useUserStore()
@@ -233,6 +297,7 @@ const profileData = ref({
   following_count: 0
 })
 const orderCount = ref(0)
+const addressCount = ref(0)
 
 // 关注、粉丝列表响应式存储
 const followingList = ref([])
@@ -422,6 +487,26 @@ const goToOrders = () => {
   router.push('/profiles/orders')
 }
 
+// 跳转到地址管理页面
+const goToAddresses = () => {
+  router.push('/profiles/addresses')
+}
+
+// 跳转到收藏页面
+const goToCollections = () => {
+  router.push('/profiles/collections')
+}
+
+// 跳转到帖子页面
+const goToPosts = () => {
+  router.push('/profiles/posts')
+}
+
+// 跳转到数据统计页面
+const goToData = () => {
+  router.push('/profiles/data')
+}
+
 const loadOrderCount = async () => {
   if (!isMe.value) return
   try {
@@ -434,16 +519,30 @@ const loadOrderCount = async () => {
   }
 }
 
+const loadAddressCount = async () => {
+  if (!isMe.value) return
+  try {
+    const res = await getAddresses()
+    if (res.code === 100) {
+      addressCount.value = res.data.length || 0
+    }
+  } catch (error) {
+    console.error('加载地址数量失败', error)
+  }
+}
+
 // 💡 侦听器关键：由于是同一个组件内切路由（比如从看自己切到看别人的列表），组件不会重新销毁挂载。
 // 必须通过监听 query.username 的变化，来重新触发数据抓取。
 watch(() => route.query.username, () => {
   fetchUserProfileChain()
   loadOrderCount()
+  loadAddressCount()
 }, { deep: true })
 
 onMounted(() => {
   fetchUserProfileChain()
   loadOrderCount()
+  loadAddressCount()
 })
 </script>
 
@@ -593,5 +692,63 @@ onMounted(() => {
   font-size: 12px;
   color: #909399;
   margin-top: 8px;
+}
+.quick-entry-card {
+  border-radius: 12px;
+  border: 1px solid #e4e7ed;
+  background-color: #fff;
+}
+.quick-entry-card :deep(.el-card__header) {
+  padding-bottom: 12px;
+}
+.quick-entry-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.quick-entry-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+.quick-entry-item:hover {
+  background-color: #f5f7fa;
+  transform: translateY(-2px);
+}
+.entry-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.order-icon {
+  background-color: #fdf6ec;
+}
+.address-icon {
+  background-color: #f0f9eb;
+}
+.collection-icon {
+  background-color: #fef0f0;
+}
+.post-icon {
+  background-color: #f4f4f5;
+}
+.data-icon {
+  background-color: #f5f0ff;
+}
+.edit-icon {
+  background-color: #ecf5ff;
+}
+.entry-label {
+  font-size: 14px;
+  color: #606266;
 }
 </style>

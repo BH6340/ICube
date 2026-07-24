@@ -50,7 +50,6 @@
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="profiles">个人中心</el-dropdown-item>
-              <el-dropdown-item command="settings">设置</el-dropdown-item>
               <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -264,8 +263,6 @@ const handleDropdownCommand = async (command) => {
     }
   } else if (command === 'profiles') {
     await router.push('/profiles/info')
-  } else if (command === 'settings') {
-    await router.push('/profiles/settings')
   }
 }
 </script>

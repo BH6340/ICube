@@ -223,3 +223,48 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f'{self.order.order_no} - {self.product.name}'
+
+
+class Address(models.Model):
+    """
+    收货地址模型
+
+    存储用户的收货地址信息，支持设置默认地址和排序管理。
+
+    设计要点：
+        - **关联用户**：通过外键关联 User 模型，一个用户可以有多个地址
+        - **默认地址**：is_default 字段标识默认地址，同一用户只能有一个默认地址
+        - **地址结构**：省市区三级地址 + 详细地址，便于前端地址选择器对接
+        - **排序控制**：sort_order 控制地址展示顺序，数值越小越靠前
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='addresses', verbose_name='用户')
+    name = models.CharField('收货人', max_length=50)
+    phone = models.CharField('联系电话', max_length=20)
+    province = models.CharField('省份', max_length=50)
+    city = models.CharField('城市', max_length=50)
+    district = models.CharField('区县', max_length=50)
+    detail = models.CharField('详细地址', max_length=500)
+    is_default = models.BooleanField('是否默认', default=False)
+    sort_order = models.IntegerField('排序', default=0)
+    created_at = models.DateTimeField('创建时间', auto_now_add=True)
+    updated_at = models.DateTimeField('更新时间', auto_now=True)
+
+    class Meta:
+        app_label = 'shop'
+        db_table = 'shop_address'
+        ordering = ['sort_order', '-created_at']
+        verbose_name = '收货地址'
+        verbose_name_plural = '收货地址'
+
+    def __str__(self):
+        return f'{self.name} - {self.phone} - {self.province}{self.city}{self.district}{self.detail}'
+
+    @property
+    def full_address(self):
+        """
+        返回完整地址字符串
+
+        Returns:
+            完整地址（省市区 + 详细地址）
+        """
+        return f'{self.province}{self.city}{self.district}{self.detail}'

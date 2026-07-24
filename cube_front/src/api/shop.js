@@ -210,3 +210,86 @@ export const completeOrder = (id) => {
     method: 'put'
   })
 }
+
+/**
+ * 获取当前用户的收货地址列表
+ *
+ * @returns {Promise<Object>} 响应数据，包含地址列表
+ */
+export const getAddresses = () => {
+  return request({
+    url: '/api/shop/addresses/',
+    method: 'get'
+  })
+}
+
+/**
+ * 创建收货地址
+ *
+ * @param {Object} data - 地址数据
+ * @param {string} data.name - 收货人姓名
+ * @param {string} data.phone - 联系电话
+ * @param {string} data.province - 省份
+ * @param {string} data.city - 城市
+ * @param {string} data.district - 区县
+ * @param {string} data.detail - 详细地址
+ * @param {boolean} [data.is_default] - 是否设为默认地址
+ * @param {number} [data.sort_order] - 排序
+ * @returns {Promise<Object>} 响应数据，包含创建的地址信息
+ */
+export const createAddress = (data) => {
+  return request({
+    url: '/api/shop/addresses/',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 更新收货地址
+ *
+ * @param {number} id - 地址 ID
+ * @param {Object} data - 更新数据
+ * @param {string} [data.name] - 收货人姓名
+ * @param {string} [data.phone] - 联系电话
+ * @param {string} [data.province] - 省份
+ * @param {string} [data.city] - 城市
+ * @param {string} [data.district] - 区县
+ * @param {string} [data.detail] - 详细地址
+ * @param {boolean} [data.is_default] - 是否设为默认地址
+ * @param {number} [data.sort_order] - 排序
+ * @returns {Promise<Object>} 响应数据，包含更新后的地址信息
+ */
+export const updateAddress = (id, data) => {
+  return request({
+    url: `/api/shop/addresses/${id}/`,
+    method: 'put',
+    data
+  })
+}
+
+/**
+ * 删除收货地址
+ *
+ * @param {number} id - 地址 ID
+ * @returns {Promise<Object>} 响应数据
+ */
+export const deleteAddress = (id) => {
+  return request({
+    url: `/api/shop/addresses/${id}/`,
+    method: 'delete'
+  })
+}
+
+/**
+ * 设置默认地址
+ *
+ * @param {number} id - 地址 ID
+ * @returns {Promise<Object>} 响应数据，包含更新后的地址信息
+ */
+export const setDefaultAddress = (id) => {
+  return request({
+    url: `/api/shop/addresses/${id}/set_default/`,
+    method: 'post'
+  })
+}

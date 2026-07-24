@@ -173,6 +173,12 @@ const router = createRouter({
                     path: 'profiles/data',
                     name: 'profileData',
                     component: () => import('@/views/profiles/MyDataView.vue')
+                },
+                {
+                    path: 'profiles/addresses',
+                    name: 'profileAddresses',
+                    component: () => import('@/views/profiles/AddressView.vue'),
+                    meta: { requiresAuth: true }
                 }
             ]
         },

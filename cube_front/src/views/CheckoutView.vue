@@ -5,21 +5,68 @@
         <el-card shadow="never" class="address-card">
           <template #header>
             <span>收货地址</span>
+            <el-button size="small" type="primary" icon="Plus" @click="goToAddressManage">
+              管理地址
+            </el-button>
           </template>
+
+          <div v-if="addresses.length > 0" class="address-selector">
+            <div
+              v-for="address in addresses"
+              :key="address.id"
+              class="address-option"
+              :class="{ 'selected': selectedAddressId === address.id }"
+              @click="selectAddress(address)"
+            >
+              <el-radio :value="address.id" v-model="selectedAddressId" />
+              <div class="address-info">
+                <div class="address-header-row">
+                  <span class="address-name">{{ address.name }}</span>
+                  <span class="address-phone">{{ address.phone }}</span>
+                  <el-tag v-if="address.is_default" size="small" type="primary" effect="plain">
+                    默认
+                  </el-tag>
+                </div>
+                <div class="address-detail">
+                  {{ address.province }}{{ address.city }}{{ address.district }}{{ address.detail }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <el-divider v-if="addresses.length > 0" style="margin: 16px 0;" />
+
           <el-form :model="addressForm" label-position="top" class="address-form">
             <el-row :gutter="20">
               <el-col :span="12">
-                <el-form-item label="收货人">
+                <el-form-item label="收货人" prop="name">
                   <el-input v-model="addressForm.name" placeholder="请输入收货人姓名" />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="联系电话">
+                <el-form-item label="联系电话" prop="phone">
                   <el-input v-model="addressForm.phone" placeholder="请输入联系电话" />
                 </el-form-item>
               </el-col>
             </el-row>
-            <el-form-item label="详细地址">
+            <el-row :gutter="10">
+              <el-col :span="8">
+                <el-form-item label="省份" prop="province">
+                  <el-input v-model="addressForm.province" placeholder="请输入省份" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="城市" prop="city">
+                  <el-input v-model="addressForm.city" placeholder="请输入城市" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="区县" prop="district">
+                  <el-input v-model="addressForm.district" placeholder="请输入区县" />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-form-item label="详细地址" prop="detail">
               <el-input v-model="addressForm.detail" placeholder="请输入详细地址" />
             </el-form-item>
           </el-form>
@@ -91,14 +138,20 @@ import { ref, computed, onMounted, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ShoppingBag } from '@element-plus/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getCart, createOrder } from '@/api/shop'
+import { getCart, createOrder, getAddresses } from '@/api/shop'
 
 const route = useRoute()
 const router = useRouter()
 const cartList = ref([])
+const addresses = ref([])
+const selectedAddressId = ref(null)
+
 const addressForm = reactive({
   name: '',
   phone: '',
+  province: '',
+  city: '',
+  district: '',
   detail: ''
 })
 
@@ -114,6 +167,20 @@ const totalPrice = computed(() => {
 
 const formatSpec = (spec) => {
   return Object.entries(spec).map(([k, v]) => `${k}: ${v}`).join(' / ')
+}
+
+const selectAddress = (address) => {
+  selectedAddressId.value = address.id
+  addressForm.name = address.name
+  addressForm.phone = address.phone
+  addressForm.province = address.province
+  addressForm.city = address.city
+  addressForm.district = address.district
+  addressForm.detail = address.detail
+}
+
+const goToAddressManage = () => {
+  router.push('/profiles/addresses')
 }
 
 const handleSubmit = async () => {
@@ -153,8 +220,24 @@ const loadCart = async () => {
   }
 }
 
+const loadAddresses = async () => {
+  try {
+    const res = await getAddresses()
+    if (res.code === 100) {
+      addresses.value = res.data || []
+      const defaultAddress = addresses.value.find(a => a.is_default)
+      if (defaultAddress) {
+        selectAddress(defaultAddress)
+      }
+    }
+  } catch (error) {
+    console.error('加载地址列表失败', error)
+  }
+}
+
 onMounted(() => {
   loadCart()
+  loadAddresses()
 })
 </script>
 
@@ -168,6 +251,66 @@ onMounted(() => {
 .summary-card {
   border-radius: 8px;
   margin-bottom: 16px;
+}
+
+.address-card :deep(.el-card__header) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.address-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.address-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 2px solid #ebeef5;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.address-option:hover {
+  border-color: #c0c4cc;
+}
+
+.address-option.selected {
+  border-color: #409eff;
+  background-color: #ecf5ff;
+}
+
+.address-option .address-info {
+  flex: 1;
+}
+
+.address-header-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.address-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.address-phone {
+  font-size: 13px;
+  color: #606266;
+}
+
+.address-detail {
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.5;
 }
 
 .address-form {

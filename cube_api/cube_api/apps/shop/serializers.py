@@ -18,7 +18,7 @@
 """
 
 from rest_framework import serializers
-from .models import ProductCategory, Product, Cart, Order, OrderItem
+from .models import ProductCategory, Product, Cart, Order, OrderItem, Address
 
 
 class ProductCategorySerializer(serializers.ModelSerializer):
@@ -196,3 +196,23 @@ class OrderCreateSerializer(serializers.Serializer):
         if not carts.exists():
             raise serializers.ValidationError('购物车商品不存在')
         return cart_ids
+
+
+class AddressSerializer(serializers.ModelSerializer):
+    """
+    收货地址序列化器
+
+    序列化收货地址信息，包含完整地址和默认状态。
+
+    设计要点：
+        - **完整字段**：包含省市区和详细地址的所有字段
+        - **默认标识**：is_default 字段标识默认地址
+        - **只读字段**：full_address 通过 property 方法生成完整地址字符串
+    """
+    full_address = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = Address
+        fields = ['id', 'name', 'phone', 'province', 'city', 'district', 'detail',
+                  'is_default', 'sort_order', 'full_address', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']

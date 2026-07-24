@@ -23,10 +23,11 @@ from rest_framework.response import Response
 from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
-from .models import ProductCategory, Product, Cart, Order, OrderItem
+from .models import ProductCategory, Product, Cart, Order, OrderItem, Address
 from .serializers import (
     ProductCategorySerializer, ProductListSerializer, ProductDetailSerializer,
-    CartSerializer, CartCreateSerializer, OrderSerializer, OrderCreateSerializer
+    CartSerializer, CartCreateSerializer, OrderSerializer, OrderCreateSerializer,
+    AddressSerializer
 )
 from .alipay_config import generate_alipay_qr_code, generate_alipay_url, verify_alipay_notify
 from utils.common_response import APIResponse
@@ -423,3 +424,108 @@ class OrderViewSet(viewsets.ModelViewSet):
         except Order.DoesNotExist:
             logger.error(f"支付宝回调 - 订单 {order_no} 不存在")
             return Response('fail')
+
+
+class AddressViewSet(viewsets.ModelViewSet):
+    """
+    收货地址视图集
+
+    处理用户收货地址的完整生命周期，包括增删改查和默认地址设置。
+
+    设计要点：
+        - **权限控制**：用户只能访问和管理自己的地址
+        - **默认地址唯一性**：同一用户只能有一个默认地址，创建或设置默认时自动取消其他默认地址
+        - **排序管理**：按 sort_order 排序，默认地址排在最前面
+        - **删除处理**：删除默认地址时，自动将第一个地址设为默认
+    """
+    queryset = Address.objects.all()
+    serializer_class = AddressSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """过滤当前用户的地址列表"""
+        return super().get_queryset().filter(user=self.request.user)
+
+    def list(self, request, *args, **kwargs):
+        """
+        获取当前用户的地址列表
+
+        返回结果按 is_default（默认地址优先）和 sort_order 排序。
+        """
+        queryset = self.get_queryset().order_by('-is_default', 'sort_order')
+        serializer = self.get_serializer(queryset, many=True)
+        return APIResponse(data=serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        """
+        创建新地址
+
+        如果设置了 is_default=True，自动将用户的其他默认地址取消。
+        如果用户没有默认地址，新创建的地址自动设为默认。
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        is_default = serializer.validated_data.get('is_default', False)
+        user = request.user
+
+        if is_default:
+            Address.objects.filter(user=user, is_default=True).update(is_default=False)
+        else:
+            if not Address.objects.filter(user=user, is_default=True).exists():
+                serializer.validated_data['is_default'] = True
+
+        serializer.save(user=user)
+        return APIResponse(data=serializer.data, msg='地址添加成功')
+
+    def update(self, request, *args, **kwargs):
+        """
+        更新地址
+
+        如果设置了 is_default=True，自动将用户的其他默认地址取消。
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        is_default = serializer.validated_data.get('is_default', False)
+        if is_default and not instance.is_default:
+            Address.objects.filter(user=request.user, is_default=True).update(is_default=False)
+
+        serializer.save()
+        return APIResponse(data=serializer.data, msg='地址更新成功')
+
+    def destroy(self, request, *args, **kwargs):
+        """
+        删除地址
+
+        如果删除的是默认地址，自动将用户的第一个地址设为默认。
+        """
+        instance = self.get_object()
+        is_default_deleted = instance.is_default
+        instance.delete()
+
+        if is_default_deleted:
+            first_address = Address.objects.filter(user=request.user).first()
+            if first_address:
+                first_address.is_default = True
+                first_address.save()
+
+        return APIResponse(msg='地址删除成功')
+
+    @action(detail=True, methods=['post'])
+    def set_default(self, request, pk=None):
+        """
+        设置默认地址
+
+        将指定地址设为默认地址，同时取消其他地址的默认状态。
+        """
+        address = self.get_object()
+        if address.is_default:
+            return APIResponse(msg='该地址已经是默认地址')
+
+        Address.objects.filter(user=request.user, is_default=True).update(is_default=False)
+        address.is_default = True
+        address.save()
+
+        return APIResponse(data=AddressSerializer(address).data, msg='默认地址设置成功')
