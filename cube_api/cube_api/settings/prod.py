@@ -80,6 +80,12 @@ CACHES = {
     }
 }
 
+# ==================== django-unfold 配置 ====================
+
+# X_FRAME_OPTIONS：Unfold 需要嵌入 iframe，必须设为 SAMEORIGIN
+# 生产环境继承 dev.py 的 UNFOLD_SETTINGS，此处仅显式覆盖安全头
+X_FRAME_OPTIONS = 'SAMEORIGIN'
+
 # ==================== 静态文件配置 ====================
 
 # 静态文件收集目录

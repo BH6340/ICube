@@ -38,7 +38,6 @@ class Tag(models.Model):
         db_table = 'forum_tag'
         verbose_name = '标签'
         verbose_name_plural = '标签'
-        # 按使用次数降序排列，热门标签排在前面
         ordering = ['-use_count']
 
     def __str__(self):
@@ -277,8 +276,9 @@ class PostLike(models.Model):
     class Meta:
         app_label = 'forum'
         db_table = 'forum_post_like'
-        # 同一用户对同一帖子只能点赞一次
         unique_together = ['post', 'user']
+        verbose_name = '帖子点赞'
+        verbose_name_plural = '帖子点赞'
 
 
 class CommentLike(models.Model):
@@ -304,8 +304,9 @@ class CommentLike(models.Model):
     class Meta:
         app_label = 'forum'
         db_table = 'forum_comment_like'
-        # 同一用户对同一评论只能有一条记录（支持切换点赞/点踩）
         unique_together = ['comment', 'user']
+        verbose_name = '评论点赞'
+        verbose_name_plural = '评论点赞'
 
 
 class PostCollect(models.Model):
@@ -326,8 +327,9 @@ class PostCollect(models.Model):
     class Meta:
         app_label = 'forum'
         db_table = 'forum_post_collect'
-        # 同一用户对同一帖子只能收藏一次
         unique_together = ['post', 'user']
+        verbose_name = '帖子收藏'
+        verbose_name_plural = '帖子收藏'
 
 
 class Report(models.Model):

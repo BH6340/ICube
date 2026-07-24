@@ -70,6 +70,11 @@ SITE_DOMAIN = os.getenv('SITE_DOMAIN', 'http://localhost:8000')
 # ==================== 应用配置 ====================
 
 INSTALLED_APPS = [
+    # django-unfold：必须在 Django 内置应用之前注册
+    # Unfold 是基于 Tailwind CSS 的现代化后台管理主题，替换原生 Django Admin 界面
+    'unfold',                        # Unfold 核心应用
+    'unfold.contrib.filters',        # Unfold 扩展过滤器（提供更丰富的侧边栏筛选组件）
+
     # Django 内置应用
     'django.contrib.admin',          # 后台管理系统
     'django.contrib.auth',           # 认证系统
@@ -417,6 +422,90 @@ LOGGING = {}
 # 3. 使用自定义的 Loguru 日志配置
 from .logger_conf import setup_logging
 setup_logging()
+
+# ==================== django-unfold 后台主题配置 ====================
+
+X_FRAME_OPTIONS = 'SAMEORIGIN'
+
+UNFOLD = {
+    "SITE_TITLE": "ICube",
+    "SITE_HEADER": "ICube 管理后台",
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": False,
+        "navigation": [
+            {
+                "title": "认证和授权",
+                "icon": "lock",
+                "collapsible": True,
+                "items": [
+                    {"title": "用户组", "link": "/admin/auth/group/"},
+                    {"title": "权限", "link": "/admin/auth/permission/"},
+                ],
+            },
+            {
+                "title": "Home",
+                "icon": "home",
+                "collapsible": True,
+                "items": [
+                    {"title": "导航菜单", "link": "/admin/home/navigationmenu/"},
+                ],
+            },
+            {
+                "title": "Accounts",
+                "icon": "people",
+                "collapsible": True,
+                "items": [
+                    {"title": "用户列表", "link": "/admin/accounts/user/"},
+                ],
+            },
+            {
+                "title": "论坛",
+                "icon": "message",
+                "collapsible": True,
+                "items": [
+                    {"title": "标签", "link": "/admin/forum/tag/"},
+                    {"title": "帖子", "link": "/admin/forum/post/"},
+                    {"title": "评论", "link": "/admin/forum/comment/"},
+                    {"title": "举报记录", "link": "/admin/forum/report/"},
+                    {"title": "帖子图片", "link": "/admin/forum/postimage/"},
+                ],
+            },
+            {
+                "title": "魔方公式",
+                "icon": "cube",
+                "collapsible": True,
+                "items": [
+                    {"title": "魔方分类", "link": "/admin/formula/cubecategory/"},
+                    {"title": "魔方状态", "link": "/admin/formula/cubestate/"},
+                    {"title": "公式", "link": "/admin/formula/formula/"},
+                    {"title": "公式标签", "link": "/admin/formula/formulatag/"},
+                    {"title": "公式收藏", "link": "/admin/formula/formulacollection/"},
+                ],
+            },
+            {
+                "title": "Timer",
+                "icon": "timer",
+                "collapsible": True,
+                "items": [
+                    {"title": "计时记录", "link": "/admin/timer/timerrecord/"},
+                ],
+            },
+            {
+                "title": "商城",
+                "icon": "shopping_cart",
+                "collapsible": True,
+                "items": [
+                    {"title": "商品分类", "link": "/admin/shop/productcategory/"},
+                    {"title": "商品", "link": "/admin/shop/product/"},
+                    {"title": "购物车", "link": "/admin/shop/cart/"},
+                    {"title": "订单", "link": "/admin/shop/order/"},
+                    {"title": "订单明细", "link": "/admin/shop/orderitem/"},
+                ],
+            },
+        ],
+    },
+}
 
 # ==================== CORS 配置 ====================
 

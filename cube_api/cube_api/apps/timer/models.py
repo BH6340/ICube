@@ -84,6 +84,8 @@ class TimerRecord(models.Model):
         app_label = 'timer'
         db_table = 'timer_record'
         ordering = ['-created_at']
+        verbose_name = '计时记录'
+        verbose_name_plural = '计时记录'
 
     def __str__(self):
         return f'{self.user.username} - {self.cube_type} - {self.time_ms}ms'

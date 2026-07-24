@@ -53,6 +53,8 @@ class ProductCategory(models.Model):
         app_label = 'shop'
         db_table = 'shop_product_category'
         ordering = ['sort_order', 'id']
+        verbose_name = '商品分类'
+        verbose_name_plural = '商品分类'
 
     def __str__(self):
         return self.name
@@ -99,6 +101,8 @@ class Product(models.Model):
         app_label = 'shop'
         db_table = 'shop_product'
         ordering = ['-created_at']
+        verbose_name = '商品'
+        verbose_name_plural = '商品'
 
     def __str__(self):
         return self.name
@@ -125,6 +129,8 @@ class Cart(models.Model):
     class Meta:
         app_label = 'shop'
         db_table = 'shop_cart'
+        verbose_name = '购物车'
+        verbose_name_plural = '购物车'
 
     def __str__(self):
         return f'{self.user.username} - {self.product.name}'
@@ -168,6 +174,8 @@ class Order(models.Model):
         app_label = 'shop'
         db_table = 'shop_order'
         ordering = ['-created_at']
+        verbose_name = '订单'
+        verbose_name_plural = '订单'
 
     def __str__(self):
         return self.order_no
@@ -210,6 +218,8 @@ class OrderItem(models.Model):
     class Meta:
         app_label = 'shop'
         db_table = 'shop_order_item'
+        verbose_name = '订单明细'
+        verbose_name_plural = '订单明细'
 
     def __str__(self):
         return f'{self.order.order_no} - {self.product.name}'

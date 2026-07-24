@@ -133,8 +133,13 @@ class User(AbstractUser):
     # 个人简介（可选）
     bio = models.TextField(blank=True)
 
-    # 头像 URL（可选）
-    image: str | None = models.URLField(null=True, blank=True)
+    # 头像（可选，上传路径：avatars/）
+    image = models.ImageField(
+        '头像',
+        upload_to='avatars/',
+        null=True,
+        blank=True
+    )
 
     # ==================== 关注关系 ====================
 

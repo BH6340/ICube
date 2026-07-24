@@ -50,6 +50,8 @@ class CubeCategory(models.Model):
         db_table = 'formula_cube_category'
         unique_together = ['order', 'method', 'phase']
         ordering = ['order', 'method', 'sort_order']
+        verbose_name = '魔方分类'
+        verbose_name_plural = '魔方分类'
 
     def __str__(self):
         return f"{self.order}阶 {self.method} {self.phase}"
@@ -99,6 +101,8 @@ class CubeState(models.Model):
         app_label = 'formula'
         db_table = 'formula_cube_state'
         ordering = ['category', 'name']
+        verbose_name = '魔方状态'
+        verbose_name_plural = '魔方状态'
 
     def __str__(self):
         return self.name
@@ -169,6 +173,8 @@ class Formula(models.Model):
         app_label = 'formula'
         db_table = 'formula_formula'
         ordering = ['category', 'name']
+        verbose_name = '公式'
+        verbose_name_plural = '公式'
 
     def __str__(self):
         return f"{self.category} - {self.name}"
@@ -234,6 +240,8 @@ class FormulaTag(models.Model):
     class Meta:
         app_label = 'formula'
         db_table = 'formula_formula_tag'
+        verbose_name = '公式标签'
+        verbose_name_plural = '公式标签'
 
     def __str__(self):
         return self.name
@@ -295,3 +303,5 @@ class FormulaCollection(models.Model):
         app_label = 'formula'
         db_table = 'formula_formula_collection'
         unique_together = ['user', 'formula']
+        verbose_name = '公式收藏'
+        verbose_name_plural = '公式收藏'

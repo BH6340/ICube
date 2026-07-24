@@ -4,6 +4,7 @@ cffi==2.1.0
 colorama==0.4.6
 cryptography==49.0.0
 Django==6.0.5
+django-unfold==0.101.0
 django-cors-headers==4.9.0
 django-filter==25.2
 django-redis==6.0.0
