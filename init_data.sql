@@ -1,5 +1,3 @@
--- 1. 指定使用 Docker 创建好的数据库
-USE icube_db;
 /*
  Navicat Premium Data Transfer
 
@@ -13,7 +11,7 @@ USE icube_db;
  Target Server Version : 90100
  File Encoding         : 65001
 
- Date: 20/07/2026 08:55:54
+ Date: 24/07/2026 15:10:20
 */
 
 SET NAMES utf8mb4;
@@ -34,7 +32,7 @@ CREATE TABLE `accounts_user`  (
   `email` varchar(254) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `username` varchar(60) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `bio` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `image` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `image` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `email`(`email` ASC) USING BTREE,
   UNIQUE INDEX `accounts_user_username_6088629e_uniq`(`username` ASC) USING BTREE
@@ -43,19 +41,19 @@ CREATE TABLE `accounts_user`  (
 -- ----------------------------
 -- Records of accounts_user
 -- ----------------------------
-INSERT INTO `accounts_user` VALUES (1, 'pbkdf2_sha256$1200000$8XqaTdWaJaiaLmQP2FPYG6$oYG5XVYa5Ed8fwV8c1ef12LAVCBD2NmrT4rqnxzPbv0=', NULL, 0, 0, 1, '2026-05-11 13:04:43.160321', 'bh01@qq.com', 'bh01', '这是bh01的测试简介', '/media/avatars/admin_OjCNYde.png');
-INSERT INTO `accounts_user` VALUES (2, 'pbkdf2_sha256$1200000$r3OXdjnkCUkkD8dsYwKvYI$tVLlEmIIgIzLbEuuQK2DNcQADpHDx2dNLaFx0jBC978=', NULL, 0, 0, 1, '2026-05-11 14:58:32.159835', 'bh02@qq.com', 'bh02', '这是bh02的简介', NULL);
-INSERT INTO `accounts_user` VALUES (3, 'pbkdf2_sha256$1200000$cJ7IS2DNMwk53YoArSUDWB$09KSEoIzAND7FptTUGF69r9Wfvn58LXDiUOYaa8Uq3U=', NULL, 0, 0, 1, '2026-05-11 14:58:56.644541', 'bh03@qq.com', 'bh03', '这是bh03的简介', NULL);
-INSERT INTO `accounts_user` VALUES (4, 'pbkdf2_sha256$1200000$1U3JbJi7IJmftkdvH2cafI$KnEY+mhMfb+DHo9EadnmWPWuVq28sDswnhG/Ixxit8s=', NULL, 0, 0, 1, '2026-05-11 14:59:20.745717', 'bh04@qq.com', 'bh04', '这是bh04的简介', NULL);
-INSERT INTO `accounts_user` VALUES (5, 'pbkdf2_sha256$1200000$WRHGASrWYmCTFXQaZUwadz$N5eocKcaXp0pYcZnT07NhKqhsvi6OFje6EPCUWnO7uk=', NULL, 0, 0, 1, '2026-05-11 19:11:36.539452', 'bh05@qq.com', 'bh05', '魔方爱好者', NULL);
-INSERT INTO `accounts_user` VALUES (6, 'pbkdf2_sha256$1200000$okkHb5GNQKwfvBOnAQJ5de$oTBOGz7ODepDV/+iQKHXc8wnGcmzwO0FtbbmGwdt4I8=', NULL, 1, 1, 1, '2026-05-12 08:26:47.622264', 'baihao6340@163.com', '', '', NULL);
-INSERT INTO `accounts_user` VALUES (7, 'pbkdf2_sha256$1200000$RYFGlCvA1CDRxSNdklva6T$kXTRELt9ADjwvXRzQ7vBw4qlYiKkYsHbLDMtsdqHy7c=', NULL, 0, 0, 1, '2026-05-12 10:31:45.718088', 'bh06@qq.com', 'bh06', '', NULL);
-INSERT INTO `accounts_user` VALUES (8, 'pbkdf2_sha256$1200000$DnUCKmEqnGwe6dgpusKgbv$dWypTxpzl3XsLQTHMtP2kVzzgSlZGrPXhDQvoFrI04I=', NULL, 0, 0, 1, '2026-06-03 10:52:12.092033', 'bh06@163.com', 'bh06_1', '', NULL);
-INSERT INTO `accounts_user` VALUES (9, 'pbkdf2_sha256$1200000$ftzQsmKyRLAeMfinPTKybA$HhvTRYfZhcto+EM0AkQcrw40kW595wOvrUz9i6d0/dY=', NULL, 0, 0, 1, '2026-06-03 14:36:26.343585', 'bh07@qq.com', 'bh07', '', NULL);
-INSERT INTO `accounts_user` VALUES (10, 'pbkdf2_sha256$1200000$jp60Dr1nt6eO4OfAqfD5Qv$yGPq7Od8NvPd5UZXv/PytTyviaCqWLBGPZFgB5vR06E=', NULL, 0, 0, 1, '2026-06-03 14:54:47.046829', 'bh08@qq.com', 'bh08', '新的个人介绍', '/media/avatars/admin_L3Lh7Ue.png');
-INSERT INTO `accounts_user` VALUES (11, 'pbkdf2_sha256$1200000$HnHuO67UPNA3KGzqrdciHY$BEGRtyOatdrHIGDWKfQyC8zc2gE9HkTmxTtSBUUMtAM=', NULL, 0, 0, 1, '2026-06-05 09:55:05.648601', 'user1@example.com', '魔方小白', '魔方爱好者，欢迎交流！', NULL);
-INSERT INTO `accounts_user` VALUES (12, 'pbkdf2_sha256$1200000$K4RZs6x8mUSPOBiwKYSfpG$m1sUeywn5sSlmRjpG9NYv9v/CLItOlun+BLJpCPab9M=', NULL, 0, 0, 1, '2026-06-05 09:55:07.421317', 'user2@example.com', '速拧大神', '魔方爱好者，欢迎交流！', NULL);
-INSERT INTO `accounts_user` VALUES (13, 'pbkdf2_sha256$1200000$NUI8BH6NjcYEnrSe8l5O4V$PR0PnTdasbMdgc3gewGRKWuk6CRdEaEkyoXrzhpLxSc=', NULL, 0, 0, 1, '2026-06-05 09:55:09.104099', 'user3@example.com', '公式收藏家', '魔方爱好者，欢迎交流！', NULL);
+INSERT INTO `accounts_user` VALUES (1, 'pbkdf2_sha256$1200000$8XqaTdWaJaiaLmQP2FPYG6$oYG5XVYa5Ed8fwV8c1ef12LAVCBD2NmrT4rqnxzPbv0=', NULL, 0, 0, 1, '2026-05-11 13:04:43.160321', 'bh01@qq.com', 'bh01', '这是bh01的测试简介', 'avatars/avatar_1_7bdc084e_JjZyEAY.svg');
+INSERT INTO `accounts_user` VALUES (2, 'pbkdf2_sha256$1200000$r3OXdjnkCUkkD8dsYwKvYI$tVLlEmIIgIzLbEuuQK2DNcQADpHDx2dNLaFx0jBC978=', NULL, 0, 0, 1, '2026-05-11 14:58:32.159835', 'bh02@qq.com', 'bh02', '这是bh02的简介', 'avatars/avatar_2_d43037d8_kARyCpc.svg');
+INSERT INTO `accounts_user` VALUES (3, 'pbkdf2_sha256$1200000$cJ7IS2DNMwk53YoArSUDWB$09KSEoIzAND7FptTUGF69r9Wfvn58LXDiUOYaa8Uq3U=', NULL, 0, 0, 1, '2026-05-11 14:58:56.644541', 'bh03@qq.com', 'bh03', '这是bh03的简介', 'avatars/avatar_3_599f7828_JWU26XE.svg');
+INSERT INTO `accounts_user` VALUES (4, 'pbkdf2_sha256$1200000$1U3JbJi7IJmftkdvH2cafI$KnEY+mhMfb+DHo9EadnmWPWuVq28sDswnhG/Ixxit8s=', NULL, 0, 0, 1, '2026-05-11 14:59:20.745717', 'bh04@qq.com', 'bh04', '这是bh04的简介', 'avatars/avatar_4_07eddaaf_WeeKHJx.svg');
+INSERT INTO `accounts_user` VALUES (5, 'pbkdf2_sha256$1200000$WRHGASrWYmCTFXQaZUwadz$N5eocKcaXp0pYcZnT07NhKqhsvi6OFje6EPCUWnO7uk=', NULL, 0, 0, 1, '2026-05-11 19:11:36.539452', 'bh05@qq.com', 'bh05', '魔方爱好者', 'avatars/avatar_5_42c5b22d_JMH7ua4.svg');
+INSERT INTO `accounts_user` VALUES (6, 'pbkdf2_sha256$1200000$okkHb5GNQKwfvBOnAQJ5de$oTBOGz7ODepDV/+iQKHXc8wnGcmzwO0FtbbmGwdt4I8=', '2026-07-24 14:13:00.721822', 1, 1, 1, '2026-05-12 08:26:47.622264', 'baihao6340@163.com', '', '', 'avatars/avatar_6_65294af4_B6xyUSz.svg');
+INSERT INTO `accounts_user` VALUES (7, 'pbkdf2_sha256$1200000$RYFGlCvA1CDRxSNdklva6T$kXTRELt9ADjwvXRzQ7vBw4qlYiKkYsHbLDMtsdqHy7c=', NULL, 0, 0, 1, '2026-05-12 10:31:45.718088', 'bh06@qq.com', 'bh06', '', 'avatars/avatar_7_4a4a872f_GADdPGB.svg');
+INSERT INTO `accounts_user` VALUES (8, 'pbkdf2_sha256$1200000$DnUCKmEqnGwe6dgpusKgbv$dWypTxpzl3XsLQTHMtP2kVzzgSlZGrPXhDQvoFrI04I=', NULL, 0, 0, 1, '2026-06-03 10:52:12.092033', 'bh06@163.com', 'bh06_1', '', 'avatars/avatar_8_539a8195_i4KcIT3.svg');
+INSERT INTO `accounts_user` VALUES (9, 'pbkdf2_sha256$1200000$ftzQsmKyRLAeMfinPTKybA$HhvTRYfZhcto+EM0AkQcrw40kW595wOvrUz9i6d0/dY=', NULL, 0, 0, 1, '2026-06-03 14:36:26.343585', 'bh07@qq.com', 'bh07', '', 'avatars/avatar_9_f143219d_ZijIf6X.svg');
+INSERT INTO `accounts_user` VALUES (10, 'pbkdf2_sha256$1200000$jp60Dr1nt6eO4OfAqfD5Qv$yGPq7Od8NvPd5UZXv/PytTyviaCqWLBGPZFgB5vR06E=', NULL, 0, 0, 1, '2026-06-03 14:54:47.046829', 'bh08@qq.com', 'bh08', '新的个人介绍', 'avatars/avatar_10_a72b3525_LbR78Bk.svg');
+INSERT INTO `accounts_user` VALUES (11, 'pbkdf2_sha256$1200000$HnHuO67UPNA3KGzqrdciHY$BEGRtyOatdrHIGDWKfQyC8zc2gE9HkTmxTtSBUUMtAM=', NULL, 0, 0, 1, '2026-06-05 09:55:05.648601', 'user1@example.com', '魔方小白', '魔方爱好者，欢迎交流！', 'avatars/avatar_11_50d05158_tAG2QVH.svg');
+INSERT INTO `accounts_user` VALUES (12, 'pbkdf2_sha256$1200000$K4RZs6x8mUSPOBiwKYSfpG$m1sUeywn5sSlmRjpG9NYv9v/CLItOlun+BLJpCPab9M=', NULL, 0, 0, 1, '2026-06-05 09:55:07.421317', 'user2@example.com', '速拧大神', '魔方爱好者，欢迎交流！', 'avatars/avatar_12_23b2b646_RidBlom.svg');
+INSERT INTO `accounts_user` VALUES (13, 'pbkdf2_sha256$1200000$NUI8BH6NjcYEnrSe8l5O4V$PR0PnTdasbMdgc3gewGRKWuk6CRdEaEkyoXrzhpLxSc=', NULL, 0, 0, 1, '2026-06-05 09:55:09.104099', 'user3@example.com', '公式收藏家', '魔方爱好者，欢迎交流！', 'avatars/avatar_13_61701999_4yQ9tw8.svg');
 
 -- ----------------------------
 -- Table structure for accounts_user_followers
@@ -282,6 +280,10 @@ INSERT INTO `auth_permission` VALUES (109, 'Can add timer record', 28, 'add_time
 INSERT INTO `auth_permission` VALUES (110, 'Can change timer record', 28, 'change_timerrecord');
 INSERT INTO `auth_permission` VALUES (111, 'Can delete timer record', 28, 'delete_timerrecord');
 INSERT INTO `auth_permission` VALUES (112, 'Can view timer record', 28, 'view_timerrecord');
+INSERT INTO `auth_permission` VALUES (113, 'Can add 轮播图', 29, 'add_banner');
+INSERT INTO `auth_permission` VALUES (114, 'Can change 轮播图', 29, 'change_banner');
+INSERT INTO `auth_permission` VALUES (115, 'Can delete 轮播图', 29, 'delete_banner');
+INSERT INTO `auth_permission` VALUES (116, 'Can view 轮播图', 29, 'view_banner');
 
 -- ----------------------------
 -- Table structure for django_admin_log
@@ -307,6 +309,8 @@ CREATE TABLE `django_admin_log`  (
 -- ----------------------------
 -- Records of django_admin_log
 -- ----------------------------
+INSERT INTO `django_admin_log` VALUES (1, '2026-07-24 14:16:06.395001', '4', 'CFOP复原步骤', 1, '[{\"added\": {}}]', 29, 6);
+INSERT INTO `django_admin_log` VALUES (2, '2026-07-24 14:27:41.737832', '4', 'CFOP复原步骤', 3, '', 29, 6);
 
 -- ----------------------------
 -- Table structure for django_content_type
@@ -343,6 +347,7 @@ INSERT INTO `django_content_type` VALUES (11, 'forum', 'postlike');
 INSERT INTO `django_content_type` VALUES (14, 'forum', 'posttag');
 INSERT INTO `django_content_type` VALUES (12, 'forum', 'report');
 INSERT INTO `django_content_type` VALUES (13, 'forum', 'tag');
+INSERT INTO `django_content_type` VALUES (29, 'home', 'banner');
 INSERT INTO `django_content_type` VALUES (15, 'home', 'navigationmenu');
 INSERT INTO `django_content_type` VALUES (5, 'sessions', 'session');
 INSERT INTO `django_content_type` VALUES (22, 'shop', 'cart');
@@ -395,6 +400,12 @@ INSERT INTO `django_migrations` VALUES (26, 'forum', '0002_postimage', '2026-07-
 INSERT INTO `django_migrations` VALUES (27, 'forum', '0003_alter_postimage_post', '2026-07-19 15:20:50.664031');
 INSERT INTO `django_migrations` VALUES (28, 'timer', '0001_initial', '2026-07-19 18:40:31.903171');
 INSERT INTO `django_migrations` VALUES (29, 'formula', '0002_formula_view_count', '2026-07-19 23:46:56.922994');
+INSERT INTO `django_migrations` VALUES (30, 'accounts', '0003_alter_user_image', '2026-07-24 09:18:38.642147');
+INSERT INTO `django_migrations` VALUES (31, 'formula', '0003_alter_cubecategory_options_alter_cubestate_options_and_more', '2026-07-24 14:05:10.586162');
+INSERT INTO `django_migrations` VALUES (32, 'forum', '0004_alter_commentlike_options_alter_postcollect_options_and_more', '2026-07-24 14:05:10.719662');
+INSERT INTO `django_migrations` VALUES (33, 'home', '0002_banner', '2026-07-24 14:05:11.091319');
+INSERT INTO `django_migrations` VALUES (34, 'shop', '0002_alter_cart_options_alter_order_options_and_more', '2026-07-24 14:05:11.168692');
+INSERT INTO `django_migrations` VALUES (35, 'timer', '0002_alter_timerrecord_options', '2026-07-24 14:05:11.194775');
 
 -- ----------------------------
 -- Table structure for django_session
@@ -534,7 +545,7 @@ INSERT INTO `formula_formula` VALUES (278, 'F2L-40', 'R U\' R\' U R U\' R\'', 'R
 INSERT INTO `formula_formula` VALUES (279, 'F2L-41', 'y L\' U\' L U L\' U\' L', 'L\' U L U\' L\' U L y\'', NULL, 'formulas/F2L_Images/F2L_041.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.445118', 4, NULL, 1, 0);
 INSERT INTO `formula_formula` VALUES (280, 'OLL-01', 'R\' U2 R U R\' U R', 'R\' U\' R U\' R\' U2 R', NULL, 'formulas/OLL_Images/OLL_001.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.471855', 5, NULL, 2, 0);
 INSERT INTO `formula_formula` VALUES (281, 'OLL-02', 'R U\' U\' R\' U\' R U\' R\'', 'R U R\' U R U U R\'', NULL, 'formulas/OLL_Images/OLL_002.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.495499', 5, NULL, 2, 0);
-INSERT INTO `formula_formula` VALUES (282, 'OLL-03', 'r U R\' U\' r\' F R F\'', 'F R\' F\' r U R U\' r\'', NULL, 'formulas/OLL_Images/OLL_003.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.519951', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (282, 'OLL-03', 'r U R\' U\' r\' F R F\'', 'F R\' F\' r U R U\' r\'', NULL, 'formulas/OLL_Images/OLL_003.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.519951', 5, NULL, 2, 1);
 INSERT INTO `formula_formula` VALUES (283, 'OLL-04', 'F\' r U R\' U\' r\' F R', 'R\' F\' r U R U\' r\' F', NULL, 'formulas/OLL_Images/OLL_004.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.544489', 5, NULL, 2, 0);
 INSERT INTO `formula_formula` VALUES (284, 'OLL-05', 'R2 D\' R U\' U\' R\' D R U\' U\' R', 'R\' U U R\' D\' R U U R\' D R2', NULL, 'formulas/OLL_Images/OLL_005.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.568181', 5, NULL, 2, 0);
 INSERT INTO `formula_formula` VALUES (285, 'OLL-06', 'R U U R\' U\' R U R\' U\' R U\' R\'', 'R U R\' U R U\' R\' U R U\' U\' R\'', NULL, 'formulas/OLL_Images/OLL_006.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.594840', 5, NULL, 2, 0);
@@ -543,13 +554,13 @@ INSERT INTO `formula_formula` VALUES (287, 'OLL-08', 'F R U R\' U\' F\'', 'F U R
 INSERT INTO `formula_formula` VALUES (288, 'OLL-09', 'f R U R\' U\' f\'', 'f U R U\' R\' f\'', NULL, 'formulas/OLL_Images/OLL_009.png', 1, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.667501', 5, NULL, 2, 0);
 INSERT INTO `formula_formula` VALUES (289, 'OLL-10', 'B\' U\' R\' U R B', 'B\' R\' U\' R U B', NULL, 'formulas/OLL_Images/OLL_010.png', 1, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.693348', 5, NULL, 2, 0);
 INSERT INTO `formula_formula` VALUES (290, 'OLL-11', 'R U R\' U\' R\' F R F\'', 'F R\' F\' R U R U\' R\'', NULL, 'formulas/OLL_Images/OLL_011.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.719952', 5, NULL, 2, 0);
-INSERT INTO `formula_formula` VALUES (291, 'OLL-12', 'F R U R\' U\'2 F\'', 'F U\'2 R U\' R\' F\'', NULL, 'formulas/OLL_Images/OLL_012.png', 1, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.745035', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (291, 'OLL-12', 'F R U R\' U\'2 F\'', 'F U\'2 R U\' R\' F\'', NULL, 'formulas/OLL_Images/OLL_012.png', 1, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.745035', 5, NULL, 2, 1);
 INSERT INTO `formula_formula` VALUES (292, 'OLL-13', 'F\' L\' U\' L U2 F', 'F\' U2 L\' U L F', NULL, 'formulas/OLL_Images/OLL_013.png', 1, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.770396', 5, NULL, 2, 0);
 INSERT INTO `formula_formula` VALUES (293, 'OLL-14', 'f R U R\' U\'2 f\'', 'f U\'2 R U\' R\' f\'', NULL, 'formulas/OLL_Images/OLL_014.png', 1, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.796676', 5, NULL, 2, 0);
 INSERT INTO `formula_formula` VALUES (294, 'OLL-15', 'F R U R\' U\' F\' f R U R\' U\' f\'', 'f U R U\' R\' f\' F U R U\' R\' F\'', NULL, 'formulas/OLL_Images/OLL_015.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.821571', 5, NULL, 2, 0);
 INSERT INTO `formula_formula` VALUES (295, 'OLL-16', 'f R U R\' U\' f\' U\' F R U R\' U\' F\'', 'F U R U\' R\' F\' U f U R U\' R\' f\'', NULL, 'formulas/OLL_Images/OLL_016.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.847151', 5, NULL, 2, 0);
 INSERT INTO `formula_formula` VALUES (296, 'OLL-17', 'f R U R\' U\' f\' U F R U R\' U\' F\'', 'F U R U\' R\' F\' U\' f U R U\' R\' f\'', NULL, 'formulas/OLL_Images/OLL_017.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.871964', 5, NULL, 2, 0);
-INSERT INTO `formula_formula` VALUES (297, 'OLL-18', 'R U\' U\' R2\' F R F\' U2 R\' F R F\'', 'F R\' F\' R U2 F R\' F\' R2\' U U R\'', NULL, 'formulas/OLL_Images/OLL_018.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.896113', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (297, 'OLL-18', 'R U\' U\' R2\' F R F\' U2 R\' F R F\'', 'F R\' F\' R U2 F R\' F\' R2\' U U R\'', NULL, 'formulas/OLL_Images/OLL_018.png', 3, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.896113', 5, NULL, 2, 1);
 INSERT INTO `formula_formula` VALUES (298, 'OLL-19', 'r\' U2 R U R\' U r', 'r\' U\' R U\' R\' U2 r', NULL, 'formulas/OLL_Images/OLL_019.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.922978', 5, NULL, 2, 0);
 INSERT INTO `formula_formula` VALUES (299, 'OLL-20', 'r U\' U\' R\' U\' R U\' r\'', 'r U R\' U R U U r\'', NULL, 'formulas/OLL_Images/OLL_020.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.947916', 5, NULL, 2, 0);
 INSERT INTO `formula_formula` VALUES (300, 'OLL-21', 'r U R\' U R U U r\'', 'r U\' U\' R\' U\' R U\' r\'', NULL, 'formulas/OLL_Images/OLL_021.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.972274', 5, NULL, 2, 0);
@@ -639,6 +650,7 @@ INSERT INTO `formula_formula_collection` VALUES (7, '2026-07-19 19:19:50.986141'
 INSERT INTO `formula_formula_collection` VALUES (8, '2026-07-19 19:19:51.870941', 281, 10);
 INSERT INTO `formula_formula_collection` VALUES (9, '2026-07-19 19:19:52.917981', 283, 10);
 INSERT INTO `formula_formula_collection` VALUES (10, '2026-07-19 19:19:53.676831', 282, 10);
+INSERT INTO `formula_formula_collection` VALUES (11, '2026-07-24 14:22:46.224749', 297, 1);
 
 -- ----------------------------
 -- Table structure for formula_formula_tag
@@ -1025,7 +1037,7 @@ CREATE TABLE `forum_post`  (
 -- ----------------------------
 -- Records of forum_post
 -- ----------------------------
-INSERT INTO `forum_post` VALUES (1, '【新手必看】三阶魔方零基础入门教程', '# 三阶魔方零基础入门教程\n\n## 前言\n魔方并不难，只要掌握了方法，任何人都可以学会还原三阶魔方。\n\n## 第一步：底层十字\n在底面拼出一个白色十字，且棱块侧面颜色与中心块对齐。\n\n## 第二步：底层角块\n完成白色面，同时底层四周颜色对齐。\n\n## 第三步：中层棱块\n还原第二层（中间层）的四个棱块。\n\n## 第四步：顶层十字\n在顶层拼出黄色十字。\n\n## 第五步：顶层面位\n将顶层全部变成黄色。\n\n## 第六步：顶层角块归位\n调整顶层角块位置。\n\n## 第七步：顶层棱块归位\n最后一步，完成整个魔方！\n\n祝大家早日学会魔方！🎉', '', 1, 1, 1, 0, 1, 1, 0, 'published', 0, '2026-06-05 09:55:10.802878', '2026-06-05 09:55:10.802918', 11);
+INSERT INTO `forum_post` VALUES (1, '【新手必看】三阶魔方零基础入门教程', '# 三阶魔方零基础入门教程\n\n## 前言\n魔方并不难，只要掌握了方法，任何人都可以学会还原三阶魔方。\n\n## 第一步：底层十字\n在底面拼出一个白色十字，且棱块侧面颜色与中心块对齐。\n\n## 第二步：底层角块\n完成白色面，同时底层四周颜色对齐。\n\n## 第三步：中层棱块\n还原第二层（中间层）的四个棱块。\n\n## 第四步：顶层十字\n在顶层拼出黄色十字。\n\n## 第五步：顶层面位\n将顶层全部变成黄色。\n\n## 第六步：顶层角块归位\n调整顶层角块位置。\n\n## 第七步：顶层棱块归位\n最后一步，完成整个魔方！\n\n祝大家早日学会魔方！🎉', '', 2, 1, 1, 0, 1, 1, 0, 'published', 0, '2026-06-05 09:55:10.802878', '2026-06-05 09:55:10.802918', 11);
 INSERT INTO `forum_post` VALUES (2, 'CFOP速拧教程 - F2L理解法', '# CFOP进阶教程：F2L理解法\n\n## 什么是F2L？\nF2L（First Two Layers）是CFOP速拧法的第二步，指同时还原前两层。\n\n## 核心思想\nF2L的本质是把一对\"角块+棱块\"组合起来放入正确的位置。\n\n## 常用F2L公式\n\n| 情况 | 公式 |\n|------|------|\n| 角棱相连 | `U R U\' R\'` |\n| 角棱分离 | `R U R\'` |\n| 角棱背面 | `R U2 R\' U R U R\'` |\n\n## 练习技巧\n1. 慢速练习，理解原理\n2. 找规律，观察相对位置\n3. 预判下一组\n\nF2L熟练后，成绩可轻松进入30秒！💪', '', 50, 2, 10, 1, 0, 1, 0, 'published', 0, '2026-06-05 09:55:10.823840', '2026-06-05 09:55:10.823875', 11);
 INSERT INTO `forum_post` VALUES (3, '魔方公式记忆技巧分享', '# 魔方公式记忆技巧\n\n## 肌肉记忆法\n不要死记硬背公式字母，而是通过反复练习形成肌肉记忆。\n\n## 分段记忆\n将长公式分成几个小段，逐段练习后连接。\n\n## 镜像对称\n很多公式是左右对称的，记住一个就能推导出另一个。\n\n## 故事联想\n为公式中的转动编一个故事，帮助记忆。\n\n## 每天10分钟\n坚持每天练习，比一次性练很久效果更好。\n\n大家有什么好的记忆方法？欢迎分享！', '', 12, 1, 3, 1, 0, 0, 0, 'published', 0, '2026-06-05 09:55:10.841141', '2026-06-05 09:55:10.841164', 11);
 INSERT INTO `forum_post` VALUES (4, '三阶魔方CFOP教程新标题', '这是教程内容，使用Markdown格式\r\n![bh01](http://127.0.0.1:8000/media/forum/posts/2026/07/bh01.png)', '', 26, 2, 1, 0, 0, 0, 0, 'published', 0, '2026-06-05 09:56:27.071163', '2026-07-19 15:29:33.899742', 10);
@@ -1071,7 +1083,7 @@ CREATE TABLE `forum_post_image`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `forum_post_image_post_id_95977176_fk_forum_post_id`(`post_id` ASC) USING BTREE,
   CONSTRAINT `forum_post_image_post_id_95977176_fk_forum_post_id` FOREIGN KEY (`post_id`) REFERENCES `forum_post` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of forum_post_image
@@ -1199,6 +1211,29 @@ INSERT INTO `forum_tag` VALUES (7, '二阶', '#FF9800', 0, '2026-06-05 09:55:05.
 INSERT INTO `forum_tag` VALUES (8, '公式', '#00BCD4', 0, '2026-06-05 09:55:05.621140');
 INSERT INTO `forum_tag` VALUES (9, '技巧', '#795548', 0, '2026-06-05 09:55:05.629283');
 INSERT INTO `forum_tag` VALUES (10, '比赛', '#FF5722', 0, '2026-06-05 09:55:05.636622');
+
+-- ----------------------------
+-- Table structure for home_banner
+-- ----------------------------
+DROP TABLE IF EXISTS `home_banner`;
+CREATE TABLE `home_banner`  (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `title` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `image` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `link` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `sort_order` int NOT NULL,
+  `is_active` tinyint(1) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of home_banner
+-- ----------------------------
+INSERT INTO `home_banner` VALUES (1, '魔方入门教程', '从零开始学习三阶魔方复原，掌握层先法，轻松入门', 'banners/banner1.png', '/tutorial/beginner', 1, 1, '2026-07-24 14:14:47.232582');
+INSERT INTO `home_banner` VALUES (2, 'CFOP速拧技巧', '学习CFOP高级解法，提升复原速度至专业水平', 'banners/banner2.png', '/tutorial/cfop', 2, 1, '2026-07-24 14:14:47.247469');
+INSERT INTO `home_banner` VALUES (3, '公式库大全', '收录数千条魔方公式，支持搜索和收藏，助你突破瓶颈', 'banners/banner3.png', '/formulas', 3, 1, '2026-07-24 14:14:47.254753');
 
 -- ----------------------------
 -- Table structure for home_navigationmenu
@@ -1331,18 +1366,18 @@ CREATE TABLE `shop_product`  (
 -- ----------------------------
 -- Records of shop_product
 -- ----------------------------
-INSERT INTO `shop_product` VALUES (1, '三阶速拧魔方', '专业级三阶魔方，顺滑手感，适合速拧练习和比赛', 49.90, 69.90, 100, '[]', '', 1, 256, '{\"版本\": [\"标准版\", \"升级版\"], \"颜色\": [\"白色\", \"黑色\"]}', '2026-07-08 15:23:43.549763', '2026-07-08 15:23:43.549790', 1);
-INSERT INTO `shop_product` VALUES (2, '三阶磁力魔方', '内置磁力定位系统，转体定位精准，提升还原速度', 89.90, 119.90, 80, '[]', '', 1, 134, '{\"颜色\": [\"白色\", \"黑色\"]}', '2026-07-08 15:23:43.559222', '2026-07-08 15:23:43.559242', 1);
-INSERT INTO `shop_product` VALUES (3, '三阶初学者套装', '适合新手入门的三阶魔方套装，包含教程和配件', 29.90, 39.90, 150, '[]', '', 1, 567, '{\"颜色\": [\"白色\"]}', '2026-07-08 15:23:43.568172', '2026-07-08 15:23:43.568191', 1);
-INSERT INTO `shop_product` VALUES (4, '四阶魔方', '经典四阶魔方，结构稳定，适合进阶玩家', 79.90, 99.90, 60, '[]', '', 1, 89, '{\"颜色\": [\"白色\", \"黑色\"]}', '2026-07-08 15:23:43.575344', '2026-07-08 15:23:43.575362', 2);
-INSERT INTO `shop_product` VALUES (5, '四阶磁力魔方', '四阶磁力版本，手感顺滑，定位精准', 129.90, 159.90, 40, '[]', '', 1, 56, '{\"颜色\": [\"黑色\"]}', '2026-07-08 15:23:43.583150', '2026-07-08 15:23:43.583182', 2);
-INSERT INTO `shop_product` VALUES (6, '五阶魔方', '五阶高阶魔方，挑战你的极限', 109.90, 139.90, 50, '[]', '', 1, 45, '{\"颜色\": [\"白色\", \"黑色\"]}', '2026-07-08 15:23:43.590697', '2026-07-08 15:23:43.590724', 3);
-INSERT INTO `shop_product` VALUES (7, '金字塔魔方', '经典异形魔方，四面体结构，锻炼空间思维', 39.90, 49.90, 70, '[]', '', 1, 123, '{\"颜色\": [\"白色\", \"黑色\"]}', '2026-07-08 15:23:43.598135', '2026-07-08 15:23:43.598152', 4);
-INSERT INTO `shop_product` VALUES (8, '斜转魔方', '斜转异形魔方，独特的转动方式，趣味性强', 44.90, 59.90, 64, '[]', '', 1, 79, '{\"颜色\": [\"白色\"]}', '2026-07-08 15:23:43.605257', '2026-07-08 16:22:24.150676', 4);
-INSERT INTO `shop_product` VALUES (9, '魔方底座', '亚克力材质，透明美观，展示你的魔方收藏', 15.90, 19.90, 200, '[]', '', 1, 345, '{\"颜色\": [\"透明\", \"黑色\"]}', '2026-07-08 15:23:43.613682', '2026-07-08 15:23:43.613701', 5);
-INSERT INTO `shop_product` VALUES (10, '魔方润滑油', '专业魔方硅油，提升顺滑度，延长魔方寿命', 12.90, 16.90, 180, '[]', '', 1, 289, '{\"规格\": [\"10ml\", \"30ml\"]}', '2026-07-08 15:23:43.622100', '2026-07-08 15:23:43.622117', 5);
-INSERT INTO `shop_product` VALUES (11, '魔方贴纸套装', '高品质PVC贴纸，多种配色可选，更换方便', 9.90, 12.90, 120, '[]', '', 1, 178, '{\"类型\": [\"三阶\", \"四阶\", \"五阶\"]}', '2026-07-08 15:23:43.629648', '2026-07-08 15:23:43.629666', 5);
-INSERT INTO `shop_product` VALUES (12, '比赛专用魔方', 'WCA认证比赛用魔方，极致性能，专为竞技设计', 159.90, 199.90, 29, '[]', '', 1, 24, '{\"颜色\": [\"黑色\"]}', '2026-07-08 15:23:43.637838', '2026-07-08 16:22:24.113471', 6);
+INSERT INTO `shop_product` VALUES (1, '三阶速拧魔方', '专业级三阶魔方，顺滑手感，适合速拧练习和比赛', 49.90, 69.90, 100, '[]', 'products/product_1_6a905cb0_85tRejH.png', 1, 256, '{\"版本\": [\"标准版\", \"升级版\"], \"颜色\": [\"白色\", \"黑色\"]}', '2026-07-08 15:23:43.549763', '2026-07-24 12:36:10.974550', 1);
+INSERT INTO `shop_product` VALUES (2, '三阶磁力魔方', '内置磁力定位系统，转体定位精准，提升还原速度', 89.90, 119.90, 80, '[]', 'products/product_2_846bf74f_JRNoo8V.png', 1, 134, '{\"颜色\": [\"白色\", \"黑色\"]}', '2026-07-08 15:23:43.559222', '2026-07-24 12:36:13.703024', 1);
+INSERT INTO `shop_product` VALUES (3, '三阶初学者套装', '适合新手入门的三阶魔方套装，包含教程和配件', 29.90, 39.90, 150, '[]', 'products/product_3_9e79361c_tBy2pvd.png', 1, 567, '{\"颜色\": [\"白色\"]}', '2026-07-08 15:23:43.568172', '2026-07-24 12:36:17.004180', 1);
+INSERT INTO `shop_product` VALUES (4, '四阶魔方', '经典四阶魔方，结构稳定，适合进阶玩家', 79.90, 99.90, 60, '[]', 'products/product_4_0d3de778_dFZnKAk.png', 1, 89, '{\"颜色\": [\"白色\", \"黑色\"]}', '2026-07-08 15:23:43.575344', '2026-07-24 12:36:21.095764', 2);
+INSERT INTO `shop_product` VALUES (5, '四阶磁力魔方', '四阶磁力版本，手感顺滑，定位精准', 129.90, 159.90, 40, '[]', 'products/product_5_2007a332_NcOYjYD.png', 1, 56, '{\"颜色\": [\"黑色\"]}', '2026-07-08 15:23:43.583150', '2026-07-24 12:36:25.256343', 2);
+INSERT INTO `shop_product` VALUES (6, '五阶魔方', '五阶高阶魔方，挑战你的极限', 109.90, 139.90, 50, '[]', 'products/product_6_d1976c7c_wmXKpYt.png', 1, 45, '{\"颜色\": [\"白色\", \"黑色\"]}', '2026-07-08 15:23:43.590697', '2026-07-24 12:36:27.203926', 3);
+INSERT INTO `shop_product` VALUES (7, '金字塔魔方', '经典异形魔方，四面体结构，锻炼空间思维', 39.90, 49.90, 70, '[]', 'products/product_7_0dc034d4_2Da42c3.png', 1, 123, '{\"颜色\": [\"白色\", \"黑色\"]}', '2026-07-08 15:23:43.598135', '2026-07-24 12:36:30.958319', 4);
+INSERT INTO `shop_product` VALUES (8, '斜转魔方', '斜转异形魔方，独特的转动方式，趣味性强', 44.90, 59.90, 64, '[]', 'products/product_8_de39b2c0_j5Ncxy5.png', 1, 79, '{\"颜色\": [\"白色\"]}', '2026-07-08 15:23:43.605257', '2026-07-24 12:36:33.217125', 4);
+INSERT INTO `shop_product` VALUES (9, '魔方底座', '亚克力材质，透明美观，展示你的魔方收藏', 15.90, 19.90, 200, '[]', 'products/product_9_e1586723_PL7ybRT.png', 1, 345, '{\"颜色\": [\"透明\", \"黑色\"]}', '2026-07-08 15:23:43.613682', '2026-07-24 12:36:35.089266', 5);
+INSERT INTO `shop_product` VALUES (10, '魔方润滑油', '专业魔方硅油，提升顺滑度，延长魔方寿命', 12.90, 16.90, 180, '[]', 'products/product_10_93196cdd_i2JHjdE.png', 1, 289, '{\"规格\": [\"10ml\", \"30ml\"]}', '2026-07-08 15:23:43.622100', '2026-07-24 12:36:37.993388', 5);
+INSERT INTO `shop_product` VALUES (11, '魔方贴纸套装', '高品质PVC贴纸，多种配色可选，更换方便', 9.90, 12.90, 120, '[]', 'products/product_11_37982974_z2RPaLL.png', 1, 178, '{\"类型\": [\"三阶\", \"四阶\", \"五阶\"]}', '2026-07-08 15:23:43.629648', '2026-07-24 12:36:40.538033', 5);
+INSERT INTO `shop_product` VALUES (12, '比赛专用魔方', 'WCA认证比赛用魔方，极致性能，专为竞技设计', 159.90, 199.90, 29, '[]', 'products/product_12_17af95aa_rJLqvJR.png', 1, 24, '{\"颜色\": [\"黑色\"]}', '2026-07-08 15:23:43.637838', '2026-07-24 12:36:42.586243', 6);
 
 -- ----------------------------
 -- Table structure for shop_product_category
