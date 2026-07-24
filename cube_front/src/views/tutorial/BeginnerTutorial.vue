@@ -265,7 +265,7 @@ const prevStep = () => {
 }
 
 const goBack = () => {
-  router.push('/')
+  router.push('/tutorials')
 }
 </script>
 
