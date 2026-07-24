@@ -17,7 +17,7 @@ from django.utils.safestring import mark_safe
 from unfold.admin import ModelAdmin
 from unfold.decorators import display
 
-from .models import NavigationMenu
+from .models import NavigationMenu, Banner
 
 
 @admin.register(NavigationMenu)
@@ -99,3 +99,72 @@ class NavigationMenuAdmin(ModelAdmin):
             '<span class="px-2 py-1 text-xs font-medium rounded-full '
             'bg-purple-100 text-purple-800">个人中心导航栏</span>'
         )
+
+
+@admin.register(Banner)
+class BannerAdmin(ModelAdmin):
+    """
+    轮播图管理 Admin
+
+    特色功能：
+        - 图片预览：列表页显示轮播图缩略图
+        - 状态 Badge：启用(绿色) / 禁用(灰色) 直观区分
+        - 列表页可编辑排序和状态：无需进入详情页即可快速调整
+        - 批量操作：支持批量启用/禁用轮播图
+    """
+
+    # ==================== 列表页配置 ====================
+
+    list_display = (
+        "image_preview",     # 自定义列：图片预览
+        "title",             # 轮播图标题
+        "description",       # 轮播图描述
+        "link",              # 跳转链接
+        "is_active",         # 是否启用（可编辑）
+        "sort_order",        # 排序值（可编辑）
+        "created_at",        # 创建时间
+    )
+
+    list_editable = ("sort_order", "is_active")
+
+    list_display_links = ("title",)
+
+    search_fields = ("title", "description", "link")
+
+    list_filter = ("is_active",)
+
+    ordering = ("sort_order", "-created_at")
+
+    # ==================== 编辑页配置 ====================
+
+    fieldsets = (
+        (None, {
+            "fields": ("title", "description", "image", "link"),
+        }),
+        ("高级设置", {
+            "fields": ("sort_order", "is_active"),
+            "classes": ("collapse",),
+        }),
+    )
+
+    # ==================== 自定义列（@display 装饰器） ====================
+
+    @display(description="图片")
+    def image_preview(self, obj):
+        """
+        轮播图图片预览
+
+        在列表页显示图片缩略图，便于管理员快速识别轮播图内容。
+
+        Args:
+            obj: Banner 模型实例
+
+        Returns:
+            HTML img 标签字符串，显示 60x40 像素的缩略图
+        """
+        if obj.image:
+            return mark_safe(
+                f'<img src="{obj.image.url}" alt="{obj.title}" '
+                'style="width: 60px; height: 40px; object-fit: cover; border-radius: 4px;">'
+            )
+        return mark_safe('<span class="text-gray-400">无图片</span>')

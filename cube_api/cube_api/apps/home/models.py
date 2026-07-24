@@ -48,3 +48,32 @@ class NavigationMenu(models.Model):
 
     def __str__(self):
         return f"[{self.get_category_display()}] {self.label}"
+
+
+class Banner(models.Model):
+    """
+    轮播图模型
+
+    存储首页轮播图数据，支持后台动态管理。
+
+    设计要点：
+        - **图片存储**: 使用 ImageField 存储轮播图图片
+        - **跳转链接**: link 字段支持外部链接和内部路由
+        - **排序控制**: sort_order 控制轮播图显示顺序，数值越小越靠前
+        - **状态管理**: is_active 字段控制轮播图是否显示
+    """
+    title = models.CharField(max_length=100, verbose_name="标题")
+    description = models.CharField(max_length=255, blank=True, verbose_name="描述")
+    image = models.ImageField(upload_to='banners/', verbose_name="轮播图图片")
+    link = models.URLField(max_length=500, blank=True, verbose_name="跳转链接")
+    sort_order = models.IntegerField(default=0, verbose_name="排序（越小越靠前）")
+    is_active = models.BooleanField(default=True, verbose_name="是否启用")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+
+    class Meta:
+        ordering = ['sort_order', '-created_at']
+        verbose_name = "轮播图"
+        verbose_name_plural = verbose_name
+
+    def __str__(self):
+        return self.title

@@ -12,8 +12,8 @@
 
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
-from .models import NavigationMenu
-from .serializers import NavigationMenuSerializer
+from .models import NavigationMenu, Banner
+from .serializers import NavigationMenuSerializer, BannerSerializer
 from utils.common_response import APIResponse
 
 
@@ -36,4 +36,27 @@ class NavigationMenuViewSet(viewsets.ReadOnlyModelViewSet):
         """获取导航菜单列表"""
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
+        return APIResponse(code=100, msg="获取成功", data=serializer.data)
+
+
+class BannerViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    轮播图视图集
+
+    提供轮播图的列表查询接口，支持前端动态渲染首页轮播图。
+
+    设计要点：
+        - **权限控制**：AllowAny 允许所有用户访问
+        - **筛选条件**：只返回 is_active=True 的轮播图
+        - **排序规则**：按 sort_order 字段排序（模型层定义）
+        - **无分页**：轮播图数据量较小，直接返回全部
+    """
+    queryset = Banner.objects.filter(is_active=True)
+    serializer_class = BannerSerializer
+    permission_classes = [AllowAny]
+
+    def list(self, request, *args, **kwargs):
+        """获取轮播图列表"""
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True, context={'request': request})
         return APIResponse(code=100, msg="获取成功", data=serializer.data)

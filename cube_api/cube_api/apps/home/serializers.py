@@ -10,7 +10,7 @@
 """
 
 from rest_framework import serializers
-from .models import NavigationMenu
+from .models import NavigationMenu, Banner
 
 
 class NavigationMenuSerializer(serializers.ModelSerializer):
@@ -26,3 +26,27 @@ class NavigationMenuSerializer(serializers.ModelSerializer):
     class Meta:
         model = NavigationMenu
         fields = ('index', 'label', 'path', 'category', 'match_paths')
+
+
+class BannerSerializer(serializers.ModelSerializer):
+    """
+    轮播图序列化器
+
+    序列化轮播图数据，返回前端渲染轮播图所需的字段。
+
+    设计要点：
+        - **图片URL**：image 字段返回完整的访问 URL
+        - **精简字段**：排除 id、is_active 等后端内部字段
+        - **排序字段**：保留 sort_order，便于前端排序（可选）
+    """
+    image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Banner
+        fields = ('title', 'description', 'image', 'link', 'sort_order')
+
+    def get_image(self, obj):
+        if obj.image:
+            request = self.context.get('request')
+            return request.build_absolute_uri(obj.image.url) if request else obj.image.url
+        return ''

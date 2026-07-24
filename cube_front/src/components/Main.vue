@@ -3,12 +3,41 @@
   <!-- 使用 Element Plus 的栅格系统 (el-row/el-col) 实现响应式布局 -->
   <div class="main-content">
     <!-- 轮播图区域 -->
-    <!-- 使用 el-carousel 组件展示首页横幅图片 -->
+    <!-- 使用 el-carousel 组件展示首页横幅图片，支持动态数据和点击跳转 -->
     <el-row :gutter="20">
       <el-col :span="24">
-        <el-carousel height="300px" border-radius="8px" indicator-position="bottom">
-          <el-carousel-item v-for="(banner, index) in banners" :key="index">
-            <img :src="banner.url" class="carousel-image" :alt="banner.name">
+        <el-carousel 
+          height="360px" 
+          border-radius="12px" 
+          indicator-position="bottom"
+          :interval="5000"
+          :autoplay="true"
+          :pause-on-hover="true"
+          trigger="click"
+        >
+          <el-carousel-item v-for="(banner, index) in banners" :key="banner.title || index">
+            <div class="carousel-item-container" @click="handleBannerClick(banner)">
+              <img 
+                :src="banner.image" 
+                class="carousel-image" 
+                :alt="banner.title"
+                :class="{ 'carousel-image-loading': !banner.loaded }"
+                @load="banner.loaded = true"
+              >
+              <div class="carousel-placeholder" v-if="!banner.loaded">
+                <el-skeleton :rows="1" animated class="carousel-skeleton"></el-skeleton>
+              </div>
+              <div class="carousel-overlay">
+                <div class="carousel-content">
+                  <h3 class="carousel-title">{{ banner.title }}</h3>
+                  <p class="carousel-description">{{ banner.description }}</p>
+                </div>
+                <div v-if="banner.link" class="carousel-link-indicator">
+                  <span class="link-text">查看详情</span>
+                  <span class="link-arrow">→</span>
+                </div>
+              </div>
+            </div>
           </el-carousel-item>
         </el-carousel>
       </el-col>
@@ -186,6 +215,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getPosts } from '@/api/posts'                    // 获取帖子 API
 import { getFormulaList, getFormulaCategories } from '@/api/formula'  // 公式相关 API
+import { getBannersApi } from '@/api/home'                // 获取轮播图 API
 
 const router = useRouter()
 
@@ -199,17 +229,36 @@ const loadingFormulas = ref(false)   // 公式加载状态
 const loadingCategories = ref(false) // 分类加载状态
 
 /**
- * 动态导入轮播图
- * 使用 Vite 的 import.meta.glob 特性，自动扫描 assets/banners 目录下的图片
- * 支持热更新，新增图片无需修改代码
+ * 从后端获取轮播图数据
  */
-const bannerModules = import.meta.glob('@/assets/banners/banner*.png', { eager: true })
+const loadBanners = async () => {
+  try {
+    const res = await getBannersApi()
+    if (res.code === 100) {
+      banners.value = (res.data || []).map(banner => ({
+        ...banner,
+        loaded: false
+      }))
+    }
+  } catch (error) {
+    console.error('加载轮播图失败', error)
+  }
+}
 
-// 将导入的模块转换为轮播图数据格式
-banners.value = Object.keys(bannerModules).map(path => ({
-  url: bannerModules[path].default,
-  name: path.split('/').pop().replace('.png', '')
-}))
+/**
+ * 处理轮播图点击事件
+ * 
+ * @param {Object} banner - 轮播图数据对象
+ */
+const handleBannerClick = (banner) => {
+  if (banner.link) {
+    if (banner.link.startsWith('/')) {
+      router.push(banner.link)
+    } else {
+      window.open(banner.link, '_blank')
+    }
+  }
+}
 
 /**
  * 加载热门帖子
@@ -342,6 +391,7 @@ const goToFormulaList = (categoryName) => {
  * 2. 各模块独立加载，互不阻塞
  */
 onMounted(() => {
+  loadBanners()
   loadHotPosts()
   loadHotFormulas()
   loadFormulaCategories()
@@ -353,11 +403,114 @@ onMounted(() => {
   padding: 20px 0;
 }
 
+.carousel-item-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
 .carousel-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 8px;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.carousel-image-loading {
+  opacity: 0;
+}
+
+.carousel-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.carousel-skeleton {
+  width: 80%;
+}
+
+.carousel-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 40px 30px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.4) 50%, transparent 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.carousel-content {
+  color: #fff;
+}
+
+.carousel-title {
+  font-size: 24px;
+  font-weight: bold;
+  margin: 0 0 8px 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.carousel-description {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+  line-height: 1.5;
+  max-width: 600px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.carousel-link-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  transition: transform 0.3s ease;
+}
+
+.carousel-item-container:hover .carousel-link-indicator {
+  transform: translateX(5px);
+}
+
+.link-arrow {
+  font-size: 16px;
+}
+
+.el-carousel__indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.el-carousel__indicator.is-active {
+  width: 24px;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.el-carousel__indicators--bottom {
+  bottom: 20px;
 }
 
 .section-card {

@@ -19,3 +19,17 @@ export function getMenusApi() {
     method: 'get'
   })
 }
+
+/**
+ * 从后端动态获取轮播图数据
+ *
+ * 获取首页轮播图列表，包含标题、描述、图片、链接等信息，用于前端动态渲染轮播图。
+ *
+ * @returns {Promise<Object>} 返回统一封装的响应体 { code: 100, msg: "...", data: [...] }
+ */
+export function getBannersApi() {
+  return request({
+    url: '/api/home/banners/',
+    method: 'get'
+  })
+}
