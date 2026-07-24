@@ -292,52 +292,28 @@ def generate_alipay_qr_code(order_no, total_amount, subject):
         return None
 
 
-def verify_alipay_notify(data):
-    """
-    验证支付宝回调数据的签名
-
-    Args:
-        data: 支付宝回调的原始数据（DRF QueryDict 或普通 dict）
-
-    返回值：
-        bool: 验签通过返回 True，否则返回 False
-
-    设计要点：
-        - **双重验签机制**：优先使用 SDK 验签，失败时降级到手动 RSA2 验签
-        - **数据格式转换**：DRF QueryDict 的 value 是列表，需转换为普通字符串
-        - **SDK 版本兼容**：手动验签绕过 SDK 版本差异导致的验签失败问题
-
-    验签流程：
-        1. 使用 SDK 的 verify 方法进行标准验签
-        2. SDK 验签失败时，手动实现 RSA2 验签：
-           - 读取支付宝公钥
-           - 移除 sign 和 sign_type 字段
-           - 按键名排序后拼接字符串
-           - 使用 RSA2 + SHA256 验证签名
-    """
+def verify_alipay_notify(data, raw_body=None):
     alipay = get_alipay_client()
     if not alipay:
         return False
 
-    # DRF QueryDict 的 value 是列表，转换为普通字符串字典
     data_dict = {k: v[0] if isinstance(v, list) else v for k, v in data.items()}
     sign_b64 = data_dict.get('sign', '')
     if not sign_b64:
         return False
 
-    # 方法一：使用 SDK verify（传递原始 dict）
+    # 方法一：SDK verify
     test_dict = dict(data_dict)
     sdk_ok = alipay.verify(test_dict, sign_b64)
     logger.info(f"SDK 验签结果: {sdk_ok}")
     if sdk_ok:
         return True
 
-    # 方法二：手动 RSA2 验签（绕过 SDK 版本差异）
+    # 方法二：用原始 POST body 精确验签
     try:
-        from urllib.parse import urlencode
         import base64
         from cryptography.hazmat.primitives import hashes
-        from cryptography.hazmat.primitives.asymmetric import padding, rsa
+        from cryptography.hazmat.primitives.asymmetric import padding
         from cryptography.hazmat.primitives.serialization import load_pem_public_key
 
         key_path = ALIPAY_CONFIG['alipay_public_key_path']
@@ -346,25 +322,23 @@ def verify_alipay_notify(data):
             return False
 
         with open(key_path, 'r') as f:
-            pub_key_pem = f.read()
+            pub_key = load_pem_public_key(f.read().encode())
 
-        pub_key = load_pem_public_key(pub_key_pem.encode())
+        if raw_body:
+            body_str = raw_body.decode('utf-8') if isinstance(raw_body, bytes) else raw_body
+            pairs = body_str.split('&')
+            msg_pairs = [(p.split('=', 1)[0], p.split('=', 1)[1]) for p in pairs if '=' in p and not p.startswith(('sign=', 'sign_type='))]
+            msg_pairs.sort(key=lambda x: x[0])
+            message = '&'.join(f'{k}={v}' for k, v in msg_pairs)
+        else:
+            from urllib.parse import urlencode
+            verify_data = {k: v for k, v in data_dict.items() if k not in ('sign', 'sign_type')}
+            message = urlencode(sorted(verify_data.items()), doseq=False)
 
-        # 去掉 sign 和 sign_type，排序后构建验签字符串
-        verify_data = {k: v for k, v in data_dict.items() if k not in ('sign', 'sign_type')}
-        sorted_items = sorted(verify_data.items())
-
-        # key1=value1&key2=value2...（值需要按支付宝规范编码）
-        message = urlencode(sorted_items, doseq=False)
-        logger.info(f"手动验签 message[:200]: {message[:200]}")
+        logger.info(f"验签 message[:300]: {message[:300]}")
 
         signature_bytes = base64.b64decode(sign_b64)
-        pub_key.verify(
-            signature_bytes,
-            message.encode('utf-8'),
-            padding.PKCS1v15(),
-            hashes.SHA256()
-        )
+        pub_key.verify(signature_bytes, message.encode('utf-8'), padding.PKCS1v15(), hashes.SHA256())
         logger.info("手动 RSA2 验签通过")
         return True
     except Exception as e:

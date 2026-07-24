@@ -397,7 +397,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         logger.info(f"支付宝回调原始数据: {raw_data}")
 
         try:
-            verified = verify_alipay_notify(request.data)
+            verified = verify_alipay_notify(request.data, request.body)
         except Exception as e:
             logger.error(f"支付宝回调签名验证异常: {e}")
             return Response('fail')
