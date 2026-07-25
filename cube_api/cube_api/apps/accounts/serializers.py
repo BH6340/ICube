@@ -16,13 +16,16 @@
     - 使用 build_image_url 统一处理图片 URL
 """
 from django.core.files.storage import default_storage
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from django.core.cache import cache
 from django.conf import settings
+import os
 
 from .models import User
 from .services import ProfileCacheService
+from cube_api.utils.image_processor import process_image
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -87,21 +90,23 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         - bio: 个人简介
         - image: 头像（文件上传）
     """
-    # 头像字段：支持文件上传，非必需，允许为空
-    # DRF 会自动处理前端 FormData 中的文件，并保存到 media 文件夹
-    image = serializers.ImageField(required=False, allow_null=True)
+    image = serializers.SerializerMethodField(read_only=True)
+    avatar = serializers.ImageField(write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = User
-        # 核心：只填写允许前端修改的字段
-        fields = ('username', 'bio', 'image')
+        fields = ('username', 'bio', 'image', 'avatar')
+
+    def get_image(self, obj):
+        from cube_api.utils.image_url import build_image_url
+        return build_image_url(obj.image)
 
     def update(self, instance: User, validated_data):
         """
         更新用户资料
 
         流程：
-            1. 处理头像上传（如果有）
+            1. 处理头像上传（如果有），自动裁剪为1:1并压缩
             2. 更新其他字段
             3. 清理用户实例缓存
 
@@ -112,20 +117,35 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         Returns:
             更新后的 User 对象
         """
-        # 提取头像文件（如果有）
-        image_file = validated_data.pop('image', None)
+        image_file = validated_data.pop('avatar', None)
+
         if image_file:
-            # 保存头像到 media/avatars/ 目录
-            saved_path = default_storage.save(f"avatars/{image_file.name}", image_file)
-            # 更新用户的头像路径（只存储相对路径，与 Django ImageField 默认行为一致）
+            processed_file = process_image(
+                image_file,
+                max_width=512,
+                max_height=512,
+                quality=85,
+                crop_square=True,
+                convert_webp=True
+            )
+
+            new_name = f"{os.path.splitext(image_file.name)[0]}_avatar.webp"
+            processed_image = InMemoryUploadedFile(
+                processed_file,
+                None,
+                new_name,
+                'image/webp',
+                processed_file.tell(),
+                None
+            )
+
+            saved_path = default_storage.save(f"avatars/{new_name}", processed_image)
             instance.image = saved_path
 
-        # 更新其他字段
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
 
-        # 清理用户实例缓存，下次请求会从数据库重新加载
         cache_key = f"user_instance_cache_{instance.id}"
         cache.delete(cache_key)
 

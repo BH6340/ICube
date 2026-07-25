@@ -24,6 +24,7 @@ from .serializers import (
 )
 from .services import PostCacheService, PostInteractionService, HotPostService
 from utils.common_response import APIResponse
+from utils.image_processor import process_image
 from apps.accounts.permissions import IsOwnerOrReadOnly
 
 
@@ -380,14 +381,16 @@ class PostViewSet(viewsets.ModelViewSet):
         上传图片
 
         上传帖子图片，返回图片URL。支持延迟关联机制（先上传后关联帖子）。
+        自动对图片进行压缩处理，可选1:1裁剪。
 
         验证规则：
             - 必须选择图片文件
             - 支持格式：jpeg, jpg, png, gif, webp
             - 大小限制：不超过 5MB
 
-        Args:
-            request: HTTP 请求对象（包含图片文件）
+        请求参数：
+            - image: 图片文件
+            - crop_square: 是否裁剪为1:1（可选，默认False）
 
         Returns:
             APIResponse: 包含图片信息的响应
@@ -403,9 +406,33 @@ class PostViewSet(viewsets.ModelViewSet):
         if image_file.size > 5 * 1024 * 1024:
             return APIResponse(code=400, msg='图片大小不能超过5MB')
 
-        # 创建图片记录（post 字段为空，支持延迟关联）
+        crop_square = request.data.get('crop_square', 'false').lower() == 'true'
+
+        processed_file = process_image(
+            image_file,
+            max_width=1200,
+            max_height=1200,
+            quality=85,
+            crop_square=crop_square,
+            convert_webp=True
+        )
+
+        from django.core.files.uploadedfile import InMemoryUploadedFile
+        import os
+        ext = os.path.splitext(image_file.name)[1].lower()
+        new_name = f"{os.path.splitext(image_file.name)[0]}_compressed.webp"
+
+        processed_image = InMemoryUploadedFile(
+            processed_file,
+            None,
+            new_name,
+            'image/webp',
+            processed_file.tell(),
+            None
+        )
+
         post_image = PostImage(
-            image=image_file,
+            image=processed_image,
             alt=image_file.name.replace('.', '_')
         )
         post_image.save()

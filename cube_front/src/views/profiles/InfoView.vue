@@ -255,6 +255,14 @@
         <el-button type="primary" :loading="saveLoading" @click="submitEditProfile">保存修改</el-button>
       </template>
     </el-dialog>
+
+    <ImageCropper
+      v-if="showCropper && cropperFile"
+      :image-file="cropperFile"
+      title="头像裁剪"
+      @close="handleAvatarCropClose"
+      @crop="handleAvatarCrop"
+    />
   </div>
 </template>
 
@@ -275,6 +283,7 @@ import { getOrders, getAddresses } from '@/api/shop'
 import { ElMessage } from 'element-plus'
 import { ShoppingCart, MapLocation, Star, Document, TrendCharts, User } from '@element-plus/icons-vue'
 import defaultAvatar from '@/assets/default_avatar.svg'
+import ImageCropper from '@/components/ImageCropper.vue'
 
 const userStore = useUserStore()
 const route = useRoute()
@@ -307,6 +316,8 @@ const followersList = ref([])
 const editForm = ref({ username: '', bio: '', image: null })
 const previewUrl = ref('')
 const selectedFile = ref(null)
+const showCropper = ref(false)
+const cropperFile = ref(null)
 
 // 💡 核心计算属性：判断当前查看的是不是“登录用户自己”
 const isMe = computed(() => {
@@ -413,10 +424,20 @@ const openEditDialog = () => {
   editDialogVisible.value = true
 }
 
-// 💡 4. 头像捕获：预览选择头像并将原生二进制 File 对象存下
 const handleAvatarChange = (file) => {
-  selectedFile.value = file.raw
-  previewUrl.value = URL.createObjectURL(file.raw)
+  cropperFile.value = file.raw
+  showCropper.value = true
+}
+
+const handleAvatarCrop = (croppedFile) => {
+  selectedFile.value = croppedFile
+  previewUrl.value = URL.createObjectURL(croppedFile)
+  showCropper.value = false
+}
+
+const handleAvatarCropClose = () => {
+  showCropper.value = false
+  cropperFile.value = null
 }
 
 // 💡 5. 真实数据保存：包装 FormData 交付给后端的 UserView
@@ -436,9 +457,8 @@ const submitEditProfile = async () => {
     // 简介直接传递
     formData.append('bio', editForm.value.bio || '')
 
-    // 如果选择了新的本地头像文件，送入二进制数据
     if (selectedFile.value) {
-      formData.append('image', selectedFile.value)
+      formData.append('avatar', selectedFile.value)
     }
 
     // 发送局部更新 PATCH 请求

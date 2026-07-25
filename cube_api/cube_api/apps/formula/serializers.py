@@ -15,9 +15,12 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from django.conf import settings
 from django.core.files.storage import default_storage
+from django.core.files.uploadedfile import InMemoryUploadedFile
+import os
 
 from .models import CubeCategory, CubeState, Formula, FormulaTag, FormulaTagRelation, FormulaCollection
 from .services import CubeStateService
+from cube_api.utils.image_processor import process_image
 
 
 class CubeCategorySerializer(serializers.ModelSerializer):
@@ -329,9 +332,27 @@ class FormulaSerializer(serializers.ModelSerializer):
             validated_data['is_custom'] = True
             validated_data['created_by'] = request.user
 
-        # 处理缩略图上传
         if thumbnail_file:
-            saved_path = default_storage.save(f"formula_thumbnails/{thumbnail_file.name}", thumbnail_file)
+            processed_file = process_image(
+                thumbnail_file,
+                max_width=512,
+                max_height=512,
+                quality=85,
+                crop_square=True,
+                convert_webp=True
+            )
+
+            new_name = f"{os.path.splitext(thumbnail_file.name)[0]}_thumbnail.webp"
+            processed_image = InMemoryUploadedFile(
+                processed_file,
+                None,
+                new_name,
+                'image/webp',
+                processed_file.tell(),
+                None
+            )
+
+            saved_path = default_storage.save(f"formula_thumbnails/{new_name}", processed_image)
             validated_data['thumbnail'] = f"{settings.MEDIA_URL}{saved_path}"
 
         formula = super().create(validated_data)
@@ -361,9 +382,27 @@ class FormulaSerializer(serializers.ModelSerializer):
         thumbnail_file = validated_data.pop('thumbnail', None)
         request = self.context.get('request')
 
-        # 处理缩略图上传
         if thumbnail_file:
-            saved_path = default_storage.save(f"formula_thumbnails/{thumbnail_file.name}", thumbnail_file)
+            processed_file = process_image(
+                thumbnail_file,
+                max_width=512,
+                max_height=512,
+                quality=85,
+                crop_square=True,
+                convert_webp=True
+            )
+
+            new_name = f"{os.path.splitext(thumbnail_file.name)[0]}_thumbnail.webp"
+            processed_image = InMemoryUploadedFile(
+                processed_file,
+                None,
+                new_name,
+                'image/webp',
+                processed_file.tell(),
+                None
+            )
+
+            saved_path = default_storage.save(f"formula_thumbnails/{new_name}", processed_image)
             validated_data['thumbnail'] = f"{settings.MEDIA_URL}{saved_path}"
 
         formula = super().update(instance, validated_data)

@@ -96,6 +96,15 @@
       </div>
     </div>
 
+    <!-- 图片裁剪组件 -->
+    <ImageCropper
+      v-if="showCropper && cropperFile"
+      :image-file="cropperFile"
+      title="图片裁剪"
+      @close="handleCropClose"
+      @crop="handleCrop"
+    />
+
     <!-- 公式选择弹窗 -->
     <el-dialog
       v-model="showFormulaDialog"
@@ -217,6 +226,7 @@ import hljs from 'highlight.js'           // 代码高亮库
 import 'highlight.js/styles/github.css'   // GitHub 风格代码高亮样式
 import request from '@/http/request'
 import { uploadImage, getFormulasForPost } from '@/api/posts' // 图片上传 API
+import ImageCropper from '@/components/ImageCropper.vue'
 
 const props = defineProps({
   modelValue: {
@@ -231,6 +241,9 @@ const content = ref(props.modelValue)
 const textareaRef = ref(null)
 const showPreview = ref(false)
 const imageInputRef = ref(null)
+const showCropper = ref(false)
+const cropperFile = ref(null)
+const pendingFiles = ref([])
 
 // 公式选择相关
 const showFormulaDialog = ref(false)
@@ -348,32 +361,39 @@ const handleImageSelect = async (event) => {
     return
   }
 
-  const loading = ref(true)
-  
-  for (let index = 0; index < validFiles.length; index++) {
-    const file = validFiles[index]
-    try {
-      const res = await uploadImage(file)
-      if (res.code === 100 && res.image && res.image.image_url) {
-        const fileName = file.name.replace(/\.[^/.]+$/, '')
-        const imageMarkdown = `![${fileName}](${res.image.image_url})\n`
-        
-        if (index === 0) {
-          insertMarkdown('', imageMarkdown)
-        } else {
-          content.value += imageMarkdown
-        }
-      } else {
-        ElMessage.error(`图片 ${file.name} 上传失败`)
-      }
-    } catch (error) {
-      console.error('图片上传失败:', error)
-      ElMessage.error(`图片 ${file.name} 上传失败`)
+  pendingFiles.value = validFiles
+  cropperFile.value = validFiles[0]
+  showCropper.value = true
+  event.target.value = ''
+}
+
+const handleCrop = async (croppedFile) => {
+  try {
+    const res = await uploadImage(croppedFile)
+    if (res.code === 100 && res.image && res.image.image_url) {
+      const fileName = croppedFile.name.replace(/\.[^/.]+$/, '')
+      const imageMarkdown = `![${fileName}](${res.image.image_url})\n`
+      insertMarkdown('', imageMarkdown)
+    } else {
+      ElMessage.error('图片上传失败')
     }
+  } catch (error) {
+    console.error('图片上传失败:', error)
+    ElMessage.error('图片上传失败')
   }
 
-  ElMessage.success(`成功添加 ${validFiles.length} 张图片`)
-  event.target.value = ''
+  pendingFiles.value.shift()
+  if (pendingFiles.value.length > 0) {
+    cropperFile.value = pendingFiles.value[0]
+  } else {
+    showCropper.value = false
+    ElMessage.success('图片处理完成')
+  }
+}
+
+const handleCropClose = () => {
+  pendingFiles.value = []
+  showCropper.value = false
 }
 
 // 公式选择相关方法
