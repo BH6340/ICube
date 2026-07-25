@@ -401,6 +401,18 @@ const resetToFormulaState = async () => {
       await executeLayerRotation(step, 0)
     }
   }
+
+  if (controls && camera) {
+    new Tween(camera.position, tweenGroup)
+      .to({ x: 4, y: 4, z: 6 }, 300)
+      .easing(Easing.Quadratic.Out)
+      .start()
+
+    new Tween(controls.target, tweenGroup)
+      .to({ x: 0, y: 0, z: 0 }, 300)
+      .easing(Easing.Quadratic.Out)
+      .start()
+  }
 }
 
 const stepForward = async () => {

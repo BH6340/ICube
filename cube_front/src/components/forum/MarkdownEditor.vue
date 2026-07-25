@@ -20,6 +20,10 @@
             <el-icon><Picture /></el-icon>
             图片
           </el-button>
+        <el-button size="small" @click="showFormulaDialog = true" title="插入公式">
+            <el-icon><Box /></el-icon>
+            公式
+          </el-button>
         <el-button size="small" @click="insertMarkdown('```\n', '\n```')" title="代码块">&lt;/&gt;</el-button>
         <el-button size="small" @click="insertMarkdown('> ', '')" title="引用">引用</el-button>
         <el-button size="small" @click="insertMarkdown('---', '')" title="分隔线">—</el-button>
@@ -91,6 +95,94 @@
         <div class="preview-content markdown-body" v-html="renderedHtml"></div>
       </div>
     </div>
+
+    <!-- 公式选择弹窗 -->
+    <el-dialog
+      v-model="showFormulaDialog"
+      title="选择魔方公式"
+      width="900px"
+      :close-on-click-modal="false"
+    >
+      <div class="formula-dialog-content">
+        <el-input
+          v-model="formulaSearch"
+          placeholder="搜索公式名称或记号"
+          clearable
+          @keyup.enter="loadFormulas"
+          @clear="loadFormulas"
+          style="margin-bottom: 12px;"
+        >
+          <template #append>
+            <el-button @click="loadFormulas">
+              <el-icon><Search /></el-icon>
+            </el-button>
+          </template>
+        </el-input>
+
+        <div class="formula-filters">
+          <el-select
+            v-model="selectedCategory"
+            placeholder="选择分类"
+            clearable
+            style="width: 180px; margin-right: 12px;"
+            @change="loadFormulas"
+          >
+            <el-option
+              v-for="cat in formulaCategories"
+              :key="cat.id"
+              :label="cat.name"
+              :value="cat.id"
+            />
+          </el-select>
+
+          <el-select
+            v-model="selectedDifficulty"
+            placeholder="选择难度"
+            clearable
+            style="width: 120px;"
+            @change="loadFormulas"
+          >
+            <el-option label="入门" :value="1" />
+            <el-option label="初级" :value="2" />
+            <el-option label="中级" :value="3" />
+            <el-option label="高级" :value="4" />
+            <el-option label="专家" :value="5" />
+          </el-select>
+        </div>
+
+        <div class="formula-grid" v-loading="formulaLoading">
+          <div
+            v-for="formula in formulas"
+            :key="formula.id"
+            class="formula-card"
+            @click="selectFormula(formula)"
+          >
+            <div class="formula-thumbnail" v-if="formula.thumbnail">
+              <img :src="formula.thumbnail" :alt="formula.name" />
+            </div>
+            <div class="formula-thumbnail placeholder" v-else>
+              <el-icon><Box /></el-icon>
+            </div>
+            <div class="formula-info">
+              <div class="formula-name">{{ formula.name }}</div>
+              <div class="formula-notation">{{ formula.notation }}</div>
+              <div class="formula-category">{{ formula.category_name }}</div>
+            </div>
+          </div>
+        </div>
+
+        <el-pagination
+          v-model:current-page="formulaPage"
+          v-model:page-size="formulaPageSize"
+          :total="formulaTotal"
+          :page-sizes="[12, 24, 48]"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="loadFormulas"
+          @current-change="loadFormulas"
+          style="margin-top: 16px; justify-content: center;"
+        />
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -118,12 +210,13 @@
  */
 
 import { ref, computed, watch, nextTick } from 'vue'
-import { Upload, View, Picture } from '@element-plus/icons-vue'
+import { Upload, View, Picture, Search, Box } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { marked } from 'marked'           // Markdown 解析库
 import hljs from 'highlight.js'           // 代码高亮库
 import 'highlight.js/styles/github.css'   // GitHub 风格代码高亮样式
-import { uploadImage } from '@/api/posts' // 图片上传 API
+import request from '@/http/request'
+import { uploadImage, getFormulasForPost } from '@/api/posts' // 图片上传 API
 
 const props = defineProps({
   modelValue: {
@@ -138,6 +231,18 @@ const content = ref(props.modelValue)
 const textareaRef = ref(null)
 const showPreview = ref(false)
 const imageInputRef = ref(null)
+
+// 公式选择相关
+const showFormulaDialog = ref(false)
+const formulaSearch = ref('')
+const formulaPage = ref(1)
+const formulaPageSize = ref(12)
+const formulaTotal = ref(0)
+const formulaLoading = ref(false)
+const formulas = ref([])
+const selectedCategory = ref(null)
+const selectedDifficulty = ref(null)
+const formulaCategories = ref([])
 
 // 配置 marked
 marked.setOptions({
@@ -270,6 +375,67 @@ const handleImageSelect = async (event) => {
   ElMessage.success(`成功添加 ${validFiles.length} 张图片`)
   event.target.value = ''
 }
+
+// 公式选择相关方法
+const loadFormulas = async () => {
+  formulaLoading.value = true
+  try {
+    const params = {
+      page: formulaPage.value,
+      page_size: formulaPageSize.value,
+      search: formulaSearch.value || undefined,
+      category: selectedCategory.value || undefined,
+      difficulty: selectedDifficulty.value || undefined
+    }
+    const res = await getFormulasForPost(params)
+    if (res.code === 100) {
+      formulas.value = res.data.results || []
+      formulaTotal.value = res.data.count || 0
+    }
+  } catch (error) {
+    console.error('加载公式失败:', error)
+    ElMessage.error('加载公式失败')
+  } finally {
+    formulaLoading.value = false
+  }
+}
+
+const loadFormulaCategories = async () => {
+  try {
+    const res = await request({
+      url: '/api/formula/categories/',
+      method: 'get'
+    })
+    if (res.code === 100) {
+      formulaCategories.value = res.data.map(cat => ({
+        id: cat.id,
+        name: `${cat.order}阶 ${cat.method} ${cat.phase}`
+      }))
+    }
+  } catch (error) {
+    console.error('加载分类失败:', error)
+  }
+}
+
+const selectFormula = (formula) => {
+  if (!formula.thumbnail) {
+    ElMessage.warning('该公式没有缩略图，无法插入')
+    return
+  }
+
+  const imageMarkdown = `![${formula.name}](${formula.thumbnail})\n`
+  insertMarkdown('', imageMarkdown)
+  showFormulaDialog.value = false
+  ElMessage.success(`已插入公式：${formula.name}`)
+}
+
+watch(showFormulaDialog, (newVal) => {
+  if (newVal) {
+    formulaPage.value = 1
+    loadFormulaCategories()
+    loadFormulas()
+  }
+})
 </script>
 
 <style scoped>
@@ -391,5 +557,99 @@ const handleImageSelect = async (event) => {
   .toolbar-right {
     justify-content: flex-end;
   }
+}
+
+/* 公式选择弹窗样式 */
+.formula-dialog-content {
+  max-height: 550px;
+  overflow-y: auto;
+}
+
+.formula-filters {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.formula-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.formula-card {
+  cursor: pointer;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  padding: 10px;
+  transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.formula-card:hover {
+  border-color: #409eff;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.formula-thumbnail {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 6px;
+  background: #f5f7fa;
+}
+
+.formula-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.formula-thumbnail.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #909399;
+}
+
+.formula-thumbnail.placeholder .el-icon {
+  font-size: 32px;
+}
+
+.formula-info {
+  width: 100%;
+}
+
+.formula-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.formula-notation {
+  font-size: 11px;
+  color: #409eff;
+  margin-bottom: 4px;
+  font-family: monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.formula-category {
+  font-size: 10px;
+  color: #909399;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

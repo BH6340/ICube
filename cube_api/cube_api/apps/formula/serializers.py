@@ -105,6 +105,58 @@ class FormulaTagSerializer(serializers.ModelSerializer):
         read_only_fields = ('created_at',)
 
 
+class FormulaSimpleSerializer(serializers.ModelSerializer):
+    """
+    公式精简序列化器（帖子编辑器专用）
+
+    用于帖子编辑器选择公式时使用，只包含必要字段。
+
+    设计原因：
+        - 帖子编辑器只需要公式的基本信息和缩略图
+        - 减少数据传输量，提高加载速度
+
+    字段：
+        - id: 公式ID
+        - name: 公式名称
+        - notation: 公式记号
+        - category_name: 分类名称（拼接阶数+方法+阶段）
+        - thumbnail: 缩略图URL
+    """
+    category_name = serializers.SerializerMethodField()
+    thumbnail = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Formula
+        fields = ('id', 'name', 'notation', 'category_name', 'thumbnail')
+
+    def get_category_name(self, obj):
+        """
+        获取分类名称（拼接阶数+方法+阶段）
+
+        Args:
+            obj: Formula 对象
+
+        Returns:
+            分类名称字符串
+        """
+        if obj.category:
+            return f"{obj.category.order}阶 {obj.category.method} {obj.category.phase}"
+        return ''
+
+    def get_thumbnail(self, obj):
+        """
+        生成缩略图URL
+
+        Args:
+            obj: Formula 对象
+
+        Returns:
+            完整的缩略图URL或空字符串
+        """
+        from cube_api.utils.image_url import build_image_url
+        return build_image_url(obj.thumbnail)
+
+
 class FormulaListSerializer(serializers.ModelSerializer):
     """
     公式列表序列化器（轻量级）

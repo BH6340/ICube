@@ -176,3 +176,24 @@ export const uploadImage = (file) => {
     }
   })
 }
+
+/**
+ * 获取公式列表（帖子编辑器专用）
+ *
+ * 返回精简的公式列表，用于帖子编辑器选择公式插入。
+ *
+ * @param {Object} [params] - 查询参数
+ * @param {number} [params.page] - 页码
+ * @param {number} [params.page_size] - 每页数量
+ * @param {string} [params.search] - 关键词搜索
+ * @param {number} [params.category] - 分类ID
+ * @param {number} [params.difficulty] - 难度等级
+ * @returns {Promise<Object>} 响应数据，包含公式列表
+ */
+export const getFormulasForPost = (params) => {
+  return request({
+    url: '/api/formula/formulas/simple_list/',
+    method: 'get',
+    params
+  })
+}

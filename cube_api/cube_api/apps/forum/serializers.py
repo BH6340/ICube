@@ -77,11 +77,12 @@ class PostListSerializer(serializers.ModelSerializer):
     """
     帖子列表序列化器（轻量级）
 
-    用于帖子列表展示，只包含必要字段，减少数据传输量。
+    用于帖子列表展示，包含必要字段和图片预览。
 
     设计原因：
         - 列表页不需要完整内容，轻量级序列化器提高加载速度
-        - 不含图片和完整内容，减少网络带宽消耗
+        - 包含前4张图片预览，丰富列表展示效果
+        - 减少网络带宽消耗
 
     字段：
         - id: 帖子ID
@@ -89,19 +90,34 @@ class PostListSerializer(serializers.ModelSerializer):
         - author: 作者资料（轻量级）
         - view_count/like_count/comment_count: 统计数据
         - tags: 标签列表
+        - images: 图片预览（最多4张）
         - is_pinned/is_essence: 状态标记
         - created_at/updated_at: 时间
     """
     author = ProfileListSerializer(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
+    images = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
         fields = (
             'id', 'title', 'author', 'view_count', 'like_count',
-            'comment_count', 'tags', 'is_pinned', 'is_essence',
+            'comment_count', 'tags', 'images', 'is_pinned', 'is_essence',
             'created_at', 'updated_at'
         )
+
+    def get_images(self, obj):
+        """
+        获取帖子的图片列表（最多4张）
+
+        Args:
+            obj: Post 对象
+
+        Returns:
+            图片序列化数据列表
+        """
+        images = obj.images.all()[:4]
+        return PostImageSerializer(images, many=True, context=self.context).data
 
 
 class PostSerializer(serializers.ModelSerializer):
@@ -366,37 +382,58 @@ class PostCreateUpdateSerializer(serializers.ModelSerializer):
                 order=idx
             )
 
-        # 关联之前上传但未关联帖子的图片（延迟关联机制）
-        self._associate_uploaded_images(post, validated_data.get('content', ''))
+        self._sync_post_images(post, validated_data.get('content', ''))
 
         return post
 
-    def _associate_uploaded_images(self, post, content):
+    def _sync_post_images(self, post, content):
         """
-        从内容中提取图片URL，关联之前上传的图片
+        根据帖子内容同步图片关联
 
-        延迟关联机制：用户先上传图片获取URL，写入内容后，
-        通过此方法将图片与帖子关联。
+        核心逻辑：
+            1. 从内容中提取所有Markdown格式的图片URL
+            2. 获取当前已关联的图片路径集合
+            3. 删除不在内容中的图片关联（已删除的图片）
+            4. 添加新出现在内容中的图片关联（新插入的图片）
+
+        支持的图片来源：
+            - 用户上传图片：/media/forum/posts/
+            - 公式库缩略图：/media/formulas/
 
         Args:
             post: Post 对象
             content: 帖子内容（可能包含图片URL）
         """
         import re
-        # 提取 Markdown 格式的图片URL
+        import os
+        from django.conf import settings
+
         image_urls = re.findall(r'!\[.*?\]\((.*?)\)', content)
-        
+
+        existing_images = set()
+        for img in post.images.all():
+            existing_images.add(img.image.name)
+
+        required_images = set()
         for url in image_urls:
-            # 只处理本地上传的图片
-            if '/media/forum/posts/' in url:
+            if '/media/forum/posts/' in url or '/media/formulas/' in url:
                 image_path = url.split('/media/')[-1]
-                try:
-                    # 查找未关联帖子的图片
-                    post_image = PostImage.objects.get(image=image_path, post__isnull=True)
-                    post_image.post = post
-                    post_image.save()
-                except PostImage.DoesNotExist:
-                    pass
+                required_images.add(image_path)
+
+        for img in list(post.images.all()):
+            if img.image.name not in required_images:
+                img.delete()
+
+        for image_path in required_images:
+            if image_path not in existing_images:
+                full_path = os.path.join(settings.MEDIA_ROOT, image_path)
+                if os.path.exists(full_path):
+                    PostImage.objects.create(
+                        post=post,
+                        image=image_path,
+                        alt='图片',
+                        order=post.images.count()
+                    )
 
     def update(self, instance, validated_data):
         """
@@ -436,8 +473,7 @@ class PostCreateUpdateSerializer(serializers.ModelSerializer):
                 order=idx
             )
 
-        # 关联之前上传但未关联帖子的图片
-        self._associate_uploaded_images(post, validated_data.get('content', ''))
+        self._sync_post_images(post, validated_data.get('content', ''))
 
         return post
 

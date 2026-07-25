@@ -102,3 +102,5 @@ front_dist/
 files/
 cube_front/deploy_front.py
 cube_api/update_requirements.py
+test_images.py
+test_post.py

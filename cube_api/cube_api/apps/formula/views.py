@@ -21,7 +21,7 @@ from django.db.models import F
 from .models import CubeCategory, CubeState, Formula, FormulaTag, FormulaCollection
 from .serializers import (
     CubeCategorySerializer, CubeStateSerializer, FormulaSerializer,
-    FormulaListSerializer, FormulaTagSerializer, FormulaMatchSerializer
+    FormulaListSerializer, FormulaSimpleSerializer, FormulaTagSerializer, FormulaMatchSerializer
 )
 from .permissions import IsAdminOrReadOnly, IsAdminOrCustomCreator
 from .services import FormulaMatchService
@@ -435,6 +435,69 @@ class FormulaViewSet(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(formulas, many=True, context={'request': request})
+        return APIResponse(data=serializer.data)
+
+    @extend_schema(
+        summary="获取精简公式列表（帖子编辑器专用）",
+        description="返回精简的公式列表，用于帖子编辑器选择公式插入",
+        parameters=[
+            OpenApiParameter(name='search', type=str, location='query', description='关键词搜索'),
+            OpenApiParameter(name='category', type=int, location='query', description='分类ID'),
+            OpenApiParameter(name='difficulty', type=int, location='query', description='难度等级'),
+            OpenApiParameter(name='page', type=int, location='query', description='页码'),
+            OpenApiParameter(name='page_size', type=int, location='query', description='每页数量')
+        ],
+        responses={
+            200: {
+                'type': 'object',
+                'properties': {
+                    'count': {'type': 'integer', 'description': '总数'},
+                    'results': {'type': 'array', 'description': '公式列表'}
+                }
+            }
+        }
+    )
+    @action(detail=False, methods=['GET'], permission_classes=[IsAuthenticatedOrReadOnly])
+    def simple_list(self, request):
+        """
+        获取精简公式列表（帖子编辑器专用）
+
+        返回精简的公式列表，只包含必要字段，用于帖子编辑器选择公式插入。
+
+        查询参数：
+            - search: 关键词搜索（名称、记号）
+            - category: 分类ID
+            - difficulty: 难度等级
+            - page: 页码
+            - page_size: 每页数量
+
+        Args:
+            request: HTTP 请求对象
+
+        Returns:
+            APIResponse: 包含公式列表的响应（带分页）
+        """
+        queryset = Formula.objects.select_related('category').filter(is_custom=False)
+
+        search = request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(name__icontains=search) | queryset.filter(notation__icontains=search)
+
+        category = request.query_params.get('category')
+        if category:
+            queryset = queryset.filter(category_id=category)
+
+        difficulty = request.query_params.get('difficulty')
+        if difficulty:
+            queryset = queryset.filter(difficulty=difficulty)
+
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = FormulaSimpleSerializer(page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
+
+        serializer = FormulaSimpleSerializer(queryset, many=True, context={'request': request})
         return APIResponse(data=serializer.data)
 
 

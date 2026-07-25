@@ -53,39 +53,59 @@
         shadow="hover"
         @click="goToDetail(post.id)"
       >
-        <div class="post-header">
-          <div class="post-title">
-            <span v-if="post.is_pinned" class="pin-badge">置顶</span>
-            <span v-if="post.is_essence" class="essence-badge">精华</span>
-            <h3>{{ post.title }}</h3>
+        <div class="post-content-wrapper">
+          <div class="post-main">
+            <div class="post-header">
+              <div class="post-title">
+                <span v-if="post.is_pinned" class="pin-badge">置顶</span>
+                <span v-if="post.is_essence" class="essence-badge">精华</span>
+                <h3>{{ post.title }}</h3>
+              </div>
+            </div>
+
+            <div class="post-info">
+              <span class="author">
+                <el-avatar :size="24" :src="post.author?.image || defaultAvatar" />
+                {{ post.author?.username }}
+              </span>
+              <span class="time">{{ formatTime(post.created_at) }}</span>
+            </div>
+
+            <div class="post-tags">
+              <el-tag
+                v-for="tag in post.tags"
+                :key="tag.id"
+                :color="tag.color"
+                size="small"
+                effect="plain"
+                style="color: white"
+              >
+                {{ tag.name }}
+              </el-tag>
+            </div>
+
+            <div class="post-stats">
+              <span><el-icon><View /></el-icon> {{ post.view_count }}</span>
+              <span><el-icon><Star /></el-icon> {{ post.like_count }}</span>
+              <span><el-icon><ChatLineRound /></el-icon> {{ post.comment_count }}</span>
+            </div>
           </div>
-        </div>
 
-        <div class="post-info">
-          <span class="author">
-            <el-avatar :size="24" :src="post.author?.image || defaultAvatar" />
-            {{ post.author?.username }}
-          </span>
-          <span class="time">{{ formatTime(post.created_at) }}</span>
-        </div>
-
-        <div class="post-tags">
-          <el-tag
-            v-for="tag in post.tags"
-            :key="tag.id"
-            :color="tag.color"
-            size="small"
-            effect="plain"
-            style="color: white"
-          >
-            {{ tag.name }}
-          </el-tag>
-        </div>
-
-        <div class="post-stats">
-          <span><el-icon><View /></el-icon> {{ post.view_count }}</span>
-          <span><el-icon><Star /></el-icon> {{ post.like_count }}</span>
-          <span><el-icon><ChatLineRound /></el-icon> {{ post.comment_count }}</span>
+          <div class="post-images" v-if="post.images && post.images.length > 0">
+            <div class="images-grid" :class="{ 'single-image': post.images.length === 1 }">
+              <div
+                v-for="(image, index) in post.images.slice(0, 4)"
+                :key="image.id"
+                class="image-item"
+                :class="{ 'single': post.images.length === 1 }"
+              >
+                <img :src="image.image_url" :alt="image.alt || '图片'" />
+                <div v-if="index === 3 && post.images.length > 4" class="image-overlay">
+                  +{{ post.images.length - 4 }}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </el-card>
     </div>
@@ -287,11 +307,65 @@ onMounted(() => {
   gap: 8px;
 }
 
-.post-tags {
+.post-content-wrapper {
   display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px;
+}
+
+.post-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.post-images {
+  flex-shrink: 0;
+  width: 140px;
+}
+
+.images-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+}
+
+.images-grid.single-image {
+  grid-template-columns: 1fr;
+}
+
+.image-item {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  aspect-ratio: 1;
+}
+
+.image-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #f5f5f5;
+  transition: transform 0.3s;
+}
+
+.image-item:hover img {
+  transform: scale(1.05);
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
 }
 
 .post-stats {
