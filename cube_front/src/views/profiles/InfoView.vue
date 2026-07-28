@@ -267,6 +267,25 @@
 </template>
 
 <script setup>
+/**
+ * InfoView.vue - 用户个人信息页面
+ *
+ * 核心职责：
+ * 1. 展示/编辑用户个人资料（头像、昵称、简介等）
+ * 2. 展示关注/粉丝列表，支持关注/取关操作
+ * 3. 展示用户订单和地址快捷入口
+ * 4. 支持用户头像上传和裁剪
+ *
+ * 功能特性：
+ *   - Tab 切换：关注 / 粉丝
+ *   - 关注/取关操作实时更新状态
+ *   - 资料编辑对话框支持字段修改
+ *   - 头像上传集成 ImageCropper 组件（1:1 裁剪 + WebP 压缩）
+ *
+ * 设计要点：
+ *   - 支持查看他人主页（根据路由参数 userId）和自身主页
+ *   - 使用 ImageCropper 处理头像上传，自动压缩为 WebP 格式
+ */
 import { ref, computed, onMounted, watch } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { useRoute, useRouter } from 'vue-router'

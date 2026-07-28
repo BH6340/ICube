@@ -148,6 +148,24 @@
 </template>
 
 <script setup>
+/**
+ * MyDataView.vue - 我的数据统计页面
+ *
+ * 核心职责：
+ * 1. 展示用户计时记录列表和统计数据
+ * 2. 使用 ECharts 可视化展示成绩趋势图
+ * 3. 支持按魔方类型、方法、日期范围筛选
+ * 4. 支持删除错误的计时记录
+ *
+ * 功能特性：
+ *   - 统计卡片：总次数、最佳成绩、平均成绩
+ *   - 趋势折线图：展示成绩变化
+ *   - 筛选条件联动刷新图表和列表
+ *
+ * 设计要点：
+ *   - 使用 echarts 渲染趋势图，组件卸载时销毁实例
+ *   - chartInstance 保存图表引用，避免重复初始化
+ */
 import { ref, reactive, onMounted, onBeforeUnmount, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import * as echarts from 'echarts'

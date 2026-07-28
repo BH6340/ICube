@@ -103,6 +103,23 @@
 </template>
 
 <script setup>
+/**
+ * AddressView.vue - 收货地址管理页面
+ *
+ * 核心职责：
+ * 1. 展示用户收货地址列表
+ * 2. 支持新增、编辑、删除地址
+ * 3. 支持设置默认地址
+ *
+ * 功能特性：
+ *   - 地址表单包含：姓名、手机、省市区、详细地址
+ *   - 表单校验确保必填项完整
+ *   - 默认地址高亮显示
+ *
+ * 设计要点：
+ *   - addressForm 使用 ref 存储表单数据
+ *   - 编辑模式复用同一对话框，通过 isEditing 区分
+ */
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'

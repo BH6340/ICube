@@ -46,7 +46,30 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue' // 💡 1. 引入 watch
+/**
+ * TagSelector.vue - 标签选择器组件
+ *
+ * 核心职责：
+ * 1. 提供帖子标签的多选功能
+ * 2. 支持从后端加载标签列表
+ * 3. 通过 v-model 双向绑定选中的标签 ID 数组
+ *
+ * 功能特性：
+ *   - 自动从后端加载标签（getTags API）
+ *   - 支持初始化时回显已选标签
+ *   - 通过 watch 深度监听 modelValue 变化
+ *   - 加载失败时显示错误提示
+ *
+ * Props:
+ *   - modelValue: 已选标签 ID 数组
+ *
+ * Emits:
+ *   - update:modelValue: 标签变化时触发
+ *
+ * 设计要点：
+ *   - 使用 watch 实现双向同步（父组件传值 → 内部状态 → 回写父组件）
+ */
+import { ref, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getTags } from '@/api/tags'
 

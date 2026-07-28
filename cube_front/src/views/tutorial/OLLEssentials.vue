@@ -135,6 +135,23 @@
 </template>
 
 <script setup>
+/**
+ * OLLEssentials.vue - OLL 基础教程页面
+ *
+ * 核心职责：
+ * 1. 展示 OLL（定向最后一层）基础算法
+ * 2. 提供点、线、角、十字等分类公式
+ * 3. 支持按情况筛选和搜索
+ *
+ * 功能特性：
+ *   - Tab 切换概览、点、线、角、十字
+ *   - 每个 case 展示公式、难度和提示
+ *   - 支持跳转到公式详情
+ *
+ * 设计要点：
+ *   - edgeCases 数组存储各种 OLL 情况
+ *   - activeTab 追踪当前选中的 Tab
+ */
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 

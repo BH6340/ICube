@@ -90,6 +90,23 @@
 </template>
 
 <script setup>
+/**
+ * BeginnerTutorial.vue - 新手入门教程页面
+ *
+ * 核心职责：
+ * 1. 展示魔方入门层先法教程
+ * 2. 分步指导从底十字到顶面的完整流程
+ * 3. 提供目标图示和操作说明
+ *
+ * 功能特性：
+ *   - 步骤式引导，currentStep 追踪当前进度
+ *   - 每步骤提供目标图示和 HTML 富文本内容
+ *   - 支持上一步/下一步导航
+ *
+ * 设计要点：
+ *   - steps 数组存储各步骤的目标图、描述和内容
+ *   - 内容以 HTML 字符串存储，通过 v-html 渲染
+ */
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 

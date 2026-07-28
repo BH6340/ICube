@@ -170,6 +170,23 @@
 </template>
 
 <script setup>
+/**
+ * CFOPTutorial.vue - CFOP 进阶教程页面
+ *
+ * 核心职责：
+ * 1. 展示 CFOP 方法的分步学习内容
+ * 2. 提供步骤导航和进度显示
+ * 3. 每个步骤包含算法数量、目标时间等统计信息
+ *
+ * 功能特性：
+ *   - 步骤式引导，currentStep 追踪当前学习步骤
+ *   - 每步骤展示标题、副标题、图标和统计信息
+ *   - 支持跳转到具体公式页面
+ *
+ * 设计要点：
+ *   - steps 数组存储各步骤的详细内容
+ *   - 点击步骤跳转到 PLL/OLL/F2L 等具体教程
+ */
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 

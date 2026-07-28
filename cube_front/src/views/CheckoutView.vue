@@ -134,6 +134,25 @@
 </template>
 
 <script setup>
+/**
+ * CheckoutView.vue - 结算页面
+ *
+ * 核心职责：
+ * 1. 展示购物车选中商品结算信息
+ * 2. 选择收货地址或新增地址
+ * 3. 提交订单创建请求
+ *
+ * 功能特性：
+ *   - 地址列表展示和选择
+ *   - 支持新增地址对话框
+ *   - 订单金额明细（商品总额、运费）
+ *   - 提交前校验地址选择
+ *
+ * 设计要点：
+ *   - addressForm 使用 reactive 存储新地址表单
+ *   - 从路由参数获取要结算的购物车 ID 列表
+ *   - 订单创建成功后跳转到支付页面
+ */
 import { ref, computed, onMounted, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ShoppingBag } from '@element-plus/icons-vue'

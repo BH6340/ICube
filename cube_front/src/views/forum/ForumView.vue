@@ -125,30 +125,69 @@
 </template>
 
 <script setup>
+/**
+ * ForumView.vue - 论坛首页视图
+ *
+ * 核心职责：
+ * 1. 展示帖子列表（支持分页、搜索、排序）
+ * 2. 支持按置顶/精华筛选
+ * 3. 帖子卡片展示：标题、作者、标签、统计信息、图片预览
+ * 4. 左右布局：左侧内容区自适应，右侧图片区固定 140px
+ *
+ * 功能特性：
+ *   - 支持四种排序：最新发布、最热、最多点赞、最多浏览
+ *   - 帖子图片预览采用 1:1 比例，object-fit: contain 确保完整显示
+ *   - 多图帖子使用网格布局展示，超过 4 张显示 +N 覆盖层
+ *   - 相对时间格式化：分钟前、小时前、天前
+ *
+ * 设计要点：
+ *   - 使用 reactive 管理搜索参数，computed 计算 token 状态
+ *   - 热门排序通过 hot 参数触发后端特殊排序逻辑
+ *   - 分页切换时保留当前筛选条件
+ */
+
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, View, Star, ChatLineRound, Edit } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { getPosts } from '@/api/posts'
-// 💡 标注修改：引入本地的默认头像 SVG 静态资源，保持和评论组件的逻辑同步
 import defaultAvatar from '@/assets/default_avatar.svg'
 
 const router = useRouter()
+/** 当前用户 Token（用于显示/隐藏发布按钮） */
 const token = computed(() => localStorage.getItem('token'))
 
+/** 帖子列表数据 */
 const posts = ref([])
+/** 加载状态 */
 const loading = ref(false)
+/** 当前页码 */
 const currentPage = ref(1)
+/** 每页数量 */
 const pageSize = ref(20)
+/** 帖子总数 */
 const total = ref(0)
 
+/** 搜索与筛选参数 */
 const searchParams = reactive({
-  search: '',
-  ordering: '-created_at',
-  is_pinned: false,
-  is_essence: false
+  search: '',          // 搜索关键词
+  ordering: '-created_at',  // 排序方式
+  is_pinned: false,    // 是否仅看置顶
+  is_essence: false    // 是否仅看精华
 })
 
+/**
+ * 相对时间格式化
+ *
+ * 将日期转换为人类可读的相对时间：
+ *   - 1 小时内：X 分钟前
+ *   - 1 天内：X 小时前
+ *   - 7 天内：X 天前
+ *   - 其他：具体日期
+ *
+ * @param {string} time - ISO 时间字符串
+ * @returns {string} 格式化后的相对时间
+ */
 const formatTime = (time) => {
   const date = new Date(time)
   const now = new Date()
@@ -168,6 +207,12 @@ const formatTime = (time) => {
   return date.toLocaleDateString()
 }
 
+/**
+ * 加载帖子列表
+ *
+ * 根据当前筛选条件和排序方式请求后端 API。
+ * 热门排序使用专用 hot 参数，其余使用 ordering 字段。
+ */
 const loadPosts = async () => {
   loading.value = true
   try {
@@ -200,15 +245,22 @@ const loadPosts = async () => {
   }
 }
 
+/** 搜索处理：重置页码并加载 */
 const handleSearch = () => {
   currentPage.value = 1
   loadPosts()
 }
 
+/**
+ * 跳转到帖子详情
+ *
+ * @param {number} id - 帖子 ID
+ */
 const goToDetail = (id) => {
   router.push(`/forum/post/${id}`)
 }
 
+/** 跳转到创建帖子页面 */
 const goToCreate = () => {
   router.push('/forum/create')
 }

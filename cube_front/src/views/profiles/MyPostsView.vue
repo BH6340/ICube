@@ -65,6 +65,23 @@
 </template>
 
 <script setup>
+/**
+ * MyPostsView.vue - 我的帖子页面
+ *
+ * 核心职责：
+ * 1. 展示当前用户发布的所有帖子列表
+ * 2. 支持搜索、查看、编辑、删除帖子
+ * 3. 显示帖子统计数据（浏览、评论、点赞）
+ *
+ * 功能特性：
+ *   - 相对时间格式化：分钟前、小时前、天前
+ *   - 分页加载，每页 20 条
+ *   - 点击编辑跳转到帖子编辑器
+ *
+ * 设计要点：
+ *   - 使用 getMyPosts API 加载当前用户帖子
+ *   - 支持路由跳转到 PostEditorView 进行编辑
+ */
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search, View, Star, ChatLineRound, Edit } from '@element-plus/icons-vue'

@@ -84,6 +84,24 @@
 </template>
 
 <script setup>
+/**
+ * PayView.vue - 支付页面
+ *
+ * 核心职责：
+ * 1. 展示订单详情和支付金额
+ * 2. 提供多种支付方式选择（支付宝/微信）
+ * 3. 发起支付并轮询检查支付结果
+ *
+ * 功能特性：
+ *   - 支付方式 Tab 切换
+ *   - 生成支付二维码/链接
+ *   - 轮询机制检测支付状态变化
+ *   - 支付成功后跳转订单详情
+ *
+ * 设计要点：
+ *   - pollingTimer 用于支付状态轮询（3秒间隔）
+ *   - 组件卸载时清理定时器，避免内存泄漏
+ */
 import { ref, onMounted, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { CircleCheck, CircleClose, CreditCard, Loading } from '@element-plus/icons-vue'

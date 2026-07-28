@@ -72,6 +72,23 @@
 </template>
 
 <script setup>
+/**
+ * CompleteOLL.vue - 完整 OLL 教程页面
+ *
+ * 核心职责：
+ * 1. 展示 OLL（定向最后一层）完整算法集
+ * 2. 按学习阶段组织内容：基础 → 进阶 → 完整
+ * 3. 提供每个 case 的公式和分类信息
+ *
+ * 功能特性：
+ *   - Tab 切换不同学习阶段
+ *   - 每个 case 展示公式列表和适用场景
+ *   - 支持跳转到公式详情
+ *
+ * 设计要点：
+ *   - learningStages 数组按算法数量分级组织
+ *   - activeTab 追踪当前选中的学习阶段
+ */
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 

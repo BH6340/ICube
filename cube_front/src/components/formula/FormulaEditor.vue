@@ -146,10 +146,40 @@
 </template>
 
 <script setup>
+/**
+ * FormulaEditor.vue - 公式编辑器组件
+ *
+ * 核心职责：
+ * 1. 提供公式上传/编辑的表单界面
+ * 2. 支持公式记号的可视化键盘输入（点击按钮添加步骤）
+ * 3. 支持两种图片来源：本地上传（经裁剪压缩）和公式库选择
+ * 4. 自动绑定分类对应的 target_state_id
+ *
+ * 功能特性：
+ *   - 记号输入支持两种方式：键盘点击输入 和 直接文本输入
+ *   - 修饰符（' 和 2）自动附加到上一个步骤
+ *   - 图片上传使用 ImageCropper 组件进行 1:1 裁剪
+ *   - 从公式库选择图片时直接引用原路径，无需重新上传
+ *
+ * Props:
+ *   - visible: 控制编辑器显示/隐藏（必填）
+ *   - editFormula: 编辑的公式对象（为空时为创建模式）
+ *
+ * Emits:
+ *   - close: 关闭编辑器
+ *   - success: 提交成功
+ *
+ * 设计要点：
+ *   - thumbnail 字段支持两种类型：File 对象（本地上传）和 string（路径引用）
+ *   - 提交时根据类型分别映射为 thumbnail_file 或 thumbnail_path 字段
+ *   - 分类变更时后端自动绑定对应的 target_state_id
+ */
+
 import { ref, computed, onMounted, watch } from 'vue'
 import ImageCropper from '../ImageCropper.vue'
 import { getFormulaCategories, getFormulaList, createFormula, updateFormula } from '@/api/formula'
 
+/** 组件属性定义 */
 const props = defineProps({
   visible: {
     type: Boolean,
@@ -161,40 +191,69 @@ const props = defineProps({
   }
 })
 
+/** 组件事件定义 */
 const emit = defineEmits(['close', 'success'])
 
-const fileInput = ref(null)
+/** 模板引用 */
+const fileInput = ref(null)               // 文件选择器引用
+
+/** 表单数据 */
 const form = ref({
-  name: '',
-  notation: '',
-  category: '',
-  difficulty: '',
-  description: '',
-  thumbnail: null
+  name: '',          // 公式名称
+  notation: '',      // 公式记号（空格分隔）
+  category: '',      // 分类 ID
+  difficulty: '',    // 难度等级
+  description: '',   // 公式描述
+  thumbnail: null    // 缩略图（File | string）
 })
+
+/** 图片预览 URL */
 const selectedImageUrl = ref('')
+/** 是否显示裁剪组件 */
 const showCropper = ref(false)
+/** 待裁剪的图片文件 */
 const cropperFile = ref(null)
+/** 是否显示公式库选择弹窗 */
 const showLibrary = ref(false)
+/** 分类列表 */
 const categories = ref([])
+/** 公式库列表（供选择图片） */
 const libraryFormulas = ref([])
 
+/** 是否为编辑模式 */
 const isEdit = computed(() => !!props.editFormula)
 
+/** 表单是否有效（名称和记号必填） */
 const isValid = computed(() => {
   return form.value.name.trim() && form.value.notation.trim()
 })
 
+/** 记号键盘布局：标准层转动 */
 const topRow = ['R', 'L', 'U', 'D', 'F', 'B']
+/** 记号键盘布局：镜像层转动（小写） */
 const middleRow = ['r', 'l', 'u', 'd', 'f', 'b']
+/** 记号键盘布局：中层和整体转动 */
 const bottomRow = ['M', 'E', 'S', 'x', 'y', 'z']
+/** 修饰符：逆时针（'）和 180°（2） */
 const modifiers = ["'", '2']
 
+/**
+ * 组件挂载生命周期
+ *
+ * 加载公式分类和公式库列表（用于图片选择）。
+ */
 onMounted(async () => {
   await loadCategories()
   await loadLibraryFormulas()
 })
 
+/**
+ * 监听编辑器显示状态
+ *
+ * 当 visible 变为 true 时：
+ *   - 编辑模式：加载已有公式数据到表单
+ *   - 创建模式：重置表单为空
+ */
 watch(() => props.visible, async (val) => {
   if (val) {
     if (isEdit.value && props.editFormula) {
@@ -223,6 +282,11 @@ watch(() => props.visible, async (val) => {
   }
 })
 
+/**
+ * 加载公式分类列表
+ *
+ * 从后端获取所有分类（含方法、阶段信息），用于分类下拉选择。
+ */
 const loadCategories = async () => {
   try {
     const res = await getFormulaCategories()
@@ -232,6 +296,16 @@ const loadCategories = async () => {
   }
 }
 
+/**
+ * 添加公式记号步骤
+ *
+ * 处理规则：
+ *   - 普通步骤（R/L/U/D/F/B 等）：追加到记号字符串末尾，自动加空格
+ *   - 修饰符（' 和 2）：附加到上一个步骤末尾，不单独成步
+ *     例如："R U" + "'" → "R U'"（而非 "R U '"）
+ *
+ * @param {string} key - 记号按键值
+ */
 const addNotation = (key) => {
   if (key === "'" || key === '2') {
     if (!form.value.notation.trim()) return
@@ -247,14 +321,23 @@ const addNotation = (key) => {
   }
 }
 
+/** 清空公式记号 */
 const clearNotation = () => {
   form.value.notation = ''
 }
 
+/** 触发文件选择对话框 */
 const triggerUpload = () => {
   fileInput.value?.click()
 }
 
+/**
+ * 处理文件选择
+ *
+ * 选择图片后自动打开裁剪组件，进行 1:1 裁剪。
+ *
+ * @param {Event} e - 文件选择事件
+ */
 const handleFileSelect = (e) => {
   const file = e.target.files?.[0]
   if (file) {
@@ -263,17 +346,34 @@ const handleFileSelect = (e) => {
   }
 }
 
+/**
+ * 处理裁剪完成
+ *
+ * 裁剪成功后：
+ *   - 将裁剪后的文件设为 thumbnail（File 类型）
+ *   - 使用 URL.createObjectURL 生成预览
+ *   - 关闭裁剪组件
+ *
+ * @param {File} croppedFile - 裁剪后的 WebP 文件
+ */
 const handleCrop = (croppedFile) => {
   form.value.thumbnail = croppedFile
   selectedImageUrl.value = URL.createObjectURL(croppedFile)
   showCropper.value = false
 }
 
+/** 移除已选择的图片 */
 const removeImage = () => {
   form.value.thumbnail = null
   selectedImageUrl.value = ''
 }
 
+/**
+ * 加载公式库列表
+ *
+ * 获取前 100 条公式，用于图片选择弹窗。
+ * 优先加载有缩略图的公式。
+ */
 const loadLibraryFormulas = async () => {
   try {
     const res = await getFormulaList({ page_size: 100 })
@@ -283,12 +383,33 @@ const loadLibraryFormulas = async () => {
   }
 }
 
+/**
+ * 从公式库选择图片
+ *
+ * 选中公式后，直接使用该公式的 thumbnail 路径作为图片来源，
+ * 不重新上传，避免重复存储。
+ *
+ * @param {Object} formula - 选中的公式对象
+ */
 const selectFromLibrary = async (formula) => {
   selectedImageUrl.value = formula.thumbnail
   form.value.thumbnail = formula.thumbnail
   showLibrary.value = false
 }
 
+/**
+ * 提交公式
+ *
+ * 根据当前模式调用创建或更新接口。
+ *
+ * 数据映射规则：
+ *   - File 类型 thumbnail → thumbnail_file（本地上传，后端处理压缩）
+ *   - string 类型 thumbnail → thumbnail_path（公式库选择，直接引用）
+ *
+ * 后端处理：
+ *   - 自动根据 category_id 绑定 target_state_id
+ *   - 自动生成缩略图（如果未提供）
+ */
 const submitFormula = async () => {
   if (!isValid.value) return
 
@@ -327,6 +448,11 @@ const submitFormula = async () => {
   }
 }
 
+/**
+ * 关闭编辑器并重置表单
+ *
+ * 清除所有表单数据和图片预览，触发 close 事件。
+ */
 const handleClose = () => {
   form.value = {
     name: '',

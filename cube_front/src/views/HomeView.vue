@@ -17,6 +17,18 @@
 </template>
 
 <script setup>
+/**
+ * HomeView.vue - 应用主布局容器
+ *
+ * 核心职责：
+ * 1. 提供全局页面布局（顶部导航 + 主内容区 + 底部页脚）
+ * 2. 作为路由容器，渲染子路由页面
+ *
+ * 设计要点：
+ * - 使用 el-container 实现经典三段式布局
+ * - 主内容区域 max-width: 1200px，居中显示
+ * - 复用 Header 和 Footer 组件，保持全站一致性
+ */
 import TopHeader from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 </script>

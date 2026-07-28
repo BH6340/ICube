@@ -171,6 +171,25 @@
 </template>
 
 <script setup>
+/**
+ * ShopView.vue - 商城首页视图
+ *
+ * 核心职责：
+ * 1. 展示商品分类树和商品列表
+ * 2. 支持多维度筛选（分类、价格区间、关键词、排序）
+ * 3. 商品详情弹窗（含规格选择和数量调整）
+ * 4. 加入购物车功能（联动购物车版本刷新）
+ *
+ * 功能特性：
+ *   - 左侧分类树 + 价格筛选 + 热门标签
+ *   - 右侧商品网格（12 列布局），支持分页
+ *   - 商品详情弹窗：图片轮播、规格选择、数量调整
+ *   - 价格区间快捷标签：0-50/50-100/100-200/200-500/500+
+ *
+ * 设计要点：
+ *   - 使用 useCartRefresh 跨组件同步购物车状态
+ *   - selectedSpec 用 reactive 存储规格选择，支持多规格商品
+ */
 import { ref, computed, onMounted, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ShoppingBag, ShoppingCart } from '@element-plus/icons-vue'

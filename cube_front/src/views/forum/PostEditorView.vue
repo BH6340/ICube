@@ -77,6 +77,27 @@
 </template>
 
 <script setup>
+/**
+ * PostEditorView.vue - 帖子编辑器视图
+ *
+ * 核心职责：
+ * 1. 提供帖子创建/编辑的表单界面
+ * 2. 集成 MarkdownEditor 组件实现富文本编辑
+ * 3. 集成 TagSelector 组件实现标签选择
+ * 4. 表单校验与提交逻辑
+ *
+ * 功能特性：
+ *   - 标题最少 5 字符，最多 200 字符
+ *   - 内容最少 10 字符，支持 Markdown 格式
+ *   - 标签支持多选
+ *   - 编辑模式自动加载已有数据
+ *
+ * 设计要点：
+ *   - 创建和编辑共用同一组件，通过路由参数区分模式
+ *   - 提交时使用 FormData 格式，支持文件上传扩展
+ *   - 响应式设计：移动端表单操作区纵向排列
+ */
+
 import {ref, reactive, computed, onMounted} from 'vue'
 import {useRouter, useRoute} from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
@@ -88,17 +109,22 @@ import TagSelector from '@/components/forum/TagSelector.vue'
 const router = useRouter()
 const route = useRoute()
 
+/** 表单引用 */
 const formRef = ref(null)
+/** 提交状态 */
 const submitting = ref(false)
 
+/** 是否为编辑模式（通过路由参数判断） */
 const isEdit = computed(() => !!route.params.id)
 
+/** 表单数据 */
 const form = reactive({
-  title: '',
-  content: '',
-  tag_ids: []
+  title: '',       // 帖子标题
+  content: '',     // Markdown 内容
+  tag_ids: []      // 标签 ID 列表
 })
 
+/** 表单校验规则 */
 const rules = {
   title: [
     {required: true, message: '请输入标题', trigger: 'blur'},
@@ -111,14 +137,18 @@ const rules = {
   ]
 }
 
+/**
+ * 加载帖子数据（编辑模式）
+ *
+ * 根据路由参数获取帖子 ID，加载已有数据填充表单。
+ * 提取逻辑兼容后端不同响应格式（res.post / res.data.post）。
+ */
 const loadPost = async () => {
   const id = route.params.id
-  // console.log('1. 进入了 loadPost 函数，当前帖子的 ID 是:', id) // 👈 埋点 1
   if (!id) return
 
   try {
     const res = await getPost(id)
-    // console.log('2. 后端接口完整返回的数据 res 是:', res) // 👈 埋点 2
 
     let postData = null
     if (res.code === 100) {
@@ -129,18 +159,14 @@ const loadPost = async () => {
       postData = res.post
     }
 
-    // console.log('3. 经过提取后的 postData 是:', postData) // 👈 埋点 3
     if (postData) {
       form.title = postData.title || ''
       form.content = postData.content || postData.content_md || ''
-      // 💡 ✨ 修复核心：直接从 postData.tags 取值，剔除多余的 .post
       if (postData.tags && postData.tags.length > 0) {
         form.tag_ids = postData.tags.map(tag => Number(tag.id))
       } else {
         form.tag_ids = []
       }
-
-      // console.log('4. 【核心目标】成功注入组件的 tag_ids:', form.tag_ids) // 👈 如果前几步正常，这里必打印
     } else {
       ElMessage.error('加载帖子失败')
       router.push('/forum')
@@ -152,6 +178,12 @@ const loadPost = async () => {
   }
 }
 
+/**
+ * 提交表单
+ *
+ * 校验通过后，根据模式调用创建或更新接口。
+ * 使用 FormData 格式便于扩展文件上传。
+ */
 const handleSubmit = async () => {
   if (!formRef.value) return
 
@@ -216,6 +248,7 @@ const handleSubmit = async () => {
   }
 }
 
+/** 返回上一页 */
 const goBack = () => {
   router.back()
 }

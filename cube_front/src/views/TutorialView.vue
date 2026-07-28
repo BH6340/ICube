@@ -314,6 +314,22 @@
 </template>
 
 <script setup>
+/**
+ * TutorialView.vue - 教程首页视图
+ *
+ * 核心职责：
+ * 1. 展示魔方教程的入口页面
+ * 2. 列出不同魔方类型和教程阶段
+ * 3. 提供跳转到具体教程的链接
+ *
+ * 功能特性：
+ *   - 卡片式展示各教程路径
+ *   - 显示教程标签、描述和目标时长
+ *
+ * 设计要点：
+ *   - orderCubes 存储教程入口信息
+ *   - 点击卡片跳转到对应教程路由
+ */
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 

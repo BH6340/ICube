@@ -132,6 +132,23 @@
 </template>
 
 <script setup>
+/**
+ * PLLEssentials.vue - PLL 基础教程页面
+ *
+ * 核心职责：
+ * 1. 展示 PLL（排列最后一层）基础算法
+ * 2. 提供角块排列和棱块排列的公式列表
+ * 3. 支持按情况筛选和搜索
+ *
+ * 功能特性：
+ *   - Tab 切换概览、角块、棱块
+ *   - 每个 case 展示公式、方向、难度和 pattern
+ *   - 支持跳转到公式详情
+ *
+ * 设计要点：
+ *   - cornerCases 和 edgeCases 分别存储角块和棱块公式
+ *   - activeTab 追踪当前选中的 Tab
+ */
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 

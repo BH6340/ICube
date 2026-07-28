@@ -180,6 +180,28 @@
 </template>
 
 <script setup>
+/**
+ * CollectionView.vue - 我的收藏/公式视图
+ *
+ * 核心职责：
+ * 1. 展示当前用户的收藏公式列表和自创公式列表
+ * 2. 支持 Tab 切换：我的收藏 / 我的公式
+ * 3. 支持分类、难度、关键词筛选
+ * 4. 支持公式详情弹窗（含 3D 演示）
+ * 5. 支持自创公式的编辑和添加
+ *
+ * 功能特性：
+ *   - 树形分类筛选（按方法/阶段分组）
+ *   - 多选难度筛选（基础/进阶/困难）
+ *   - 自创公式支持编辑权限校验（仅作者可编辑）
+ *   - 空状态引导用户去公式库收藏或添加公式
+ *
+ * 设计要点：
+ *   - 收藏和自创公式共用筛选逻辑，通过 activeTab 区分数据源
+ *   - 分类树由 buildCategoryTree 构建，按 method 分组
+ *   - 列表数据兼容分页格式（res.data.results）和数组格式
+ */
+
 import { ref, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import { Picture, Star } from '@element-plus/icons-vue';
@@ -187,34 +209,70 @@ import { getFormulaCategories, getMyCollections, removeCollection, getMyCustomFo
 import CubeDemo from '../../components/formula/CubeDemo.vue';
 import FormulaEditor from '../../components/formula/FormulaEditor.vue';
 
+/** 分类列表（原始数据） */
 const categoryList = ref([]);
+/** 分类树（树形结构，用于 UI 展示） */
 const categoryTree = ref([]);
+/** 公式列表数据 */
 const formulaList = ref([]);
+/** 总数 */
 const total = ref(0);
+/** 当前页码 */
 const currentPage = ref(1);
+/** 每页数量 */
 const pageSize = ref(12);
+/** 选中的分类 ID */
 const selectedCategory = ref(null);
+/** 选中的难度列表 */
 const selectedDifficulties = ref([]);
+/** 搜索关键词 */
 const searchKeyword = ref('');
+/** 排序方式 */
 const sortBy = ref('default');
+/** 详情弹窗显示状态 */
 const showDetailDialog = ref(false);
+/** 选中的公式对象 */
 const selectedFormula = ref(null);
+/** 当前激活的 Tab：collections / my_formulas */
 const activeTab = ref('collections');
+/** 编辑器显示状态 */
 const showEditor = ref(false);
+/** 正在编辑的公式 */
 const editFormula = ref(null);
 
+/**
+ * 难度等级标签文本
+ *
+ * @param {number} level - 难度等级（1-3）
+ * @returns {string} 标签文本
+ */
 const difficultyLabel = (level) => {
   if (level === 1) return '基础';
   if (level === 2) return '进阶';
   return '困难';
 };
 
+/**
+ * 难度等级标签颜色
+ *
+ * @param {number} level - 难度等级
+ * @returns {string} Element Plus tag 类型
+ */
 const difficultyTagType = (level) => {
   if (level === 1) return 'success';
   if (level === 2) return 'warning';
   return 'danger';
 };
 
+/**
+ * 构建分类树形结构
+ *
+ * 将扁平分类列表转换为按 method 分组的树形结构。
+ * 根节点为方法名（如"三阶层先法"），子节点为阶段名（如"F2L"）。
+ *
+ * @param {Array} categories - 分类列表
+ * @returns {Array} 树形结构
+ */
 const buildCategoryTree = (categories) => {
   const methods = {};
   categories.forEach(cat => {
@@ -234,6 +292,11 @@ const buildCategoryTree = (categories) => {
   return Object.values(methods);
 };
 
+/**
+ * 分类点击处理
+ *
+ * @param {Object} data - 树节点数据（raw 存在表示具体分类，否则为方法分组）
+ */
 const handleCategoryClick = (data) => {
   if (data.raw) {
     selectedCategory.value = data.raw.id;
@@ -248,11 +311,21 @@ const handleCategoryClick = (data) => {
   }
 };
 
+/**
+ * 公式点击查看详情
+ *
+ * @param {Object} formula - 公式对象
+ */
 const handleFormulaClick = (formula) => {
   selectedFormula.value = formula;
   showDetailDialog.value = true;
 };
 
+/**
+ * 取消收藏
+ *
+ * @param {Object} formula - 公式对象
+ */
 const removeCollectionItem = async (formula) => {
   try {
     await removeCollection(formula.id);
@@ -264,21 +337,30 @@ const removeCollectionItem = async (formula) => {
   }
 };
 
+/**
+ * 判断是否为公式作者
+ *
+ * @param {Object} formula - 公式对象
+ * @returns {boolean} 当前用户是否为作者
+ */
 const isFormulaAuthor = (formula) => {
   const user = JSON.parse(localStorage.getItem('user') || 'null');
   return user && formula.author && formula.author.id === user.id;
 };
 
+/** 打开编辑器编辑公式 */
 const handleEditFormula = (formula) => {
   editFormula.value = formula;
   showEditor.value = true;
 };
 
+/** 打开编辑器添加新公式 */
 const handleAddFormula = () => {
   editFormula.value = null;
   showEditor.value = true;
 };
 
+/** Tab 切换处理 */
 const handleTabChange = () => {
   currentPage.value = 1;
   if (activeTab.value === 'collections') {
@@ -288,6 +370,9 @@ const handleTabChange = () => {
   }
 };
 
+/**
+ * 加载分类列表
+ */
 const loadCategories = async () => {
   try {
     const res = await getFormulaCategories();
@@ -300,6 +385,11 @@ const loadCategories = async () => {
   }
 };
 
+/**
+ * 加载收藏公式列表
+ *
+ * 构建筛选参数，请求后端收藏接口。
+ */
 const loadCollections = async () => {
   const params = {
     page: currentPage.value,
@@ -336,6 +426,11 @@ const loadCollections = async () => {
   }
 };
 
+/**
+ * 加载自创公式列表
+ *
+ * 构建筛选参数，请求后端自创公式接口。
+ */
 const loadMyFormulas = async () => {
   const params = {
     page: currentPage.value,
@@ -372,6 +467,7 @@ const loadMyFormulas = async () => {
   }
 };
 
+/** 筛选变更处理 */
 const handleFilterChange = () => {
   currentPage.value = 1;
   if (activeTab.value === 'collections') {
@@ -381,6 +477,7 @@ const handleFilterChange = () => {
   }
 };
 
+/** 搜索处理 */
 const handleSearch = () => {
   currentPage.value = 1;
   if (activeTab.value === 'collections') {
@@ -390,6 +487,7 @@ const handleSearch = () => {
   }
 };
 
+/** 排序变更处理 */
 const handleSortChange = () => {
   currentPage.value = 1;
   if (activeTab.value === 'collections') {
@@ -399,6 +497,7 @@ const handleSortChange = () => {
   }
 };
 
+/** 分页变更处理 */
 const handlePageChange = (page) => {
   currentPage.value = page;
   if (activeTab.value === 'collections') {
@@ -408,6 +507,11 @@ const handlePageChange = (page) => {
   }
 };
 
+/**
+ * 公式提交成功回调
+ *
+ * 显示成功提示并刷新当前列表。
+ */
 const handleFormulaSuccess = () => {
   ElMessage.success('公式提交成功');
   currentPage.value = 1;
@@ -418,6 +522,7 @@ const handleFormulaSuccess = () => {
   }
 };
 
+/** 编辑器关闭回调 */
 const handleEditorClose = () => {
   showEditor.value = false;
   editFormula.value = null;

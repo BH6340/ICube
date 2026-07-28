@@ -110,6 +110,23 @@
 </template>
 
 <script setup>
+/**
+ * CompletePLL.vue - 完整 PLL 教程页面
+ *
+ * 核心职责：
+ * 1. 展示 PLL（排列最后一层）完整算法集
+ * 2. 按学习阶段组织内容：基础 → 进阶 → 完整
+ * 3. 提供每个 case 的公式、方向和难度信息
+ *
+ * 功能特性：
+ *   - Tab 切换不同学习阶段
+ *   - 每个 case 展示公式列表和可视化 pattern
+ *   - 支持跳转到公式详情
+ *
+ * 设计要点：
+ *   - learningStages 数组按难度分级组织
+ *   - activeTab 追踪当前选中的学习阶段
+ */
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 

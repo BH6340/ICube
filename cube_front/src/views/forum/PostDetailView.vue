@@ -123,6 +123,27 @@
 </template>
 
 <script setup>
+/**
+ * PostDetailView.vue - 帖子详情视图
+ *
+ * 核心职责：
+ * 1. 展示帖子完整内容（Markdown 渲染 + 代码高亮）
+ * 2. 展示作者信息、统计数据（浏览/评论/点赞）
+ * 3. 提供点赞、收藏、编辑、删除等操作
+ * 4. 集成评论区组件（嵌套回复、点赞/点踩）
+ *
+ * 功能特性：
+ *   - 使用 marked + highlight.js 实现 Markdown 渲染和代码高亮
+ *   - 支持置顶/精华/已关闭评论等状态标签
+ *   - 点赞/收藏实时更新状态，支持快速切换
+ *   - 作者和管理员可编辑/删除帖子
+ *
+ * 设计要点：
+ *   - 配置 marked 时启用 breaks（换行符转 <br>）和 gfm（GitHub 风味）
+ *   - 响应式计算属性判断登录状态、是否作者、是否管理员
+ *   - 组件卸载时恢复 document.title
+ */
+
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -138,17 +159,20 @@ import CommentSection from '@/components/forum/CommentSection.vue'
 const router = useRouter()
 const route = useRoute()
 
+/** 帖子数据 */
 const post = ref(null)
+/** 加载状态 */
 const loading = ref(false)
+/** 错误信息 */
 const error = ref('')
 
-// 用户状态
+/** 用户状态 */
 const isLoggedIn = computed(() => !!localStorage.getItem('token'))
 const currentUsername = computed(() => localStorage.getItem('username') || '')
 const isOwner = computed(() => post.value?.author?.username === currentUsername.value)
 const isAdmin = computed(() => false)
 
-// 配置 marked
+/** 配置 marked 渲染器 */
 marked.setOptions({
   highlight: function(code, lang) {
     if (lang && hljs.getLanguage(lang)) {
@@ -160,6 +184,7 @@ marked.setOptions({
   gfm: true
 })
 
+/** 渲染后的 Markdown 内容（含代码高亮） */
 const renderedContent = computed(() => {
   if (post.value?.content) {
     return marked(post.value.content)
@@ -167,6 +192,12 @@ const renderedContent = computed(() => {
   return '<p>暂无内容</p>'
 })
 
+/**
+ * 格式化日期时间
+ *
+ * @param {string} time - ISO 时间字符串
+ * @returns {string} 中文格式日期时间
+ */
 const formatDateTime = (time) => {
   if (!time) return ''
   const date = new Date(time)
@@ -179,6 +210,12 @@ const formatDateTime = (time) => {
   })
 }
 
+/**
+ * 加载帖子详情
+ *
+ * 从路由参数获取帖子 ID，调用 API 获取详情数据。
+ * 同时更新页面标题。
+ */
 const loadPost = async () => {
   const id = route.params.id
   if (!id) {
@@ -194,7 +231,6 @@ const loadPost = async () => {
     console.log('Post Detail Response:', res)
 
     if (res.code === 100) {
-      // 数据在 res.post 中
       post.value = res.post
       document.title = `${post.value.title} - 魔方论坛`
     } else if (res.code === 404) {
@@ -210,6 +246,11 @@ const loadPost = async () => {
   }
 }
 
+/**
+ * 点赞/取消点赞
+ *
+ * 未登录时跳转登录页。点赞后实时更新状态。
+ */
 const handleLike = async () => {
   if (!isLoggedIn.value) {
     ElMessage.warning('请先登录')
@@ -228,6 +269,11 @@ const handleLike = async () => {
   }
 }
 
+/**
+ * 收藏/取消收藏
+ *
+ * 未登录时跳转登录页。收藏后实时更新状态和提示。
+ */
 const handleCollect = async () => {
   if (!isLoggedIn.value) {
     ElMessage.warning('请先登录')
@@ -247,10 +293,17 @@ const handleCollect = async () => {
   }
 }
 
+/** 跳转到编辑页面 */
 const goToEdit = () => {
   router.push(`/forum/edit/${post.value.id}`)
 }
 
+/**
+ * 删除帖子
+ *
+ * 弹出确认框，确认后调用删除接口。
+ * 仅作者和管理员可操作。
+ */
 const handleDelete = async () => {
   ElMessageBox.confirm('确定要删除这个帖子吗？删除后无法恢复！', '警告', {
     confirmButtonText: '确定删除',
@@ -271,20 +324,28 @@ const handleDelete = async () => {
   }).catch(() => {})
 }
 
+/**
+ * 跳转到用户主页
+ *
+ * @param {string} username - 用户名
+ */
 const goToProfile = (username) => {
   if (username) {
     router.push(`/profiles/info?username=${username}`)
   }
 }
 
+/** 返回上一页 */
 const goBack = () => {
   router.back()
 }
 
+/** 评论添加回调：重新加载帖子以更新评论数 */
 const onCommentAdded = () => {
   loadPost()
 }
 
+/** 评论数更新回调：本地递增评论计数 */
 const updateCommentCount = () => {
   if (post.value) {
     post.value.comment_count++

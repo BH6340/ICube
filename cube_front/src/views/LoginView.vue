@@ -25,6 +25,18 @@
 </template>
 
 <script setup>
+/**
+ * LoginView.vue - 用户登录页面
+ *
+ * 核心职责：
+ * 1. 提供用户邮箱/密码登录表单
+ * 2. 登录成功后跳转至首页或指定页面
+ *
+ * 设计要点：
+ * - 使用 useUserStore 管理登录状态和用户信息
+ * - 登录表单包含前端校验规则
+ * - 登录失败显示后端错误信息
+ */
 import {ref, reactive} from 'vue'
 import {useRouter} from 'vue-router'
 import {ElMessage} from 'element-plus'

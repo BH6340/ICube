@@ -68,6 +68,24 @@
 </template>
 
 <script setup>
+/**
+ * TimerView.vue - 魔方计时器页面视图
+ *
+ * 核心职责：
+ * 1. 提供专业的魔方竞速计时功能（仿 csTimer 交互逻辑）
+ * 2. 支持 2x2/3x3/4x4 三种魔方类型和多种还原方法
+ * 3. 自动生成符合 WCA 标准的打乱公式
+ * 4. 计时历史记录本地持久化 + 同步到后端
+ * 5. 支持键盘操作（空格键长按启动）
+ *
+ * 计时状态机：
+ *   idle → holding(长按0.5s) → ready(变绿) → running(竞速) → idle
+ *
+ * 设计要点：
+ * - 使用 performance.now() 保证高精度计时（10ms 刷新率）
+ * - 长按防误触：必须超过 0.5s 才算有效准备
+ * - 打乱公式防重机制：防止连续出现同方向的面
+ */
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { createTimerRecord } from '@/api/timer'

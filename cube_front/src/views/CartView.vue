@@ -59,6 +59,24 @@
 </template>
 
 <script setup>
+/**
+ * CartView.vue - 购物车页面
+ *
+ * 核心职责：
+ * 1. 展示用户购物车商品列表
+ * 2. 支持修改商品数量、删除商品、选择商品
+ * 3. 计算选中商品总价，跳转结算
+ *
+ * 功能特性：
+ *   - 全选/反选商品
+ *   - 数量加减按钮（最小数量为 1）
+ *   - 实时计算总价和总数量
+ *   - 删除商品后刷新购物车版本
+ *
+ * 设计要点：
+ *   - 使用 useCartRefresh 跨组件同步购物车状态
+ *   - selectedCartIds 存储选中商品 ID 数组
+ */
 import { ref, computed, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ShoppingBag } from '@element-plus/icons-vue'

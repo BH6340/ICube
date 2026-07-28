@@ -63,6 +63,23 @@
 </template>
 
 <script setup>
+/**
+ * OrderView.vue - 我的订单页面
+ *
+ * 核心职责：
+ * 1. 展示当前用户的所有订单列表
+ * 2. 支持按状态筛选（全部/待付款/已付款/已发货/已完成/已取消）
+ * 3. 提供取消订单和确认收货功能
+ *
+ * 功能特性：
+ *   - 订单状态标签使用不同颜色区分
+ *   - 取消订单前二次确认（MessageBox）
+ *   - 确认收货后自动刷新订单列表
+ *
+ * 设计要点：
+ *   - 状态映射表 statusLabels/statusTypes 集中管理
+ *   - 使用 getOrders API 分页加载订单
+ */
 import { ref, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ShoppingBag } from '@element-plus/icons-vue'

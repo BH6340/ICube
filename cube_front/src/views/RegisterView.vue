@@ -32,6 +32,22 @@
 </template>
 
 <script setup>
+/**
+ * RegisterView.vue - 用户注册页面
+ *
+ * 核心职责：
+ * 1. 提供用户注册表单（用户名、邮箱、密码、确认密码、简介）
+ * 2. 表单验证和提交
+ * 3. 注册成功后自动登录并跳转首页
+ *
+ * 功能特性：
+ *   - 前端密码一致性校验
+ *   - 注册成功后显示通知并跳转登录
+ *
+ * 设计要点：
+ *   - 注册表单使用 reactive 绑定双向数据
+ *   - 提交成功后调用 ElNotification 欢迎提示
+ */
 import {ref, reactive} from 'vue'
 import {ElMessage, ElNotification} from 'element-plus'
 import {registerApi} from '@/api/user'
