@@ -12,7 +12,7 @@ USE icube_db;
  Target Server Version : 90100
  File Encoding         : 65001
 
- Date: 24/07/2026 17:46:43
+ Date: 28/07/2026 20:29:43
 */
 
 SET NAMES utf8mb4;
@@ -37,7 +37,7 @@ CREATE TABLE `accounts_user`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `email`(`email` ASC) USING BTREE,
   UNIQUE INDEX `accounts_user_username_6088629e_uniq`(`username` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 15 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 17 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of accounts_user
@@ -51,11 +51,12 @@ INSERT INTO `accounts_user` VALUES (6, 'pbkdf2_sha256$1200000$okkHb5GNQKwfvBOnAQ
 INSERT INTO `accounts_user` VALUES (7, 'pbkdf2_sha256$1200000$RYFGlCvA1CDRxSNdklva6T$kXTRELt9ADjwvXRzQ7vBw4qlYiKkYsHbLDMtsdqHy7c=', NULL, 0, 0, 1, '2026-05-12 10:31:45.718088', 'bh06@qq.com', 'bh06', '', 'avatars/avatar_7_4a4a872f_GADdPGB.svg');
 INSERT INTO `accounts_user` VALUES (8, 'pbkdf2_sha256$1200000$DnUCKmEqnGwe6dgpusKgbv$dWypTxpzl3XsLQTHMtP2kVzzgSlZGrPXhDQvoFrI04I=', NULL, 0, 0, 1, '2026-06-03 10:52:12.092033', 'bh06@163.com', 'bh06_1', '', 'avatars/avatar_8_539a8195_i4KcIT3.svg');
 INSERT INTO `accounts_user` VALUES (9, 'pbkdf2_sha256$1200000$ftzQsmKyRLAeMfinPTKybA$HhvTRYfZhcto+EM0AkQcrw40kW595wOvrUz9i6d0/dY=', NULL, 0, 0, 1, '2026-06-03 14:36:26.343585', 'bh07@qq.com', 'bh07', '', 'avatars/avatar_9_f143219d_ZijIf6X.svg');
-INSERT INTO `accounts_user` VALUES (10, 'pbkdf2_sha256$1200000$jp60Dr1nt6eO4OfAqfD5Qv$yGPq7Od8NvPd5UZXv/PytTyviaCqWLBGPZFgB5vR06E=', NULL, 0, 0, 1, '2026-06-03 14:54:47.046829', 'bh08@qq.com', 'bh08', '新的个人介绍', 'avatars/avatar_10_a72b3525_LbR78Bk.svg');
+INSERT INTO `accounts_user` VALUES (10, 'pbkdf2_sha256$1200000$jp60Dr1nt6eO4OfAqfD5Qv$yGPq7Od8NvPd5UZXv/PytTyviaCqWLBGPZFgB5vR06E=', NULL, 0, 0, 1, '2026-06-03 14:54:47.046829', 'bh08@qq.com', 'bh08', '新的个人介绍', 'avatars/admin_cropped_avatar_OkYvoNL.webp');
 INSERT INTO `accounts_user` VALUES (11, 'pbkdf2_sha256$1200000$HnHuO67UPNA3KGzqrdciHY$BEGRtyOatdrHIGDWKfQyC8zc2gE9HkTmxTtSBUUMtAM=', NULL, 0, 0, 1, '2026-06-05 09:55:05.648601', 'user1@example.com', '魔方小白', '魔方爱好者，欢迎交流！', 'avatars/avatar_11_50d05158_tAG2QVH.svg');
 INSERT INTO `accounts_user` VALUES (12, 'pbkdf2_sha256$1200000$K4RZs6x8mUSPOBiwKYSfpG$m1sUeywn5sSlmRjpG9NYv9v/CLItOlun+BLJpCPab9M=', NULL, 0, 0, 1, '2026-06-05 09:55:07.421317', 'user2@example.com', '速拧大神', '魔方爱好者，欢迎交流！', 'avatars/avatar_12_23b2b646_RidBlom.svg');
 INSERT INTO `accounts_user` VALUES (13, 'pbkdf2_sha256$1200000$NUI8BH6NjcYEnrSe8l5O4V$PR0PnTdasbMdgc3gewGRKWuk6CRdEaEkyoXrzhpLxSc=', NULL, 0, 0, 1, '2026-06-05 09:55:09.104099', 'user3@example.com', '公式收藏家', '魔方爱好者，欢迎交流！', 'avatars/avatar_13_61701999_4yQ9tw8.svg');
 INSERT INTO `accounts_user` VALUES (15, 'pbkdf2_sha256$1200000$AWyslHhILW6eJAhu7XQPXC$HrQbn7QsET2D7UZvcwIY3sipNk/CDeMV8lIzNnAR1+M=', NULL, 0, 0, 1, '2026-07-24 17:37:27.677024', 'test@test.com', 'testuser', '', '');
+INSERT INTO `accounts_user` VALUES (16, 'pbkdf2_sha256$1200000$Tiy7ilP3yPpw9fw0GJk0AQ$g1fcszaIBUFeZeSNCv4txXz/b20cpN1oaiOG3f/uOvE=', NULL, 0, 0, 1, '2026-07-25 11:19:24.352279', 'testapi@test.com', 'testapi', '', '');
 
 -- ----------------------------
 -- Table structure for accounts_user_followers
@@ -165,7 +166,7 @@ CREATE TABLE `auth_permission`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `auth_permission_content_type_id_codename_01ab375a_uniq`(`content_type_id` ASC, `codename` ASC) USING BTREE,
   CONSTRAINT `auth_permission_content_type_id_2f476e4b_fk_django_co` FOREIGN KEY (`content_type_id`) REFERENCES `django_content_type` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 113 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 121 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of auth_permission
@@ -310,7 +311,7 @@ CREATE TABLE `django_admin_log`  (
   CONSTRAINT `django_admin_log_content_type_id_c4bce8eb_fk_django_co` FOREIGN KEY (`content_type_id`) REFERENCES `django_content_type` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `django_admin_log_user_id_c564eba6_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `django_admin_log_chk_1` CHECK (`action_flag` >= 0)
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of django_admin_log
@@ -328,7 +329,7 @@ CREATE TABLE `django_content_type`  (
   `model` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `django_content_type_app_label_model_76bd3d3b_uniq`(`app_label` ASC, `model` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 29 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 31 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of django_content_type
@@ -374,7 +375,7 @@ CREATE TABLE `django_migrations`  (
   `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `applied` datetime(6) NOT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 30 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 37 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of django_migrations
@@ -505,14 +506,14 @@ CREATE TABLE `formula_formula`  (
   CONSTRAINT `formula_formula_category_id_2d7b2936_fk_formula_cube_category_id` FOREIGN KEY (`category_id`) REFERENCES `formula_cube_category` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `formula_formula_created_by_id_8d6b77d2_fk_accounts_user_id` FOREIGN KEY (`created_by_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `formula_formula_target_state_id_8022afe7_fk_formula_c` FOREIGN KEY (`target_state_id`) REFERENCES `formula_cube_state` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 358 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 360 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of formula_formula
 -- ----------------------------
-INSERT INTO `formula_formula` VALUES (239, 'F2L-01', 'd\' L\' U L', 'L\' U\' L d', NULL, 'formulas/F2L_Images/F2L_001.png', 1, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.457998', 4, NULL, 1, 4);
-INSERT INTO `formula_formula` VALUES (240, 'F2L-02', 'U R U\' R\'', 'R U R\' U\'', NULL, 'formulas/F2L_Images/F2L_002.png', 1, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.490123', 4, NULL, 1, 1);
-INSERT INTO `formula_formula` VALUES (241, 'F2L-03', 'R U R\'', 'R U\' R\'', NULL, 'formulas/F2L_Images/F2L_003.png', 1, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.513833', 4, NULL, 1, 3);
+INSERT INTO `formula_formula` VALUES (239, 'F2L-01', 'd\' L\' U L', 'L\' U\' L d', NULL, 'formulas/F2L_Images/F2L_001.png', 1, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.457998', 4, NULL, 1, 5);
+INSERT INTO `formula_formula` VALUES (240, 'F2L-02', 'U R U\' R\'', 'R U R\' U\'', NULL, 'formulas/F2L_Images/F2L_002.png', 1, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.490123', 4, NULL, 1, 3);
+INSERT INTO `formula_formula` VALUES (241, 'F2L-03', 'R U R\'', 'R U\' R\'', NULL, 'formulas/F2L_Images/F2L_003.png', 1, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.513833', 4, NULL, 1, 4);
 INSERT INTO `formula_formula` VALUES (242, 'F2L-04', 'y L\' U\' L', 'L\' U L y\'', NULL, 'formulas/F2L_Images/F2L_004.png', 1, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.537867', 4, NULL, 1, 1);
 INSERT INTO `formula_formula` VALUES (243, 'F2L-05', 'U\' R U R\' U R U R\'', 'R U\' R\' U\' R U\' R\' U', NULL, 'formulas/F2L_Images/F2L_005.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.560667', 4, NULL, 1, 0);
 INSERT INTO `formula_formula` VALUES (244, 'F2L-06', 'U\' R U\' R\' U y\' R\' U\' R', 'R\' U R y U\' R U R\' U', NULL, 'formulas/F2L_Images/F2L_006.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.590151', 4, NULL, 1, 0);
@@ -629,6 +630,9 @@ INSERT INTO `formula_formula` VALUES (354, 'PLL-18', 'R2\' u\' R U\' R U R\' u R
 INSERT INTO `formula_formula` VALUES (355, 'PLL-19', 'R U R\' y\' R2\' u\' R U\' R\' U R\' u R2', 'R2 u\' R U\' R U R\' u R2\' y R U\' R\'', NULL, 'formulas/PLL_Images/PLL_019.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.511134', 6, NULL, 3, 0);
 INSERT INTO `formula_formula` VALUES (356, 'PLL-20', 'R2\' u R\' U R\' U\' R u\' R2\' y\' R\' U R', 'R\' U\' R y R2\' u R\' U R U\' R u\' R2\'', NULL, 'formulas/PLL_Images/PLL_020.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.537408', 6, NULL, 3, 0);
 INSERT INTO `formula_formula` VALUES (357, 'PLL-21', 'R\' d\' F R2\' u R\' U R U\' R u\' R2', 'R2 u R\' U R\' U\' R u\' R2\' F\' d R', NULL, 'formulas/PLL_Images/PLL_021.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.561603', 6, NULL, 3, 0);
+INSERT INTO `formula_formula` VALUES (358, 'F2L-31-BR', 'y\' R\' U R\' F R F\' U R U2 R\' U R', 'R\' U\' R U2 R\' U\' F R\' F\' R U\' R y', NULL, 'formulas/F2L_Images/F2L_031.png', 4, '四向F2L-31-BR，右后方', 1, '2026-07-25 15:58:09.492153', 4, 10, 1, 12);
+INSERT INTO `formula_formula` VALUES (359, 'F2L-31-BR_test', 'y\' R\' U R\' F R F\' U R U2 R\' U R', 'R\' U\' R U2 R\' U\' F R\' F\' R U\' R y', NULL, 'formulas/F2L_Images/F2L_031.png', 4, '', 1, '2026-07-26 11:20:25.666096', 4, 10, 1, 0);
+INSERT INTO `formula_formula` VALUES (360, 'f2l-31', 'y\' R\' U R\' F R F\' U R U2 R\' U R', 'R\' U\' R U2 R\' U\' F R\' F\' R U\' R y', NULL, 'formula_thumbnails/F2L-31-BR_cropped_thumbnail_BdeDWNJ.webp', 1, '', 1, '2026-07-28 10:07:26.658056', 4, 10, 1, 0);
 
 -- ----------------------------
 -- Table structure for formula_formula_collection
@@ -644,7 +648,7 @@ CREATE TABLE `formula_formula_collection`  (
   INDEX `formula_formula_coll_formula_id_81ad47ba_fk_formula_f`(`formula_id` ASC) USING BTREE,
   CONSTRAINT `formula_formula_coll_formula_id_81ad47ba_fk_formula_f` FOREIGN KEY (`formula_id`) REFERENCES `formula_formula` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `formula_formula_collection_user_id_0acb4f8b_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of formula_formula_collection
@@ -1040,7 +1044,7 @@ CREATE TABLE `forum_post`  (
   INDEX `forum_post_title_d13f3075`(`title` ASC) USING BTREE,
   INDEX `forum_post_created_at_ecff5f37`(`created_at` ASC) USING BTREE,
   CONSTRAINT `forum_post_author_id_609b7963_fk_accounts_user_id` FOREIGN KEY (`author_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 14 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of forum_post
@@ -1048,12 +1052,16 @@ CREATE TABLE `forum_post`  (
 INSERT INTO `forum_post` VALUES (1, '【新手必看】三阶魔方零基础入门教程', '# 三阶魔方零基础入门教程\n\n## 前言\n魔方并不难，只要掌握了方法，任何人都可以学会还原三阶魔方。\n\n## 第一步：底层十字\n在底面拼出一个白色十字，且棱块侧面颜色与中心块对齐。\n\n## 第二步：底层角块\n完成白色面，同时底层四周颜色对齐。\n\n## 第三步：中层棱块\n还原第二层（中间层）的四个棱块。\n\n## 第四步：顶层十字\n在顶层拼出黄色十字。\n\n## 第五步：顶层面位\n将顶层全部变成黄色。\n\n## 第六步：顶层角块归位\n调整顶层角块位置。\n\n## 第七步：顶层棱块归位\n最后一步，完成整个魔方！\n\n祝大家早日学会魔方！🎉', '', 2, 1, 1, 0, 1, 1, 0, 'published', 0, '2026-06-05 09:55:10.802878', '2026-06-05 09:55:10.802918', 11);
 INSERT INTO `forum_post` VALUES (2, 'CFOP速拧教程 - F2L理解法', '# CFOP进阶教程：F2L理解法\n\n## 什么是F2L？\nF2L（First Two Layers）是CFOP速拧法的第二步，指同时还原前两层。\n\n## 核心思想\nF2L的本质是把一对\"角块+棱块\"组合起来放入正确的位置。\n\n## 常用F2L公式\n\n| 情况 | 公式 |\n|------|------|\n| 角棱相连 | `U R U\' R\'` |\n| 角棱分离 | `R U R\'` |\n| 角棱背面 | `R U2 R\' U R U R\'` |\n\n## 练习技巧\n1. 慢速练习，理解原理\n2. 找规律，观察相对位置\n3. 预判下一组\n\nF2L熟练后，成绩可轻松进入30秒！💪', '', 50, 2, 10, 1, 0, 1, 0, 'published', 0, '2026-06-05 09:55:10.823840', '2026-06-05 09:55:10.823875', 11);
 INSERT INTO `forum_post` VALUES (3, '魔方公式记忆技巧分享', '# 魔方公式记忆技巧\n\n## 肌肉记忆法\n不要死记硬背公式字母，而是通过反复练习形成肌肉记忆。\n\n## 分段记忆\n将长公式分成几个小段，逐段练习后连接。\n\n## 镜像对称\n很多公式是左右对称的，记住一个就能推导出另一个。\n\n## 故事联想\n为公式中的转动编一个故事，帮助记忆。\n\n## 每天10分钟\n坚持每天练习，比一次性练很久效果更好。\n\n大家有什么好的记忆方法？欢迎分享！', '', 12, 1, 3, 1, 0, 0, 0, 'published', 0, '2026-06-05 09:55:10.841141', '2026-06-05 09:55:10.841164', 11);
-INSERT INTO `forum_post` VALUES (4, '三阶魔方CFOP教程新标题', '这是教程内容，使用Markdown格式\r\n![bh01](http://127.0.0.1:8000/media/forum/posts/2026/07/bh01.png)', '', 26, 2, 1, 0, 0, 0, 0, 'published', 0, '2026-06-05 09:56:27.071163', '2026-07-19 15:29:33.899742', 10);
+INSERT INTO `forum_post` VALUES (4, '三阶魔方CFOP教程新标题', '这是教程内容，使用Markdown格式\r\n![bh01](http://127.0.0.1:8000/media/forum/posts/2026/07/bh01.png)', '', 30, 2, 1, 0, 0, 0, 0, 'published', 0, '2026-06-05 09:56:27.071163', '2026-07-19 15:29:33.899742', 10);
 INSERT INTO `forum_post` VALUES (5, '发布新帖子', '# 魔方\r\n## 标题二\r\n### 标题三\r\n```\r\n公式如下\r\npython\r\n```', '', 27, 1, 0, 0, 0, 0, 0, 'published', 0, '2026-06-12 10:08:08.741039', '2026-06-12 10:52:53.080432', 10);
 INSERT INTO `forum_post` VALUES (6, '再发一篇新帖子（修改）', '# CFOP 速拧学习方法\r\n\r\n## 什么是 CFOP？\r\n\r\nCFOP 是目前最主流的魔方速拧解法，由四个步骤组成：\r\n\r\n1. **C（Cross）**——底面十字\r\n2. **F（F2L）**——前两层\r\n3. **O（OLL）**——顶面朝向\r\n4. **P（PLL）**——顶层排列\r\n\r\n## 学习顺序建议\r\n\r\n| 阶段 | 内容                                 | 目标时间 |\r\n| ---- | ------------------------------------ | -------- |\r\n| 入门 | C + 4个基本公式                      | 60秒     |\r\n| 进阶 | F2L理解法 + 7个十字OLL + 4个PLL      | 30秒     |\r\n| 熟练 | F2L 41种情况 + 全部OLL(57) + PLL(21) | 15秒内   |\r\n\r\n## 实用技巧\r\n\r\n- **C**：八步内完成十字，学会盲拧预判\r\n- **F2L**：先理解“藏角藏棱”原理，不建议死记公式\r\n- **OLL**：先学十字后的7条，其他慢慢补充\r\n- **PLL**：优先学三棱换、三角换、邻角对棱换等高频公式\r\n\r\n## 资源推荐\r\n\r\n- 网站：`algdb.net` 公式库\r\n- 视频：J Perm 教学频道\r\n- App：Cube Station 计时练习\r\n\r\n> 每天练习20分钟，两个月基本可以进30秒。公式不是越多越好，**指法流畅**比记全更重要。', '', 4, 0, 0, 0, 0, 0, 0, 'deleted', 0, '2026-06-12 10:25:11.426914', '2026-06-12 10:47:10.140862', 10);
 INSERT INTO `forum_post` VALUES (7, '返回格式测试', '这是教程内容，使用Markdown格式...', '', 1, 0, 0, 0, 0, 0, 0, 'deleted', 0, '2026-06-12 10:28:11.697133', '2026-06-12 10:28:11.697157', 10);
 INSERT INTO `forum_post` VALUES (8, '再发一篇新帖子2修改', '# CFOP 速拧学习方法\r\n\r\n## 什么是 CFOP？\r\n\r\nCFOP 是目前最主流的魔方速拧解法，由四个步骤组成：\r\n\r\n1. **C（Cross）**——底面十字\r\n2. **F（F2L）**——前两层\r\n3. **O（OLL）**——顶面朝向\r\n4. **P（PLL）**——顶层排列\r\n\r\n## 学习顺序建议\r\n\r\n| 阶段 | 内容                                 | 目标时间 |\r\n| ---- | ------------------------------------ | -------- |\r\n| 入门 | C + 4个基本公式                      | 60秒     |\r\n| 进阶 | F2L理解法 + 7个十字OLL + 4个PLL      | 30秒     |\r\n| 熟练 | F2L 41种情况 + 全部OLL(57) + PLL(21) | 15秒内   |\r\n\r\n## 实用技巧\r\n\r\n- **C**：八步内完成十字，学会盲拧预判\r\n- **F2L**：先理解“藏角藏棱”原理，不建议死记公式\r\n- **OLL**：先学十字后的7条，其他慢慢补充\r\n- **PLL**：优先学三棱换、三角换、邻角对棱换等高频公式\r\n\r\n## 资源推荐\r\n\r\n- 网站：`algdb.net` 公式库\r\n- 视频：J Perm 教学频道\r\n- App：Cube Station 计时练习\r\n\r\n> 每天练习20分钟，两个月基本可以进30秒。公式不是越多越好，**指法流畅**比记全更重要。', '', 5, 0, 0, 0, 0, 0, 0, 'deleted', 0, '2026-06-12 10:33:13.469010', '2026-06-12 10:34:08.659699', 10);
 INSERT INTO `forum_post` VALUES (9, '返回格式测试', '这是教程内容，使用Markdown格式...', '', 0, 0, 0, 0, 0, 0, 0, 'deleted', 0, '2026-06-12 10:38:10.289770', '2026-06-12 10:38:10.289796', 10);
+INSERT INTO `forum_post` VALUES (10, 'F2L公式', '![F2L-07](/media/formulas/F2L_Images/F2L_007.png)\r\n\r\n# 发文测试，F2L', '', 34, 0, 0, 0, 0, 0, 0, 'published', 0, '2026-07-25 10:01:52.570561', '2026-07-25 12:07:25.090391', 10);
+INSERT INTO `forum_post` VALUES (11, '111111', '![F2L-05](/media/formulas/F2L_Images/F2L_005.png)![F2L-10](/media/formulas/F2L_Images/F2L_010.png)![admin](/media/forum/posts/2026/07/admin.png)![bh01](/media/forum/posts/2026/07/bh01_m3QZaCZ.png)![admin](/media/forum/posts/2026/07/admin_g2v0Okt.png)', '', 16, 0, 0, 0, 0, 0, 0, 'published', 0, '2026-07-25 10:53:46.442350', '2026-07-25 12:07:44.919342', 10);
+INSERT INTO `forum_post` VALUES (12, '测试多图帖子', '![F2L-01](/media/formulas/F2L_Images/F2L_001.png)\n![F2L-02](/media/formulas/F2L_Images/F2L_002.png)\n![F2L-03](/media/formulas/F2L_Images/F2L_003.png)', '', 0, 0, 0, 0, 0, 0, 0, 'published', 0, '2026-07-25 10:57:30.527408', '2026-07-25 10:57:30.527435', 10);
+INSERT INTO `forum_post` VALUES (13, '111111', '![F2L-09](/media/formulas/F2L_Images/F2L_009.png)\r\n![F2L-07](/media/formulas/F2L_Images/F2L_007.png)\r\n![F2L-03](/media/formulas/F2L_Images/F2L_003.png)\r\n![admin_cropped](/media/forum/posts/2026/07/admin_cropped_compressed.webp)', '', 26, 0, 0, 1, 0, 0, 0, 'published', 0, '2026-07-25 11:00:14.679846', '2026-07-25 15:01:42.047184', 10);
 
 -- ----------------------------
 -- Table structure for forum_post_collect
@@ -1069,13 +1077,14 @@ CREATE TABLE `forum_post_collect`  (
   INDEX `forum_post_collect_user_id_b2a3c9ad_fk_accounts_user_id`(`user_id` ASC) USING BTREE,
   CONSTRAINT `forum_post_collect_post_id_5e799cb7_fk_forum_post_id` FOREIGN KEY (`post_id`) REFERENCES `forum_post` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `forum_post_collect_user_id_b2a3c9ad_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of forum_post_collect
 -- ----------------------------
 INSERT INTO `forum_post_collect` VALUES (6, '2026-06-07 10:37:12.153830', 2, 10);
 INSERT INTO `forum_post_collect` VALUES (8, '2026-06-21 10:59:24.454375', 3, 10);
+INSERT INTO `forum_post_collect` VALUES (10, '2026-07-25 14:46:08.519848', 13, 10);
 
 -- ----------------------------
 -- Table structure for forum_post_image
@@ -1091,12 +1100,27 @@ CREATE TABLE `forum_post_image`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `forum_post_image_post_id_95977176_fk_forum_post_id`(`post_id` ASC) USING BTREE,
   CONSTRAINT `forum_post_image_post_id_95977176_fk_forum_post_id` FOREIGN KEY (`post_id`) REFERENCES `forum_post` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 18 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of forum_post_image
 -- ----------------------------
 INSERT INTO `forum_post_image` VALUES (1, 'forum/posts/2026/07/bh01.png', 'bh01_png', 0, '2026-07-19 15:26:43.578009', 4);
+INSERT INTO `forum_post_image` VALUES (2, 'formulas/F2L_Images/F2L_007.png', '公式缩略图', 0, '2026-07-25 10:20:30.594850', 10);
+INSERT INTO `forum_post_image` VALUES (3, 'forum/posts/2026/07/admin.png', 'admin_png', 0, '2026-07-25 10:54:42.501816', 11);
+INSERT INTO `forum_post_image` VALUES (4, 'forum/posts/2026/07/bh01_m3QZaCZ.png', 'bh01_png', 0, '2026-07-25 10:55:47.760011', 11);
+INSERT INTO `forum_post_image` VALUES (5, 'forum/posts/2026/07/admin_g2v0Okt.png', 'admin_png', 0, '2026-07-25 10:56:36.573952', 11);
+INSERT INTO `forum_post_image` VALUES (6, 'forum/posts/2026/07/admin_gqSlQE7.png', 'admin_png', 0, '2026-07-25 10:57:11.725194', NULL);
+INSERT INTO `forum_post_image` VALUES (7, 'formulas/F2L_Images/F2L_001.png', '公式缩略图', 0, '2026-07-25 10:57:30.550732', 12);
+INSERT INTO `forum_post_image` VALUES (8, 'formulas/F2L_Images/F2L_002.png', '公式缩略图', 1, '2026-07-25 10:57:30.569300', 12);
+INSERT INTO `forum_post_image` VALUES (9, 'formulas/F2L_Images/F2L_003.png', '公式缩略图', 2, '2026-07-25 10:57:30.589398', 12);
+INSERT INTO `forum_post_image` VALUES (11, 'formulas/F2L_Images/F2L_003.png', '图片', 0, '2026-07-25 12:07:12.371794', 13);
+INSERT INTO `forum_post_image` VALUES (12, 'formulas/F2L_Images/F2L_007.png', '图片', 0, '2026-07-25 12:07:12.402786', 13);
+INSERT INTO `forum_post_image` VALUES (13, 'formulas/F2L_Images/F2L_009.png', '图片', 0, '2026-07-25 12:07:12.424067', 13);
+INSERT INTO `forum_post_image` VALUES (14, 'formulas/F2L_Images/F2L_005.png', '图片', 3, '2026-07-25 12:07:44.951916', 11);
+INSERT INTO `forum_post_image` VALUES (15, 'formulas/F2L_Images/F2L_010.png', '图片', 3, '2026-07-25 12:07:44.972344', 11);
+INSERT INTO `forum_post_image` VALUES (16, 'forum/posts/2026/07/admin_cropped_compressed.webp', 'admin_cropped_webp', 0, '2026-07-25 15:01:14.517408', NULL);
+INSERT INTO `forum_post_image` VALUES (17, 'forum/posts/2026/07/admin_cropped_compressed.webp', '图片', 3, '2026-07-25 15:01:42.061366', 13);
 
 -- ----------------------------
 -- Table structure for forum_post_like
@@ -1139,7 +1163,7 @@ CREATE TABLE `forum_post_tags`  (
   INDEX `forum_post_tags_tag_id_c1772c43_fk_forum_tag_id`(`tag_id` ASC) USING BTREE,
   CONSTRAINT `forum_post_tags_post_id_e73359c8_fk_forum_post_id` FOREIGN KEY (`post_id`) REFERENCES `forum_post` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `forum_post_tags_tag_id_c1772c43_fk_forum_tag_id` FOREIGN KEY (`tag_id`) REFERENCES `forum_tag` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 21 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 26 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of forum_post_tags
@@ -1164,6 +1188,11 @@ INSERT INTO `forum_post_tags` VALUES (17, '2026-06-12 10:33:13.497834', 8, 5);
 INSERT INTO `forum_post_tags` VALUES (18, '2026-06-12 10:38:10.303698', 9, 1);
 INSERT INTO `forum_post_tags` VALUES (19, '2026-06-12 10:38:10.303718', 9, 2);
 INSERT INTO `forum_post_tags` VALUES (20, '2026-06-12 10:38:10.303732', 9, 3);
+INSERT INTO `forum_post_tags` VALUES (21, '2026-07-25 10:01:52.595640', 10, 1);
+INSERT INTO `forum_post_tags` VALUES (22, '2026-07-25 10:01:52.595662', 10, 2);
+INSERT INTO `forum_post_tags` VALUES (23, '2026-07-25 10:53:46.468193', 11, 1);
+INSERT INTO `forum_post_tags` VALUES (24, '2026-07-25 10:53:46.468217', 11, 4);
+INSERT INTO `forum_post_tags` VALUES (25, '2026-07-25 11:00:14.691958', 13, 1);
 
 -- ----------------------------
 -- Table structure for forum_report
