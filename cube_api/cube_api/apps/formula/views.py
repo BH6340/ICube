@@ -438,6 +438,46 @@ class FormulaViewSet(viewsets.ModelViewSet):
         return APIResponse(data=serializer.data)
 
     @extend_schema(
+        summary="获取公式作者列表",
+        description="返回所有创建过公式的作者列表，用于筛选",
+        responses={
+            200: {
+                'type': 'object',
+                'properties': {
+                    'authors': {'type': 'array', 'description': '作者列表'}
+                }
+            }
+        }
+    )
+    @action(detail=False, methods=['GET'], permission_classes=[IsAuthenticatedOrReadOnly])
+    def authors(self, request):
+        """
+        获取公式作者列表
+
+        返回所有创建过公式的用户列表，用于前端筛选器。
+
+        查询策略：
+            - 从 Formula 模型中提取 distinct 的 created_by
+            - 排除空值（系统预设公式）
+
+        Args:
+            request: HTTP 请求对象
+
+        Returns:
+            APIResponse: 包含作者列表的响应
+        """
+        authors = Formula.objects.filter(created_by__isnull=False)\
+            .values('created_by__id', 'created_by__username')\
+            .distinct()
+
+        author_list = [
+            {'id': author['created_by__id'], 'username': author['created_by__username']}
+            for author in authors
+        ]
+
+        return APIResponse(data={'authors': author_list})
+
+    @extend_schema(
         summary="获取精简公式列表（帖子编辑器专用）",
         description="返回精简的公式列表，用于帖子编辑器选择公式插入",
         parameters=[

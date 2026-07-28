@@ -135,7 +135,7 @@ const initThree = () => {
   const height = canvasContainer.value.clientHeight || 300
 
   scene = new THREE.Scene()
-  scene.background = new THREE.Color('#1a1a2e')
+  scene.background = new THREE.Color('#f5f5f5')
 
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.9)
   scene.add(ambientLight)
@@ -507,7 +507,7 @@ onBeforeUnmount(() => {
 .canvas-wrapper {
   width: 100%;
   height: 320px;
-  background-color: #1a1a2e;
+  background-color: #f5f5f5;
   border-radius: 8px;
   overflow: hidden;
 }

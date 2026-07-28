@@ -17,6 +17,7 @@ from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import InMemoryUploadedFile
 import os
+import uuid
 
 from .models import CubeCategory, CubeState, Formula, FormulaTag, FormulaTagRelation, FormulaCollection
 from .services import CubeStateService
@@ -182,18 +183,20 @@ class FormulaListSerializer(serializers.ModelSerializer):
         - is_custom: 是否自定义
         - tags: 标签列表（嵌套序列化）
         - view_count: 浏览次数
+        - author: 作者信息（动态生成）
         - created_at: 创建时间
     """
     category = CubeCategorySerializer(read_only=True)
     target_state = CubeStateSerializer(read_only=True)
     tags = FormulaTagSerializer(many=True, read_only=True)
     thumbnail = serializers.SerializerMethodField()
+    author = serializers.SerializerMethodField()
 
     class Meta:
         model = Formula
         fields = (
             'id', 'name', 'notation', 'inverse_notation', 'category', 'target_state',
-            'difficulty', 'thumbnail', 'is_custom', 'tags', 'view_count', 'created_at'
+            'difficulty', 'thumbnail', 'is_custom', 'tags', 'view_count', 'author', 'created_at'
         )
 
     def get_thumbnail(self, obj):
@@ -211,6 +214,26 @@ class FormulaListSerializer(serializers.ModelSerializer):
         from cube_api.utils.image_url import build_image_url
         return build_image_url(obj.thumbnail)
 
+    def get_author(self, obj):
+        """
+        获取作者信息
+
+        返回作者的ID和用户名，便于前端按作者筛选。
+        对于数据库初始插入的公式（created_by 为 None），返回"官方"作为作者。
+
+        Args:
+            obj: Formula 对象
+
+        Returns:
+            作者信息字典（包含 id 和 username）
+        """
+        if obj.created_by:
+            return {
+                'id': obj.created_by.id,
+                'username': obj.created_by.username
+            }
+        return {'id': 0, 'username': '官方'}
+
 
 class FormulaSerializer(serializers.ModelSerializer):
     """
@@ -223,10 +246,14 @@ class FormulaSerializer(serializers.ModelSerializer):
         - 动态计算前置状态（pre_state）
         - 支持 tag_ids 字段批量关联标签
         - 自动识别用户创建的自定义公式
+        - 包含作者信息（author）
 
     动态字段：
         - pre_state: 前置状态定义（从目标状态推导或直接返回）
         - thumbnail: 缩略图URL（动态生成）
+        - author: 作者信息（动态生成）
+        - category: 分类信息（只读，展示用）
+        - category_id: 分类ID（只写，创建/更新用）
 
     只读字段：
         - inverse_notation: 逆公式（自动生成）
@@ -235,10 +262,14 @@ class FormulaSerializer(serializers.ModelSerializer):
         - view_count: 浏览次数
     """
     category = CubeCategorySerializer(read_only=True)
+    category_id = serializers.IntegerField(write_only=True, required=False)
     target_state = CubeStateSerializer(read_only=True)
     tags = FormulaTagSerializer(many=True, read_only=True)
     pre_state = serializers.SerializerMethodField()
     thumbnail = serializers.SerializerMethodField()
+    thumbnail_file = serializers.FileField(write_only=True, required=False)
+    thumbnail_path = serializers.CharField(write_only=True, required=False)
+    author = serializers.SerializerMethodField()
     # 用于批量关联标签的写入字段
     tag_ids = serializers.ListField(
         child=serializers.IntegerField(),
@@ -250,9 +281,11 @@ class FormulaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Formula
         fields = (
-            'id', 'name', 'notation', 'inverse_notation', 'category', 'target_state',
-            'pre_state_definition', 'pre_state', 'thumbnail', 'difficulty', 'description',
-            'is_custom', 'tags', 'tag_ids', 'view_count', 'created_at'
+            'id', 'name', 'notation', 'inverse_notation', 'category', 'category_id',
+            'target_state', 'pre_state_definition', 'pre_state', 'thumbnail',
+            'thumbnail_file', 'thumbnail_path',
+            'difficulty', 'description', 'is_custom', 'tags', 'tag_ids',
+            'view_count', 'author', 'created_at'
         )
         read_only_fields = ('inverse_notation', 'created_at', 'is_custom', 'view_count')
 
@@ -286,6 +319,26 @@ class FormulaSerializer(serializers.ModelSerializer):
         from cube_api.utils.image_url import build_image_url
         return build_image_url(obj.thumbnail)
 
+    def get_author(self, obj):
+        """
+        获取作者信息
+
+        返回作者的ID和用户名，便于前端按作者筛选和显示。
+        对于数据库初始插入的公式（created_by 为 None），返回"官方"作为作者。
+
+        Args:
+            obj: Formula 对象
+
+        Returns:
+            作者信息字典（包含 id 和 username）
+        """
+        if obj.created_by:
+            return {
+                'id': obj.created_by.id,
+                'username': obj.created_by.username
+            }
+        return {'id': 0, 'username': '官方'}
+
     def validate_pre_state_definition(self, value):
         """
         验证前置状态定义的正确性
@@ -313,6 +366,10 @@ class FormulaSerializer(serializers.ModelSerializer):
 
         处理标签关联、缩略图上传和自定义公式识别。
 
+        缩略图处理逻辑：
+            - 如果是文件对象，进行压缩处理后保存
+            - 如果是字符串（URL），直接使用该URL（从公式库选择的情况）
+
         自动识别逻辑：
             - 如果当前用户已登录且不是管理员，标记为自定义公式
             - 设置 created_by 为当前用户
@@ -324,13 +381,23 @@ class FormulaSerializer(serializers.ModelSerializer):
             创建的 Formula 对象
         """
         tag_ids = validated_data.pop('tag_ids', [])
-        thumbnail_file = validated_data.pop('thumbnail', None)
+        thumbnail_file = validated_data.pop('thumbnail_file', None)
+        thumbnail_path = validated_data.pop('thumbnail_path', None)
+        category_id = validated_data.pop('category_id', None)
         request = self.context.get('request')
 
         # 自动识别自定义公式
         if request and request.user.is_authenticated and not request.user.is_staff:
             validated_data['is_custom'] = True
             validated_data['created_by'] = request.user
+
+        # 处理分类关联
+        if category_id:
+            try:
+                category = CubeCategory.objects.get(id=category_id)
+                validated_data['category'] = category
+            except CubeCategory.DoesNotExist:
+                pass
 
         if thumbnail_file:
             processed_file = process_image(
@@ -352,10 +419,48 @@ class FormulaSerializer(serializers.ModelSerializer):
                 None
             )
 
-            saved_path = default_storage.save(f"formula_thumbnails/{new_name}", processed_image)
-            validated_data['thumbnail'] = f"{settings.MEDIA_URL}{saved_path}"
+            validated_data['thumbnail'] = processed_image
+        elif thumbnail_path:
+            relative_path = thumbnail_path
+            if '/media/' in thumbnail_path:
+                relative_path = thumbnail_path.split('/media/')[1]
+            validated_data['_thumbnail_path'] = relative_path
+
+        if not thumbnail_file and not thumbnail_path:
+            formula_name = validated_data.get('name', '')
+            formula_notation = validated_data.get('notation', '')
+            if formula_name or formula_notation:
+                from cube_api.utils.image_processor import generate_formula_thumbnail
+                buffer = generate_formula_thumbnail(formula_name, formula_notation)
+                new_name = f"auto_formula_{uuid.uuid4().hex}.webp"
+                processed_image = InMemoryUploadedFile(
+                    buffer,
+                    None,
+                    new_name,
+                    'image/webp',
+                    buffer.tell(),
+                    None
+                )
+                validated_data['thumbnail'] = processed_image
 
         formula = super().create(validated_data)
+
+        # 如果是引用其他图片路径，需要重新设置
+        if thumbnail_path:
+            if '/media/' in thumbnail_path:
+                relative_path = thumbnail_path.split('/media/')[1]
+            else:
+                relative_path = thumbnail_path
+            formula.thumbnail.name = relative_path
+            formula.save()
+
+        # 根据分类自动关联状态（如果分类存在且公式没有关联状态）
+        if formula.category and not formula.target_state:
+            # 查找该分类下的第一个状态
+            default_state = CubeState.objects.filter(category=formula.category).first()
+            if default_state:
+                formula.target_state = default_state
+                formula.save()
 
         # 处理标签关联
         if tag_ids:
@@ -369,7 +474,12 @@ class FormulaSerializer(serializers.ModelSerializer):
         """
         更新公式
 
-        支持标签更新和缩略图上传。
+        支持标签更新、缩略图上传和分类更新。
+
+        缩略图处理逻辑：
+            - 如果是文件对象，进行压缩处理后保存
+            - 如果是字符串（URL），直接使用该URL（从公式库选择的情况）
+            - 如果为空，保留原有图片
 
         Args:
             instance: 原 Formula 对象
@@ -379,7 +489,9 @@ class FormulaSerializer(serializers.ModelSerializer):
             更新后的 Formula 对象
         """
         tag_ids = validated_data.pop('tag_ids', None)
-        thumbnail_file = validated_data.pop('thumbnail', None)
+        thumbnail_file = validated_data.pop('thumbnail_file', None)
+        thumbnail_path = validated_data.pop('thumbnail_path', None)
+        category_id = validated_data.pop('category_id', None)
         request = self.context.get('request')
 
         if thumbnail_file:
@@ -402,10 +514,61 @@ class FormulaSerializer(serializers.ModelSerializer):
                 None
             )
 
-            saved_path = default_storage.save(f"formula_thumbnails/{new_name}", processed_image)
-            validated_data['thumbnail'] = f"{settings.MEDIA_URL}{saved_path}"
+            validated_data['thumbnail'] = processed_image
+        elif thumbnail_path:
+            relative_path = thumbnail_path
+            if '/media/' in thumbnail_path:
+                relative_path = thumbnail_path.split('/media/')[1]
+            validated_data['_thumbnail_path'] = relative_path
+
+        if not thumbnail_file and not thumbnail_path and not instance.thumbnail:
+            formula_name = validated_data.get('name', instance.name)
+            formula_notation = validated_data.get('notation', instance.notation)
+            if formula_name or formula_notation:
+                from cube_api.utils.image_processor import generate_formula_thumbnail
+                buffer = generate_formula_thumbnail(formula_name, formula_notation)
+                new_name = f"auto_formula_{uuid.uuid4().hex}.webp"
+                processed_image = InMemoryUploadedFile(
+                    buffer,
+                    None,
+                    new_name,
+                    'image/webp',
+                    buffer.tell(),
+                    None
+                )
+                validated_data['thumbnail'] = processed_image
+
+        if category_id:
+            try:
+                category = CubeCategory.objects.get(id=category_id)
+                validated_data['category'] = category
+            except CubeCategory.DoesNotExist:
+                pass
 
         formula = super().update(instance, validated_data)
+
+        # 如果是引用其他图片路径，需要重新设置
+        if thumbnail_path:
+            if '/media/' in thumbnail_path:
+                relative_path = thumbnail_path.split('/media/')[1]
+            else:
+                relative_path = thumbnail_path
+            formula.thumbnail.name = relative_path
+            formula.save()
+
+        # 根据分类更新目标状态
+        if category_id:
+            try:
+                category = CubeCategory.objects.get(id=category_id)
+                if formula.target_state and formula.target_state.category != category:
+                    formula.target_state = None
+                if not formula.target_state:
+                    default_state = CubeState.objects.filter(category=category).first()
+                    if default_state:
+                        formula.target_state = default_state
+                        formula.save()
+            except CubeCategory.DoesNotExist:
+                pass
 
         # 更新标签关联（先删除后添加）
         if tag_ids is not None:

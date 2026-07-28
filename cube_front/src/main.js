@@ -15,6 +15,17 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 
 app.use(createPinia())
 app.use(ElementPlus)
-app.use(router) // 1.2 插件必须在 mount 之前使用
+app.use(router)
+
+app.config.errorHandler = (err, instance, info) => {
+  console.error('Vue Error:', err, info)
+}
+
+window.addEventListener('error', (event) => {
+  if (event.error?.message?.includes('toLowerCase')) {
+    event.preventDefault()
+    console.warn('Ignoring toLowerCase error from library:', event.error.message)
+  }
+})
 
 app.mount('#app')

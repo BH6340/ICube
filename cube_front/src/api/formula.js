@@ -26,6 +26,18 @@ export const getFormulaCategories = () => {
 }
 
 /**
+ * 获取公式作者列表
+ *
+ * @returns {Promise<Object>} 响应数据，包含作者列表（id 和 username）
+ */
+export const getFormulaAuthors = () => {
+  return request({
+    url: '/api/formula/formulas/authors/',
+    method: 'get'
+  })
+}
+
+/**
  * 获取公式列表
  *
  * @param {Object} [params] - 查询参数
@@ -33,7 +45,9 @@ export const getFormulaCategories = () => {
  * @param {number} [params.page_size] - 每页数量
  * @param {number} [params.category] - 分类 ID
  * @param {string} [params.difficulty] - 难度等级（支持多值）
- * @param {string} [params.keyword] - 关键词搜索
+ * @param {string} [params.created_by] - 作者 ID（支持多值）
+ * @param {boolean} [params.is_custom] - 是否自定义公式
+ * @param {string} [params.search] - 关键词搜索
  * @returns {Promise<Object>} 响应数据，包含公式列表和分页信息
  */
 export const getFormulaList = (params = {}) => {
@@ -132,6 +146,22 @@ export const matchFormula = (data) => {
 export const getMyCollections = (params = {}) => {
   return request({
     url: '/api/formula/collections/',
+    method: 'get',
+    params
+  })
+}
+
+/**
+ * 获取我创建的自定义公式列表
+ *
+ * @param {Object} [params] - 查询参数
+ * @param {number} [params.page] - 页码
+ * @param {number} [params.page_size] - 每页数量
+ * @returns {Promise<Object>} 响应数据，包含公式列表
+ */
+export const getMyCustomFormulas = (params = {}) => {
+  return request({
+    url: '/api/formula/formulas/my_custom/',
     method: 'get',
     params
   })

@@ -60,8 +60,22 @@ def build_image_url(relative_path, absolute=False):
     # 关键处理：Django ImageFieldFile 对象不能直接调用字符串方法
     # hasattr(relative_path, 'path') 用于判断是否为文件对象
     # 需要先转换为字符串才能继续处理
-    if hasattr(relative_path, 'path'):
-        relative_path = str(relative_path)
+    # 注意：hasattr 会触发 .path 属性访问，可能导致 SuspiciousFileOperation
+    # 所以改用 isinstance 判断，或者捕获异常
+    try:
+        from django.db.models.fields.files import FieldFile
+        if isinstance(relative_path, FieldFile):
+            # 直接用 name 属性，避免触发 path 属性的计算
+            if relative_path.name:
+                relative_path = relative_path.name
+            else:
+                return ''
+    except (ImportError, Exception):
+        # 如果导入失败或出现其他异常，尝试转换为字符串
+        try:
+            relative_path = str(relative_path)
+        except Exception:
+            return ''
     
     # 如果已经是完整的绝对URL，直接返回，无需处理
     if relative_path.startswith('http://') or relative_path.startswith('https://'):

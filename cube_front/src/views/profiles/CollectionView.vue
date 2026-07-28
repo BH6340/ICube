@@ -35,12 +35,32 @@
       <el-col :xs="24" :sm="16" :md="18">
         <div class="main-content">
           <div class="toolbar">
-            <span class="result-count">共 {{ total }} 个收藏公式</span>
-            <el-select v-model="sortBy" @change="handleSortChange" style="width: 120px">
-              <el-option label="默认排序" value="default" />
-              <el-option label="难度升序" value="difficulty_asc" />
-              <el-option label="难度降序" value="difficulty_desc" />
-            </el-select>
+            <div class="toolbar-left">
+              <el-tabs v-model="activeTab" @tab-change="handleTabChange" class="toolbar-tabs">
+                <el-tab-pane label="我的收藏" name="collections">
+                  <span class="result-count">共 {{ total }} 个收藏公式</span>
+                </el-tab-pane>
+                <el-tab-pane label="我的公式" name="my_formulas">
+                  <span class="result-count">共 {{ total }} 个自创公式</span>
+                </el-tab-pane>
+              </el-tabs>
+            </div>
+            <div class="toolbar-right">
+              <el-button
+                  v-if="activeTab === 'my_formulas'"
+                  type="primary"
+                  size="small"
+                  @click="handleAddFormula"
+                  icon="Plus"
+              >
+                添加新公式
+              </el-button>
+              <el-select v-model="sortBy" @change="handleSortChange" style="width: 120px; margin-left: 10px">
+                <el-option label="默认排序" value="default" />
+                <el-option label="难度升序" value="difficulty_asc" />
+                <el-option label="难度降序" value="difficulty_desc" />
+              </el-select>
+            </div>
           </div>
 
           <div class="formula-grid">
@@ -62,16 +82,31 @@
                 </el-icon>
               </div>
               <div class="formula-footer">
-                <span class="category-tag">{{ formula.category?.name }}</span>
-                <el-button
-                    type="text"
-                    size="small"
-                    @click.stop="removeCollectionItem(formula)"
-                    class="collected"
-                >
-                  <el-icon><Star /></el-icon>
-                  取消收藏
-                </el-button>
+                <div class="footer-left">
+                  <span class="category-tag">{{ formula.category?.name }}</span>
+                  <span v-if="formula.author" class="author-tag">{{ formula.author.username }}</span>
+                </div>
+                <div class="footer-right">
+                  <el-button
+                      v-if="activeTab === 'my_formulas'"
+                      type="primary"
+                      size="small"
+                      @click.stop="handleEditFormula(formula)"
+                      icon="Edit"
+                  >
+                    编辑
+                  </el-button>
+                  <el-button
+                      v-if="activeTab === 'collections'"
+                      type="text"
+                      size="small"
+                      @click.stop="removeCollectionItem(formula)"
+                      class="collected"
+                  >
+                    <el-icon><Star /></el-icon>
+                    取消收藏
+                  </el-button>
+                </div>
               </div>
             </el-card>
           </div>
@@ -134,6 +169,13 @@
         <el-button @click="showDetailDialog = false">关闭</el-button>
       </template>
     </el-dialog>
+
+    <FormulaEditor 
+      :visible="showEditor" 
+      :edit-formula="editFormula"
+      @close="handleEditorClose"
+      @success="handleFormulaSuccess"
+    />
   </div>
 </template>
 
@@ -141,8 +183,9 @@
 import { ref, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import { Picture, Star } from '@element-plus/icons-vue';
-import { getFormulaCategories, getMyCollections, removeCollection } from '../../api/formula';
+import { getFormulaCategories, getMyCollections, removeCollection, getMyCustomFormulas } from '../../api/formula';
 import CubeDemo from '../../components/formula/CubeDemo.vue';
+import FormulaEditor from '../../components/formula/FormulaEditor.vue';
 
 const categoryList = ref([]);
 const categoryTree = ref([]);
@@ -156,6 +199,9 @@ const searchKeyword = ref('');
 const sortBy = ref('default');
 const showDetailDialog = ref(false);
 const selectedFormula = ref(null);
+const activeTab = ref('collections');
+const showEditor = ref(false);
+const editFormula = ref(null);
 
 const difficultyLabel = (level) => {
   if (level === 1) return '基础';
@@ -195,27 +241,11 @@ const handleCategoryClick = (data) => {
     selectedCategory.value = null;
   }
   currentPage.value = 1;
-  loadCollections();
-};
-
-const handleFilterChange = () => {
-  currentPage.value = 1;
-  loadCollections();
-};
-
-const handleSearch = () => {
-  currentPage.value = 1;
-  loadCollections();
-};
-
-const handleSortChange = () => {
-  currentPage.value = 1;
-  loadCollections();
-};
-
-const handlePageChange = (page) => {
-  currentPage.value = page;
-  loadCollections();
+  if (activeTab.value === 'collections') {
+    loadCollections();
+  } else {
+    loadMyFormulas();
+  }
 };
 
 const handleFormulaClick = (formula) => {
@@ -231,6 +261,30 @@ const removeCollectionItem = async (formula) => {
     ElMessage.success('取消收藏成功');
   } catch (error) {
     ElMessage.error('取消收藏失败');
+  }
+};
+
+const isFormulaAuthor = (formula) => {
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  return user && formula.author && formula.author.id === user.id;
+};
+
+const handleEditFormula = (formula) => {
+  editFormula.value = formula;
+  showEditor.value = true;
+};
+
+const handleAddFormula = () => {
+  editFormula.value = null;
+  showEditor.value = true;
+};
+
+const handleTabChange = () => {
+  currentPage.value = 1;
+  if (activeTab.value === 'collections') {
+    loadCollections();
+  } else {
+    loadMyFormulas();
   }
 };
 
@@ -282,6 +336,93 @@ const loadCollections = async () => {
   }
 };
 
+const loadMyFormulas = async () => {
+  const params = {
+    page: currentPage.value,
+    page_size: pageSize.value
+  };
+  if (selectedCategory.value) {
+    params.category = selectedCategory.value;
+  }
+  if (selectedDifficulties.value.length > 0) {
+    const difficultyMap = { '基础': [1], '进阶': [2], '困难': [3] };
+    const difficultyValues = selectedDifficulties.value.flatMap(d => difficultyMap[d] || []);
+    params.difficulty = difficultyValues.join(',');
+  }
+  if (searchKeyword.value.trim()) {
+    params.search = searchKeyword.value.trim();
+  }
+  if (sortBy.value !== 'default') {
+    params.ordering = sortBy.value === 'difficulty_asc' ? 'difficulty' : '-difficulty';
+  }
+
+  try {
+    const res = await getMyCustomFormulas(params);
+    if (res.code === 100) {
+      if (res.data.results) {
+        formulaList.value = res.data.results;
+        total.value = res.data.count;
+      } else {
+        formulaList.value = res.data;
+        total.value = res.data.length;
+      }
+    }
+  } catch (error) {
+    ElMessage.error('加载我的公式失败');
+  }
+};
+
+const handleFilterChange = () => {
+  currentPage.value = 1;
+  if (activeTab.value === 'collections') {
+    loadCollections();
+  } else {
+    loadMyFormulas();
+  }
+};
+
+const handleSearch = () => {
+  currentPage.value = 1;
+  if (activeTab.value === 'collections') {
+    loadCollections();
+  } else {
+    loadMyFormulas();
+  }
+};
+
+const handleSortChange = () => {
+  currentPage.value = 1;
+  if (activeTab.value === 'collections') {
+    loadCollections();
+  } else {
+    loadMyFormulas();
+  }
+};
+
+const handlePageChange = (page) => {
+  currentPage.value = page;
+  if (activeTab.value === 'collections') {
+    loadCollections();
+  } else {
+    loadMyFormulas();
+  }
+};
+
+const handleFormulaSuccess = () => {
+  ElMessage.success('公式提交成功');
+  currentPage.value = 1;
+  if (activeTab.value === 'my_formulas') {
+    loadMyFormulas();
+  } else {
+    loadCollections();
+  }
+};
+
+const handleEditorClose = () => {
+  showEditor.value = false;
+  editFormula.value = null;
+};
+
 onMounted(() => {
   loadCategories();
   loadCollections();
@@ -310,6 +451,15 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+}
+
+.toolbar-left {
+  flex: 1;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
 }
 
 .result-count {
