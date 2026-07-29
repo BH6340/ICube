@@ -545,6 +545,11 @@ class FormulaSerializer(serializers.ModelSerializer):
             except CubeCategory.DoesNotExist:
                 pass
 
+        # 当公式记号被修改时，重新生成逆公式
+        if 'notation' in validated_data:
+            from .services import FormulaService
+            validated_data['inverse_notation'] = FormulaService.generate_inverse_notation(validated_data['notation'])
+
         formula = super().update(instance, validated_data)
 
         # 如果是引用其他图片路径，需要重新设置
