@@ -97,6 +97,15 @@
                     编辑
                   </el-button>
                   <el-button
+                      v-if="activeTab === 'my_formulas'"
+                      type="danger"
+                      size="small"
+                      @click.stop="handleDeleteFormula(formula)"
+                      icon="Delete"
+                  >
+                    删除
+                  </el-button>
+                  <el-button
                       v-if="activeTab === 'collections'"
                       type="text"
                       size="small"
@@ -203,9 +212,9 @@
  */
 
 import { ref, onMounted } from 'vue';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { Picture, Star } from '@element-plus/icons-vue';
-import { getFormulaCategories, getMyCollections, removeCollection, getMyCustomFormulas } from '../../api/formula';
+import { getFormulaCategories, getMyCollections, removeCollection, getMyCustomFormulas, deleteFormula } from '../../api/formula';
 import CubeDemo from '../../components/formula/CubeDemo.vue';
 import FormulaEditor from '../../components/formula/FormulaEditor.vue';
 
@@ -352,6 +361,30 @@ const isFormulaAuthor = (formula) => {
 const handleEditFormula = (formula) => {
   editFormula.value = formula;
   showEditor.value = true;
+};
+
+/**
+ * 删除自定义公式
+ *
+ * 删除前弹出确认对话框，删除成功后刷新列表。
+ *
+ * @param {Object} formula - 要删除的公式对象
+ */
+const handleDeleteFormula = async (formula) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除公式「${formula.name}」吗？删除后不可恢复。`,
+      '删除确认',
+      { confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning' }
+    );
+    await deleteFormula(formula.id);
+    ElMessage.success('公式已删除');
+    loadMyFormulas();
+  } catch (err) {
+    if (err !== 'cancel') {
+      ElMessage.error('删除失败');
+    }
+  }
 };
 
 /** 打开编辑器添加新公式 */
