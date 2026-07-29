@@ -104,3 +104,4 @@ cube_front/deploy_front.py
 cube_api/update_requirements.py
 test_images.py
 test_post.py
+update_db_dump.py
