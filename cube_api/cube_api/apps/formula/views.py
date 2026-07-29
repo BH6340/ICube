@@ -14,9 +14,11 @@
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly, AllowAny
+from rest_framework.exceptions import PermissionDenied
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import F
+from django.db.models import F, Q
+from django.db import models
 
 from .models import CubeCategory, CubeState, Formula, FormulaTag, FormulaCollection
 from .serializers import (
@@ -33,25 +35,48 @@ class CubeCategoryViewSet(viewsets.ModelViewSet):
     """
     魔方分类视图集
 
-    处理魔方分类的 CRUD 操作，支持搜索、排序和过滤。
+    处理魔方分类的 CRUD 操作，支持用户自定义分类。
 
     权限控制：
-        - 管理员：可创建、编辑、删除分类
-        - 普通用户：只读
+        - 列表/详情：公开访问
+        - 创建：需登录（自动标记为自定义分类）
+        - 删除：仅创建者可删除自己的自定义分类
+
+    查询逻辑：
+        - 未登录：仅可见系统分类（created_by=None）
+        - 已登录：可见系统分类 + 当前用户的自定义分类
 
     查询优化：
         - 支持按阶数、方法、阶段过滤
         - 支持关键词搜索（名称、方法、阶段）
     """
-    queryset = CubeCategory.objects.all()
     serializer_class = CubeCategorySerializer
-    permission_classes = [IsAdminOrReadOnly]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
     search_fields = ['name', 'method', 'phase']
     ordering_fields = ['order', 'method', 'sort_order']
-    # 默认排序：阶数 → 方法 → 排序
     ordering = ['order', 'method', 'sort_order']
     filterset_fields = ['order', 'method', 'phase']
+
+    def get_permissions(self):
+        """动态设置权限：列表和详情公开，其他操作需登录"""
+        if self.action in ['list', 'retrieve']:
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    def get_queryset(self):
+        """
+        获取分类查询集
+
+        未登录用户：仅系统分类
+        已登录用户：系统分类 + 自己的自定义分类
+        """
+        user = self.request.user
+        if user.is_authenticated:
+            return CubeCategory.objects.filter(
+                models.Q(created_by__isnull=True) |
+                models.Q(created_by=user)
+            )
+        return CubeCategory.objects.filter(created_by__isnull=True)
 
     def list(self, request, *args, **kwargs):
         """
@@ -71,9 +96,9 @@ class CubeCategoryViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """
-        创建魔方分类
+        创建自定义魔方分类
 
-        只有管理员可以创建分类。
+        自动设置创建者和标记为自定义分类。
 
         Args:
             request: HTTP 请求对象
@@ -85,6 +110,10 @@ class CubeCategoryViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         return APIResponse(data=serializer.data, status=status.HTTP_201_CREATED)
+
+    def perform_create(self, serializer):
+        """创建时自动设置创建者和标记"""
+        serializer.save(created_by=self.request.user, is_custom=True)
 
     def retrieve(self, request, *args, **kwargs):
         """
@@ -104,7 +133,7 @@ class CubeCategoryViewSet(viewsets.ModelViewSet):
         """
         更新魔方分类
 
-        只有管理员可以更新分类。
+        仅允许创建者更新自己的自定义分类。
 
         Args:
             request: HTTP 请求对象
@@ -112,8 +141,11 @@ class CubeCategoryViewSet(viewsets.ModelViewSet):
         Returns:
             APIResponse: 更新后的分类数据
         """
-        partial = kwargs.pop('partial', False)
         instance = self.get_object()
+        # 权限检查：非自定义分类或非创建者不允许修改
+        if not instance.is_custom or instance.created_by != request.user:
+            raise PermissionDenied('无权修改此分类')
+        partial = kwargs.pop('partial', False)
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
@@ -123,7 +155,7 @@ class CubeCategoryViewSet(viewsets.ModelViewSet):
         """
         删除魔方分类
 
-        只有管理员可以删除分类。
+        仅允许创建者删除自己的自定义分类。
 
         Args:
             request: HTTP 请求对象
@@ -132,8 +164,24 @@ class CubeCategoryViewSet(viewsets.ModelViewSet):
             APIResponse: 删除成功的响应
         """
         instance = self.get_object()
+        if not instance.is_custom or instance.created_by != request.user:
+            raise PermissionDenied('无权删除此分类')
         instance.delete()
         return APIResponse(msg="删除成功")
+
+    @action(detail=False, methods=['get'])
+    def my_custom(self, request):
+        """
+        获取当前用户的自定义分类
+
+        Returns:
+            APIResponse: 包含当前用户自定义分类列表
+        """
+        categories = CubeCategory.objects.filter(
+            created_by=request.user, is_custom=True
+        )
+        serializer = self.get_serializer(categories, many=True)
+        return APIResponse(data={'categories': serializer.data})
 
 
 class CubeStateViewSet(viewsets.ModelViewSet):

@@ -68,7 +68,7 @@
               @click="handleFormulaClick(formula)" hover>
               <div class="formula-header">
                 <span class="formula-name">{{ formula.name }}</span>
-                <el-tag :type="difficultyTagType(formula.difficulty)" size="small">
+                <el-tag :type="difficultyTagType(formula.difficulty)" size="small" effect="plain">
                   {{ difficultyLabel(formula.difficulty) }}
                 </el-tag>
               </div>
@@ -84,7 +84,8 @@
               <div class="formula-footer">
                 <div class="footer-left">
                   <span class="category-tag">{{ formula.category?.name }}</span>
-                  <span v-if="formula.author" class="author-tag">{{ formula.author.username }}</span>
+                  <span v-if="formula.author" class="author-separator">&nbsp;&nbsp;by&nbsp;</span>
+                  <span v-if="formula.author" class="author-name">{{ formula.author.username }}</span>
                 </div>
                 <div class="footer-right">
                   <el-button
@@ -633,6 +634,21 @@ onMounted(() => {
   font-size: 16px;
   font-weight: 600;
   color: #303133;
+}
+
+.category-tag {
+  font-size: 12px;
+  color: #909399;
+}
+
+.author-separator {
+  font-size: 12px;
+  color: #909399;
+}
+
+.author-name {
+  font-size: 12px;
+  color: #606266;
 }
 
 .formula-notation {

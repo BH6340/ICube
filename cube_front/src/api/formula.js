@@ -16,7 +16,7 @@ import request from '@/http/request'
 /**
  * 获取公式分类列表
  *
- * @returns {Promise<Object>} 响应数据，包含分类树形结构
+ * @returns {Promise<Object>} 响应数据，包含分类列表（系统分类 + 当前用户的自定义分类）
  */
 export const getFormulaCategories = () => {
   return request({
@@ -24,6 +24,69 @@ export const getFormulaCategories = () => {
     method: 'get'
   })
 }
+
+// === 分类管理 ===
+
+/**
+ * 获取当前用户的自定义分类
+ *
+ * @returns {Promise<Object>} 响应数据，包含当前用户的自定义分类列表
+ */
+export const getMyCustomCategories = () => {
+  return request({
+    url: '/api/formula/categories/my_custom/',
+    method: 'get'
+  })
+}
+
+/**
+ * 创建自定义分类
+ *
+ * @param {Object} data - 分类数据
+ * @param {string} data.name - 分类名称
+ * @param {number} data.order - 阶数（3/4/5）
+ * @param {string} data.method - 求解方法
+ * @param {string} data.phase - 阶段
+ * @returns {Promise<Object>} 响应数据，包含创建的分类信息
+ */
+export const createCategory = (data) => {
+  return request({
+    url: '/api/formula/categories/',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 删除自定义分类
+ *
+ * @param {number} id - 分类 ID
+ * @returns {Promise<Object>} 响应数据
+ */
+export const deleteCategory = (id) => {
+  return request({
+    url: `/api/formula/categories/${id}/`,
+    method: 'delete'
+  })
+}
+
+/**
+ * 阶段选项（固定列表，用于创建分类时选择）
+ *
+ * 包含魔方各求解方法的常见阶段
+ */
+export const PHASE_OPTIONS = [
+  'Cross', 'F2L', 'OLL', 'PLL', 'Full PLL',
+  'Edge Control', 'EOLine', 'EOCross', 'F2L+OLL',
+  'Block Building', 'Layer-by-Layer', '其他'
+]
+
+/**
+ * 求解方法选项
+ *
+ * 包含主流的魔方求解方法
+ */
+export const METHOD_OPTIONS = ['层先法', 'CFOP', '桥式法', 'ZZ法', 'Heise法', '自创']
 
 /**
  * 获取公式作者列表

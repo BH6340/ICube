@@ -20,12 +20,24 @@
         <div class="form-row">
           <div class="form-group">
             <label>分类</label>
-            <select v-model="form.category" class="form-select">
-              <option value="">请选择分类</option>
-              <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-                {{ cat.name }}
-              </option>
-            </select>
+            <div class="category-selector">
+              <select v-model="form.category" class="form-select">
+                <option value="">请选择分类</option>
+                <optgroup v-if="systemCategories.length" label="系统分类">
+                  <option v-for="cat in systemCategories" :key="cat.id" :value="cat.id">
+                    {{ cat.name }}
+                  </option>
+                </optgroup>
+                <optgroup v-if="customCategories.length" label="我的自定义分类">
+                  <option v-for="cat in customCategories" :key="cat.id" :value="cat.id">
+                    {{ cat.name }}
+                  </option>
+                </optgroup>
+              </select>
+              <button type="button" class="add-category-btn" @click="showCategoryDialog = true">
+                + 新建
+              </button>
+            </div>
           </div>
           <div class="form-group">
             <label>难度</label>
@@ -122,6 +134,56 @@
         @crop="handleCrop"
       />
 
+      <!-- 自定义分类创建弹窗 -->
+      <div class="category-modal" v-if="showCategoryDialog" @click.self="showCategoryDialog = false">
+        <div class="category-dialog">
+          <div class="dialog-header">
+            <h3>创建自定义分类</h3>
+            <button type="button" class="close-btn" @click="showCategoryDialog = false">×</button>
+          </div>
+          <div class="dialog-body">
+            <div class="form-group">
+              <label>分类名称 *</label>
+              <input 
+                v-model="newCategory.name" 
+                type="text" 
+                placeholder="如：我的OLL变体"
+                class="form-input"
+                maxlength="50"
+              />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>阶数</label>
+                <select v-model="newCategory.order" class="form-select">
+                  <option :value="3">3阶</option>
+                  <option :value="4">4阶</option>
+                  <option :value="5">5阶</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>求解方法</label>
+                <select v-model="newCategory.method" class="form-select">
+                  <option v-for="m in METHOD_OPTIONS" :key="m" :value="m">{{ m }}</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>阶段</label>
+                <select v-model="newCategory.phase" class="form-select" filterable>
+                  <option v-for="p in PHASE_OPTIONS" :key="p" :value="p">{{ p }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="dialog-footer">
+            <button type="button" class="btn-cancel" @click="showCategoryDialog = false">取消</button>
+            <button type="button" class="btn-confirm" @click="handleCreateCategory" :disabled="submitting">
+              {{ submitting ? '创建中...' : '创建' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div class="library-modal" v-if="showLibrary" @click="showLibrary = false">
         <div class="library-content" @click.stop>
           <div class="library-header">
@@ -176,8 +238,12 @@
  */
 
 import { ref, computed, onMounted, watch } from 'vue'
+import { ElMessage } from 'element-plus'
 import ImageCropper from '../ImageCropper.vue'
-import { getFormulaCategories, getFormulaList, createFormula, updateFormula } from '@/api/formula'
+import { 
+  getFormulaCategories, getFormulaList, createFormula, updateFormula,
+  createCategory, METHOD_OPTIONS, PHASE_OPTIONS
+} from '@/api/formula'
 
 /** 组件属性定义 */
 const props = defineProps({
@@ -217,8 +283,28 @@ const cropperFile = ref(null)
 const showLibrary = ref(false)
 /** 分类列表 */
 const categories = ref([])
+/** 系统分类（只读） */
+const systemCategories = ref([])
+/** 用户自定义分类 */
+const customCategories = ref([])
 /** 公式库列表（供选择图片） */
 const libraryFormulas = ref([])
+
+/** 分类创建弹窗状态 */
+const showCategoryDialog = ref(false)
+/** 分类创建提交状态 */
+const submitting = ref(false)
+/** 新分类表单数据 */
+const newCategory = reactive({
+  name: '',
+  order: 3,
+  method: 'CFOP',
+  phase: 'OLL'
+})
+/** 求解方法选项 */
+const methodOptions = METHOD_OPTIONS
+/** 阶段选项 */
+const phaseOptions = PHASE_OPTIONS
 
 /** 是否为编辑模式 */
 const isEdit = computed(() => !!props.editFormula)
@@ -285,14 +371,51 @@ watch(() => props.visible, async (val) => {
 /**
  * 加载公式分类列表
  *
- * 从后端获取所有分类（含方法、阶段信息），用于分类下拉选择。
+ * 从后端获取所有分类（含方法、阶段信息），并按系统/自定义分组。
  */
 const loadCategories = async () => {
   try {
     const res = await getFormulaCategories()
-    categories.value = res.data
+    const data = res.data?.results || res.data || []
+    categories.value = data
+    systemCategories.value = data.filter(c => !c.is_custom)
+    customCategories.value = data.filter(c => c.is_custom)
   } catch (e) {
     console.error('加载分类失败', e)
+  }
+}
+
+/**
+ * 创建自定义分类
+ *
+ * 验证表单数据后调用后端接口创建分类，
+ * 成功后刷新分类列表并自动选中新分类。
+ */
+const handleCreateCategory = async () => {
+  if (!newCategory.name.trim()) {
+    ElMessage.warning('请输入分类名称')
+    return
+  }
+  submitting.value = true
+  try {
+    const payload = {
+      name: newCategory.name.trim(),
+      order: newCategory.order,
+      method: newCategory.method,
+      phase: newCategory.phase
+    }
+    const res = await createCategory(payload)
+    await loadCategories()
+    // 自动选中新创建的分类
+    form.value.category = res.data?.id || res.data?.data?.id
+    showCategoryDialog.value = false
+    ElMessage.success('分类创建成功')
+    // 重置表单
+    Object.assign(newCategory, { name: '', order: 3, method: 'CFOP', phase: 'OLL' })
+  } catch (e) {
+    ElMessage.error('创建分类失败')
+  } finally {
+    submitting.value = false
   }
 }
 
@@ -798,5 +921,93 @@ const handleClose = () => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* === 分类选择器 === */
+.category-selector {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.category-selector .form-select {
+  flex: 1;
+}
+
+.add-category-btn {
+  padding: 8px 12px;
+  border: 1px dashed #1890ff;
+  background: #fff;
+  color: #1890ff;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.add-category-btn:hover {
+  background: #e6f7ff;
+  border-style: solid;
+}
+
+/* === 分类创建弹窗 === */
+.category-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+}
+
+.category-dialog {
+  width: 450px;
+  max-width: 95%;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.dialog-header {
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.dialog-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.dialog-body {
+  padding: 20px;
+}
+
+.dialog-body .form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.dialog-body .form-row .form-group {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.dialog-footer {
+  padding: 15px 20px;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 </style>

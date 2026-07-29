@@ -26,6 +26,7 @@ class CubeCategory(models.Model):
     魔方分类模型
 
     定义魔方公式的分类体系，采用三维分类：阶数、求解方法、阶段。
+    支持用户自定义分类，自定义分类关联创建者。
 
     字段设计：
         - order: 魔方阶数（3=三阶、4=四阶等）
@@ -33,9 +34,13 @@ class CubeCategory(models.Model):
         - phase: 阶段（如 Cross、F2L、OLL、PLL 等）
         - name: 分类名称（展示用）
         - sort_order: 排序字段
+        - created_by: 创建者（为空表示系统预置分类）
+        - is_custom: 是否为用户自定义分类
 
-    唯一性约束：
-        - unique_together: 同一阶数、同一方法、同一阶段只能有一个分类
+    说明：
+        - 系统分类：created_by=None, is_custom=False
+        - 用户自定义分类：created_by=用户, is_custom=True
+        - 移除 unique_together，允许用户创建与系统分类重复的自定义分类
     """
     order = models.IntegerField('阶数', default=3)
     method = models.CharField('求解方法', max_length=50)
@@ -43,12 +48,20 @@ class CubeCategory(models.Model):
     name = models.CharField('分类名称', max_length=100)
     description = models.TextField('描述', blank=True)
     sort_order = models.IntegerField('排序', default=0)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='custom_categories',
+        help_text='创建者（为空表示系统预置分类）'
+    )
+    is_custom = models.BooleanField('是否自定义', default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         app_label = 'formula'
         db_table = 'formula_cube_category'
-        unique_together = ['order', 'method', 'phase']
         ordering = ['order', 'method', 'sort_order']
         verbose_name = '魔方分类'
         verbose_name_plural = '魔方分类'

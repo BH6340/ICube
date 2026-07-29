@@ -28,7 +28,7 @@ class CubeCategorySerializer(serializers.ModelSerializer):
     """
     魔方分类序列化器
 
-    序列化魔方分类数据，包含完整的分类信息。
+    序列化魔方分类数据，包含完整的分类信息，支持用户自定义分类。
 
     字段：
         - id: 分类ID
@@ -38,12 +38,26 @@ class CubeCategorySerializer(serializers.ModelSerializer):
         - name: 分类名称
         - description: 描述
         - sort_order: 排序
+        - is_custom: 是否用户自定义
+        - created_by: 创建者信息（只读）
         - created_at: 创建时间
     """
+    created_by = serializers.SerializerMethodField()
 
     class Meta:
         model = CubeCategory
-        fields = ('id', 'order', 'method', 'phase', 'name', 'description', 'sort_order', 'created_at')
+        fields = ('id', 'order', 'method', 'phase', 'name', 'description', 'sort_order', 
+                  'is_custom', 'created_by', 'created_at')
+        read_only_fields = ('created_by', 'is_custom', 'created_at')
+
+    def get_created_by(self, obj):
+        """获取创建者信息"""
+        if obj.created_by:
+            return {
+                'id': obj.created_by.id,
+                'username': obj.created_by.username
+            }
+        return None
 
 
 class CubeStateSerializer(serializers.ModelSerializer):
