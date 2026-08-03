@@ -18,7 +18,7 @@ CREATE TABLE `accounts_user` (
   UNIQUE KEY `accounts_user_username_6088629e_uniq` (`username`)
 ) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-INSERT INTO `accounts_user` (`id`, `password`, `last_login`, `is_superuser`, `is_staff`, `is_active`, `date_joined`, `email`, `username`, `bio`, `image`) VALUES (1, 'pbkdf2_sha256$1200000$8XqaTdWaJaiaLmQP2FPYG6$oYG5XVYa5Ed8fwV8c1ef12LAVCBD2NmrT4rqnxzPbv0=', NULL, 0, 0, 1, '2026-05-11T13:04:43.160321', 'bh01@qq.com', 'bh01', '这是bh01的测试简介', '/media/avatars/admin_TvFlaQx.png');
+INSERT INTO `accounts_user` (`id`, `password`, `last_login`, `is_superuser`, `is_staff`, `is_active`, `date_joined`, `email`, `username`, `bio`, `image`) VALUES (1, 'pbkdf2_sha256$1200000$wwSqWroPaylmBPEEypn13v$wsXa3FcTXGAixXKlWvBK41XawV/8PlRan8Ikg/M8UgE=', NULL, 0, 0, 1, '2026-05-11T13:04:43.160321', 'bh01@qq.com', 'bh01', '这是bh01的测试简介', '/media/avatars/admin_TvFlaQx.png');
 INSERT INTO `accounts_user` (`id`, `password`, `last_login`, `is_superuser`, `is_staff`, `is_active`, `date_joined`, `email`, `username`, `bio`, `image`) VALUES (2, 'pbkdf2_sha256$1200000$r3OXdjnkCUkkD8dsYwKvYI$tVLlEmIIgIzLbEuuQK2DNcQADpHDx2dNLaFx0jBC978=', NULL, 0, 0, 1, '2026-05-11T14:58:32.159835', 'bh02@qq.com', 'bh02', '这是bh02的简介', 'avatars/avatar_2_d43037d8_kARyCpc.svg');
 INSERT INTO `accounts_user` (`id`, `password`, `last_login`, `is_superuser`, `is_staff`, `is_active`, `date_joined`, `email`, `username`, `bio`, `image`) VALUES (3, 'pbkdf2_sha256$1200000$cJ7IS2DNMwk53YoArSUDWB$09KSEoIzAND7FptTUGF69r9Wfvn58LXDiUOYaa8Uq3U=', NULL, 0, 0, 1, '2026-05-11T14:58:56.644541', 'bh03@qq.com', 'bh03', '这是bh03的简介', 'avatars/avatar_3_599f7828_JWU26XE.svg');
 INSERT INTO `accounts_user` (`id`, `password`, `last_login`, `is_superuser`, `is_staff`, `is_active`, `date_joined`, `email`, `username`, `bio`, `image`) VALUES (4, 'pbkdf2_sha256$1200000$1U3JbJi7IJmftkdvH2cafI$KnEY+mhMfb+DHo9EadnmWPWuVq28sDswnhG/Ixxit8s=', NULL, 0, 0, 1, '2026-05-11T14:59:20.745717', 'bh04@qq.com', 'bh04', '这是bh04的简介', 'avatars/avatar_4_07eddaaf_WeeKHJx.svg');
@@ -359,7 +359,7 @@ CREATE TABLE `formula_cube_category` (
   PRIMARY KEY (`id`),
   KEY `formula_cube_category_created_by_id_f4fc7195_fk_accounts_user_id` (`created_by_id`),
   CONSTRAINT `formula_cube_category_created_by_id_f4fc7195_fk_accounts_user_id` FOREIGN KEY (`created_by_id`) REFERENCES `accounts_user` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 INSERT INTO `formula_cube_category` (`id`, `order`, `method`, `phase`, `name`, `description`, `sort_order`, `created_at`, `created_by_id`, `is_custom`) VALUES (4, 3, 'CFOP', 'F2L', '官方F2L', '三阶魔方 CFOP 方法的 F2L 阶段', 1, '2026-07-07T11:06:37.916198', NULL, 0);
 INSERT INTO `formula_cube_category` (`id`, `order`, `method`, `phase`, `name`, `description`, `sort_order`, `created_at`, `created_by_id`, `is_custom`) VALUES (5, 3, 'CFOP', 'OLL', '官方OLL', '三阶魔方 CFOP 方法的 OLL 阶段', 2, '2026-07-07T11:06:38.954387', NULL, 0);
