@@ -12,6 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 后端：Django 6.0 + DRF + MySQL 8.0 + Redis 7
 - 前端：Vue 3.5 + Vite 8.0 + Element Plus 2.14 + Three.js 0.184
 - 部署：Docker Compose + Nginx
+- Python 解释器（本地开发）：固定使用 `E:\software\python\python313\env\cube_api\Scripts\python.exe`，禁止使用其他解释器
 
 ## 常用命令
 ```bash
@@ -121,6 +122,28 @@ ICube/
 - nginx 依赖 api 和 front
 - api 依赖 db（需健康检查通过，`start_period: 45s`）和 redis
 - front 独立构建，产物通过 `front_dist` 卷共享给 nginx
+
+## 业务领域约定
+- 公式列表排序字段：`view_count`（不是 `views`）
+- 公式缩略图路径匹配：`/media/formulas/`（不是 `/media/formula_thumbnails/`）
+- 公式图片两字段区分：`thumbnail_file`（用户上传）与 `thumbnail_path`（公式库图片引用）
+- 新增/修改公式：按 `category_id` 自动绑定 `target_state_id`，改分类时同步更新
+- 公式卡片显示：头部=公式名+难度标签，底部=分类名  by  用户名（中间两个空格）
+- 帖子图片关联：全量同步模式——从 Markdown 解析所有 `![alt](url)`，删除多余、补齐缺失
+- 帖子列表布局：flex 左右结构，左侧内容自适应，右侧图片固定 140px，垂直居中；图片 1:1、`object-fit: contain`，不裁剪
+- 轮播图推荐规格：16:9，1280×720~1920×1080，100-300KB，PNG
+- 教程导航：`/tutorials` → `/tutorial/beginner`、`/tutorial/cfop` 及子页面
+- 媒体文件夹 `/media` 必须纳入 Git 版本控制并上传服务器
+
+## 易踩坑位（历史教训）
+- 未处理的 `AuthenticationFailed` 会让无 Token 的只读请求返回 401
+- 直接对 `ImageFieldFile` 调字符串方法 → `AttributeError`
+- DB 图片路径前缀不一致（有无 `/media/`）→ 部分图片无法访问
+- 未导入 `F` 表达式直接使用 → `NameError: name 'models' is not defined`
+- 浏览器 Private Network Access 会阻止公网域名直接访问 localhost 图片资源
+- `build_image_url` 中 `hasattr(relative_path, 'path')` 会在头像路径以 `/` 开头时触发 `SuspiciousFileOperation`
+- Django `ImageField` 无法直接用字符串路径赋值更新，需走 `.name` 或 `.save()`
+- JWT Token 有效但用户不存在时，`authenticate` 返回 `(None, validated_token)` 会导致 DRF 状态不一致，应返回 `None`
 
 ## 注意事项
 - 前端代码中禁止硬编码 `localhost:8000`，API 请求通过 `/api` 代理，媒体文件通过 `/media/` 访问

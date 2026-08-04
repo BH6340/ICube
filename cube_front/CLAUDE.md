@@ -31,6 +31,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Pinia 状态管理：`stores/`
 - API 调用：`api/`
 - HTTP 请求：`http/request.js`
+- API 模块导入 request 用 `@/http/request`（禁止写 `@/utils/request`）
+- 禁止硬编码 `localhost:8000`：API 走 `/api` 代理，媒体走 `/media/`
 
 ## 关键约定
 
@@ -39,6 +41,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Vite 代理
 本地开发时，`/api` 请求通过 Vite 代理到 `http://127.0.0.1:8000`。生产环境由 Nginx 处理。
+`vite.config.js` 需同时配置 `dev` 和 `preview` 的 proxy，确保 `/api` 与 `/media` 请求正确代理到后端。
 
 ### Three.js 内存清理（CubeDemo.vue）
 在 `onBeforeUnmount` 中**必须**：
@@ -50,3 +53,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### 认证
 JWT token 存储在 `localStorage`，通过 `Authorization: Token <token>` 头发送。
+
+## 业务领域约定
+- 公式列表排序字段：`view_count`（不是 `views`）
+- 公式缩略图路径匹配：`/media/formulas/`（不是 `/media/formula_thumbnails/`）
+- 公式卡片显示：头部=公式名+难度标签，底部=分类名  by  用户名（中间两个空格）
+- 帖子图片关联：全量同步模式——从 Markdown 解析所有 `![alt](url)`，删除多余、补齐缺失
+- 帖子列表布局：flex 左右结构，左侧内容自适应，右侧图片固定 140px，垂直居中；图片 1:1、`object-fit: contain`，不裁剪
+- 公式列表和公式选择弹窗图片均使用 1:1 比例，`object-fit: contain` 确保完整显示，不裁剪
+- 轮播图推荐规格：16:9，1280×720~1920×1080，100-300KB，PNG
+- 教程导航：`/tutorials` → `/tutorial/beginner`、`/tutorial/cfop` 及子页面
+
+## 易踩坑位（历史教训）
+- 前端导入路径错误（如使用 `@/utils/request` 而非 `@/http/request`）会导致 Vite 编译失败
+- 浏览器 Private Network Access (PNA) 策略会阻止公网域名直接访问 localhost 回环地址的图片资源
+- 后端返回的图片路径可能不含 `/media/` 前缀，需通过 `build_image_url` 统一添加

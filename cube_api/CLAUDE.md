@@ -38,6 +38,8 @@ python manage.py runserver 8000 --settings=cube_api.settings.dev
 - 缓存：Redis 操作统一封装在 services.py 中（如 ProfileCacheService、PostCacheService）
 - API 响应：必须使用 utils/common_response.py 中的 APIResponse 统一格式
 - 数据库查询：禁止在视图中直接编写复杂查询，应通过 Service 层封装
+- 图片路径：存储相对路径，禁止硬编码 `http://localhost:8000`；URL 生成统一走 `utils/image_url.py` 的 `build_image_url` 添加 `/media/` 前缀
+- ImageFieldFile 处理：先判断并转字符串再调用字符串方法；用 `isinstance` 检查 `FieldFile`，禁止用 `hasattr(.., 'path')`（会触发 `SuspiciousFileOperation`）
 
 ## 关键架构约定
 
@@ -78,6 +80,16 @@ python manage.py runserver 8000 --settings=cube_api.settings.dev
 - 用户实例缓存在 Redis 中（key: `user_instance_cache_{user_id}`，TTL: 1 小时）
 - JWT 黑名单：注销时将 `jti` 加入 Redis 黑名单（通过 `JWTCacheService.is_blacklisted()` 检查）
 - Token 前缀：`Token`（而非默认的 `Bearer`），通过 `AUTH_HEADER_TYPES: ('Token',)` 配置
+- `authenticate` 方法：Token 无效或用户不存在时返回 `None`，不抛 `AuthenticationFailed`，以兼容 `IsAuthenticatedOrReadOnly`
+
+## 易踩坑位（历史教训）
+- 未处理的 `AuthenticationFailed` 会让无 Token 的只读请求返回 401
+- 直接对 `ImageFieldFile` 调字符串方法 → `AttributeError`
+- DB 图片路径前缀不一致（有无 `/media/`）→ 部分图片无法访问
+- 未导入 `F` 表达式直接使用 → `NameError: name 'models' is not defined`
+- `build_image_url` 中 `hasattr(relative_path, 'path')` 会在头像路径以 `/` 开头时触发 `SuspiciousFileOperation`
+- Django `ImageField` 无法直接用字符串路径赋值更新，需走 `.name` 或 `.save()`
+- JWT Token 有效但用户不存在时，`authenticate` 返回 `(None, validated_token)` 会导致 DRF 状态不一致，应返回 `None`
 
 ## 注意事项
 - 生产环境使用 settings.prod，确保 DEBUG=False
