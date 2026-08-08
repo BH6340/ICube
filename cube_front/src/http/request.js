@@ -17,15 +17,37 @@ import axios from 'axios'
 import { ElMessage } from 'element-plus'
 
 /**
+ * 错误提示防抖缓存：key=消息内容，value=上次提示的时间戳
+ * 3 秒内相同的错误消息只弹一次，避免并发多请求失败时刷屏
+ */
+const lastErrorMap = new Map()
+const ERROR_DEBOUNCE_MS = 3000
+
+/**
+ * 统一弹错误提示，带防抖和 Element Plus grouping 合并
+ */
+function showErrorMsg(message) {
+    const now = Date.now()
+    const lastAt = lastErrorMap.get(message)
+    if (lastAt && now - lastAt < ERROR_DEBOUNCE_MS) return
+    lastErrorMap.set(message, now)
+    ElMessage({
+        type: 'error',
+        message,
+        grouping: true
+    })
+}
+
+/**
  * 创建 Axios 实例
  *
  * 配置说明：
  *   - baseURL: 空字符串，由 Vite 代理配置处理（开发环境代理到 /api）
- *   - timeout: 请求超时时间 5000ms
+ *   - timeout: 请求超时时间 10000ms（原 5000ms 在网速稍慢时容易误报超时）
  */
 const service = axios.create({
     baseURL: '',
-    timeout: 5000
+    timeout: 10000
 })
 
 /**
@@ -59,10 +81,7 @@ service.interceptors.response.use(
 
         // 业务逻辑错误判断
         if (res.code !== 100) {
-            ElMessage({
-                type: 'error',
-                message: !res.msg ? '请求服务器异常,请联系管理员' : res.msg
-            })
+            showErrorMsg(!res.msg ? '请求服务器异常,请联系管理员' : res.msg)
             return Promise.reject(new Error(res.msg || 'Error'))
         } else {
             return res
@@ -70,12 +89,7 @@ service.interceptors.response.use(
     },
     error => {
         const error_msg = error.response?.data?.msg
-
-        ElMessage({
-            type: 'error',
-            message: !error_msg ? '请求服务器异常,请联系管理员' : error_msg
-        })
-
+        showErrorMsg(!error_msg ? '请求服务器异常,请联系管理员' : error_msg)
         return Promise.reject(error)
     }
 )
