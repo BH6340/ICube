@@ -1,0 +1,1602 @@
+# ICube 魔方学习平台 — Code Wiki
+
+> 仓库根：`e:\BH\PyStudy\ICube`
+> 后端实际路径：`cube_api/cube_api/apps/`（因 `sys.path` 注入，导入为 `apps.xxx`）
+> 本文档聚焦后端，前端仅突出与后端交互部分。
+
+***
+
+## 目录
+
+- [1. 项目概述](#1-项目概述)
+- [2. 整体架构与服务拓扑](#2-整体架构与服务拓扑)
+- [3. 技术栈与依赖](#3-技术栈与依赖)
+- [4. 后端架构总览](#4-后端架构总览)
+- [5. 后端配置层（settings）](#5-后端配置层settings)
+- [6. 后端工具层（utils）](#6-后端工具层utils)
+- [7. accounts 模块](#7-accounts-模块)
+- [8. forum 模块](#8-forum-模块)
+- [9. formula 模块](#9-formula-模块)
+- [10. shop 模块](#10-shop-模块)
+- [11. home 模块](#11-home-模块)
+- [12. timer 模块](#12-timer-模块)
+- [13. 前端架构（重点：与后端交互）](#13-前端架构重点与后端交互)
+- [14. 部署与运维](#14-部署与运维)
+- [15. 关键设计模式与约定](#15-关键设计模式与约定)
+- [16. 已知问题与优化点](#16-已知问题与优化点)
+- [17. 常用命令速查](#17-常用命令速查)
+
+***
+
+## 1. 项目概述
+
+ICube 是一个魔方学习与交流平台，前后端分离架构，涵盖：
+
+- **公式库**：CFOP/F2L/OLL/PLL 公式分类体系、魔方状态匹配、3D 渲染、用户自定义公式与收藏
+- **论坛**：Markdown 帖子、图片延迟关联、树形评论、点赞/点踩、收藏、举报、热度排行
+- **商城**：商品分类树、购物车、订单全生命周期、支付宝沙箱支付、收货地址管理
+- **计时器**：用户魔方还原计时记录、分组统计与趋势分析
+- **认证**：自定义 email 登录 + JWT（带 Redis 缓存与黑名单注销）+ 关注/粉丝关系（数据库 + Redis 双写）
+- **首页**：动态导航菜单 + 轮播图（后端驱动）
+
+***
+
+## 2. 整体架构与服务拓扑
+
+### 2.1 请求流转（生产）
+
+```
+浏览器
+  ├─ /api/*    → Nginx → icube_api:8000 (Django/DRF，保留 /api/ 前缀)
+  ├─ /media/*  → Nginx → alias media_volume (30天缓存)
+  ├─ /static/* → Nginx → alias collected_static (30天缓存)
+  └─ /*        → Nginx → try_files → front_dist/index.html (SPA 回退)
+```
+
+本地开发：Vite dev server 接管前端，`/api` 与 `/media` 经 `vite.config.js` proxy → `127.0.0.1:8000`。
+
+### 2.2 Docker 服务拓扑
+
+```
+                        ┌─────────────────────────────────────┐
+                        │  浏览器 http://<server>/             │
+                        └─────────────────┬───────────────────┘
+                                          ▼
+                ┌──────────────────────────────────────────────┐
+                │  nginx (icube_nginx)  :80 / :443            │
+                │  /api/*  → proxy_pass icube_api:8000        │
+                │  /media/* → alias media_volume (30d)        │
+                │  /static/*→ alias collected_static (30d)    │
+                │  /* → try_files front_dist/index.html       │
+                └──────┬──────────────┬──────────────┬───────┘
+            depends_on │     depends_on│     volume   │ front_dist
+                       ▼              ▼              ▼
+       ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
+       │  api (icube_api) │  │  front(icube_    │  │  Vue 构建产物     │
+       │  Django+DRF      │  │    front)        │  │  /app/dist        │
+       │  gunicorn :8000  │  │  node:20-alpine  │  └──────────────────┘
+       │  /app (源码卷)   │  │  npm run build   │
+       └────┬────────┬────┘  └──────────────────┘
+   depends_on│       │ volume
+   (healthy) │       │ media_volume + collected_static
+            ▼        ▼
+   ┌──────────────┐  ┌──────────────────┐
+   │ db (MySQL 8) │  │ redis (7-alpine) │
+   │ :3306        │  │ :6379            │
+   │ healthcheck  │  │                  │
+   │ start_period │  └──────────────────┘
+   │   45s        │
+   └──────────────┘
+```
+
+### 2.3 数据卷
+
+| 卷名                 | 用途               | 挂载点                                                                |
+| ------------------ | ---------------- | ------------------------------------------------------------------ |
+| `mysql_data`       | MySQL 持久化        | `db:/var/lib/mysql`                                                |
+| `redis_data`       | Redis 持久化        | `redis:/data`                                                      |
+| `media_volume`     | 用户上传媒体           | `api:/app/media` ↔ `nginx:/usr/share/nginx/html/media`             |
+| `collected_static` | collectstatic 产物 | `api:/app/collected_static` ↔ `nginx:/usr/share/nginx/html/static` |
+| `front_dist`       | 前端构建产物           | `front:/app/dist` ↔ `nginx:/usr/share/nginx/html`                  |
+
+所有服务共用自定义桥接网络 `icube_network`。
+
+***
+
+## 3. 技术栈与依赖
+
+### 3.1 后端核心依赖
+
+| 包                             | 版本      | 用途                       |
+| ----------------------------- | ------- | ------------------------ |
+| Django                        | 6.0.5   | Web 框架                   |
+| djangorestframework           | 3.17.1  | DRF                      |
+| djangorestframework-simplejwt | 5.5.1   | JWT 认证（Token 前缀 `Token`） |
+| django-filter                 | 25.2    | 过滤器后端                    |
+| django-cors-headers           | 4.9.0   | CORS 跨域                  |
+| django-redis                  | 6.0.0   | Redis 缓存后端               |
+| redis                         | 7.4.0   | Redis Python 客户端         |
+| drf-spectacular               | 0.29.0  | OpenAPI 文档生成             |
+| django-unfold                 | 0.101.0 | 后台管理主题（Tailwind）         |
+| mysqlclient                   | 2.2.8   | MySQL 驱动                 |
+| pillow                        | 12.2.0  | 图像处理                     |
+| openpyxl                      | 3.1.5   | Excel 导入（公式数据）           |
+| python-alipay-sdk             | 3.4.0   | 支付宝支付                    |
+| loguru                        | 0.7.3   | 日志框架（项目唯一允许的日志库）         |
+
+> `gunicorn` 未写入 `requirements.txt`，在 Dockerfile 中单独 pip install。
+
+### 3.2 前端核心依赖
+
+| 包                       | 版本       | 用途                        |
+| ----------------------- | -------- | ------------------------- |
+| vue                     | ^3.5.32  | Vue 3 框架                  |
+| vue-router              | ^5.0.6   | 路由                        |
+| pinia                   | ^3.0.4   | 状态管理                      |
+| element-plus            | ^2.14.0  | UI 组件库                    |
+| axios                   | ^1.16.0  | HTTP 客户端                  |
+| three                   | ^0.184.0 | 3D 魔方渲染                   |
+| @tweenjs/tween.js       | ^25.0.0  | 3D 动画补间                   |
+| echarts                 | ^6.1.0   | 数据图表                      |
+| marked                  | ^18.0.4  | Markdown 渲染               |
+| cropperjs               | ^2.1.1   | 图片裁剪                      |
+| vite                    | ^8.0.8   | 构建工具                      |
+| unplugin-auto-import    | ^21.0.0  | 自动导入 Vue/Router/Pinia API |
+| unplugin-vue-components | ^32.0.0  | 自动导入 Element Plus 组件      |
+
+Node 版本要求：`^20.19.0 || >=22.12.0`（与 Dockerfile `node:20-alpine` 匹配）。
+
+***
+
+## 4. 后端架构总览
+
+### 4.1 目录结构
+
+```
+cube_api/
+├── manage.py
+├── requirements.txt
+├── Dockerfile
+├── mysql.conf                    # MySQL 字符集/认证插件配置
+└── cube_api/
+    ├── __init__.py
+    ├── settings/
+    │   ├── dev.py                 # 基础配置（开发）
+    │   ├── prod.py                # 生产配置（from .dev import * 后覆盖）
+    │   └── logger_conf.py         # Loguru 日志配置
+    ├── urls.py                    # 顶层路由
+    ├── wsgi.py / asgi.py
+    ├── utils/                     # 工具层（响应/异常/分页/图片）
+    │   ├── common_response.py
+    │   ├── common_exception.py
+    │   ├── common_pagination.py
+    │   ├── image_url.py
+    │   └── image_processor.py
+    └── apps/                      # 业务应用（sys.path 注入，导入为 apps.xxx）
+        ├── accounts/              # 认证与社交关系
+        ├── forum/                 # 论坛
+        ├── formula/               # 公式库
+        ├── shop/                  # 商城
+        ├── home/                  # 首页导航
+        └── timer/                 # 计时器
+```
+
+每个 app 标准结构：`models.py / views.py / serializers.py / services.py / urls.py / admin.py / permissions.py / filters.py（可选）/ signals.py（可选）/ tests/`。
+
+### 4.2 顶层路由（[urls.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/urls.py)）
+
+| 路径前缀                      | 模块              | 说明             |
+| ------------------------- | --------------- | -------------- |
+| `/admin/`                 | Django Admin    | Unfold 主题      |
+| `/api/schema/`            | drf-spectacular | OpenAPI Schema |
+| `/api/schema/swagger-ui/` | drf-spectacular | Swagger UI     |
+| `/api/schema/redoc/`      | drf-spectacular | Redoc          |
+| `/api/home/`              | home            | 导航菜单、轮播图       |
+| `/api/`                   | accounts        | 登录、注册、用户信息、关注  |
+| `/api/forum/`             | forum           | 帖子、评论、标签、举报    |
+| `/api/formula/`           | formula         | 公式、分类、状态、收藏    |
+| `/api/shop/`              | shop            | 商品、购物车、订单、支付   |
+| `/api/timer/`             | timer           | 计时记录、统计        |
+
+开发环境（DEBUG=True）下挂载 `MEDIA_URL` 提供媒体文件服务。
+
+***
+
+## 5. 后端配置层（settings）
+
+### 5.1 dev.py — 基础配置（[dev.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py)）
+
+**路径注入**（[L40-L50](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L40-L50)）：
+
+- `sys.path.insert(0, cube_api/cube_api/)` → 可直接 `import utils`、`from apps.xxx import ...`
+- `apps` 目录注入 → 导入为 `apps.xxx`
+
+**自定义用户模型**：`AUTH_USER_MODEL = 'accounts.User'`
+
+**DRF 全局配置**（[L293-L319](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L293-L319)）：
+
+- 统一分页：`utils.common_pagination.UnifiedPagination`，PAGE\_SIZE=20
+- 统一异常：`utils.common_exception.common_exception_handler`
+- 过滤后端：`DjangoFilterBackend`
+- 认证：`apps.accounts.authentication.CachedJWTAuthentication`
+- 默认权限：`IsAuthenticatedOrReadOnly`
+- 限流：anon=100/day、user=1000/day、login\_scope=5/min
+
+**JWT 配置**（[L387-L393](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L387-L393)）：
+
+- Access/Refresh Token 有效期均 7 天
+- Token 轮换开启
+- `AUTH_HEADER_TYPES = ('Token',)` —— **Token 前缀为** **`Token`** **而非** **`Bearer`**
+
+**Redis 配置**（[L196-L239](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L196-L239)）：
+
+- 开发：`redis://127.0.0.1:6379/1`，KEY\_PREFIX=`icube`，TTL=86400s
+- 阻塞连接池：`max_connections=50`、`timeout=20`
+- JSON 序列化器
+
+**测试模式自动切换**（[L190-L194](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L190-L194), [L322-L369](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L322-L369)）：
+当 `'test' in sys.argv` 时：
+
+- 数据库切换为 SQLite `:memory:`
+- Redis 切换为 db=3，KEY\_PREFIX=`icube_test`
+- 限流清空
+- 密码哈希器改为 `MD5PasswordHasher`（加速测试）
+- `django_redis.get_redis_connection` 替换为 mock（返回 Django cache 对象）
+
+**Loguru 日志接管**（[L416-L424](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L416-L424)）：
+
+```python
+LOGGING_CONFIG = None   # 禁用 Django 默认日志配置
+LOGGING = {}            # 防止自动加载默认配置
+from .logger_conf import setup_logging
+setup_logging()
+```
+
+### 5.2 prod.py — 生产配置（[prod.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/prod.py)）
+
+`from .dev import *` 后覆盖：
+
+| 配置项                      | 生产值                                                        |
+| ------------------------ | ---------------------------------------------------------- |
+| DEBUG                    | False                                                      |
+| SECRET\_KEY              | `os.getenv('SECRET_KEY', SECRET_KEY)`                      |
+| ALLOWED\_HOSTS           | 环境变量 + `localhost,127.0.0.1,icube_api,api`                 |
+| CORS\_ALLOWED\_ORIGINS   | `http://` + `https://` + `ALLOWED_ORIGIN` 环境变量 + localhost |
+| CORS\_ALLOW\_CREDENTIALS | True                                                       |
+| DATABASES HOST           | `db`（Docker 服务名）                                           |
+| CACHES LOCATION          | `redis://redis:6379/1`，KEY\_PREFIX=`icube_prod`            |
+| STATIC\_ROOT             | `BASE_DIR/collected_static`                                |
+
+### 5.3 logger\_conf.py — Loguru 配置（[logger\_conf.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/logger_conf.py)）
+
+**核心机制**：
+
+- `InterceptHandler`：继承 `logging.Handler`，将标准 logging 的 LogRecord 转发到 Loguru，调整调用栈深度确保显示原始位置
+- `setup_logging()`：通过 `logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)` 全局接管
+
+**日志目录**：
+
+- Docker（`RUNNING_IN_DOCKER=true`）→ `/var/log/icube/`
+- 本地 → `<BASE_DIR>/log/`
+
+**环境策略**：
+
+| 配置项         | 开发（`DJANGO_ENV != prod`） | 生产（`DJANGO_ENV=prod`）                |
+| ----------- | ------------------------ | ------------------------------------ |
+| 控制台级别       | INFO（彩色）                 | WARNING（彩色）                          |
+| 文件最低级别      | DEBUG                    | INFO                                 |
+| 文件 sink     | 按级别分文件                   | 统一 `cube-all.log` + `cube-error.log` |
+| 文件格式        | 文本                       | JSON（便于日志分析）                         |
+| rotation    | 10 MB                    | 10 MB                                |
+| retention   | 30 days                  | 30 days                              |
+| diagnose    | True                     | **False**（避免暴露敏感信息）                  |
+| enqueue（异步） | True（文件）/ False（控制台）     | True（文件）/ False（控制台）                 |
+
+显式接管 `django`、`django.server`、`django.db.backends`、`django.utils.autoreload`、`gunicorn`、`uvicorn` logger，全部 `propagate=False` 防重复。
+
+***
+
+## 6. 后端工具层（utils）
+
+### 6.1 common\_response.py — 统一响应（[common\_response.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/utils/common_response.py)）
+
+| 类                              | 继承             | 用途                       |
+| ------------------------------ | -------------- | ------------------------ |
+| `APIResponse`                  | DRF `Response` | 通用响应 `{code, msg, data}` |
+| `PaginatedResponse`            | APIResponse    | 适配分页器实例                  |
+| `PageNumberPaginationResponse` | APIResponse    | 适配 page 对象               |
+
+**状态码约定**：
+
+| code | 含义              | HTTP status |
+| ---- | --------------- | ----------- |
+| 100  | 请求成功（默认）        | 200         |
+| 400  | 请求参数错误          | 200         |
+| 403  | 权限不足            | 200         |
+| 404  | 资源不存在           | 200         |
+| 503  | 服务不可用（如支付宝配置异常） | 200         |
+| 998  | 业务逻辑错误          | 跟随 DRF      |
+| 999  | 系统内部错误          | 500         |
+
+**响应格式**：
+
+```json
+{"code": 100, "msg": "请求成功", "data": {...}}
+```
+
+分页响应：
+
+```json
+{"code": 100, "msg": "success", "data": {"count": 100, "next": "?page=2", "previous": null, "results": [...]}}
+```
+
+前端拦截器将 `code !== 100` 视为错误。
+
+### 6.2 common\_exception.py — 统一异常处理（[common\_exception.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/utils/common_exception.py)）
+
+核心函数 `common_exception_handler(exc, context)`（[L35](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/utils/common_exception.py#L35-L127)）：
+
+1. 提取上下文（user email/Anonymous、path、method、view 类名）
+2. 调用 DRF 原生 `drf_exception_handler` 获取初步 response
+3. **情况 A：DRF 已处理**（业务错误）：
+   - `ValidationError` → 取第一个字段第一个错误，格式 `field: error`
+   - 其他 dict → 取 detail；list → 取 `[0]`；其他 → str()
+   - `logger.warning` + 结构化上下文 → `APIResponse(code=998, msg, status=response.status_code)`
+4. **情况 B：未捕获异常**（系统错误）：
+   - `logger.error` + 上下文 → `APIResponse(code=999, msg="系统开小差了，请稍后再试", status=500)`
+   - 屏蔽敏感堆栈，仅返回友好提示
+
+| 异常类型             | 分支 | code | HTTP status | 日志      |
+| ---------------- | -- | ---- | ----------- | ------- |
+| ValidationError  | A  | 998  | 400         | warning |
+| PermissionDenied | A  | 998  | 403         | warning |
+| NotFound         | A  | 998  | 404         | warning |
+| APIException 子类  | A  | 998  | 跟随 DRF      | warning |
+| 其他 Python 异常     | B  | 999  | 500         | error   |
+
+### 6.3 common\_pagination.py — 统一分页（[common\_pagination.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/utils/common_pagination.py)）
+
+| 类                           | page\_size | max\_page\_size | 用途    |
+| --------------------------- | ---------- | --------------- | ----- |
+| `UnifiedPagination`         | 20         | 100             | 默认分页器 |
+| `LargeResultsSetPagination` | 50         | 500             | 大数据集  |
+| `SmallResultsSetPagination` | 10         | 50              | 小数据集  |
+
+重写 `get_paginated_response(data)` 返回 `APIResponse(data={count, next, previous, results})`，与统一响应格式一致。同时提供 `get_paginated_response_schema(schema)` 为 drf-spectacular 生成正确 schema。
+
+### 6.4 image\_url.py — 图片 URL 标准化（[image\_url.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/utils/image_url.py)）
+
+```python
+def build_image_url(relative_path, absolute=False)
+```
+
+**处理逻辑**（[L57-L102](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/utils/image_url.py#L57-L102)）：
+
+1. 空路径 → 返回 `''`
+2. `isinstance(relative_path, FieldFile)` → 取 `.name`（**避免触发 .path 属性计算**）
+3. 完整 URL（http/https 开头）→ 原样返回
+4. 补 `/` 前缀
+5. 补 `/media/` 前缀（已存在则跳过）
+6. `absolute=True` 时拼接 `settings.SITE_DOMAIN`
+
+**关键约束**（项目规则）：
+
+- **禁止** **`hasattr(relative_path, 'path')`** —— 头像路径以 `/` 开头时会触发 `SuspiciousFileOperation`
+- 改用 `isinstance(FieldFile)` 检查后访问 `.name`
+
+**默认返回相对路径**的原因：浏览器 Private Network Access (PNA) 会阻止公网域名直接访问 localhost 图片资源。
+
+### 6.5 image\_processor.py — 图像处理（[image\_processor.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/utils/image_processor.py)）
+
+依赖 Pillow。
+
+| 函数                           | 签名                                                                                           | 功能                               |
+| ---------------------------- | -------------------------------------------------------------------------------------------- | -------------------------------- |
+| `compress_image`             | `(file, max_width=1200, max_height=1200, quality=85, output_format='JPEG')`                  | 缩放压缩；RGBA/LA 转 JPEG 填白；LANCZOS   |
+| `convert_to_webp`            | `(file, quality=85)`                                                                         | 转 WebP（有损）                       |
+| `crop_to_square`             | `(file)`                                                                                     | 中心裁剪 1:1；透明输出 PNG，否则 JPEG        |
+| `process_image`              | `(file, max_width=1200, max_height=1200, quality=85, crop_square=False, convert_webp=False)` | 统一入口                             |
+| `generate_formula_thumbnail` | `(formula_name, formula_notation, size=512)`                                                 | 无上传图时自动生成文字缩略图：白底+公式名+记号，输出 WebP |
+
+所有函数返回 `BytesIO`，调用方负责 `seek(0)` 后写入文件存储。
+
+***
+
+## 7. accounts 模块
+
+### 7.1 模块职责
+
+自定义用户认证与社交关系管理：email 登录、JWT 黑名单注销、用户资料管理、关注/粉丝关系（数据库 + Redis 双写双读）。
+
+### 7.2 数据模型（[models.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/models.py)）
+
+#### User（[L98-L298](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/models.py#L98-L298)）
+
+继承 `AbstractUser`，email 登录模型。
+
+| 字段        | 类型            | 关键约束                                                |
+| --------- | ------------- | --------------------------------------------------- |
+| email     | EmailField    | unique, db\_index（登录用户名）                            |
+| username  | CharField(60) | unique, db\_index                                   |
+| bio       | TextField     | blank                                               |
+| image     | ImageField    | upload\_to='avatars/', null/blank                   |
+| followers | M2M("self")   | symmetrical=False, related\_name="following"（自关联关注） |
+
+- 移除 `first_name`、`last_name`
+- `USERNAME_FIELD = "email"`、`REQUIRED_FIELDS = []`
+- `objects = UserManager()`
+
+**关注/取关操作**（[L211-L250](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/models.py#L211-L250)）：
+
+- `follow(user)`：禁止关注自己；`following.add` 后用 `get_redis_connection` 双写 `sadd` 自己 following + 对方 followers
+- `unfollow(user)`：对称 `srem`
+
+**懒加载属性**（[L254-L298](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/models.py#L254-L298)）：
+
+- `followers_count`（property）：Redis `exists` 判断 → `scard`；未命中查库 + `sadd` 回写
+- `following_count`（property）：同上
+
+> 注：模型层缓存只 `sadd` 不写 `-1` 占位符，与 Service 层策略不同。
+
+#### UserManager（[L24-L95](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/models.py#L24-L95)）
+
+- `create_user(email, password, **other)`：标准化 email、`set_unusable_password` 兜底
+- `create_superuser`：默认 `is_staff/is_superuser/is_active=True`
+
+### 7.3 URL 路由表（[urls.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/urls.py)）
+
+使用 `SimpleRouter(trailing_slash=False)`：
+
+| 路由                               | 视图                           | 方法            | 权限                           | 功能           |
+| -------------------------------- | ---------------------------- | ------------- | ---------------------------- | ------------ |
+| `/users/info`                    | UserView                     | GET/PUT/PATCH | IsAuthenticated              | 当前用户资料       |
+| `/users/register`                | AuthViewSet\@register        | POST          | AllowAny                     | 注册           |
+| `/users/login`                   | AuthViewSet\@login           | POST          | AllowAny + LoginRateThrottle | 登录获取 JWT     |
+| `/users/logout`                  | AuthViewSet\@logout          | POST          | IsAuthenticated              | 注销（jti 入黑名单） |
+| `/profiles/`                     | ProfileDetailView            | GET           | IsAuthenticatedOrReadOnly    | 用户列表         |
+| `/profiles/{username}`           | ProfileDetailView            | GET           | IsAuthenticatedOrReadOnly    | 用户详情         |
+| `/profiles/{username}/follow`    | ProfileDetailView\@follow    | POST/DELETE   | IsAuthenticated              | 关注/取关        |
+| `/profiles/{username}/following` | ProfileDetailView\@following | GET           | IsAuthenticatedOrReadOnly    | 关注列表         |
+| `/profiles/{username}/followers` | ProfileDetailView\@followers | GET           | IsAuthenticatedOrReadOnly    | 粉丝列表         |
+
+### 7.4 视图说明（[views.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/views.py)）
+
+#### AuthViewSet（[L33-L230](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/views.py#L33-L230)）
+
+- 继承 `GenericViewSet`，permission=`AllowAny`
+- `get_throttles()`：仅 `action=='login'` 时追加 `LoginRateThrottle`
+- `register`（[L89-L122](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/views.py#L89-L122)）：用户名重名自动加 `_N` 后缀
+- `login`（[L164-L202](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/views.py#L164-L202)）：`authenticate(email, password)` 校验，失败 `code=102, 401`；成功 `RefreshToken.for_user` 生成 token
+- `logout`（[L204-L230](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/views.py#L204-L230)）：`JWTCacheService.add_to_blacklist(request.auth)`
+
+#### UserView（[L233-L307](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/views.py#L233-L307)）
+
+- 继承 `RetrieveUpdateAPIView`，permission=`IsAuthenticated`
+- `parser_classes = [MultiPartParser, FormParser, JSONParser]`
+- `get_serializer_class()`：PUT/PATCH → `UserUpdateSerializer`，GET → `UserSerializer`
+- `get_object()`：直接返回 `request.user`
+- `update()`：强制 `partial=True`，取 `request.data`（非嵌套 user 键）
+
+#### ProfileDetailView（[L310-L474](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/views.py#L310-L474)）
+
+- 继承 `ReadOnlyModelViewSet`，`lookup_field='username'`
+- `get_serializer_class()`：following/followers → `ProfileListSerializer`，其他 → `ProfileSerializer`
+- `retrieve()`：必须传 `context={'request': request}`（否则 `get_following` 永远 False）
+- `follow` action（[L377-L426](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/views.py#L377-L426)）：禁止操作自己（`code=103`）；POST 走 `following.add` + `ProfileCacheService.update_follow_relation(is_follow=True)`；DELETE 对称
+
+### 7.5 序列化器（[serializers.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/serializers.py)）
+
+| 序列化器                    | 用途             | 关键设计                                                                                                                                                                                               |
+| ----------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `UserSerializer`        | 创建/登录返回        | `image` SerializerMethodField → `build_image_url`；`create` 调 `create_user`                                                                                                                         |
+| `UserUpdateSerializer`  | 资料更新           | `avatar` write\_only ImageField；`process_image(max_width=512, max_height=512, quality=85, crop_square=True, convert_webp=True)` 头像压缩转 WebP；**更新后** **`cache.delete(f"user_instance_cache_{id}")`** |
+| `ProfileSerializer`     | 用户详情（含关注状态+统计） | `following`/`followers_count`/`following_count` 走 `ProfileCacheService`；`collection_count` 直接查库                                                                                                    |
+| `ProfileListSerializer` | 关注/粉丝列表（轻量）    | 去除计数字段，仅 `username/bio/image/following`                                                                                                                                                            |
+
+### 7.6 服务层（[services.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/services.py)）
+
+#### JWTCacheService（[L23-L105](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/services.py#L23-L105)）
+
+JWT Token 黑名单管理（无状态 JWT + 黑名单注销机制）。
+
+**缓存键**：`jwt:blacklist:{jti}`（String，TTL = Token 剩余有效期）
+
+| 方法                          | 逻辑                                                                         |
+| --------------------------- | -------------------------------------------------------------------------- |
+| `add_to_blacklist(payload)` | 提取 `jti`/`exp` → 计算剩余秒数 → `setex(jwt:blacklist:{jti}, remaining, 1)`；已过期不入 |
+| `is_blacklisted(jti)`       | jti 为空返回 True；否则 `exists(jwt:blacklist:{jti}) == 1`                        |
+| `_get_con()`                | 兼容测试环境：Django 代理层穿透 `con.client.get_client()`                              |
+
+#### ProfileCacheService（[L108-L333](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/services.py#L108-L333)）
+
+用户资料与社交关系缓存。
+
+**缓存键**：
+
+- `user:{user_id}:following` → 关注 ID 集合（Set）
+- `user:{user_id}:followers` → 粉丝 ID 集合（Set）
+
+| 方法                                            | 关键逻辑                                                                                            |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `get_following_ids(user_id)`                  | `scard > 0` → `smembers`；未命中查库 + Pipeline 回写；空集合 `sadd(key, -1)` + `expire(600)` **防穿透**        |
+| `is_following(cur, target)`                   | 复用上面 + Python `in`（O(1)）                                                                        |
+| `get_followers_count(user_id)`                | `scard > 0` 时若 `sismember(-1)` 则 `total-1`；未命中查库 + 回写                                           |
+| `get_following_count(user_id)`                | 复用 `get_following_ids`，若 `-1 in set` 返回 0                                                       |
+| `get_collection_count(user_id)`               | **直接查库** `FormulaCollection.objects.filter(user_id=).count()`（无缓存）                              |
+| `update_follow_relation(from, to, is_follow)` | **Pipeline 批量**：关注 → `sadd following` + `srem -1` + `sadd followers` + `srem -1`；取关 → 对称 `srem` |
+
+**缓存策略**：
+
+- 懒加载重建（exists/scard 判断命中）
+- -1 占位符防穿透（10 分钟 TTL）
+- Pipeline 批量减少网络往返
+- 测试环境兼容（Django 缓存代理穿透）
+
+### 7.7 认证与权限
+
+#### CachedJWTAuthentication（[authentication.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/authentication.py)）
+
+继承 `JWTAuthentication`，扩展缓存与黑名单。
+
+**authenticate() 流程**（[L93-L142](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/authentication.py#L93-L142)）：
+
+1. 提取 Authorization 头；为空返回 None
+2. 验证签名/过期
+3. **黑名单检查**：`jti = validated_token.get("jti")`，`JWTCacheService.is_blacklisted(jti)` 命中返回 None
+4. `get_user(validated_token)` 返回用户实例
+5. 返回 `(user, validated_token)` 或 None
+6. **任何异常都返回 None，不抛 AuthenticationFailed**
+
+**设计原因**：兼容 `IsAuthenticatedOrReadOnly`，让无 Token 的只读请求不被 401 拦截。
+
+**get\_user() 缓存机制**（[L45-L91](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/authentication.py#L45-L91)）：
+
+- 缓存键 `user_instance_cache_{user_id}`，TTL 1 小时
+- **只存用户 ID 不存完整对象**（避免敏感信息泄露 + 减小缓存）
+- 命中：`User.objects.get(id=cached_id)` 重新拉库
+- 未命中：查库后 `cache.set(cache_key, user.id, timeout=60*60)`
+
+> **修改用户状态后需清理 JWT 缓存**（`UserUpdateSerializer.update` 已实现 `cache.delete`）。
+
+#### 权限类（[permissions.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/permissions.py)）
+
+| 权限类                       | 适用场景        | 逻辑                                                                         |
+| ------------------------- | ----------- | -------------------------------------------------------------------------- |
+| `IsOwnerOrReadOnly`       | 帖子/通用资源编辑   | 读放行；写按字段优先级 `author → user → owner` 检查；回退 `is_staff`                       |
+| `IsAdminOrReadOnly`       | 全局配置        | 读放行；写要求 `is_staff`                                                         |
+| `IsAuthenticatedAndOwner` | 必须登录且操作自己资源 | has\_permission: is\_authenticated；has\_object\_permission: 检查 author/user |
+| `IsSelfOrReadOnly`        | 用户资料管理      | 读放行；写要求 `obj == request.user`                                              |
+| `IsFollowingOrReadOnly`   | 粉丝专属内容      | 读检查 `following.filter(id=obj.author.id).exists()`                          |
+
+### 7.8 限流（[throttles.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/throttles.py)）
+
+#### LoginRateThrottle（[L19-L74](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/throttles.py#L19-L74)）
+
+- 继承 `SimpleRateThrottle`
+- `scope = 'login_scope'`（settings 中 `5/minute`）
+- **get\_cache\_key 三级过滤**：
+  1. `view.action != 'login'` → None（仅对 login 动作）
+  2. `request.data.get('user', {}).get('email', '')` 为空 → None
+  3. `ident = self.get_ident(request)` 处理 X-Forwarded-For
+- **限流键**：`throttle_login_scope_{IP}_{email}`（滑动窗口算法）
+
+***
+
+## 8. forum 模块
+
+### 8.1 模块职责
+
+论坛核心：帖子发布（Markdown + 图片延迟关联）、树形评论（点赞/点踩）、标签、收藏、举报、热度排行、统计字段冗余 + Redis 浏览量缓存。
+
+### 8.2 数据模型（[models.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/models.py)）
+
+| 模型              | db\_table          | 核心设计                                                                                   |
+| --------------- | ------------------ | -------------------------------------------------------------------------------------- |
+| **Tag**         | `forum_tag`        | name unique、color、use\_count 冗余计数                                                      |
+| **PostTag**     | `forum_post_tags`  | 自定义中间表，`unique_together=['post','tag']`                                                |
+| **Post**        | `forum_post`       | 软删除（status='deleted'）、冗余统计（view\_count/like\_count/comment\_count/collect\_count）、复合索引 |
+| **Comment**     | `forum_comment`    | 树形 parent 自关联、软删除（is\_deleted）、is\_hidden 管理员隐藏                                        |
+| **PostLike**    | —                  | `unique_together=['post','user']`（幂等）                                                  |
+| **CommentLike** | —                  | `unique_together=['comment','user']`、`is_like` Bool 区分赞/踩                              |
+| **PostCollect** | —                  | `unique_together=['post','user']`                                                      |
+| **Report**      | —                  | 通用举报：content\_type CharField + object\_id（不用 ContentType）                              |
+| **PostImage**   | `forum_post_image` | **post 允许 null（延迟关联）**、`upload_to='forum/posts/%Y/%m/'`                                |
+
+#### Post 字段（[L81-L178](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/models.py#L81-L178)）
+
+| 字段                                                          | 类型             | 说明                               |
+| ----------------------------------------------------------- | -------------- | -------------------------------- |
+| title                                                       | CharField(200) | db\_index, MinLengthValidator(3) |
+| content / content\_md                                       | TextField      | 正文 + Markdown 源码                 |
+| author                                                      | FK→User        | CASCADE, related\_name='posts'   |
+| view\_count / like\_count / comment\_count / collect\_count | IntegerField   | **冗余统计字段**（用 F 表达式原子更新）          |
+| is\_pinned / is\_essence / is\_closed                       | BooleanField   | 置顶/精华/关闭评论                       |
+| status                                                      | CharField(20)  | choices: published/deleted/draft |
+| tags                                                        | M2M(Tag)       | through='PostTag'                |
+| report\_count                                               | IntegerField   | 举报数                              |
+| created\_at / updated\_at                                   | DateTimeField  | <br />                           |
+
+- **软删除**：`soft_delete()` → `save(update_fields=['status'])`
+- **Meta ordering**：`['-is_pinned', '-is_essence', '-created_at']`
+- **复合索引**：`[author, -created_at]`、`[-created_at]`、`[status, -created_at]`
+
+### 8.3 URL 路由表（[urls.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/urls.py)）
+
+`DefaultRouter` 注册：
+
+| 路由                        | 视图                         | 方法                   | 权限                        | 功能                               |
+| ------------------------- | -------------------------- | -------------------- | ------------------------- | -------------------------------- |
+| `/posts/`                 | PostViewSet                | GET                  | IsAuthenticatedOrReadOnly | 帖子列表（search/ordering/filter/hot） |
+| `/posts/{id}/`            | PostViewSet                | GET/PUT/PATCH/DELETE | + IsOwnerOrReadOnly       | 详情（retrieve 自动 +1 浏览量）           |
+| `/posts/{id}/like/`       | PostViewSet\@like          | POST                 | IsAuthenticated           | 切换点赞                             |
+| `/posts/{id}/collect/`    | PostViewSet\@collect       | POST                 | IsAuthenticated           | 切换收藏                             |
+| `/posts/{id}/comments/`   | PostViewSet\@comments      | GET                  | IsAuthenticatedOrReadOnly | 帖子一级评论                           |
+| `/posts/my_posts/`        | PostViewSet\@my\_posts     | GET                  | IsAuthenticated           | 当前用户帖子                           |
+| `/posts/collected/`       | PostViewSet\@collected     | GET                  | —                         | 当前用户收藏                           |
+| `/posts/hot/`             | PostViewSet\@hot           | GET                  | —                         | 热门帖子                             |
+| `/posts/upload_image/`    | PostViewSet\@upload\_image | POST                 | IsAuthenticated           | 上传图片（post=None 延迟关联）             |
+| `/comments/`              | CommentViewSet             | GET                  | IsAuthenticatedOrReadOnly | 一级评论列表                           |
+| `/comments/{id}/like/`    | CommentViewSet\@like       | POST                 | —                         | 评论点赞                             |
+| `/comments/{id}/dislike/` | CommentViewSet\@dislike    | POST                 | —                         | 评论点踩                             |
+| `/tags/`                  | TagViewSet                 | GET                  | IsAuthenticatedOrReadOnly | 标签（只读）                           |
+| `/reports/`               | ReportViewSet              | GET/POST             | IsAuthenticated           | 举报（管理员看全部）                       |
+
+### 8.4 视图说明（[views.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/views.py)）
+
+#### PostViewSet（[L31-L441](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/views.py#L31-L441)）
+
+- 继承 `ModelViewSet`
+- queryset：`Post.objects.filter(status='published').select_related('author').prefetch_related('tags', 'images')`
+- permission：`[IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]`
+
+**过滤器配置**：
+
+- `filter_backends = [SearchFilter, OrderingFilter, DjangoFilterBackend]`
+- `search_fields = ['title', 'content']`
+- `ordering_fields = ['created_at', 'view_count', 'like_count', 'comment_count', 'is_pinned', 'is_essence']`
+- `ordering = ['-is_pinned', '-is_essence', '-created_at']`
+- `filterset_fields = ['tags__name', 'is_pinned', 'is_essence', 'created_at']`
+
+**关键方法**：
+
+- `get_serializer_class()`：list → PostListSerializer；create/update → PostCreateUpdateSerializer；其他 → PostSerializer
+- `list()`（[L82-L118](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/views.py#L82-L118)）：`hot` 参数存在时 `annotate(hot_score=Count('likes')*3 + Count('comments')*2 + Count('collects'))` + `order_by('-hot_score')`
+- `retrieve()`：调 `PostCacheService.increase_view(id)`
+- `destroy()`：`instance.soft_delete()`
+- `update()`：手动检查 `instance.author != request.user` → 403
+- `like` action：`PostInteractionService.toggle_like` → `{liked, like_count}`
+- `collect` action：`toggle_collect`
+- `comments` action：**只返回一级评论**（`parent=None`）
+- `hot` action：支持 days（默认7）、limit（默认20）→ `HotPostService.get_hot_posts`
+- `upload_image` action（[L378-L441](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/views.py#L378-L441)）：
+  - 校验 content\_type（jpeg/jpg/png/gif/webp）+ 大小 ≤ 5MB
+  - `process_image(max_width=1200, max_height=1200, quality=85, crop_square=, convert_webp=True)`
+  - 创建 `PostImage(post=None)` **延迟关联**
+
+#### CommentViewSet（[L444-L577](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/views.py#L444-L577))
+
+- 继承 `ModelViewSet`
+- `get_queryset()`：list 动作 → `filter(parent=None)` **只返回一级评论** + `order_by('-created_at')`
+- `create/destroy`：手动重算 `post.comment_count`
+- `like`/`dislike` action：`PostInteractionService.toggle_comment_reaction(comment_id, user, is_like=True/False)`
+
+### 8.5 序列化器（[serializers.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/serializers.py)）
+
+| 序列化器                         | 用途      | 关键设计                                                  |
+| ---------------------------- | ------- | ----------------------------------------------------- |
+| `TagSerializer`              | 标签      | id/name/color/use\_count                              |
+| `PostImageSerializer`        | 帖子图片    | `image_url` SerializerMethodField → `build_image_url` |
+| `PostListSerializer`         | 帖子列表    | 嵌套 author/tags，`get_images` 最多 4 张预览图                 |
+| `PostSerializer`             | 帖子详情    | 动态字段 `is_liked`/`is_collected`，write\_only `tag_ids`  |
+| `PostCreateUpdateSerializer` | 创建/更新   | 支持 .md 文件上传；`_sync_post_images` 全量同步图片                |
+| `ReplySerializer`            | 子评论（轻量） | 不含 replies 避免递归；`liked`/`disliked`/`reply_to_name`    |
+| `CommentSerializer`          | 一级评论    | `get_replies` **深度优先递归扁平化**所有子孙；`reply_count`         |
+| `ReportSerializer`           | 举报      | reporter 自动设当前用户                                      |
+
+#### \_sync\_post\_images 全量同步逻辑（[L389-L436](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/serializers.py#L389-L436)）
+
+1. `re.findall(r'!\[.*?\]\((.*?)\)', content)` 解析 Markdown 所有图片 URL
+2. 收集当前 `post.images.all()` 的 `image.name` → `existing_images`
+3. 筛选 URL 包含 `/media/forum/posts/` 或 `/media/formulas/` 的，提取 `image_path = url.split('/media/')[-1]` → `required_images`
+4. **删除多余**：已关联但不在 Markdown 中的 → `img.delete()`
+5. **补齐缺失**：Markdown 中存在但未关联且文件存在的 → `PostImage.objects.create`
+
+### 8.6 服务层（[services.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/services.py)）
+
+> ⚠️ **违反项目规则**：[L16, L23-25](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/services.py#L16-L25) 使用内置 `logging` 模块，应改用 loguru。
+
+#### PostCacheService（[L28-L177](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/services.py#L28-L177)）
+
+**缓存键**：`forum:post:{post_id}:view`
+
+| 方法                        | 逻辑                                                                                                                                        |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `increase_view(post_id)`  | 优先 `cache.incr(key)`；异常降级查库 + `F('view_count')+1` + `save(update_fields=['view_count'])`                                                  |
+| `get_view_count(post_id)` | `cache.get` 命中返回；未命中查库 + `cache.set(key, count, 3600)`                                                                                    |
+| `sync_all_views()`        | ⚠️ **使用 KEYS 命令** `con.keys("*forum:post:*:view")`（阻塞风险，建议改 SCAN）；解析 post\_id 后 `update(view_count=F('view_count')+int(views))`；删除已同步 key |
+
+#### PostInteractionService（[L180-L345](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/services.py#L180-L345)）
+
+| 方法                                                   | 逻辑                                                              |
+| ---------------------------------------------------- | --------------------------------------------------------------- |
+| `toggle_like(post_id, user)`                         | 已赞：delete + `F('like_count')-1`；未赞：create + `F('like_count')+1` |
+| `toggle_collect(post_id, user)`                      | 对称收藏切换                                                          |
+| `toggle_comment_reaction(comment_id, user, is_like)` | 三态：新建反应 / 取消反应 / 切换反应（赞↔踩）                                      |
+
+#### HotPostService（[L348-L389](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/services.py#L348-L389)）
+
+`get_hot_posts(days=7, limit=20)`：
+
+- **热度算法**：`hot_score = F('like_count')*3 + F('comment_count')*2 + F('view_count')`
+- 权重：点赞×3（认可度）、评论×2（参与度）、浏览×1（防刷量）
+- `annotate + order_by('-hot_score')[:limit]`
+
+### 8.7 权限类（[permissions.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/permissions.py)）
+
+| 权限类                        | 逻辑                                                                         |
+| -------------------------- | -------------------------------------------------------------------------- |
+| `IsPostOwnerOrReadOnly`    | 读放行；写检查 `obj.author == request.user`                                       |
+| `IsCommentOwnerOrReadOnly` | 同上                                                                         |
+| `CanModeratePost`          | has\_permission: is\_staff or is\_moderator；has\_object\_permission: 放宽至作者 |
+
+> 注：PostViewSet 实际复用 accounts 的 `IsOwnerOrReadOnly`，未使用 forum 自身权限类（预留）。
+
+### 8.8 信号（[signals.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/signals.py)）
+
+| 信号           | sender  | 接收器                                   | 逻辑                                                    |
+| ------------ | ------- | ------------------------------------- | ----------------------------------------------------- |
+| post\_save   | Comment | `update_post_comment_count`           | `created and not is_deleted` 时重算 `post.comment_count` |
+| post\_delete | Comment | `update_post_comment_count_on_delete` | 物理删除时重算 comment\_count                                |
+| post\_save   | Tag     | `update_tag_use_count`                | `use_count = instance.posts.count()`                  |
+
+> ⚠️ CommentViewSet.create/destroy 也手动更新 comment\_count，与信号存在重复。
+
+### 8.9 帖子图片关联机制
+
+采用**全量同步模式**：
+
+```
+用户上传图片(upload_image action)
+    ↓ PostImage(post=None) 延迟关联存储
+用户提交帖子(content 含 Markdown)
+    ↓ _sync_post_images(post, content)
+    ├── 解析 Markdown ![](url) 提取 required_images
+    ├── 删除 post.images 中不在 required_images 的
+    └── 为 required_images 中未关联的创建 PostImage(post=post)
+```
+
+支持两类图片来源：用户上传 `/media/forum/posts/` + 公式库 `/media/formulas/`（跨模块引用 formula 应用图片）。
+
+***
+
+## 9. formula 模块
+
+### 9.1 模块职责
+
+魔方公式库：公式分类体系、魔方状态定义、公式 CRUD/匹配/收藏、逆公式自动生成与状态推导。
+
+### 9.2 数据模型（[models.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/formula/models.py)）
+
+| 模型                     | db\_table                      | 核心设计                                                                  |
+| ---------------------- | ------------------------------ | --------------------------------------------------------------------- |
+| **CubeCategory**       | `formula_cube_category`        | 三维分类：order(阶数)→method(求解方法)→phase(阶段)；系统/自定义（is\_custom, created\_by） |
+| **CubeState**          | `formula_cube_state`           | JSON 存储魔方状态（order/blocks/pos/faces）                                   |
+| **Formula**            | `formula_formula`              | 核心；thumbnail ImageField、inverse\_notation 自动生成、view\_count 原子递增       |
+| **FormulaTag**         | `formula_formula_tag`          | name unique、color                                                     |
+| **FormulaTagRelation** | `formula_formula_tag_relation` | 中间表，`unique_together=['formula','tag']`                               |
+| **FormulaCollection**  | `formula_formula_collection`   | 收藏，`unique_together=['user','formula']`（幂等）                           |
+
+#### Formula 字段（[L124-L233](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/formula/models.py#L124-L233)）
+
+| 字段                     | 类型              | 说明                                                           |
+| ---------------------- | --------------- | ------------------------------------------------------------ |
+| category               | FK→CubeCategory | CASCADE                                                      |
+| name                   | CharField(200)  | <br />                                                       |
+| notation               | TextField       | 公式记号                                                         |
+| inverse\_notation      | TextField       | blank（自动生成）                                                  |
+| target\_state          | FK→CubeState    | SET\_NULL                                                    |
+| pre\_state\_definition | JSONField       | null（前置状态）                                                   |
+| thumbnail              | ImageField      | upload\_to='formula\_thumbnails/'（**模型层只有此一个 thumbnail 字段**） |
+| difficulty             | IntegerField    | default=1                                                    |
+| view\_count            | IntegerField    | default=0（**字段名是 view\_count，不是 views**）                     |
+| is\_custom             | BooleanField    | default=False                                                |
+| created\_by            | FK→User         | SET\_NULL                                                    |
+
+- `save()`：notation 存在且 inverse\_notation 为空时调用 `FormulaService.generate_inverse_notation`
+- `get_pre_state()`：优先 `pre_state_definition`；否则返回 `{derive_from_target, target_state, inverse_notation}` 供推导
+
+### 9.3 URL 路由表（[urls.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/formula/urls.py)）
+
+| 路由                           | 视图                              | 方法             | 权限                                                 | 功能                          |
+| ---------------------------- | ------------------------------- | -------------- | -------------------------------------------------- | --------------------------- |
+| `/categories/`               | CubeCategoryViewSet             | GET            | AllowAny                                           | 分类列表（未登录仅系统分类）              |
+| `/categories/{id}/`          | CubeCategoryViewSet             | GET/PUT/DELETE | IsAuthenticated                                    | 详情/更新/删除（仅创建者）              |
+| `/categories/my_custom/`     | CubeCategoryViewSet\@my\_custom | GET            | IsAuthenticated                                    | 我的自定义分类                     |
+| `/states/`                   | CubeStateViewSet                | CRUD           | IsAdminOrReadOnly                                  | 魔方状态管理                      |
+| `/formulas/`                 | FormulaViewSet                  | GET/POST       | IsAuthenticatedOrReadOnly + IsAdminOrCustomCreator | 公式列表/创建（retrieve 自动 +1 浏览量） |
+| `/formulas/{id}/`            | FormulaViewSet                  | GET/PUT/DELETE | 同上                                                 | 详情/更新/删除                    |
+| `/formulas/match/`           | FormulaViewSet\@match           | POST           | IsAuthenticated                                    | 按状态匹配公式                     |
+| `/formulas/my_custom/`       | FormulaViewSet\@my\_custom      | GET            | IsAuthenticated                                    | 我的自定义公式                     |
+| `/formulas/authors/`         | FormulaViewSet\@authors         | GET            | IsAuthenticatedOrReadOnly                          | 公式作者列表（distinct）            |
+| `/formulas/simple_list/`     | FormulaViewSet\@simple\_list    | GET            | IsAuthenticatedOrReadOnly                          | 精简列表（帖子编辑器用）                |
+| `/tags/`                     | FormulaTagViewSet               | CRUD           | IsAdminOrReadOnly                                  | 标签管理                        |
+| `/collections/`              | FormulaCollectionViewSet        | GET/POST       | IsAuthenticated                                    | 收藏列表/添加（get\_or\_create 幂等） |
+| `/collections/{formula_id}/` | FormulaCollectionViewSet        | DELETE         | IsAuthenticated                                    | 取消收藏（按公式ID）                 |
+
+### 9.4 视图说明（[views.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/formula/views.py)）
+
+#### FormulaViewSet（[L289-L589](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/formula/views.py#L289-L589)）
+
+- queryset：`Formula.objects.select_related('category','target_state').prefetch_related('tag_relations__tag')`
+- permission：`[IsAuthenticatedOrReadOnly, IsAdminOrCustomCreator]`
+- **过滤器**：SearchFilter + OrderingFilter + DjangoFilterBackend
+  - search\_fields=`['name','notation','description']`
+  - ordering\_fields=`['category','difficulty','created_at','view_count']`
+  - filterset\_class=`FormulaFilter`
+- `get_serializer_class()`：list → FormulaListSerializer；其他 → FormulaSerializer
+- **retrieve**：`F('view_count')+1` 原子递增 + `refresh_from_db`
+- **自定义 action**：match/my\_custom/authors/simple\_list
+
+### 9.5 序列化器（[serializers.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/formula/serializers.py)）
+
+#### FormulaSerializer（详情，[L252-L599](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/formula/serializers.py#L252-L599)）
+
+**thumbnail\_file 与 thumbnail\_path 的区分点**（仅序列化器层）：
+
+- `thumbnail`（只读 SerializerMethodField → `build_image_url`）
+- `thumbnail_file`（write\_only FileField，用户上传文件）
+- `thumbnail_path`（write\_only CharField，公式库图片引用路径）
+- `tag_ids`（write\_only ListField）
+
+**create（[L377-L485](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/formula/serializers.py#L377-L485)）**：
+
+- 非 staff 已登录用户 → `is_custom=True, created_by=user`
+- 缩略图三态处理：
+  1. 文件 → `process_image(max_width=512, max_height=512, quality=85, crop_square=True, convert_webp=True)`
+  2. 路径 → 剥离 `/media/` 前缀后赋给 `formula.thumbnail.name`
+  3. 都无 → `generate_formula_thumbnail(name, notation)` 自动生成
+- **target\_state\_id 自动绑定**：category 存在且无 target\_state 时，取该分类下第一个 CubeState
+- 标签关联：`FormulaTagRelation.objects.get_or_create`
+
+**update（[L487-L599](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/formula/serializers.py#L487-L599)）**：
+
+- notation 修改时重新生成 inverse\_notation
+- **改分类时同步更新 target\_state**：旧 target\_state 不属于新 category 则置空，再绑定新分类下首个状态
+- 标签全量同步：先 delete 再 get\_or\_create
+
+### 9.6 服务层（[services.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/formula/services.py)）
+
+#### FormulaService（[L17-L87](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/formula/services.py#L17-L87)）
+
+- `generate_inverse_notation(notation)`：按空格分割 → reversed → `NOTATION_INVERSE_MAP` 取逆 → 拼接
+- 覆盖 R/L/U/D/F/B/M/E/S/x/y/z 等正向/逆向/180度三种变体
+
+#### CubeStateService（[L90-L436](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/formula/services.py#L90-L436)）
+
+- `validate_state_definition(state_def)`：多层验证（结构→order→blocks→单块→中心块→相邻块颜色）
+- 中心块标准配色 `CENTER_COLORS`：Y/W/B/G/O/R
+- 颜色支持 `Y/W/B/G/O/R/-/?`（`-` 不关心，`?` 未知）
+
+#### FormulaMatchService（[L439-L563](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/formula/services.py#L439-L563)）
+
+- `match_formulas(user_state)`：前置状态匹配 + 目标状态匹配
+- `_is_state_match`：公式状态中 `-` 跳过，部分匹配
+- ⚠️ `_execute_formula` 为占位（转动模拟未实现，退化为原状态比较）
+
+### 9.7 过滤器（[filters.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/formula/filters.py)）
+
+`FormulaFilter`：
+
+- `difficulty = BaseInFilter(lookup_expr='in')` — 支持逗号分隔多值
+- `created_by = BaseInFilter(lookup_expr='in')` — 多作者ID
+- 示例：`/api/formulas/?difficulty=1,2,3&is_custom=true&created_by=1,2`
+
+### 9.8 权限类（[permissions.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/formula/permissions.py)）
+
+| 权限类                      | 逻辑                                                                                                 |
+| ------------------------ | -------------------------------------------------------------------------------------------------- |
+| `IsAdminOrReadOnly`      | 读放行；写要求 is\_staff                                                                                  |
+| `IsOwnerOrReadOnly`      | 读放行；写检查 created\_by（未使用）                                                                           |
+| `IsAdminOrCustomCreator` | has\_permission：SAFE 放行，写需登录；has\_object\_permission：`obj.is_custom and obj.created_by==user` 或管理员 |
+
+### 9.9 management/commands
+
+| 命令                   | 功能                                                |
+| -------------------- | ------------------------------------------------- |
+| `import_formulas`    | 从 Excel 导入 CFOP 公式（F2L/OLL/PLL），依赖 openpyxl，硬编码路径 |
+| `insert_cube_states` | 插入 F2L/OLL/PLL 三个目标状态 + 批量更新公式 target\_state      |
+
+***
+
+## 10. shop 模块
+
+### 10.1 模块职责
+
+魔方商城：商品分类树、购物车、订单全生命周期、支付宝集成、收货地址管理。
+
+### 10.2 数据模型（[models.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/shop/models.py)）
+
+| 模型                  | db\_table               | 核心设计                                                                                               |
+| ------------------- | ----------------------- | -------------------------------------------------------------------------------------------------- |
+| **ProductCategory** | `shop_product_category` | parent FK→self(`SET_NULL`)，树形分类                                                                    |
+| **Product**         | `shop_product`          | price/original\_price DecimalField、stock Int、images JSONField、thumbnail ImageField、specs JSONField |
+| **Cart**            | `shop_cart`             | user+product 双 FK                                                                                  |
+| **Order**           | `shop_order`            | order\_no unique、total\_amount Decimal(12,2)、status 状态机、address JSONField（快照）                      |
+| **OrderItem**       | `shop_order_item`       | **price 下单时快照**、quantity、selected\_spec                                                            |
+| **Address**         | `shop_address`          | is\_default 唯一性、`full_address` property                                                            |
+
+**订单状态机**（[L156](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/shop/models.py#L156-L162)）：
+
+```
+pending（待付款）→ paid（已付款）→ shipped（已发货）→ completed（已完成）
+                  ↘ cancelled（已取消）
+        paid → cancelled
+```
+
+**关键设计**：
+
+- 订单号 `Order.generate_order_no()`：`ORD` + 时间戳(14) + UUID 前 8 位大写
+- **库存并发控制**：`F` 表达式原子扣减
+- **价格快照**：OrderItem.price 记录下单时价格
+- 无软删除，物理删除 + 事务保证
+
+### 10.3 URL 路由表（[urls.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/shop/urls.py)）
+
+| 路由                             | 视图                           | 方法                  | 权限              | 功能                                |
+| ------------------------------ | ---------------------------- | ------------------- | --------------- | --------------------------------- |
+| `/categories/`                 | ProductCategoryViewSet       | GET                 | AllowAny        | 分类树                               |
+| `/products/`                   | ProductViewSet               | GET                 | AllowAny        | 商品列表（category/price/keyword/sort） |
+| `/cart/`                       | CartViewSet                  | GET/POST/PUT/DELETE | IsAuthenticated | 购物车                               |
+| `/orders/`                     | OrderViewSet                 | GET/POST            | IsAuthenticated | 订单 CRUD                           |
+| `/orders/{id}/pay/`            | OrderViewSet\@pay            | PUT                 | IsAuthenticated | 获取支付宝支付链接                         |
+| `/orders/{id}/cancel/`         | OrderViewSet\@cancel         | PUT                 | IsAuthenticated | 取消（库存回滚）                          |
+| `/orders/{id}/complete/`       | OrderViewSet\@complete       | PUT                 | IsAuthenticated | 确认收货                              |
+| `/orders/notify/`              | OrderViewSet\@alipay\_notify | POST                | **AllowAny**    | 支付宝异步回调                           |
+| `/addresses/`                  | AddressViewSet               | GET/POST/PUT/DELETE | IsAuthenticated | 地址 CRUD                           |
+| `/addresses/{id}/set_default/` | AddressViewSet\@set\_default | POST                | IsAuthenticated | 设默认                               |
+
+### 10.4 视图说明（[views.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/shop/views.py)）
+
+#### OrderViewSet（[L192-L426](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/shop/views.py#L192-L426)）
+
+- `get_queryset`：过滤当前用户 + status 筛选
+- `retrieve`：支持 order\_no 或 id 双查询
+- **create** **`@transaction.atomic`**（[L240-L307](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/shop/views.py#L240-L307)）：F 表达式扣库存/加销量、删购物车、生成订单与明细
+- `pay` action：调 `generate_alipay_url`，失败 `code=503`
+- `alipay_notify` action（[L377-L426](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/shop/views.py#L377-L426)）：
+  - `permission_classes=[AllowAny]`
+  - 先读 `request.body` 再读 `request.data`
+  - `verify_alipay_notify` **双重验签**
+  - `select_for_update` 锁定订单（幂等）
+  - 仅 pending→paid
+  - 返回纯文本 `'success'`/`'fail'`
+
+#### CartViewSet（[L112-L189](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/shop/views.py#L112-L189)）
+
+- `get_queryset` 过滤当前用户
+- create：相同商品+相同规格用 `F('quantity')+quantity` 合并
+- update：quantity≤0 自动删除；>stock 返回 `code=400`
+
+#### AddressViewSet（[L429-L530](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/shop/views.py#L429-L530)）
+
+- create/update 保证同用户仅一个默认地址
+- destroy 删默认地址时自动将首地址设为默认
+
+### 10.5 支付宝集成（[alipay\_config.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/shop/alipay_config.py)）
+
+基于 `python-alipay-sdk`。
+
+| 函数/配置                                                  | 位置                                                                                              | 关键点                                                                                                                           |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `ALIPAY_CONFIG`                                        | [L25-L38](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/shop/alipay_config.py#L25-L38)     | app\_id、私钥/公钥路径 `os.path.join(BASE_DIR,'keys',...)`、notify\_url=`http://{SERVER_HOST}/api/shop/orders/notify/`、debug=True（沙箱） |
+| `get_alipay_client()`                                  | [L153-L206](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/shop/alipay_config.py#L153-L206) | 文件存在性检查；sign\_type=`RSA2`；启动打印公钥 modulus 指纹                                                                                   |
+| `generate_alipay_url(order_no, total_amount, subject)` | [L209-L250](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/shop/alipay_config.py#L209-L250) | `total_amount=str(total_amount)` 强制两位小数字符串；沙箱/生产网关切换                                                                          |
+| `verify_alipay_notify(data, raw_body)`                 | [L295-L355](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/shop/alipay_config.py#L295-L355) | **双重验签**：SDK verify + 失败时手动 RSA2 验签；验签 message/sign 落盘便于核对                                                                    |
+
+**密钥路径**：`apps/shop/keys/app_private_key.pem` + `alipay_public_key.pem`，已 `.gitignore`，**禁止提交版本控制**。
+
+### 10.6 management/commands
+
+`init_shop_data`：初始化商品分类（6 个顶级）与 12 个示例商品，`get_or_create` 幂等。
+
+***
+
+## 11. home 模块
+
+### 11.1 模块职责
+
+首页导航菜单与轮播图只读查询，支撑前端动态渲染。
+
+### 11.2 数据模型（[models.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/home/models.py)）
+
+| 模型                 | 核心设计                                                                                                                             |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| **NavigationMenu** | index unique、label、path、category(choices: main/profile)、sort\_order、match\_paths JSONField(list)。**无父级自关联**——靠 category 字段区分两组导航 |
+| **Banner**         | title、description、image ImageField(upload\_to='banners/')、link URLField、sort\_order、is\_active                                   |
+
+> 注：本模块**无层级菜单父级自关联**，与常见设计不同。`match_paths` 用于前端路由高亮匹配。
+
+### 11.3 URL 路由表
+
+| 路由                   | 视图                    | 方法  | 权限       | 功能           |
+| -------------------- | --------------------- | --- | -------- | ------------ |
+| `/navigation/menus/` | NavigationMenuViewSet | GET | AllowAny | 导航菜单（无分页）    |
+| `/banners/`          | BannerViewSet         | GET | AllowAny | 启用中的轮播图（无分页） |
+
+### 11.4 management/commands
+
+`init_menus`：⚠️ **危险操作** `NavigationMenu.objects.all().delete()` 先清空再 `bulk_create`（重置语义，非幂等）。main 6 项 + profile 5 项。
+
+***
+
+## 12. timer 模块
+
+### 12.1 模块职责
+
+用户魔方还原计时记录的 CRUD 与统计/趋势分析，**单用户隔离查询**。
+
+### 12.2 数据模型（[models.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/timer/models.py)）
+
+#### TimerRecord（[L20-L91](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/timer/models.py#L20-L91)）
+
+| 字段          | 类型            | 约束                                      |
+| ----------- | ------------- | --------------------------------------- |
+| user        | FK→User       | CASCADE, related\_name='timer\_records' |
+| cube\_type  | CharField(10) | choices: 2x2/3x3/4x4/5x5/other          |
+| method      | CharField(20) | choices: layer/cfop/roux/zbll/other     |
+| time\_ms    | IntegerField  | **毫秒级精度，避免浮点**                          |
+| scramble    | TextField     | blank，打乱公式                              |
+| created\_at | DateTimeField | auto\_now\_add                          |
+
+### 12.3 URL 路由表
+
+| 路由                | 视图                        | 方法         | 权限              | 功能                   |
+| ----------------- | ------------------------- | ---------- | --------------- | -------------------- |
+| `/records/`       | TimerRecordViewSet        | GET/POST   | IsAuthenticated | 记录列表/创建              |
+| `/records/{id}/`  | TimerRecordViewSet        | GET/DELETE | IsAuthenticated | 详情/删除（校验 user 一致）    |
+| `/records/stats/` | TimerRecordViewSet\@stats | GET        | IsAuthenticated | 分组统计（best/avg/count） |
+| `/records/trend/` | TimerRecordViewSet\@trend | GET        | IsAuthenticated | 按日期趋势（默认30天）         |
+
+### 12.4 视图说明（[views.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/timer/views.py)）
+
+#### TimerRecordViewSet（[L29-L200](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/timer/views.py#L29-L200)）
+
+- 继承 `ModelViewSet`，permission=`[IsAuthenticated]`
+- **无 filter\_backends**，过滤逻辑全在 `get_queryset` 与 action 内手动解析
+- **get\_queryset 单用户隔离**（[L49-L75](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/timer/views.py#L49-L75)）：`filter(user=request.user)` + cube\_type/method/start\_date/end\_date
+- **stats action**（[L105-L155](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/timer/views.py#L105-L155)）：`values('cube_type','method').annotate(total_count=Count('id'), best_time=Min('time_ms'), avg_time=Avg('time_ms'))`
+- **trend action**（[L157-L200](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/timer/views.py#L157-L200)）：参数 days（默认30），按 `created_at__date` 分组
+
+***
+
+## 13. 前端架构（重点：与后端交互）
+
+### 13.1 构建配置（[vite.config.js](file:///e:/BH/PyStudy/ICube/cube_front/vite.config.js)）
+
+**双 Proxy**（dev 和 preview 完全镜像，均监听 `0.0.0.0:5173`）：
+
+- `/api` → `http://127.0.0.1:8000`，`changeOrigin: true`
+- `/media` → `http://127.0.0.1:8000`，`changeOrigin: true`
+
+**自动导入**：
+
+```js
+AutoImport({ resolvers: [ElementPlusResolver()], imports: ['vue', 'vue-router', 'pinia'] })
+Components({ resolvers: [ElementPlusResolver()] })
+```
+
+对应约定：业务代码无需 `import { ref } from 'vue'` 或手动注册 EP 组件。
+
+**别名**：`'@'` → `./src`。
+
+### 13.2 应用入口（[main.js](file:///e:/BH/PyStudy/ICube/cube_front/src/main.js) + [App.vue](file:///e:/BH/PyStudy/ICube/cube_front/src/App.vue)）
+
+挂载流程：`createApp(App)` → 注册 EP 图标 → `use(createPinia())` → `use(ElementPlus)` → `use(router)` → 注册全局 errorHandler → `mount('#app')`。
+
+App.vue 极简：仅 `<router-view />` + 清零 body 边距。
+
+### 13.3 HTTP 请求层（[request.js](file:///e:/BH/PyStudy/ICube/cube_front/src/http/request.js)）— 重点
+
+**axios 实例**：
+
+- `baseURL: ''`（**空字符串**，`/api` 前缀在每个 api 模块的 `url` 字段中硬编码）
+- `timeout: 5000`
+
+**请求拦截器**（[L37-L46](file:///e:/BH/PyStudy/ICube/cube_front/src/http/request.js#L37-L46)）：
+
+```js
+const token = localStorage.getItem('token')
+if (token) config.headers['Authorization'] = `Token ${token}`
+```
+
+- **直接从 localStorage 取 Token**，未通过 user store（与 store 共享 key 但绕过 Pinia）
+- Token 前缀 `Token`（与后端 `CachedJWTAuthentication` 约定一致，非 `Bearer`）
+
+**响应拦截器**（[L56-L81](file:///e:/BH/PyStudy/ICube/cube_front/src/http/request.js#L56-L81)）：
+
+- 成功：`res.code === 100` → `return res`（完整响应体，含 code/msg/data）
+- 业务失败：`res.code !== 100` → `ElMessage.error(res.msg || '请求服务器异常,请联系管理员')` + `Promise.reject(new Error(res.msg))`
+- HTTP 错误：取 `error.response?.data?.msg`，同样 ElMessage + reject
+- ⚠️ **未发现 401 自动跳转登录**，登录态过期依赖组件层 catch
+
+### 13.4 路由系统（[router/index.js](file:///e:/BH/PyStudy/ICube/cube_front/src/router/index.js)）
+
+`createWebHistory` 模式，去除 `#`。
+
+**路由结构**：
+
+- `/`（HomeView，静态 import，父布局）承载所有功能子路由
+- `/login`、`/register` 独立页面（无导航栏）
+
+**HomeView 子路由**（节选）：
+
+| path                        | name             | requiresAuth | 用途           |
+| --------------------------- | ---------------- | ------------ | ------------ |
+| `''`                        | home             | 否            | 首页（Main.vue） |
+| `tutorials`                 | tutorials        | 否            | 教程总览         |
+| `tutorial/beginner`         | beginnerTutorial | 否            | 新手层先法        |
+| `tutorial/cfop`             | cfopTutorial     | 否            | CFOP         |
+| `tutorial/oll-essentials` 等 | —                | 否            | CFOP 子页      |
+| `formulas`                  | formulas         | 否            | 公式库          |
+| `timer`                     | timer            | 否            | 计时器          |
+| `forum`                     | forum            | 否            | 论坛           |
+| `forum/post/:id`            | postDetail       | 否            | 帖子详情         |
+| `forum/create`              | createPost       | **是**        | 创建帖子         |
+| `forum/edit/:id`            | editPost         | **是**        | 编辑帖子         |
+| `shop`                      | shop             | 否            | 商城           |
+| `shop/cart`                 | shopCart         | **是**        | 购物车          |
+| `shop/checkout`             | shopCheckout     | **是**        | 结算           |
+| `shop/pay/:orderNo`         | shopPay          | **是**        | 支付页          |
+| `profiles/*`                | —                | 部分           | 个人中心子页       |
+
+**教程链路**：`/tutorials` → `/tutorial/beginner` / `/tutorial/cfop` → CFOP 子页（oll-essentials/pll-essentials/complete-oll/complete-pll）。
+
+**懒加载**：除 HomeView 外全部 `() => import('@/views/...')`。
+
+⚠️ **路由守卫缺失**：`meta.requiresAuth` 已标记，但 index.js 中**无** **`beforeEach`** **读取该字段**，登录保护实际未在路由层强制，依赖组件层或后端 401 兜底。
+
+### 13.5 状态管理（Pinia stores）
+
+#### user store（[stores/user.js](file:///e:/BH/PyStudy/ICube/cube_front/src/stores/user.js)）
+
+**state**（4 个 ref，初始化时全部从 localStorage 读取）：token / username / bio / image
+
+**actions**：
+
+- `setInfo(data)`：登录后整体写入 4 字段 + 同步 localStorage
+- `updateInfo(data)`：局部更新，按字段 `undefined` 判断逐项写
+- `clearInfo()`：清空 + `localStorage.clear()`
+
+**持久化**：手动 `localStorage.setItem`，未用 pinia-persistedstate。
+
+⚠️ store 未封装 `login/logout/getUserInfo` action，登录/登出逻辑分散在组件层（Header.vue 直接调 api + store 方法）。
+
+#### cart store（[stores/cart.js](file:///e:/BH/PyStudy/ICube/cube_front/src/stores/cart.js)）
+
+**非传统购物车数据 store**，而是**轻量版本号刷新机制**：
+
+- `cartVersion = ref(0)`（模块级，全局共享）
+- `bumpCartVersion()`：`cartVersion.value++`
+- Header.vue 通过 `watch(cartVersion, loadCartCount)` 自动重新拉取购物车数量
+- 购物车真实数据每次从后端 `getCart()` 拉取，前端不缓存
+
+#### menu store（[stores/menu.js](file:///e:/BH/PyStudy/ICube/cube_front/src/stores/menu.js)）
+
+- state：`allMenus` / `isLoaded`
+- getters：`mainMenus`（category==='main'）/ `profileMenus`（category==='profile'）
+- `fetchMenus()`：调 `getMenusApi()`，已加载时直接 return
+
+### 13.6 API 模块清单
+
+所有 api 模块统一 `import request from '@/http/request'`，调用形式 `request({ url, method, data/params })`。响应体统一 `{ code, msg, data }`。
+
+#### home.js
+
+| 函数              | 方法  | URL                           | 用途   |
+| --------------- | --- | ----------------------------- | ---- |
+| `getMenusApi`   | GET | `/api/home/navigation/menus/` | 导航菜单 |
+| `getBannersApi` | GET | `/api/home/banners/`          | 轮播图  |
+
+#### user.js（节选）
+
+| 函数                          | 方法     | URL                               | 后端接口                     |
+| --------------------------- | ------ | --------------------------------- | ------------------------ |
+| `loginApi(data)`            | POST   | `/api/users/login`                | accounts 登录              |
+| `registerApi(data)`         | POST   | `/api/users/register`             | accounts 注册              |
+| `logoutApi()`               | POST   | `/api/users/logout`               | accounts 登出（jti 黑名单）     |
+| `getProfileApi(username)`   | GET    | `/api/profiles/{username}`        | accounts 个人资料            |
+| `followUserApi(username)`   | POST   | `/api/profiles/{username}/follow` | 关注                       |
+| `unfollowUserApi(username)` | DELETE | `/api/profiles/{username}/follow` | 取关                       |
+| `updateProfileApi(data)`    | PATCH  | `/api/users/info`                 | 更新资料（含 File 时 multipart） |
+
+#### posts.js（节选）
+
+| 函数                   | 方法   | URL                              | 用途             |
+| -------------------- | ---- | -------------------------------- | -------------- |
+| `getPosts(params)`   | GET  | `/api/forum/posts/`              | 分页+分类+关键词      |
+| `getPost(id)`        | GET  | `/api/forum/posts/{id}/`         | 详情             |
+| `createPost(data)`   | POST | `/api/forum/posts/`              | multipart 上传封面 |
+| `likePost(id)`       | POST | `/api/forum/posts/{id}/like/`    | 点赞（data:{}）    |
+| `collectPost(id)`    | POST | `/api/forum/posts/{id}/collect/` | 收藏             |
+| `getMyPosts(params)` | GET  | `/api/forum/posts/my_posts/`     | 我的帖子           |
+| `uploadImage(file)`  | POST | `/api/forum/posts/upload_image/` | 编辑器上传图片        |
+
+#### formula.js（节选）
+
+| 函数                               | 方法     | URL                              | 用途   |
+| -------------------------------- | ------ | -------------------------------- | ---- |
+| `getFormulaCategories()`         | GET    | `/api/formula/categories/`       | 分类列表 |
+| `getFormulaList(params)`         | GET    | `/api/formula/formulas/`         | 公式列表 |
+| `matchFormula(data)`             | POST   | `/api/formula/formulas/match/`   | 状态匹配 |
+| `addCollection(formulaId)`       | POST   | `/api/formula/collections/`      | 收藏   |
+| `removeCollection(collectionId)` | DELETE | `/api/formula/collections/{id}/` | 取消收藏 |
+
+#### shop.js（节选）
+
+| 函数                    | 方法   | URL                          | 用途           |
+| --------------------- | ---- | ---------------------------- | ------------ |
+| `getProducts(params)` | GET  | `/api/shop/products/`        | 商品列表         |
+| `addToCart(data)`     | POST | `/api/shop/cart/`            | 加入购物车        |
+| `createOrder(data)`   | POST | `/api/shop/orders/`          | 创建订单（扣库存）    |
+| `payOrder(id)`        | PUT  | `/api/shop/orders/{id}/pay/` | 支付（返回支付宝URL） |
+| `getAddresses()`      | GET  | `/api/shop/addresses/`       | 地址列表         |
+
+#### timer.js
+
+| 函数                        | 方法   | URL                         | 用途   |
+| ------------------------- | ---- | --------------------------- | ---- |
+| `createTimerRecord(data)` | POST | `/api/timer/records/`       | 创建记录 |
+| `getTimerStats(params)`   | GET  | `/api/timer/records/stats/` | 分组统计 |
+| `getTimerTrend(params)`   | GET  | `/api/timer/records/trend/` | 趋势统计 |
+
+### 13.7 布局组件
+
+#### Header.vue（[components/Header.vue](file:///e:/BH/PyStudy/ICube/cube_front/src/components/Header.vue)）
+
+- `el-menu mode="horizontal"` + 动态菜单项（根据路由切换 mainMenus/profileMenus）
+- 深度路径匹配 `findActiveMenu`：优先 `match_paths` 前缀匹配，回退精确 `path`
+- 购物车角标：`el-badge :value="cartCount"` + `watch(cartVersion, loadCartCount)` 响应式刷新
+- 退出登录：`await logoutApi()` → `userStore.clearInfo()` → `router.push('/')`
+
+#### Main.vue（[components/Main.vue](file:///e:/BH/PyStudy/ICube/cube_front/src/components/Main.vue)）
+
+首页主内容区：
+
+- 轮播图（`getBannersApi`，支持内外跳转）
+- 热门帖子（`getPosts({ ordering: '-view_count', created_at__gte: 30天前 })`）+ 精选公式（`getFormulaList({ ordering: '-view_count' })`）
+- 魔方教程入口三列卡片
+- 公式分类标签（`getFormulaCategories()` → `el-tag`）
+
+***
+
+## 14. 部署与运维
+
+### 14.1 docker-compose.yml（[docker-compose.yml](file:///e:/BH/PyStudy/ICube/docker-compose.yml)）
+
+5 服务架构：
+
+| 服务        | image/build          | 关键配置                                                                                                                                                               |
+| --------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **db**    | `mysql:8.0`          | 端口 3306、healthcheck（`mysqladmin ping`，**start\_period 45s**）、挂载 `mysql.conf` + `init_data.sql`                                                                     |
+| **redis** | `redis:7-alpine`     | 端口 6379、`redis_data` 卷                                                                                                                                             |
+| **api**   | build `./cube_api`   | env: `DJANGO_SETTINGS_MODULE=cube_api.settings.prod` + DB/Redis/ALLOWED\_HOSTS 等；挂载 `./cube_api:/app` + media + collected\_static；depends\_on: db(healthy) + redis |
+| **front** | build `./cube_front` | 仅共享 `front_dist:/app/dist`（不挂源码）                                                                                                                                   |
+| **nginx** | `nginx:latest`       | 端口 80/443；挂载 conf.d/ssl + media + static + front\_dist；depends\_on: api + front                                                                                    |
+
+> ⚠️ `version: '3.8'` 字段已过时，可移除。
+
+### 14.2 后端 Dockerfile（[cube\_api/Dockerfile](file:///e:/BH/PyStudy/ICube/cube_api/Dockerfile)）
+
+| 项         | 配置                                                                                                                                |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| 基础镜像      | `python:3.13-slim`                                                                                                                |
+| apt 源     | 替换为清华源                                                                                                                            |
+| 系统依赖      | gcc、python3-dev、default-libmysqlclient-dev、pkg-config（mysqlclient 编译）                                                             |
+| Python 依赖 | 先 `pip install gunicorn`，再 `pip install -r requirements.txt`（清华源）                                                                 |
+| 分层缓存      | `COPY requirements.txt` → 安装 → `COPY . .`                                                                                         |
+| EXPOSE    | 8000                                                                                                                              |
+| 启动命令      | `gunicorn cube_api.wsgi:application --env DJANGO_SETTINGS_MODULE=cube_api.settings.prod --bind 0.0.0.0:8000 --workers 3 --reload` |
+
+⚠️ **关键观察**：
+
+- 启动命令使用 `--reload`（配合源码挂载热更新，生产建议去掉）
+- **无 entrypoint.sh**，未自动执行 `migrate` 和 `collectstatic`，需手动执行
+- `gunicorn` 未写入 `requirements.txt`
+
+### 14.3 前端 Dockerfile（[cube\_front/Dockerfile](file:///e:/BH/PyStudy/ICube/cube_front/Dockerfile)）
+
+| 项      | 配置                                                      |
+| ------ | ------------------------------------------------------- |
+| 基础镜像   | `node:20-alpine`（**单阶段构建**）                             |
+| 依赖安装   | `npm install --registry=https://registry.npmmirror.com` |
+| 构建     | `npm run build`                                         |
+| EXPOSE | 5173                                                    |
+| 启动命令   | `npm run preview -- --host 0.0.0.0 --port 5173`         |
+
+⚠️ preview 服务实际未被 nginx 访问（nginx 直接通过 `front_dist` 卷读取构建产物）。
+
+### 14.4 Nginx 配置（[nginx/conf.d/icube.conf](file:///e:/BH/PyStudy/ICube/nginx/conf.d/icube.conf)）
+
+| 路径         | 处理方式                                                   |
+| ---------- | ------------------------------------------------------ |
+| `/api/`    | `proxy_pass http://icube_api:8000;`（**保留 /api/ 前缀**透传） |
+| `/media/`  | `alias /usr/share/nginx/html/media/;` `expires 30d;`   |
+| `/static/` | `alias /usr/share/nginx/html/static/;` `expires 30d;`  |
+| `/`        | `try_files $uri $uri/ /index.html;`（SPA 回退）            |
+
+proxy 头：Host/X-Real-IP/X-Forwarded-For/X-Forwarded-Proto 全透传；超时 60s。
+
+⚠️ **未配置项**：gzip、`client_max_body_size`（默认 1MB，后端允许 5MB）、HTTPS server 块、upstream 块。
+
+### 14.5 环境变量清单
+
+| 变量                                                            | 用途                       | 默认值                                                   |
+| ------------------------------------------------------------- | ------------------------ | ----------------------------------------------------- |
+| `DJANGO_SETTINGS_MODULE`                                      | Django 配置模块              | `cube_api.settings.prod`                              |
+| `DB_NAME` / `DB_USER` / `DB_PASSWORD` / `DB_HOST` / `DB_PORT` | 数据库连接                    | `icube_db` / `icube_api` / `icube123` / `db` / `3306` |
+| `SECRET_KEY`                                                  | Django 密钥                | fallback 到 dev.py 硬编码（生产必须覆盖）                         |
+| `ALLOWED_HOSTS`                                               | 允许主机（逗号分隔）               | 自动追加 localhost/127.0.0.1/icube\_api/api               |
+| `ALLOWED_ORIGIN`                                              | 前端 CORS 来源（域名，不含 scheme） | 自动拼接 http/https + localhost                           |
+| `SERVER_HOST`                                                 | 支付宝回调地址（服务器外网域名）         | `localhost`                                           |
+| `REDIS_URL`                                                   | Redis 连接地址               | `redis://redis:6379/1`                                |
+| `SITE_DOMAIN`                                                 | 站点域名（生成绝对 URL）           | `http://localhost:8000`                               |
+| `DJANGO_ENV`                                                  | 日志环境标识（`prod` 触发生产日志策略）  | `dev`                                                 |
+| `RUNNING_IN_DOCKER`                                           | 是否 Docker（决定日志目录）        | `false`（true 时写 `/var/log/icube/`）                    |
+
+MySQL 容器内置：`MYSQL_ROOT_PASSWORD=icube_root123`、`MYSQL_DATABASE=icube_db`、`MYSQL_USER=icube_api`、`MYSQL_PASSWORD=icube123`。
+
+### 14.6 数据库初始化
+
+#### mysql.conf（[mysql.conf](file:///e:/BH/PyStudy/ICube/cube_api/mysql.conf)）
+
+```ini
+[mysqld]
+character-set-server=utf8mb4
+collation-server=utf8mb4_unicode_ci
+default-authentication-plugin=mysql_native_password
+bind-address = 0.0.0.0
+```
+
+- **utf8mb4**（支持 emoji）
+- **mysql\_native\_password** 认证插件（避免 MySQL 8 默认 caching\_sha2\_password 连接失败）
+
+#### init\_data.sql
+
+- MySQL 容器**首次启动**时由 `/docker-entrypoint-initdb.d/02_init_data.sql` 自动执行
+- 包含约 36 张表的建表语句 + 种子数据（16 个测试用户，密码 `pbkdf2_sha256` 哈希）
+- ⚠️ 表 collation 为 `utf8mb4_0900_ai_ci`，与 mysql.conf 中 `utf8mb4_unicode_ci` 不一致
+
+### 14.7 媒体文件夹注意事项
+
+- **`/media`** **必须纳入 Git 版本控制并上传服务器**（项目规则明确要求）
+- 包含公式库图片（`formulas/F2L_Images/`、`OLL_Images/`、`PLL_Images/`）、轮播图（`banners/`）、默认头像（`avatars/*.svg`）等业务必需资源
+- 生产环境 `media_volume` 卷由 `api:/app/media` 和 `nginx:/usr/share/nginx/html/media` 共享
+- ⚠️ `deploy.sh` 使用 `docker compose down -v` 会删除 `media_volume`，可能导致用户上传内容丢失（版本控制的 `cube_api/media/` 仍保留）
+
+***
+
+## 15. 关键设计模式与约定
+
+### 15.1 响应格式约定
+
+所有视图必须用 `utils/common_response.py` 的 `APIResponse`：
+
+```python
+return APIResponse(data=serializer.data)                    # 成功
+return APIResponse(data=cart, msg='添加成功')               # 成功带消息
+return APIResponse(code=400, msg='库存不足')                 # 参数错误
+return APIResponse(code=503, msg='支付宝配置异常')           # 服务不可用
+```
+
+前端拦截器将 `code !== 100` 视为错误。
+
+### 15.2 认证与 Token 约定
+
+- **Token 前缀**：`Token`（非 `Bearer`）
+- **用户实例缓存**：Redis key `user_instance_cache_{user_id}`，TTL 1h
+- **注销**：jti 入黑名单（key `jwt:blacklist:{jti}`，TTL = Token 剩余有效期）
+- **修改用户状态后需清理 JWT 缓存**
+
+### 15.3 图片处理约定
+
+- **存储相对路径**，禁止硬编码 `http://localhost:8000`
+- **URL 生成统一走** `utils/image_url.py` 的 `build_image_url` 添加 `/media/` 前缀
+- **ImageFieldFile 处理**：先 `isinstance` 检查 `FieldFile`，再转字符串调用方法；**禁止** **`hasattr(.., 'path')`**（触发 `SuspiciousFileOperation`）
+- **公式图片两字段区分**：`thumbnail_file`（用户上传）与 `thumbnail_path`（公式库图片引用）
+
+### 15.4 缓存策略
+
+| 场景        | 缓存键                                 | 策略                                 |
+| --------- | ----------------------------------- | ---------------------------------- |
+| 用户实例      | `user_instance_cache_{user_id}`     | TTL 1h，只存 ID                       |
+| Token 黑名单 | `jwt:blacklist:{jti}`               | TTL = Token 剩余有效期                  |
+| 关注关系      | `user:{id}:following` / `followers` | 懒加载 + -1 占位符防穿透（600s）+ Pipeline 批量 |
+| 帖子浏览量     | `forum:post:{id}:view`              | `incr` 原子操作 + 1h TTL               |
+
+### 15.5 业务字段约定
+
+- 公式列表排序字段：`view_count`（不是 `views`）
+- 公式缩略图路径匹配：`/media/formulas/`（不是 `/media/formula_thumbnails/`）
+- 新增/修改公式：按 `category_id` 自动绑定 `target_state_id`，改分类时同步更新
+- 公式卡片显示：头部=公式名+难度标签，底部=分类名  by  用户名（中间两个空格）
+- 帖子图片关联：全量同步模式（解析 Markdown 所有 `![](url)`，删除多余、补齐缺失）
+- 帖子列表布局：flex 左右结构，左侧内容自适应，右侧图片固定 140px，垂直居中；图片 1:1、`object-fit: contain`
+
+### 15.6 DRF 视图约定
+
+- 优先 `ModelViewSet`，复杂逻辑拆到 `services.py`
+- 自定义权限类放 `permissions.py`（如 `IsOwnerOrReadOnly`）
+- Redis 操作统一封装在 `services.py`（如 `ProfileCacheService`、`PostCacheService`）
+- **严禁使用内置** **`logging`** **模块**，只能 `from loguru import logger`
+
+### 15.7 前端约定
+
+- 自动导入：无需 `import { ref } from 'vue'` 或手动注册 EP 组件
+- API 请求统一通过 `src/http/request.js`；api 模块导入用 `@/http/request`（**禁止** **`@/utils/request`**）
+- Composition API + `<script setup>`
+- 禁止硬编码 `localhost:8000`：API 走 `/api` 代理，媒体走 `/media/`
+- Three.js 清理（CubeDemo.vue）：`onBeforeUnmount` 中必须 `geometry.dispose()` / `material.dispose()` / `renderer.dispose()` / `cancelAnimationFrame` / 停止 `TWEEN`
+
+***
+
+## 16. 已知问题与优化点
+
+### 16.1 后端
+
+| #  | 位置                                                                                                            | 问题                                                                        | 建议                             |
+| -- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------ |
+| 1  | [forum/services.py L16, L23-25](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/services.py#L16-L25) | 使用内置 `logging` 模块，违反"只能用 loguru"规则                                        | 改为 `from loguru import logger` |
+| 2  | forum/services.py HotPostService                                                                              | 热度算法双实现（Count 版 vs F 表达式版）且权重不一致                                          | 统一为一处实现                        |
+| 3  | forum/views.py CommentViewSet                                                                                 | create/destroy 与 signals.py 的 post\_save/post\_delete 重复更新 comment\_count | 移除一处                           |
+| 4  | forum/permissions.py                                                                                          | `IsPostOwnerOrReadOnly` 等三个权限类实际未被 PostViewSet 引用（预留代码）                   | 评估删除或启用                        |
+| 5  | forum/services.py sync\_all\_views                                                                            | 使用 KEYS 命令阻塞 Redis 主线程                                                    | 改用 SCAN 游标分批遍历                 |
+| 6  | accounts/authentication.py                                                                                    | 缓存命中仍需一次 DB 查询（只存 user\_id）                                               | 评估缓存完整对象（注意敏感信息）               |
+| 7  | formula/services.py \_execute\_formula                                                                        | 魔方转动模拟未实现，match 退化为原状态比较                                                  | 实现真实转动模拟                       |
+| 8  | formula import\_formulas                                                                                      | 硬编码绝对路径 `E:\BH\PyStudy\web_projects\ICube\files\...`                      | 改为相对路径或环境变量                    |
+| 9  | timer/serializers.py                                                                                          | TimerTrendSerializer 字段（times）与视图返回（best\_time）不一致                        | 对齐字段                           |
+| 10 | formula insert\_cube\_states                                                                                  | 状态格式（faces 矩阵）与 CubeStateService 验证（blocks 列表）不兼容                         | 统一格式                           |
+
+### 16.2 前端
+
+| # | 位置                                                                                           | 问题                                           | 建议              |
+| - | -------------------------------------------------------------------------------------------- | -------------------------------------------- | --------------- |
+| 1 | [http/request.js](file:///e:/BH/PyStudy/ICube/cube_front/src/http/request.js#L37-L46)        | 请求拦截器绕过 Pinia 直接读 localStorage               | 改为通过 user store |
+| 2 | [http/request.js](file:///e:/BH/PyStudy/ICube/cube_front/src/http/request.js#L56-L81)        | 响应拦截器无 401 自动跳登录                             | 增加 401 路由跳转     |
+| 3 | [router/index.js](file:///e:/BH/PyStudy/ICube/cube_front/src/router/index.js)                | `meta.requiresAuth` 标记存在但无 `beforeEach` 守卫   | 补全全局守卫          |
+| 4 | [api/comments.js L24-30](file:///e:/BH/PyStudy/ICube/cube_front/src/api/comments.js#L24-L30) | getComments 用 `data` 传分页参数（GET 应该用 `params`） | 改为 `params`     |
+
+### 16.3 部署
+
+| # | 位置             | 问题                                                                     | 建议                             |
+| - | -------------- | ---------------------------------------------------------------------- | ------------------------------ |
+| 1 | deploy.sh L38  | root 密码占位符 `你的数据库密码` 未替换                                               | 替换为实际值或改用环境变量                  |
+| 2 | 后端 Dockerfile  | 未配置 entrypoint.sh 自动 migrate/collectstatic                             | 增加 entrypoint 脚本               |
+| 3 | nginx 配置       | 未配置 `client_max_body_size`（默认 1MB，后端允许 5MB）                            | 增加 `client_max_body_size 10m;` |
+| 4 | nginx 配置       | 未配置 HTTPS server 块（虽然 compose 暴露 443）                                  | 增加 SSL 配置                      |
+| 5 | 后端 Dockerfile  | `gunicorn --reload` 用于生产有性能开销                                          | 生产去掉 `--reload`                |
+| 6 | 前端 Dockerfile  | `npm run preview` 服务实际未被 nginx 访问                                      | 改为多阶段构建只产出 dist                |
+| 7 | init\_data.sql | 表 collation `utf8mb4_0900_ai_ci` 与 mysql.conf `utf8mb4_unicode_ci` 不一致 | 统一                             |
+
+***
+
+## 17. 常用命令速查
+
+### 17.1 本地开发
+
+```bash
+# 后端（固定 Python 解释器）
+cd cube_api
+E:\software\python\python313\env\cube_api\Scripts\python.exe manage.py runserver 8000 --settings=cube_api.settings.dev
+
+# 前端（/api → 127.0.0.1:8000）
+cd cube_front
+npm run dev
+```
+
+### 17.2 生产部署
+
+```bash
+# 一键部署
+./deploy.sh
+
+# 手动构建/启动全部服务
+sudo docker compose up -d --build
+
+# 仅重启后端（代码修改后，因有 volume 挂载）
+sudo docker compose restart api
+
+# 查看后端日志
+sudo docker compose logs -f api
+
+# 数据库迁移（容器未自动执行）
+sudo docker compose exec api python manage.py migrate
+
+# 收集静态文件
+sudo docker compose exec api python manage.py collectstatic --noinput
+
+# 创建超级用户
+sudo docker compose exec api python manage.py createsuperuser
+```
+
+### 17.3 测试
+
+```bash
+# 全部测试（自动切 SQLite 内存库 + Mock Redis + 禁用限流 + MD5）
+sudo docker compose exec api python manage.py test
+
+# 单测试模块
+sudo docker compose exec api python manage.py test apps.forum.tests.test_models
+```
+
+### 17.4 数据初始化
+
+```bash
+# 初始化首页导航菜单（⚠️ 先 delete 再 insert，非幂等）
+sudo docker compose exec api python manage.py init_menus
+
+# 初始化商城商品（get_or_create，幂等）
+sudo docker compose exec api python manage.py init_shop_data
+
+# 从 Excel 导入 CFOP 公式（硬编码路径）
+sudo docker compose exec api python manage.py import_formulas
+
+# 插入 F2L/OLL/PLL 目标状态
+sudo docker compose exec api python manage.py insert_cube_states
+```
+
+### 17.5 API 文档
+
+- Swagger UI：`http://<server>/api/schema/swagger-ui/`
+- Redoc：`http://<server>/api/schema/redoc/`
+- OpenAPI Schema：`http://<server>/api/schema/`
+
+***
+
+## 附录：模块依赖关系图
+
+```
+                    ┌──────────────────────────────────┐
+                    │         accounts (认证核心)      │
+                    │  User / JWT / 关注粉丝缓存        │
+                    └────────┬─────────────────────────┘
+                             │ FK→User
+        ┌────────────────────┼────────────────────┐
+        │                    │                    │
+        ▼                    ▼                    ▼
+    forum              formula                shop
+   (帖子/评论)        (公式库)             (商城/支付)
+        │                    │                    │
+        │   forum._sync_post_images 引用           │
+        │   /media/formulas/ 公式库图片            │
+        └───────────────────►│                    │
+                             │                    │
+                             │  accounts.ProfileCacheService
+                             │  .get_collection_count
+                             │  反向引用 FormulaCollection
+                             ◄────────────────────┘
+                                                    │
+                                                    │ shop 支付宝
+                                                    ▼
+                                               alipay_config
+                                                    │
+                                                    ▼
+                                          apps/shop/keys/ (禁止提交)
+
+    独立模块：
+    home   (导航/轮播，纯只读，无业务耦合)
+    timer  (计时记录，单用户隔离，无缓存层)
+
+    工具层被所有模块依赖：
+    utils.common_response   →  统一响应
+    utils.common_exception  →  统一异常处理
+    utils.common_pagination →  统一分页
+    utils.image_url         →  图片 URL 标准化
+    utils.image_processor   →  图像处理
+    settings.logger_conf    →  Loguru 日志接管
+```
+
+***
+
+> 文档生成日期：2026-08-06
+> 基于代码库实际状态分析，所有引用均使用可点击的 `file://` 链接格式。
+
