@@ -4,15 +4,15 @@ USE icube_db;
 
  Source Server         : icube
  Source Server Type    : MySQL
- Source Server Version : 90100
+ Source Server Version : 9.1.0
  Source Host           : localhost:3306
  Source Schema         : icube
 
  Target Server Type    : MySQL
- Target Server Version : 90100
+ Target Server Version : 9.1.0
  File Encoding         : 65001
 
- Date: 03/08/2026 18:00:01
+ Date: 08/08/2026 13:54:22
 */
 
 SET NAMES utf8mb4;
@@ -22,22 +22,22 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- Table structure for accounts_user
 -- ----------------------------
 DROP TABLE IF EXISTS `accounts_user`;
-CREATE TABLE `accounts_user`  (
+CREATE TABLE `accounts_user` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `password` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `last_login` datetime(6) NULL DEFAULT NULL,
+  `password` varchar(128) NOT NULL,
+  `last_login` datetime(6) DEFAULT NULL,
   `is_superuser` tinyint(1) NOT NULL,
   `is_staff` tinyint(1) NOT NULL,
   `is_active` tinyint(1) NOT NULL,
   `date_joined` datetime(6) NOT NULL,
-  `email` varchar(254) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `username` varchar(60) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `bio` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `image` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `email`(`email` ASC) USING BTREE,
-  UNIQUE INDEX `accounts_user_username_6088629e_uniq`(`username` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 17 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  `email` varchar(254) NOT NULL,
+  `username` varchar(60) NOT NULL,
+  `bio` longtext NOT NULL,
+  `image` varchar(100) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email` (`email`),
+  UNIQUE KEY `accounts_user_username_6088629e_uniq` (`username`)
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of accounts_user
@@ -62,16 +62,16 @@ INSERT INTO `accounts_user` VALUES (16, 'pbkdf2_sha256$1200000$Tiy7ilP3yPpw9fw0G
 -- Table structure for accounts_user_followers
 -- ----------------------------
 DROP TABLE IF EXISTS `accounts_user_followers`;
-CREATE TABLE `accounts_user_followers`  (
+CREATE TABLE `accounts_user_followers` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `from_user_id` bigint NOT NULL,
   `to_user_id` bigint NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `accounts_user_followers_from_user_id_to_user_id_ad929616_uniq`(`from_user_id` ASC, `to_user_id` ASC) USING BTREE,
-  INDEX `accounts_user_followers_to_user_id_6dddd47f_fk_accounts_user_id`(`to_user_id` ASC) USING BTREE,
-  CONSTRAINT `accounts_user_follow_from_user_id_1e8ec42b_fk_accounts_` FOREIGN KEY (`from_user_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `accounts_user_followers_to_user_id_6dddd47f_fk_accounts_user_id` FOREIGN KEY (`to_user_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `accounts_user_followers_from_user_id_to_user_id_ad929616_uniq` (`from_user_id`,`to_user_id`),
+  KEY `accounts_user_followers_to_user_id_6dddd47f_fk_accounts_user_id` (`to_user_id`),
+  CONSTRAINT `accounts_user_follow_from_user_id_1e8ec42b_fk_accounts_` FOREIGN KEY (`from_user_id`) REFERENCES `accounts_user` (`id`),
+  CONSTRAINT `accounts_user_followers_to_user_id_6dddd47f_fk_accounts_user_id` FOREIGN KEY (`to_user_id`) REFERENCES `accounts_user` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of accounts_user_followers
@@ -86,16 +86,16 @@ INSERT INTO `accounts_user_followers` VALUES (8, 5, 1);
 -- Table structure for accounts_user_groups
 -- ----------------------------
 DROP TABLE IF EXISTS `accounts_user_groups`;
-CREATE TABLE `accounts_user_groups`  (
+CREATE TABLE `accounts_user_groups` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `user_id` bigint NOT NULL,
   `group_id` int NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `accounts_user_groups_user_id_group_id_59c0b32f_uniq`(`user_id` ASC, `group_id` ASC) USING BTREE,
-  INDEX `accounts_user_groups_group_id_bd11a704_fk_auth_group_id`(`group_id` ASC) USING BTREE,
-  CONSTRAINT `accounts_user_groups_group_id_bd11a704_fk_auth_group_id` FOREIGN KEY (`group_id`) REFERENCES `auth_group` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `accounts_user_groups_user_id_52b62117_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `accounts_user_groups_user_id_group_id_59c0b32f_uniq` (`user_id`,`group_id`),
+  KEY `accounts_user_groups_group_id_bd11a704_fk_auth_group_id` (`group_id`),
+  CONSTRAINT `accounts_user_groups_group_id_bd11a704_fk_auth_group_id` FOREIGN KEY (`group_id`) REFERENCES `auth_group` (`id`),
+  CONSTRAINT `accounts_user_groups_user_id_52b62117_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of accounts_user_groups
@@ -105,16 +105,16 @@ CREATE TABLE `accounts_user_groups`  (
 -- Table structure for accounts_user_user_permissions
 -- ----------------------------
 DROP TABLE IF EXISTS `accounts_user_user_permissions`;
-CREATE TABLE `accounts_user_user_permissions`  (
+CREATE TABLE `accounts_user_user_permissions` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `user_id` bigint NOT NULL,
   `permission_id` int NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `accounts_user_user_permi_user_id_permission_id_2ab516c2_uniq`(`user_id` ASC, `permission_id` ASC) USING BTREE,
-  INDEX `accounts_user_user_p_permission_id_113bb443_fk_auth_perm`(`permission_id` ASC) USING BTREE,
-  CONSTRAINT `accounts_user_user_p_permission_id_113bb443_fk_auth_perm` FOREIGN KEY (`permission_id`) REFERENCES `auth_permission` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `accounts_user_user_p_user_id_e4f0a161_fk_accounts_` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `accounts_user_user_permi_user_id_permission_id_2ab516c2_uniq` (`user_id`,`permission_id`),
+  KEY `accounts_user_user_p_permission_id_113bb443_fk_auth_perm` (`permission_id`),
+  CONSTRAINT `accounts_user_user_p_permission_id_113bb443_fk_auth_perm` FOREIGN KEY (`permission_id`) REFERENCES `auth_permission` (`id`),
+  CONSTRAINT `accounts_user_user_p_user_id_e4f0a161_fk_accounts_` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of accounts_user_user_permissions
@@ -124,12 +124,12 @@ CREATE TABLE `accounts_user_user_permissions`  (
 -- Table structure for auth_group
 -- ----------------------------
 DROP TABLE IF EXISTS `auth_group`;
-CREATE TABLE `auth_group`  (
+CREATE TABLE `auth_group` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `name`(`name` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  `name` varchar(150) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of auth_group
@@ -139,16 +139,16 @@ CREATE TABLE `auth_group`  (
 -- Table structure for auth_group_permissions
 -- ----------------------------
 DROP TABLE IF EXISTS `auth_group_permissions`;
-CREATE TABLE `auth_group_permissions`  (
+CREATE TABLE `auth_group_permissions` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `group_id` int NOT NULL,
   `permission_id` int NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `auth_group_permissions_group_id_permission_id_0cd325b0_uniq`(`group_id` ASC, `permission_id` ASC) USING BTREE,
-  INDEX `auth_group_permissio_permission_id_84c5c92e_fk_auth_perm`(`permission_id` ASC) USING BTREE,
-  CONSTRAINT `auth_group_permissio_permission_id_84c5c92e_fk_auth_perm` FOREIGN KEY (`permission_id`) REFERENCES `auth_permission` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `auth_group_permissions_group_id_b120cbf9_fk_auth_group_id` FOREIGN KEY (`group_id`) REFERENCES `auth_group` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `auth_group_permissions_group_id_permission_id_0cd325b0_uniq` (`group_id`,`permission_id`),
+  KEY `auth_group_permissio_permission_id_84c5c92e_fk_auth_perm` (`permission_id`),
+  CONSTRAINT `auth_group_permissio_permission_id_84c5c92e_fk_auth_perm` FOREIGN KEY (`permission_id`) REFERENCES `auth_permission` (`id`),
+  CONSTRAINT `auth_group_permissions_group_id_b120cbf9_fk_auth_group_id` FOREIGN KEY (`group_id`) REFERENCES `auth_group` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of auth_group_permissions
@@ -158,15 +158,15 @@ CREATE TABLE `auth_group_permissions`  (
 -- Table structure for auth_permission
 -- ----------------------------
 DROP TABLE IF EXISTS `auth_permission`;
-CREATE TABLE `auth_permission`  (
+CREATE TABLE `auth_permission` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `name` varchar(255) NOT NULL,
   `content_type_id` int NOT NULL,
-  `codename` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `auth_permission_content_type_id_codename_01ab375a_uniq`(`content_type_id` ASC, `codename` ASC) USING BTREE,
-  CONSTRAINT `auth_permission_content_type_id_2f476e4b_fk_django_co` FOREIGN KEY (`content_type_id`) REFERENCES `django_content_type` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 121 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  `codename` varchar(100) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `auth_permission_content_type_id_codename_01ab375a_uniq` (`content_type_id`,`codename`),
+  CONSTRAINT `auth_permission_content_type_id_2f476e4b_fk_django_co` FOREIGN KEY (`content_type_id`) REFERENCES `django_content_type` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=121 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of auth_permission
@@ -296,40 +296,40 @@ INSERT INTO `auth_permission` VALUES (120, 'Can view 收货地址', 30, 'view_ad
 -- Table structure for django_admin_log
 -- ----------------------------
 DROP TABLE IF EXISTS `django_admin_log`;
-CREATE TABLE `django_admin_log`  (
+CREATE TABLE `django_admin_log` (
   `id` int NOT NULL AUTO_INCREMENT,
   `action_time` datetime(6) NOT NULL,
-  `object_id` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
-  `object_repr` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `action_flag` smallint UNSIGNED NOT NULL,
-  `change_message` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `content_type_id` int NULL DEFAULT NULL,
+  `object_id` longtext,
+  `object_repr` varchar(200) NOT NULL,
+  `action_flag` smallint unsigned NOT NULL,
+  `change_message` longtext NOT NULL,
+  `content_type_id` int DEFAULT NULL,
   `user_id` bigint NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  INDEX `django_admin_log_content_type_id_c4bce8eb_fk_django_co`(`content_type_id` ASC) USING BTREE,
-  INDEX `django_admin_log_user_id_c564eba6_fk_accounts_user_id`(`user_id` ASC) USING BTREE,
-  CONSTRAINT `django_admin_log_content_type_id_c4bce8eb_fk_django_co` FOREIGN KEY (`content_type_id`) REFERENCES `django_content_type` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `django_admin_log_user_id_c564eba6_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `django_admin_log_chk_1` CHECK (`action_flag` >= 0)
-) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`id`),
+  KEY `django_admin_log_content_type_id_c4bce8eb_fk_django_co` (`content_type_id`),
+  KEY `django_admin_log_user_id_c564eba6_fk_accounts_user_id` (`user_id`),
+  CONSTRAINT `django_admin_log_content_type_id_c4bce8eb_fk_django_co` FOREIGN KEY (`content_type_id`) REFERENCES `django_content_type` (`id`),
+  CONSTRAINT `django_admin_log_user_id_c564eba6_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`),
+  CONSTRAINT `django_admin_log_chk_1` CHECK ((`action_flag` >= 0))
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of django_admin_log
 -- ----------------------------
-INSERT INTO `django_admin_log` VALUES (1, '2026-07-24 14:16:06.395001', '4', 'CFOP复原步骤', 1, '[{\"added\": {}}]', 29, 6);
+INSERT INTO `django_admin_log` VALUES (1, '2026-07-24 14:16:06.395001', '4', 'CFOP复原步骤', 1, '[{"added": {}}]', 29, 6);
 INSERT INTO `django_admin_log` VALUES (2, '2026-07-24 14:27:41.737832', '4', 'CFOP复原步骤', 3, '', 29, 6);
 
 -- ----------------------------
 -- Table structure for django_content_type
 -- ----------------------------
 DROP TABLE IF EXISTS `django_content_type`;
-CREATE TABLE `django_content_type`  (
+CREATE TABLE `django_content_type` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `app_label` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `model` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `django_content_type_app_label_model_76bd3d3b_uniq`(`app_label` ASC, `model` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 31 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  `app_label` varchar(100) NOT NULL,
+  `model` varchar(100) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `django_content_type_app_label_model_76bd3d3b_uniq` (`app_label`,`model`)
+) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of django_content_type
@@ -369,13 +369,13 @@ INSERT INTO `django_content_type` VALUES (28, 'timer', 'timerrecord');
 -- Table structure for django_migrations
 -- ----------------------------
 DROP TABLE IF EXISTS `django_migrations`;
-CREATE TABLE `django_migrations`  (
+CREATE TABLE `django_migrations` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `app` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `app` varchar(255) NOT NULL,
+  `name` varchar(255) NOT NULL,
   `applied` datetime(6) NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 38 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of django_migrations
@@ -421,13 +421,13 @@ INSERT INTO `django_migrations` VALUES (37, 'formula', '0004_add_custom_category
 -- Table structure for django_session
 -- ----------------------------
 DROP TABLE IF EXISTS `django_session`;
-CREATE TABLE `django_session`  (
-  `session_key` varchar(40) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `session_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+CREATE TABLE `django_session` (
+  `session_key` varchar(40) NOT NULL,
+  `session_data` longtext NOT NULL,
   `expire_date` datetime(6) NOT NULL,
-  PRIMARY KEY (`session_key`) USING BTREE,
-  INDEX `django_session_expire_date_a5c62663`(`expire_date` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`session_key`),
+  KEY `django_session_expire_date_a5c62663` (`expire_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of django_session
@@ -437,21 +437,21 @@ CREATE TABLE `django_session`  (
 -- Table structure for formula_cube_category
 -- ----------------------------
 DROP TABLE IF EXISTS `formula_cube_category`;
-CREATE TABLE `formula_cube_category`  (
+CREATE TABLE `formula_cube_category` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `order` int NOT NULL,
-  `method` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `phase` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `description` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `method` varchar(50) NOT NULL,
+  `phase` varchar(50) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `description` longtext NOT NULL,
   `sort_order` int NOT NULL,
   `created_at` datetime(6) NOT NULL,
-  `created_by_id` bigint NULL DEFAULT NULL,
+  `created_by_id` bigint DEFAULT NULL,
   `is_custom` tinyint(1) NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  INDEX `formula_cube_category_created_by_id_f4fc7195_fk_accounts_user_id`(`created_by_id` ASC) USING BTREE,
-  CONSTRAINT `formula_cube_category_created_by_id_f4fc7195_fk_accounts_user_id` FOREIGN KEY (`created_by_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`id`),
+  KEY `formula_cube_category_created_by_id_f4fc7195_fk_accounts_user_id` (`created_by_id`),
+  CONSTRAINT `formula_cube_category_created_by_id_f4fc7195_fk_accounts_user_id` FOREIGN KEY (`created_by_id`) REFERENCES `accounts_user` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of formula_cube_category
@@ -465,53 +465,53 @@ INSERT INTO `formula_cube_category` VALUES (7, 3, 'CFOP', 'F2L', '四向F2L', ''
 -- Table structure for formula_cube_state
 -- ----------------------------
 DROP TABLE IF EXISTS `formula_cube_state`;
-CREATE TABLE `formula_cube_state`  (
+CREATE TABLE `formula_cube_state` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `name` varchar(100) NOT NULL,
   `state_definition` json NOT NULL,
-  `description` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `description` longtext NOT NULL,
   `created_at` datetime(6) NOT NULL,
-  `category_id` bigint NULL DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `name`(`name` ASC) USING BTREE,
-  INDEX `formula_cube_state_category_id_cfeae333_fk_formula_c`(`category_id` ASC) USING BTREE,
-  CONSTRAINT `formula_cube_state_category_id_cfeae333_fk_formula_c` FOREIGN KEY (`category_id`) REFERENCES `formula_cube_category` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  `category_id` bigint DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`),
+  KEY `formula_cube_state_category_id_cfeae333_fk_formula_c` (`category_id`),
+  CONSTRAINT `formula_cube_state_category_id_cfeae333_fk_formula_c` FOREIGN KEY (`category_id`) REFERENCES `formula_cube_category` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of formula_cube_state
 -- ----------------------------
-INSERT INTO `formula_cube_state` VALUES (1, 'F2L完成状态', '{\"faces\": {\"B\": [[\"gray\", \"gray\", \"gray\"], [\"green\", \"green\", \"green\"], [\"green\", \"green\", \"green\"]], \"D\": [[\"white\", \"white\", \"white\"], [\"white\", \"white\", \"white\"], [\"white\", \"white\", \"white\"]], \"F\": [[\"gray\", \"gray\", \"gray\"], [\"blue\", \"blue\", \"blue\"], [\"blue\", \"blue\", \"blue\"]], \"L\": [[\"gray\", \"gray\", \"gray\"], [\"orange\", \"orange\", \"orange\"], [\"orange\", \"orange\", \"orange\"]], \"R\": [[\"gray\", \"gray\", \"gray\"], [\"red\", \"red\", \"red\"], [\"red\", \"red\", \"red\"]], \"U\": [[\"gray\", \"gray\", \"gray\"], [\"gray\", \"gray\", \"gray\"], [\"gray\", \"gray\", \"gray\"]]}, \"description\": \"底层和前两层已完成，第三层和顶面为灰色\"}', '底层和前两层已完成，顶层和第三层为灰色（未完成状态）', '2026-07-08 09:24:25.364211', 4);
-INSERT INTO `formula_cube_state` VALUES (2, 'OLL完成状态', '{\"faces\": {\"B\": [[\"gray\", \"gray\", \"gray\"], [\"green\", \"green\", \"green\"], [\"green\", \"green\", \"green\"]], \"D\": [[\"white\", \"white\", \"white\"], [\"white\", \"white\", \"white\"], [\"white\", \"white\", \"white\"]], \"F\": [[\"gray\", \"gray\", \"gray\"], [\"blue\", \"blue\", \"blue\"], [\"blue\", \"blue\", \"blue\"]], \"L\": [[\"gray\", \"gray\", \"gray\"], [\"orange\", \"orange\", \"orange\"], [\"orange\", \"orange\", \"orange\"]], \"R\": [[\"gray\", \"gray\", \"gray\"], [\"red\", \"red\", \"red\"], [\"red\", \"red\", \"red\"]], \"U\": [[\"yellow\", \"yellow\", \"yellow\"], [\"yellow\", \"yellow\", \"yellow\"], [\"yellow\", \"yellow\", \"yellow\"]]}, \"description\": \"底层、下面两层、顶面方向已完成，第三层待调整\"}', '底层、前两层、顶面方向已完成，角块位置可能不正确', '2026-07-08 09:24:25.420154', 5);
-INSERT INTO `formula_cube_state` VALUES (3, 'PLL完成状态', '{\"faces\": {\"B\": [[\"green\", \"green\", \"green\"], [\"green\", \"green\", \"green\"], [\"green\", \"green\", \"green\"]], \"D\": [[\"white\", \"white\", \"white\"], [\"white\", \"white\", \"white\"], [\"white\", \"white\", \"white\"]], \"F\": [[\"blue\", \"blue\", \"blue\"], [\"blue\", \"blue\", \"blue\"], [\"blue\", \"blue\", \"blue\"]], \"L\": [[\"orange\", \"orange\", \"orange\"], [\"orange\", \"orange\", \"orange\"], [\"orange\", \"orange\", \"orange\"]], \"R\": [[\"red\", \"red\", \"red\"], [\"red\", \"red\", \"red\"], [\"red\", \"red\", \"red\"]], \"U\": [[\"yellow\", \"yellow\", \"yellow\"], [\"yellow\", \"yellow\", \"yellow\"], [\"yellow\", \"yellow\", \"yellow\"]]}, \"description\": \"完全还原的魔方状态\"}', '完全还原的魔方状态', '2026-07-08 09:24:25.431265', 6);
+INSERT INTO `formula_cube_state` VALUES (1, 'F2L完成状态', '{"faces": {"B": [["gray", "gray", "gray"], ["green", "green", "green"], ["green", "green", "green"]], "D": [["white", "white", "white"], ["white", "white", "white"], ["white", "white", "white"]], "F": [["gray", "gray", "gray"], ["blue", "blue", "blue"], ["blue", "blue", "blue"]], "L": [["gray", "gray", "gray"], ["orange", "orange", "orange"], ["orange", "orange", "orange"]], "R": [["gray", "gray", "gray"], ["red", "red", "red"], ["red", "red", "red"]], "U": [["gray", "gray", "gray"], ["gray", "gray", "gray"], ["gray", "gray", "gray"]]}, "description": "底层和前两层已完成，第三层和顶面为灰色"}', '底层和前两层已完成，顶层和第三层为灰色（未完成状态）', '2026-07-08 09:24:25.364211', 4);
+INSERT INTO `formula_cube_state` VALUES (2, 'OLL完成状态', '{"faces": {"B": [["gray", "gray", "gray"], ["green", "green", "green"], ["green", "green", "green"]], "D": [["white", "white", "white"], ["white", "white", "white"], ["white", "white", "white"]], "F": [["gray", "gray", "gray"], ["blue", "blue", "blue"], ["blue", "blue", "blue"]], "L": [["gray", "gray", "gray"], ["orange", "orange", "orange"], ["orange", "orange", "orange"]], "R": [["gray", "gray", "gray"], ["red", "red", "red"], ["red", "red", "red"]], "U": [["yellow", "yellow", "yellow"], ["yellow", "yellow", "yellow"], ["yellow", "yellow", "yellow"]]}, "description": "底层、下面两层、顶面方向已完成，第三层待调整"}', '底层、前两层、顶面方向已完成，角块位置可能不正确', '2026-07-08 09:24:25.420154', 5);
+INSERT INTO `formula_cube_state` VALUES (3, 'PLL完成状态', '{"faces": {"B": [["green", "green", "green"], ["green", "green", "green"], ["green", "green", "green"]], "D": [["white", "white", "white"], ["white", "white", "white"], ["white", "white", "white"]], "F": [["blue", "blue", "blue"], ["blue", "blue", "blue"], ["blue", "blue", "blue"]], "L": [["orange", "orange", "orange"], ["orange", "orange", "orange"], ["orange", "orange", "orange"]], "R": [["red", "red", "red"], ["red", "red", "red"], ["red", "red", "red"]], "U": [["yellow", "yellow", "yellow"], ["yellow", "yellow", "yellow"], ["yellow", "yellow", "yellow"]]}, "description": "完全还原的魔方状态"}', '完全还原的魔方状态', '2026-07-08 09:24:25.431265', 6);
 
 -- ----------------------------
 -- Table structure for formula_formula
 -- ----------------------------
 DROP TABLE IF EXISTS `formula_formula`;
-CREATE TABLE `formula_formula`  (
+CREATE TABLE `formula_formula` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `name` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `notation` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `inverse_notation` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `pre_state_definition` json NULL,
-  `thumbnail` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `name` varchar(200) NOT NULL,
+  `notation` longtext NOT NULL,
+  `inverse_notation` longtext NOT NULL,
+  `pre_state_definition` json DEFAULT NULL,
+  `thumbnail` varchar(100) DEFAULT NULL,
   `difficulty` int NOT NULL,
-  `description` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `description` longtext NOT NULL,
   `is_custom` tinyint(1) NOT NULL,
   `created_at` datetime(6) NOT NULL,
-  `category_id` bigint NULL DEFAULT NULL,
-  `created_by_id` bigint NULL DEFAULT NULL,
-  `target_state_id` bigint NULL DEFAULT NULL,
+  `category_id` bigint DEFAULT NULL,
+  `created_by_id` bigint DEFAULT NULL,
+  `target_state_id` bigint DEFAULT NULL,
   `view_count` int NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  INDEX `formula_formula_category_id_2d7b2936_fk_formula_cube_category_id`(`category_id` ASC) USING BTREE,
-  INDEX `formula_formula_created_by_id_8d6b77d2_fk_accounts_user_id`(`created_by_id` ASC) USING BTREE,
-  INDEX `formula_formula_target_state_id_8022afe7_fk_formula_c`(`target_state_id` ASC) USING BTREE,
-  CONSTRAINT `formula_formula_category_id_2d7b2936_fk_formula_cube_category_id` FOREIGN KEY (`category_id`) REFERENCES `formula_cube_category` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `formula_formula_created_by_id_8d6b77d2_fk_accounts_user_id` FOREIGN KEY (`created_by_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `formula_formula_target_state_id_8022afe7_fk_formula_c` FOREIGN KEY (`target_state_id`) REFERENCES `formula_cube_state` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 361 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`id`),
+  KEY `formula_formula_category_id_2d7b2936_fk_formula_cube_category_id` (`category_id`),
+  KEY `formula_formula_created_by_id_8d6b77d2_fk_accounts_user_id` (`created_by_id`),
+  KEY `formula_formula_target_state_id_8022afe7_fk_formula_c` (`target_state_id`),
+  CONSTRAINT `formula_formula_category_id_2d7b2936_fk_formula_cube_category_id` FOREIGN KEY (`category_id`) REFERENCES `formula_cube_category` (`id`),
+  CONSTRAINT `formula_formula_created_by_id_8d6b77d2_fk_accounts_user_id` FOREIGN KEY (`created_by_id`) REFERENCES `accounts_user` (`id`),
+  CONSTRAINT `formula_formula_target_state_id_8022afe7_fk_formula_c` FOREIGN KEY (`target_state_id`) REFERENCES `formula_cube_state` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=361 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of formula_formula
@@ -641,17 +641,17 @@ INSERT INTO `formula_formula` VALUES (360, 'F2L-31-BR', 'R\' U R\' F R F\' U R U
 -- Table structure for formula_formula_collection
 -- ----------------------------
 DROP TABLE IF EXISTS `formula_formula_collection`;
-CREATE TABLE `formula_formula_collection`  (
+CREATE TABLE `formula_formula_collection` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `created_at` datetime(6) NOT NULL,
   `formula_id` bigint NOT NULL,
   `user_id` bigint NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `formula_formula_collection_user_id_formula_id_4d365c61_uniq`(`user_id` ASC, `formula_id` ASC) USING BTREE,
-  INDEX `formula_formula_coll_formula_id_81ad47ba_fk_formula_f`(`formula_id` ASC) USING BTREE,
-  CONSTRAINT `formula_formula_coll_formula_id_81ad47ba_fk_formula_f` FOREIGN KEY (`formula_id`) REFERENCES `formula_formula` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `formula_formula_collection_user_id_0acb4f8b_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `formula_formula_collection_user_id_formula_id_4d365c61_uniq` (`user_id`,`formula_id`),
+  KEY `formula_formula_coll_formula_id_81ad47ba_fk_formula_f` (`formula_id`),
+  CONSTRAINT `formula_formula_coll_formula_id_81ad47ba_fk_formula_f` FOREIGN KEY (`formula_id`) REFERENCES `formula_formula` (`id`),
+  CONSTRAINT `formula_formula_collection_user_id_0acb4f8b_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of formula_formula_collection
@@ -671,14 +671,14 @@ INSERT INTO `formula_formula_collection` VALUES (11, '2026-07-24 14:22:46.224749
 -- Table structure for formula_formula_tag
 -- ----------------------------
 DROP TABLE IF EXISTS `formula_formula_tag`;
-CREATE TABLE `formula_formula_tag`  (
+CREATE TABLE `formula_formula_tag` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `color` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `name` varchar(50) NOT NULL,
+  `color` varchar(7) NOT NULL,
   `created_at` datetime(6) NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `name`(`name` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of formula_formula_tag
@@ -694,16 +694,16 @@ INSERT INTO `formula_formula_tag` VALUES (12, '进阶', '#1890ff', '2026-07-07 1
 -- Table structure for formula_formula_tag_relation
 -- ----------------------------
 DROP TABLE IF EXISTS `formula_formula_tag_relation`;
-CREATE TABLE `formula_formula_tag_relation`  (
+CREATE TABLE `formula_formula_tag_relation` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `formula_id` bigint NOT NULL,
   `tag_id` bigint NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `formula_formula_tag_relation_formula_id_tag_id_59674866_uniq`(`formula_id` ASC, `tag_id` ASC) USING BTREE,
-  INDEX `formula_formula_tag__tag_id_9b5262c7_fk_formula_f`(`tag_id` ASC) USING BTREE,
-  CONSTRAINT `formula_formula_tag__formula_id_2e32b839_fk_formula_f` FOREIGN KEY (`formula_id`) REFERENCES `formula_formula` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `formula_formula_tag__tag_id_9b5262c7_fk_formula_f` FOREIGN KEY (`tag_id`) REFERENCES `formula_formula_tag` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 715 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `formula_formula_tag_relation_formula_id_tag_id_59674866_uniq` (`formula_id`,`tag_id`),
+  KEY `formula_formula_tag__tag_id_9b5262c7_fk_formula_f` (`tag_id`),
+  CONSTRAINT `formula_formula_tag__formula_id_2e32b839_fk_formula_f` FOREIGN KEY (`formula_id`) REFERENCES `formula_formula` (`id`),
+  CONSTRAINT `formula_formula_tag__tag_id_9b5262c7_fk_formula_f` FOREIGN KEY (`tag_id`) REFERENCES `formula_formula_tag` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=715 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of formula_formula_tag_relation
@@ -951,9 +951,9 @@ INSERT INTO `formula_formula_tag_relation` VALUES (714, 357, 12);
 -- Table structure for forum_comment
 -- ----------------------------
 DROP TABLE IF EXISTS `forum_comment`;
-CREATE TABLE `forum_comment`  (
+CREATE TABLE `forum_comment` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `content` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `content` longtext NOT NULL,
   `like_count` int NOT NULL,
   `dislike_count` int NOT NULL,
   `is_deleted` tinyint(1) NOT NULL,
@@ -961,17 +961,17 @@ CREATE TABLE `forum_comment`  (
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
   `author_id` bigint NOT NULL,
-  `parent_id` bigint NULL DEFAULT NULL,
+  `parent_id` bigint DEFAULT NULL,
   `post_id` bigint NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  INDEX `forum_comment_author_id_9e60eecd_fk_accounts_user_id`(`author_id` ASC) USING BTREE,
-  INDEX `forum_comment_parent_id_4c29b530_fk_forum_comment_id`(`parent_id` ASC) USING BTREE,
-  INDEX `forum_comment_post_id_eb329692_fk_forum_post_id`(`post_id` ASC) USING BTREE,
-  INDEX `forum_comment_created_at_13bd6261`(`created_at` ASC) USING BTREE,
-  CONSTRAINT `forum_comment_author_id_9e60eecd_fk_accounts_user_id` FOREIGN KEY (`author_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `forum_comment_parent_id_4c29b530_fk_forum_comment_id` FOREIGN KEY (`parent_id`) REFERENCES `forum_comment` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `forum_comment_post_id_eb329692_fk_forum_post_id` FOREIGN KEY (`post_id`) REFERENCES `forum_post` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 16 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`id`),
+  KEY `forum_comment_author_id_9e60eecd_fk_accounts_user_id` (`author_id`),
+  KEY `forum_comment_parent_id_4c29b530_fk_forum_comment_id` (`parent_id`),
+  KEY `forum_comment_post_id_eb329692_fk_forum_post_id` (`post_id`),
+  KEY `forum_comment_created_at_13bd6261` (`created_at`),
+  CONSTRAINT `forum_comment_author_id_9e60eecd_fk_accounts_user_id` FOREIGN KEY (`author_id`) REFERENCES `accounts_user` (`id`),
+  CONSTRAINT `forum_comment_parent_id_4c29b530_fk_forum_comment_id` FOREIGN KEY (`parent_id`) REFERENCES `forum_comment` (`id`),
+  CONSTRAINT `forum_comment_post_id_eb329692_fk_forum_post_id` FOREIGN KEY (`post_id`) REFERENCES `forum_post` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of forum_comment
@@ -996,18 +996,18 @@ INSERT INTO `forum_comment` VALUES (15, '你好2', 1, 0, 0, 0, '2026-06-10 15:51
 -- Table structure for forum_comment_like
 -- ----------------------------
 DROP TABLE IF EXISTS `forum_comment_like`;
-CREATE TABLE `forum_comment_like`  (
+CREATE TABLE `forum_comment_like` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `is_like` tinyint(1) NOT NULL,
   `created_at` datetime(6) NOT NULL,
   `comment_id` bigint NOT NULL,
   `user_id` bigint NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `forum_comment_like_comment_id_user_id_d60aefe4_uniq`(`comment_id` ASC, `user_id` ASC) USING BTREE,
-  INDEX `forum_comment_like_user_id_d8a40fcd_fk_accounts_user_id`(`user_id` ASC) USING BTREE,
-  CONSTRAINT `forum_comment_like_comment_id_b7b768e7_fk_forum_comment_id` FOREIGN KEY (`comment_id`) REFERENCES `forum_comment` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `forum_comment_like_user_id_d8a40fcd_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 43 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `forum_comment_like_comment_id_user_id_d60aefe4_uniq` (`comment_id`,`user_id`),
+  KEY `forum_comment_like_user_id_d8a40fcd_fk_accounts_user_id` (`user_id`),
+  CONSTRAINT `forum_comment_like_comment_id_b7b768e7_fk_forum_comment_id` FOREIGN KEY (`comment_id`) REFERENCES `forum_comment` (`id`),
+  CONSTRAINT `forum_comment_like_user_id_d8a40fcd_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of forum_comment_like
@@ -1023,11 +1023,11 @@ INSERT INTO `forum_comment_like` VALUES (42, 0, '2026-07-19 15:31:36.696956', 9,
 -- Table structure for forum_post
 -- ----------------------------
 DROP TABLE IF EXISTS `forum_post`;
-CREATE TABLE `forum_post`  (
+CREATE TABLE `forum_post` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `content` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `content_md` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `title` varchar(200) NOT NULL,
+  `content` longtext NOT NULL,
+  `content_md` longtext NOT NULL,
   `view_count` int NOT NULL,
   `like_count` int NOT NULL,
   `comment_count` int NOT NULL,
@@ -1035,52 +1035,194 @@ CREATE TABLE `forum_post`  (
   `is_pinned` tinyint(1) NOT NULL,
   `is_essence` tinyint(1) NOT NULL,
   `is_closed` tinyint(1) NOT NULL,
-  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `status` varchar(20) NOT NULL,
   `report_count` int NOT NULL,
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
   `author_id` bigint NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  INDEX `forum_post_author__f7ff0a_idx`(`author_id` ASC, `created_at` DESC) USING BTREE,
-  INDEX `forum_post_created_543ce4_idx`(`created_at` DESC) USING BTREE,
-  INDEX `forum_post_status_56aec8_idx`(`status` ASC, `created_at` DESC) USING BTREE,
-  INDEX `forum_post_title_d13f3075`(`title` ASC) USING BTREE,
-  INDEX `forum_post_created_at_ecff5f37`(`created_at` ASC) USING BTREE,
-  CONSTRAINT `forum_post_author_id_609b7963_fk_accounts_user_id` FOREIGN KEY (`author_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 14 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`id`),
+  KEY `forum_post_author__f7ff0a_idx` (`author_id`,`created_at` DESC),
+  KEY `forum_post_created_543ce4_idx` (`created_at` DESC),
+  KEY `forum_post_status_56aec8_idx` (`status`,`created_at` DESC),
+  KEY `forum_post_title_d13f3075` (`title`),
+  KEY `forum_post_created_at_ecff5f37` (`created_at`),
+  CONSTRAINT `forum_post_author_id_609b7963_fk_accounts_user_id` FOREIGN KEY (`author_id`) REFERENCES `accounts_user` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of forum_post
 -- ----------------------------
-INSERT INTO `forum_post` VALUES (1, '【新手必看】三阶魔方零基础入门教程', '# 三阶魔方零基础入门教程\n\n## 前言\n魔方并不难，只要掌握了方法，任何人都可以学会还原三阶魔方。\n\n## 第一步：底层十字\n在底面拼出一个白色十字，且棱块侧面颜色与中心块对齐。\n\n## 第二步：底层角块\n完成白色面，同时底层四周颜色对齐。\n\n## 第三步：中层棱块\n还原第二层（中间层）的四个棱块。\n\n## 第四步：顶层十字\n在顶层拼出黄色十字。\n\n## 第五步：顶层面位\n将顶层全部变成黄色。\n\n## 第六步：顶层角块归位\n调整顶层角块位置。\n\n## 第七步：顶层棱块归位\n最后一步，完成整个魔方！\n\n祝大家早日学会魔方！🎉', '', 2, 1, 1, 0, 1, 1, 0, 'published', 0, '2026-06-05 09:55:10.802878', '2026-06-05 09:55:10.802918', 11);
-INSERT INTO `forum_post` VALUES (2, 'CFOP速拧教程 - F2L理解法', '# CFOP进阶教程：F2L理解法\n\n## 什么是F2L？\nF2L（First Two Layers）是CFOP速拧法的第二步，指同时还原前两层。\n\n## 核心思想\nF2L的本质是把一对\"角块+棱块\"组合起来放入正确的位置。\n\n## 常用F2L公式\n\n| 情况 | 公式 |\n|------|------|\n| 角棱相连 | `U R U\' R\'` |\n| 角棱分离 | `R U R\'` |\n| 角棱背面 | `R U2 R\' U R U R\'` |\n\n## 练习技巧\n1. 慢速练习，理解原理\n2. 找规律，观察相对位置\n3. 预判下一组\n\nF2L熟练后，成绩可轻松进入30秒！💪', '', 50, 2, 10, 1, 0, 1, 0, 'published', 0, '2026-06-05 09:55:10.823840', '2026-06-05 09:55:10.823875', 11);
-INSERT INTO `forum_post` VALUES (3, '魔方公式记忆技巧分享', '# 魔方公式记忆技巧\n\n## 肌肉记忆法\n不要死记硬背公式字母，而是通过反复练习形成肌肉记忆。\n\n## 分段记忆\n将长公式分成几个小段，逐段练习后连接。\n\n## 镜像对称\n很多公式是左右对称的，记住一个就能推导出另一个。\n\n## 故事联想\n为公式中的转动编一个故事，帮助记忆。\n\n## 每天10分钟\n坚持每天练习，比一次性练很久效果更好。\n\n大家有什么好的记忆方法？欢迎分享！', '', 12, 1, 3, 1, 0, 0, 0, 'published', 0, '2026-06-05 09:55:10.841141', '2026-06-05 09:55:10.841164', 11);
-INSERT INTO `forum_post` VALUES (4, '三阶魔方CFOP教程新标题', '这是教程内容，使用Markdown格式\r\n![bh01](http://127.0.0.1:8000/media/forum/posts/2026/07/bh01.png)', '', 30, 2, 1, 0, 0, 0, 0, 'published', 0, '2026-06-05 09:56:27.071163', '2026-07-19 15:29:33.899742', 10);
-INSERT INTO `forum_post` VALUES (5, '发布新帖子', '# 魔方\r\n## 标题二\r\n### 标题三\r\n```\r\n公式如下\r\npython\r\n```', '', 27, 1, 0, 0, 0, 0, 0, 'published', 0, '2026-06-12 10:08:08.741039', '2026-06-12 10:52:53.080432', 10);
-INSERT INTO `forum_post` VALUES (6, '再发一篇新帖子（修改）', '# CFOP 速拧学习方法\r\n\r\n## 什么是 CFOP？\r\n\r\nCFOP 是目前最主流的魔方速拧解法，由四个步骤组成：\r\n\r\n1. **C（Cross）**——底面十字\r\n2. **F（F2L）**——前两层\r\n3. **O（OLL）**——顶面朝向\r\n4. **P（PLL）**——顶层排列\r\n\r\n## 学习顺序建议\r\n\r\n| 阶段 | 内容                                 | 目标时间 |\r\n| ---- | ------------------------------------ | -------- |\r\n| 入门 | C + 4个基本公式                      | 60秒     |\r\n| 进阶 | F2L理解法 + 7个十字OLL + 4个PLL      | 30秒     |\r\n| 熟练 | F2L 41种情况 + 全部OLL(57) + PLL(21) | 15秒内   |\r\n\r\n## 实用技巧\r\n\r\n- **C**：八步内完成十字，学会盲拧预判\r\n- **F2L**：先理解“藏角藏棱”原理，不建议死记公式\r\n- **OLL**：先学十字后的7条，其他慢慢补充\r\n- **PLL**：优先学三棱换、三角换、邻角对棱换等高频公式\r\n\r\n## 资源推荐\r\n\r\n- 网站：`algdb.net` 公式库\r\n- 视频：J Perm 教学频道\r\n- App：Cube Station 计时练习\r\n\r\n> 每天练习20分钟，两个月基本可以进30秒。公式不是越多越好，**指法流畅**比记全更重要。', '', 4, 0, 0, 0, 0, 0, 0, 'deleted', 0, '2026-06-12 10:25:11.426914', '2026-06-12 10:47:10.140862', 10);
+INSERT INTO `forum_post` VALUES (1, '【新手必看】三阶魔方零基础入门教程', '# 三阶魔方零基础入门教程
+
+## 前言
+魔方并不难，只要掌握了方法，任何人都可以学会还原三阶魔方。
+
+## 第一步：底层十字
+在底面拼出一个白色十字，且棱块侧面颜色与中心块对齐。
+
+## 第二步：底层角块
+完成白色面，同时底层四周颜色对齐。
+
+## 第三步：中层棱块
+还原第二层（中间层）的四个棱块。
+
+## 第四步：顶层十字
+在顶层拼出黄色十字。
+
+## 第五步：顶层面位
+将顶层全部变成黄色。
+
+## 第六步：顶层角块归位
+调整顶层角块位置。
+
+## 第七步：顶层棱块归位
+最后一步，完成整个魔方！
+
+祝大家早日学会魔方！🎉', '', 2, 1, 1, 0, 1, 1, 0, 'published', 0, '2026-06-05 09:55:10.802878', '2026-06-05 09:55:10.802918', 11);
+INSERT INTO `forum_post` VALUES (2, 'CFOP速拧教程 - F2L理解法', '# CFOP进阶教程：F2L理解法
+
+## 什么是F2L？
+F2L（First Two Layers）是CFOP速拧法的第二步，指同时还原前两层。
+
+## 核心思想
+F2L的本质是把一对"角块+棱块"组合起来放入正确的位置。
+
+## 常用F2L公式
+
+| 情况 | 公式 |
+|------|------|
+| 角棱相连 | `U R U\' R\'` |
+| 角棱分离 | `R U R\'` |
+| 角棱背面 | `R U2 R\' U R U R\'` |
+
+## 练习技巧
+1. 慢速练习，理解原理
+2. 找规律，观察相对位置
+3. 预判下一组
+
+F2L熟练后，成绩可轻松进入30秒！💪', '', 50, 2, 10, 1, 0, 1, 0, 'published', 0, '2026-06-05 09:55:10.823840', '2026-06-05 09:55:10.823875', 11);
+INSERT INTO `forum_post` VALUES (3, '魔方公式记忆技巧分享', '# 魔方公式记忆技巧
+
+## 肌肉记忆法
+不要死记硬背公式字母，而是通过反复练习形成肌肉记忆。
+
+## 分段记忆
+将长公式分成几个小段，逐段练习后连接。
+
+## 镜像对称
+很多公式是左右对称的，记住一个就能推导出另一个。
+
+## 故事联想
+为公式中的转动编一个故事，帮助记忆。
+
+## 每天10分钟
+坚持每天练习，比一次性练很久效果更好。
+
+大家有什么好的记忆方法？欢迎分享！', '', 12, 1, 3, 1, 0, 0, 0, 'published', 0, '2026-06-05 09:55:10.841141', '2026-06-05 09:55:10.841164', 11);
+INSERT INTO `forum_post` VALUES (4, '三阶魔方CFOP教程新标题', '这是教程内容，使用Markdown格式
+![bh01](http://127.0.0.1:8000/media/forum/posts/2026/07/bh01.png)', '', 30, 2, 1, 0, 0, 0, 0, 'published', 0, '2026-06-05 09:56:27.071163', '2026-07-19 15:29:33.899742', 10);
+INSERT INTO `forum_post` VALUES (5, '发布新帖子', '# 魔方
+## 标题二
+### 标题三
+```
+公式如下
+python
+```', '', 27, 1, 0, 0, 0, 0, 0, 'published', 0, '2026-06-12 10:08:08.741039', '2026-06-12 10:52:53.080432', 10);
+INSERT INTO `forum_post` VALUES (6, '再发一篇新帖子（修改）', '# CFOP 速拧学习方法
+
+## 什么是 CFOP？
+
+CFOP 是目前最主流的魔方速拧解法，由四个步骤组成：
+
+1. **C（Cross）**——底面十字
+2. **F（F2L）**——前两层
+3. **O（OLL）**——顶面朝向
+4. **P（PLL）**——顶层排列
+
+## 学习顺序建议
+
+| 阶段 | 内容                                 | 目标时间 |
+| ---- | ------------------------------------ | -------- |
+| 入门 | C + 4个基本公式                      | 60秒     |
+| 进阶 | F2L理解法 + 7个十字OLL + 4个PLL      | 30秒     |
+| 熟练 | F2L 41种情况 + 全部OLL(57) + PLL(21) | 15秒内   |
+
+## 实用技巧
+
+- **C**：八步内完成十字，学会盲拧预判
+- **F2L**：先理解“藏角藏棱”原理，不建议死记公式
+- **OLL**：先学十字后的7条，其他慢慢补充
+- **PLL**：优先学三棱换、三角换、邻角对棱换等高频公式
+
+## 资源推荐
+
+- 网站：`algdb.net` 公式库
+- 视频：J Perm 教学频道
+- App：Cube Station 计时练习
+
+> 每天练习20分钟，两个月基本可以进30秒。公式不是越多越好，**指法流畅**比记全更重要。', '', 4, 0, 0, 0, 0, 0, 0, 'deleted', 0, '2026-06-12 10:25:11.426914', '2026-06-12 10:47:10.140862', 10);
 INSERT INTO `forum_post` VALUES (7, '返回格式测试', '这是教程内容，使用Markdown格式...', '', 1, 0, 0, 0, 0, 0, 0, 'deleted', 0, '2026-06-12 10:28:11.697133', '2026-06-12 10:28:11.697157', 10);
-INSERT INTO `forum_post` VALUES (8, '再发一篇新帖子2修改', '# CFOP 速拧学习方法\r\n\r\n## 什么是 CFOP？\r\n\r\nCFOP 是目前最主流的魔方速拧解法，由四个步骤组成：\r\n\r\n1. **C（Cross）**——底面十字\r\n2. **F（F2L）**——前两层\r\n3. **O（OLL）**——顶面朝向\r\n4. **P（PLL）**——顶层排列\r\n\r\n## 学习顺序建议\r\n\r\n| 阶段 | 内容                                 | 目标时间 |\r\n| ---- | ------------------------------------ | -------- |\r\n| 入门 | C + 4个基本公式                      | 60秒     |\r\n| 进阶 | F2L理解法 + 7个十字OLL + 4个PLL      | 30秒     |\r\n| 熟练 | F2L 41种情况 + 全部OLL(57) + PLL(21) | 15秒内   |\r\n\r\n## 实用技巧\r\n\r\n- **C**：八步内完成十字，学会盲拧预判\r\n- **F2L**：先理解“藏角藏棱”原理，不建议死记公式\r\n- **OLL**：先学十字后的7条，其他慢慢补充\r\n- **PLL**：优先学三棱换、三角换、邻角对棱换等高频公式\r\n\r\n## 资源推荐\r\n\r\n- 网站：`algdb.net` 公式库\r\n- 视频：J Perm 教学频道\r\n- App：Cube Station 计时练习\r\n\r\n> 每天练习20分钟，两个月基本可以进30秒。公式不是越多越好，**指法流畅**比记全更重要。', '', 5, 0, 0, 0, 0, 0, 0, 'deleted', 0, '2026-06-12 10:33:13.469010', '2026-06-12 10:34:08.659699', 10);
+INSERT INTO `forum_post` VALUES (8, '再发一篇新帖子2修改', '# CFOP 速拧学习方法
+
+## 什么是 CFOP？
+
+CFOP 是目前最主流的魔方速拧解法，由四个步骤组成：
+
+1. **C（Cross）**——底面十字
+2. **F（F2L）**——前两层
+3. **O（OLL）**——顶面朝向
+4. **P（PLL）**——顶层排列
+
+## 学习顺序建议
+
+| 阶段 | 内容                                 | 目标时间 |
+| ---- | ------------------------------------ | -------- |
+| 入门 | C + 4个基本公式                      | 60秒     |
+| 进阶 | F2L理解法 + 7个十字OLL + 4个PLL      | 30秒     |
+| 熟练 | F2L 41种情况 + 全部OLL(57) + PLL(21) | 15秒内   |
+
+## 实用技巧
+
+- **C**：八步内完成十字，学会盲拧预判
+- **F2L**：先理解“藏角藏棱”原理，不建议死记公式
+- **OLL**：先学十字后的7条，其他慢慢补充
+- **PLL**：优先学三棱换、三角换、邻角对棱换等高频公式
+
+## 资源推荐
+
+- 网站：`algdb.net` 公式库
+- 视频：J Perm 教学频道
+- App：Cube Station 计时练习
+
+> 每天练习20分钟，两个月基本可以进30秒。公式不是越多越好，**指法流畅**比记全更重要。', '', 5, 0, 0, 0, 0, 0, 0, 'deleted', 0, '2026-06-12 10:33:13.469010', '2026-06-12 10:34:08.659699', 10);
 INSERT INTO `forum_post` VALUES (9, '返回格式测试', '这是教程内容，使用Markdown格式...', '', 0, 0, 0, 0, 0, 0, 0, 'deleted', 0, '2026-06-12 10:38:10.289770', '2026-06-12 10:38:10.289796', 10);
-INSERT INTO `forum_post` VALUES (10, 'F2L公式', '![F2L-07](/media/formulas/F2L_Images/F2L_007.png)\r\n\r\n# 发文测试，F2L', '', 34, 0, 0, 0, 0, 0, 0, 'published', 0, '2026-07-25 10:01:52.570561', '2026-07-25 12:07:25.090391', 10);
+INSERT INTO `forum_post` VALUES (10, 'F2L公式', '![F2L-07](/media/formulas/F2L_Images/F2L_007.png)
+
+# 发文测试，F2L', '', 34, 0, 0, 0, 0, 0, 0, 'published', 0, '2026-07-25 10:01:52.570561', '2026-07-25 12:07:25.090391', 10);
 INSERT INTO `forum_post` VALUES (11, '111111', '![F2L-05](/media/formulas/F2L_Images/F2L_005.png)![F2L-10](/media/formulas/F2L_Images/F2L_010.png)![admin](/media/forum/posts/2026/07/admin.png)![bh01](/media/forum/posts/2026/07/bh01_m3QZaCZ.png)![admin](/media/forum/posts/2026/07/admin_g2v0Okt.png)', '', 16, 0, 0, 0, 0, 0, 0, 'published', 0, '2026-07-25 10:53:46.442350', '2026-07-25 12:07:44.919342', 10);
-INSERT INTO `forum_post` VALUES (12, '测试多图帖子', '![F2L-01](/media/formulas/F2L_Images/F2L_001.png)\n![F2L-02](/media/formulas/F2L_Images/F2L_002.png)\n![F2L-03](/media/formulas/F2L_Images/F2L_003.png)', '', 0, 0, 0, 0, 0, 0, 0, 'published', 0, '2026-07-25 10:57:30.527408', '2026-07-25 10:57:30.527435', 10);
-INSERT INTO `forum_post` VALUES (13, '111111', '![F2L-09](/media/formulas/F2L_Images/F2L_009.png)\r\n![F2L-07](/media/formulas/F2L_Images/F2L_007.png)\r\n![F2L-03](/media/formulas/F2L_Images/F2L_003.png)\r\n![admin_cropped](/media/forum/posts/2026/07/admin_cropped_compressed.webp)', '', 26, 0, 0, 1, 0, 0, 0, 'published', 0, '2026-07-25 11:00:14.679846', '2026-07-25 15:01:42.047184', 10);
+INSERT INTO `forum_post` VALUES (12, '测试多图帖子', '![F2L-01](/media/formulas/F2L_Images/F2L_001.png)
+![F2L-02](/media/formulas/F2L_Images/F2L_002.png)
+![F2L-03](/media/formulas/F2L_Images/F2L_003.png)', '', 0, 0, 0, 0, 0, 0, 0, 'published', 0, '2026-07-25 10:57:30.527408', '2026-07-25 10:57:30.527435', 10);
+INSERT INTO `forum_post` VALUES (13, '111111', '![F2L-09](/media/formulas/F2L_Images/F2L_009.png)
+![F2L-07](/media/formulas/F2L_Images/F2L_007.png)
+![F2L-03](/media/formulas/F2L_Images/F2L_003.png)
+![admin_cropped](/media/forum/posts/2026/07/admin_cropped_compressed.webp)', '', 26, 0, 0, 1, 0, 0, 0, 'published', 0, '2026-07-25 11:00:14.679846', '2026-07-25 15:01:42.047184', 10);
 
 -- ----------------------------
 -- Table structure for forum_post_collect
 -- ----------------------------
 DROP TABLE IF EXISTS `forum_post_collect`;
-CREATE TABLE `forum_post_collect`  (
+CREATE TABLE `forum_post_collect` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `created_at` datetime(6) NOT NULL,
   `post_id` bigint NOT NULL,
   `user_id` bigint NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `forum_post_collect_post_id_user_id_3cbd7f97_uniq`(`post_id` ASC, `user_id` ASC) USING BTREE,
-  INDEX `forum_post_collect_user_id_b2a3c9ad_fk_accounts_user_id`(`user_id` ASC) USING BTREE,
-  CONSTRAINT `forum_post_collect_post_id_5e799cb7_fk_forum_post_id` FOREIGN KEY (`post_id`) REFERENCES `forum_post` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `forum_post_collect_user_id_b2a3c9ad_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `forum_post_collect_post_id_user_id_3cbd7f97_uniq` (`post_id`,`user_id`),
+  KEY `forum_post_collect_user_id_b2a3c9ad_fk_accounts_user_id` (`user_id`),
+  CONSTRAINT `forum_post_collect_post_id_5e799cb7_fk_forum_post_id` FOREIGN KEY (`post_id`) REFERENCES `forum_post` (`id`),
+  CONSTRAINT `forum_post_collect_user_id_b2a3c9ad_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of forum_post_collect
@@ -1093,17 +1235,17 @@ INSERT INTO `forum_post_collect` VALUES (10, '2026-07-25 14:46:08.519848', 13, 1
 -- Table structure for forum_post_image
 -- ----------------------------
 DROP TABLE IF EXISTS `forum_post_image`;
-CREATE TABLE `forum_post_image`  (
+CREATE TABLE `forum_post_image` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `image` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `alt` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `image` varchar(100) NOT NULL,
+  `alt` varchar(200) NOT NULL,
   `order` int NOT NULL,
   `created_at` datetime(6) NOT NULL,
-  `post_id` bigint NULL DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  INDEX `forum_post_image_post_id_95977176_fk_forum_post_id`(`post_id` ASC) USING BTREE,
-  CONSTRAINT `forum_post_image_post_id_95977176_fk_forum_post_id` FOREIGN KEY (`post_id`) REFERENCES `forum_post` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 18 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  `post_id` bigint DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `forum_post_image_post_id_95977176_fk_forum_post_id` (`post_id`),
+  CONSTRAINT `forum_post_image_post_id_95977176_fk_forum_post_id` FOREIGN KEY (`post_id`) REFERENCES `forum_post` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of forum_post_image
@@ -1129,17 +1271,17 @@ INSERT INTO `forum_post_image` VALUES (17, 'forum/posts/2026/07/admin_cropped_co
 -- Table structure for forum_post_like
 -- ----------------------------
 DROP TABLE IF EXISTS `forum_post_like`;
-CREATE TABLE `forum_post_like`  (
+CREATE TABLE `forum_post_like` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `created_at` datetime(6) NOT NULL,
   `post_id` bigint NOT NULL,
   `user_id` bigint NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `forum_post_like_post_id_user_id_c7f796d2_uniq`(`post_id` ASC, `user_id` ASC) USING BTREE,
-  INDEX `forum_post_like_user_id_8bb1cc47_fk_accounts_user_id`(`user_id` ASC) USING BTREE,
-  CONSTRAINT `forum_post_like_post_id_d9d17230_fk_forum_post_id` FOREIGN KEY (`post_id`) REFERENCES `forum_post` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `forum_post_like_user_id_8bb1cc47_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 15 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `forum_post_like_post_id_user_id_c7f796d2_uniq` (`post_id`,`user_id`),
+  KEY `forum_post_like_user_id_8bb1cc47_fk_accounts_user_id` (`user_id`),
+  CONSTRAINT `forum_post_like_post_id_d9d17230_fk_forum_post_id` FOREIGN KEY (`post_id`) REFERENCES `forum_post` (`id`),
+  CONSTRAINT `forum_post_like_user_id_8bb1cc47_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of forum_post_like
@@ -1156,17 +1298,17 @@ INSERT INTO `forum_post_like` VALUES (14, '2026-07-20 00:17:43.252321', 1, 1);
 -- Table structure for forum_post_tags
 -- ----------------------------
 DROP TABLE IF EXISTS `forum_post_tags`;
-CREATE TABLE `forum_post_tags`  (
+CREATE TABLE `forum_post_tags` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `created_at` datetime(6) NOT NULL,
   `post_id` bigint NOT NULL,
   `tag_id` bigint NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `forum_post_tags_post_id_tag_id_507521d9_uniq`(`post_id` ASC, `tag_id` ASC) USING BTREE,
-  INDEX `forum_post_tags_tag_id_c1772c43_fk_forum_tag_id`(`tag_id` ASC) USING BTREE,
-  CONSTRAINT `forum_post_tags_post_id_e73359c8_fk_forum_post_id` FOREIGN KEY (`post_id`) REFERENCES `forum_post` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `forum_post_tags_tag_id_c1772c43_fk_forum_tag_id` FOREIGN KEY (`tag_id`) REFERENCES `forum_tag` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 26 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `forum_post_tags_post_id_tag_id_507521d9_uniq` (`post_id`,`tag_id`),
+  KEY `forum_post_tags_tag_id_c1772c43_fk_forum_tag_id` (`tag_id`),
+  CONSTRAINT `forum_post_tags_post_id_e73359c8_fk_forum_post_id` FOREIGN KEY (`post_id`) REFERENCES `forum_post` (`id`),
+  CONSTRAINT `forum_post_tags_tag_id_c1772c43_fk_forum_tag_id` FOREIGN KEY (`tag_id`) REFERENCES `forum_tag` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of forum_post_tags
@@ -1201,24 +1343,24 @@ INSERT INTO `forum_post_tags` VALUES (25, '2026-07-25 11:00:14.691958', 13, 1);
 -- Table structure for forum_report
 -- ----------------------------
 DROP TABLE IF EXISTS `forum_report`;
-CREATE TABLE `forum_report`  (
+CREATE TABLE `forum_report` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `content_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `content_type` varchar(20) NOT NULL,
   `object_id` int NOT NULL,
-  `reason` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `description` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `reason` varchar(20) NOT NULL,
+  `description` longtext NOT NULL,
+  `status` varchar(20) NOT NULL,
   `created_at` datetime(6) NOT NULL,
-  `handled_at` datetime(6) NULL DEFAULT NULL,
-  `handler_id` bigint NULL DEFAULT NULL,
+  `handled_at` datetime(6) DEFAULT NULL,
+  `handler_id` bigint DEFAULT NULL,
   `reporter_id` bigint NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `forum_report_content_type_object_id_reporter_id_93eed8a9_uniq`(`content_type` ASC, `object_id` ASC, `reporter_id` ASC) USING BTREE,
-  INDEX `forum_report_handler_id_2f41d3fd_fk_accounts_user_id`(`handler_id` ASC) USING BTREE,
-  INDEX `forum_report_reporter_id_f7e3028b_fk_accounts_user_id`(`reporter_id` ASC) USING BTREE,
-  CONSTRAINT `forum_report_handler_id_2f41d3fd_fk_accounts_user_id` FOREIGN KEY (`handler_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `forum_report_reporter_id_f7e3028b_fk_accounts_user_id` FOREIGN KEY (`reporter_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `forum_report_content_type_object_id_reporter_id_93eed8a9_uniq` (`content_type`,`object_id`,`reporter_id`),
+  KEY `forum_report_handler_id_2f41d3fd_fk_accounts_user_id` (`handler_id`),
+  KEY `forum_report_reporter_id_f7e3028b_fk_accounts_user_id` (`reporter_id`),
+  CONSTRAINT `forum_report_handler_id_2f41d3fd_fk_accounts_user_id` FOREIGN KEY (`handler_id`) REFERENCES `accounts_user` (`id`),
+  CONSTRAINT `forum_report_reporter_id_f7e3028b_fk_accounts_user_id` FOREIGN KEY (`reporter_id`) REFERENCES `accounts_user` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of forum_report
@@ -1228,15 +1370,15 @@ CREATE TABLE `forum_report`  (
 -- Table structure for forum_tag
 -- ----------------------------
 DROP TABLE IF EXISTS `forum_tag`;
-CREATE TABLE `forum_tag`  (
+CREATE TABLE `forum_tag` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `name` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `color` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `name` varchar(30) NOT NULL,
+  `color` varchar(7) NOT NULL,
   `use_count` int NOT NULL,
   `created_at` datetime(6) NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `name`(`name` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of forum_tag
@@ -1256,17 +1398,17 @@ INSERT INTO `forum_tag` VALUES (10, '比赛', '#FF5722', 0, '2026-06-05 09:55:05
 -- Table structure for home_banner
 -- ----------------------------
 DROP TABLE IF EXISTS `home_banner`;
-CREATE TABLE `home_banner`  (
+CREATE TABLE `home_banner` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `title` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `image` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `link` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `title` varchar(100) NOT NULL,
+  `description` varchar(255) NOT NULL,
+  `image` varchar(100) NOT NULL,
+  `link` varchar(500) NOT NULL,
   `sort_order` int NOT NULL,
   `is_active` tinyint(1) NOT NULL,
   `created_at` datetime(6) NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of home_banner
@@ -1279,54 +1421,54 @@ INSERT INTO `home_banner` VALUES (3, '公式库大全', '收录数千条魔方�
 -- Table structure for home_navigationmenu
 -- ----------------------------
 DROP TABLE IF EXISTS `home_navigationmenu`;
-CREATE TABLE `home_navigationmenu`  (
+CREATE TABLE `home_navigationmenu` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `index` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `label` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `path` varchar(250) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `category` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `index` varchar(20) NOT NULL,
+  `label` varchar(50) NOT NULL,
+  `path` varchar(250) NOT NULL,
+  `category` varchar(20) NOT NULL,
   `sort_order` int NOT NULL,
   `match_paths` json NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `index`(`index` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 23 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `index` (`index`)
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of home_navigationmenu
 -- ----------------------------
-INSERT INTO `home_navigationmenu` VALUES (12, '1', '首页', '/', 'main', 10, '[\"/home\"]');
-INSERT INTO `home_navigationmenu` VALUES (13, '2', '教程', '/tutorials', 'main', 20, '[\"/tutorials\"]');
-INSERT INTO `home_navigationmenu` VALUES (14, '3', '公式库', '/formulas', 'main', 30, '[\"/formulas\"]');
-INSERT INTO `home_navigationmenu` VALUES (15, '4', '计时器', '/timer', 'main', 40, '[\"/timer\"]');
-INSERT INTO `home_navigationmenu` VALUES (16, '5', '交流论坛', '/forum', 'main', 50, '[\"/forum\"]');
-INSERT INTO `home_navigationmenu` VALUES (17, '6', '魔方商店', '/shop', 'main', 60, '[\"/shop\"]');
+INSERT INTO `home_navigationmenu` VALUES (12, '1', '首页', '/', 'main', 10, '["/home"]');
+INSERT INTO `home_navigationmenu` VALUES (13, '2', '教程', '/tutorials', 'main', 20, '["/tutorials"]');
+INSERT INTO `home_navigationmenu` VALUES (14, '3', '公式库', '/formulas', 'main', 30, '["/formulas"]');
+INSERT INTO `home_navigationmenu` VALUES (15, '4', '计时器', '/timer', 'main', 40, '["/timer"]');
+INSERT INTO `home_navigationmenu` VALUES (16, '5', '交流论坛', '/forum', 'main', 50, '["/forum"]');
+INSERT INTO `home_navigationmenu` VALUES (17, '6', '魔方商店', '/shop', 'main', 60, '["/shop"]');
 INSERT INTO `home_navigationmenu` VALUES (18, 'p-1', '返回首页', '/', 'profile', 10, '[]');
-INSERT INTO `home_navigationmenu` VALUES (19, 'p-2', '个人信息', '/profiles/info', 'profile', 20, '[\"/profiles/info\"]');
-INSERT INTO `home_navigationmenu` VALUES (20, 'p-3', '公式收藏', '/profiles/collections', 'profile', 30, '[\"/profiles/collections\"]');
-INSERT INTO `home_navigationmenu` VALUES (21, 'p-4', '我的数据', '/profiles/data', 'profile', 40, '[\"/profiles/data\"]');
-INSERT INTO `home_navigationmenu` VALUES (22, 'p-5', '我的帖子', '/profiles/posts', 'profile', 50, '[\"/profiles/posts\"]');
+INSERT INTO `home_navigationmenu` VALUES (19, 'p-2', '个人信息', '/profiles/info', 'profile', 20, '["/profiles/info"]');
+INSERT INTO `home_navigationmenu` VALUES (20, 'p-3', '公式收藏', '/profiles/collections', 'profile', 30, '["/profiles/collections"]');
+INSERT INTO `home_navigationmenu` VALUES (21, 'p-4', '我的数据', '/profiles/data', 'profile', 40, '["/profiles/data"]');
+INSERT INTO `home_navigationmenu` VALUES (22, 'p-5', '我的帖子', '/profiles/posts', 'profile', 50, '["/profiles/posts"]');
 
 -- ----------------------------
 -- Table structure for shop_address
 -- ----------------------------
 DROP TABLE IF EXISTS `shop_address`;
-CREATE TABLE `shop_address`  (
+CREATE TABLE `shop_address` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `phone` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `province` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `city` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `district` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `detail` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `name` varchar(50) NOT NULL,
+  `phone` varchar(20) NOT NULL,
+  `province` varchar(50) NOT NULL,
+  `city` varchar(50) NOT NULL,
+  `district` varchar(50) NOT NULL,
+  `detail` varchar(500) NOT NULL,
   `is_default` tinyint(1) NOT NULL,
   `sort_order` int NOT NULL,
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
   `user_id` bigint NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  INDEX `shop_address_user_id_3edd3b17_fk_accounts_user_id`(`user_id` ASC) USING BTREE,
-  CONSTRAINT `shop_address_user_id_3edd3b17_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`id`),
+  KEY `shop_address_user_id_3edd3b17_fk_accounts_user_id` (`user_id`),
+  CONSTRAINT `shop_address_user_id_3edd3b17_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of shop_address
@@ -1337,7 +1479,7 @@ INSERT INTO `shop_address` VALUES (1, '01', '13900001111', '四川省', '成都'
 -- Table structure for shop_cart
 -- ----------------------------
 DROP TABLE IF EXISTS `shop_cart`;
-CREATE TABLE `shop_cart`  (
+CREATE TABLE `shop_cart` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `quantity` int NOT NULL,
   `selected_spec` json NOT NULL,
@@ -1345,12 +1487,12 @@ CREATE TABLE `shop_cart`  (
   `updated_at` datetime(6) NOT NULL,
   `user_id` bigint NOT NULL,
   `product_id` bigint NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  INDEX `shop_cart_user_id_27925ac6_fk_accounts_user_id`(`user_id` ASC) USING BTREE,
-  INDEX `shop_cart_product_id_48b482ee_fk_shop_product_id`(`product_id` ASC) USING BTREE,
-  CONSTRAINT `shop_cart_product_id_48b482ee_fk_shop_product_id` FOREIGN KEY (`product_id`) REFERENCES `shop_product` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `shop_cart_user_id_27925ac6_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`id`),
+  KEY `shop_cart_user_id_27925ac6_fk_accounts_user_id` (`user_id`),
+  KEY `shop_cart_product_id_48b482ee_fk_shop_product_id` (`product_id`),
+  CONSTRAINT `shop_cart_product_id_48b482ee_fk_shop_product_id` FOREIGN KEY (`product_id`) REFERENCES `shop_product` (`id`),
+  CONSTRAINT `shop_cart_user_id_27925ac6_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of shop_cart
@@ -1360,108 +1502,108 @@ CREATE TABLE `shop_cart`  (
 -- Table structure for shop_order
 -- ----------------------------
 DROP TABLE IF EXISTS `shop_order`;
-CREATE TABLE `shop_order`  (
+CREATE TABLE `shop_order` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `order_no` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `total_amount` decimal(12, 2) NOT NULL,
-  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `order_no` varchar(32) NOT NULL,
+  `total_amount` decimal(12,2) NOT NULL,
+  `status` varchar(20) NOT NULL,
   `address` json NOT NULL,
   `created_at` datetime(6) NOT NULL,
-  `paid_at` datetime(6) NULL DEFAULT NULL,
-  `shipped_at` datetime(6) NULL DEFAULT NULL,
-  `completed_at` datetime(6) NULL DEFAULT NULL,
+  `paid_at` datetime(6) DEFAULT NULL,
+  `shipped_at` datetime(6) DEFAULT NULL,
+  `completed_at` datetime(6) DEFAULT NULL,
   `user_id` bigint NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `order_no`(`order_no` ASC) USING BTREE,
-  INDEX `shop_order_user_id_00aba627_fk_accounts_user_id`(`user_id` ASC) USING BTREE,
-  CONSTRAINT `shop_order_user_id_00aba627_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `order_no` (`order_no`),
+  KEY `shop_order_user_id_00aba627_fk_accounts_user_id` (`user_id`),
+  CONSTRAINT `shop_order_user_id_00aba627_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of shop_order
 -- ----------------------------
-INSERT INTO `shop_order` VALUES (1, 'ORD202607081622245B62EBFB', 204.80, 'pending', '{\"name\": \"11\", \"phone\": \"11\", \"detail\": \"11111\"}', '2026-07-08 16:22:24.160142', NULL, NULL, NULL, 1);
+INSERT INTO `shop_order` VALUES (1, 'ORD202607081622245B62EBFB', 204.80, 'pending', '{"name": "11", "phone": "11", "detail": "11111"}', '2026-07-08 16:22:24.160142', NULL, NULL, NULL, 1);
 
 -- ----------------------------
 -- Table structure for shop_order_item
 -- ----------------------------
 DROP TABLE IF EXISTS `shop_order_item`;
-CREATE TABLE `shop_order_item`  (
+CREATE TABLE `shop_order_item` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `price` decimal(10, 2) NOT NULL,
+  `price` decimal(10,2) NOT NULL,
   `quantity` int NOT NULL,
   `selected_spec` json NOT NULL,
   `order_id` bigint NOT NULL,
   `product_id` bigint NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  INDEX `shop_order_item_order_id_fb1c4e35_fk_shop_order_id`(`order_id` ASC) USING BTREE,
-  INDEX `shop_order_item_product_id_270f6177_fk_shop_product_id`(`product_id` ASC) USING BTREE,
-  CONSTRAINT `shop_order_item_order_id_fb1c4e35_fk_shop_order_id` FOREIGN KEY (`order_id`) REFERENCES `shop_order` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `shop_order_item_product_id_270f6177_fk_shop_product_id` FOREIGN KEY (`product_id`) REFERENCES `shop_product` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`id`),
+  KEY `shop_order_item_order_id_fb1c4e35_fk_shop_order_id` (`order_id`),
+  KEY `shop_order_item_product_id_270f6177_fk_shop_product_id` (`product_id`),
+  CONSTRAINT `shop_order_item_order_id_fb1c4e35_fk_shop_order_id` FOREIGN KEY (`order_id`) REFERENCES `shop_order` (`id`),
+  CONSTRAINT `shop_order_item_product_id_270f6177_fk_shop_product_id` FOREIGN KEY (`product_id`) REFERENCES `shop_product` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of shop_order_item
 -- ----------------------------
-INSERT INTO `shop_order_item` VALUES (1, 159.90, 1, '{\"颜色\": \"黑色\"}', 1, 12);
+INSERT INTO `shop_order_item` VALUES (1, 159.90, 1, '{"颜色": "黑色"}', 1, 12);
 INSERT INTO `shop_order_item` VALUES (2, 44.90, 1, '{}', 1, 8);
 
 -- ----------------------------
 -- Table structure for shop_product
 -- ----------------------------
 DROP TABLE IF EXISTS `shop_product`;
-CREATE TABLE `shop_product`  (
+CREATE TABLE `shop_product` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `name` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `description` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `price` decimal(10, 2) NOT NULL,
-  `original_price` decimal(10, 2) NULL DEFAULT NULL,
+  `name` varchar(200) NOT NULL,
+  `description` longtext NOT NULL,
+  `price` decimal(10,2) NOT NULL,
+  `original_price` decimal(10,2) DEFAULT NULL,
   `stock` int NOT NULL,
   `images` json NOT NULL,
-  `thumbnail` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `thumbnail` varchar(100) DEFAULT NULL,
   `is_on_sale` tinyint(1) NOT NULL,
   `sales_count` int NOT NULL,
   `specs` json NOT NULL,
   `created_at` datetime(6) NOT NULL,
   `updated_at` datetime(6) NOT NULL,
-  `category_id` bigint NULL DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  INDEX `shop_product_category_id_14d7eea8_fk_shop_product_category_id`(`category_id` ASC) USING BTREE,
-  CONSTRAINT `shop_product_category_id_14d7eea8_fk_shop_product_category_id` FOREIGN KEY (`category_id`) REFERENCES `shop_product_category` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  `category_id` bigint DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `shop_product_category_id_14d7eea8_fk_shop_product_category_id` (`category_id`),
+  CONSTRAINT `shop_product_category_id_14d7eea8_fk_shop_product_category_id` FOREIGN KEY (`category_id`) REFERENCES `shop_product_category` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of shop_product
 -- ----------------------------
-INSERT INTO `shop_product` VALUES (1, '三阶速拧魔方', '专业级三阶魔方，顺滑手感，适合速拧练习和比赛', 49.90, 69.90, 100, '[]', 'products/product_1_6a905cb0_85tRejH.png', 1, 256, '{\"版本\": [\"标准版\", \"升级版\"], \"颜色\": [\"白色\", \"黑色\"]}', '2026-07-08 15:23:43.549763', '2026-07-24 12:36:10.974550', 1);
-INSERT INTO `shop_product` VALUES (2, '三阶磁力魔方', '内置磁力定位系统，转体定位精准，提升还原速度', 89.90, 119.90, 80, '[]', 'products/product_2_846bf74f_JRNoo8V.png', 1, 134, '{\"颜色\": [\"白色\", \"黑色\"]}', '2026-07-08 15:23:43.559222', '2026-07-24 12:36:13.703024', 1);
-INSERT INTO `shop_product` VALUES (3, '三阶初学者套装', '适合新手入门的三阶魔方套装，包含教程和配件', 29.90, 39.90, 150, '[]', 'products/product_3_9e79361c_tBy2pvd.png', 1, 567, '{\"颜色\": [\"白色\"]}', '2026-07-08 15:23:43.568172', '2026-07-24 12:36:17.004180', 1);
-INSERT INTO `shop_product` VALUES (4, '四阶魔方', '经典四阶魔方，结构稳定，适合进阶玩家', 79.90, 99.90, 60, '[]', 'products/product_4_0d3de778_dFZnKAk.png', 1, 89, '{\"颜色\": [\"白色\", \"黑色\"]}', '2026-07-08 15:23:43.575344', '2026-07-24 12:36:21.095764', 2);
-INSERT INTO `shop_product` VALUES (5, '四阶磁力魔方', '四阶磁力版本，手感顺滑，定位精准', 129.90, 159.90, 40, '[]', 'products/product_5_2007a332_NcOYjYD.png', 1, 56, '{\"颜色\": [\"黑色\"]}', '2026-07-08 15:23:43.583150', '2026-07-24 12:36:25.256343', 2);
-INSERT INTO `shop_product` VALUES (6, '五阶魔方', '五阶高阶魔方，挑战你的极限', 109.90, 139.90, 50, '[]', 'products/product_6_d1976c7c_wmXKpYt.png', 1, 45, '{\"颜色\": [\"白色\", \"黑色\"]}', '2026-07-08 15:23:43.590697', '2026-07-24 12:36:27.203926', 3);
-INSERT INTO `shop_product` VALUES (7, '金字塔魔方', '经典异形魔方，四面体结构，锻炼空间思维', 39.90, 49.90, 70, '[]', 'products/product_7_0dc034d4_2Da42c3.png', 1, 123, '{\"颜色\": [\"白色\", \"黑色\"]}', '2026-07-08 15:23:43.598135', '2026-07-24 12:36:30.958319', 4);
-INSERT INTO `shop_product` VALUES (8, '斜转魔方', '斜转异形魔方，独特的转动方式，趣味性强', 44.90, 59.90, 64, '[]', 'products/product_8_de39b2c0_j5Ncxy5.png', 1, 79, '{\"颜色\": [\"白色\"]}', '2026-07-08 15:23:43.605257', '2026-07-24 12:36:33.217125', 4);
-INSERT INTO `shop_product` VALUES (9, '魔方底座', '亚克力材质，透明美观，展示你的魔方收藏', 15.90, 19.90, 200, '[]', 'products/product_9_e1586723_PL7ybRT.png', 1, 345, '{\"颜色\": [\"透明\", \"黑色\"]}', '2026-07-08 15:23:43.613682', '2026-07-24 12:36:35.089266', 5);
-INSERT INTO `shop_product` VALUES (10, '魔方润滑油', '专业魔方硅油，提升顺滑度，延长魔方寿命', 12.90, 16.90, 180, '[]', 'products/product_10_93196cdd_i2JHjdE.png', 1, 289, '{\"规格\": [\"10ml\", \"30ml\"]}', '2026-07-08 15:23:43.622100', '2026-07-24 12:36:37.993388', 5);
-INSERT INTO `shop_product` VALUES (11, '魔方贴纸套装', '高品质PVC贴纸，多种配色可选，更换方便', 9.90, 12.90, 120, '[]', 'products/product_11_37982974_z2RPaLL.png', 1, 178, '{\"类型\": [\"三阶\", \"四阶\", \"五阶\"]}', '2026-07-08 15:23:43.629648', '2026-07-24 12:36:40.538033', 5);
-INSERT INTO `shop_product` VALUES (12, '比赛专用魔方', 'WCA认证比赛用魔方，极致性能，专为竞技设计', 159.90, 199.90, 29, '[]', 'products/product_12_17af95aa_rJLqvJR.png', 1, 24, '{\"颜色\": [\"黑色\"]}', '2026-07-08 15:23:43.637838', '2026-07-24 12:36:42.586243', 6);
+INSERT INTO `shop_product` VALUES (1, '三阶速拧魔方', '专业级三阶魔方，顺滑手感，适合速拧练习和比赛', 49.90, 69.90, 100, '[]', 'products/product_1_6a905cb0_85tRejH.png', 1, 256, '{"版本": ["标准版", "升级版"], "颜色": ["白色", "黑色"]}', '2026-07-08 15:23:43.549763', '2026-07-24 12:36:10.974550', 1);
+INSERT INTO `shop_product` VALUES (2, '三阶磁力魔方', '内置磁力定位系统，转体定位精准，提升还原速度', 89.90, 119.90, 80, '[]', 'products/product_2_846bf74f_JRNoo8V.png', 1, 134, '{"颜色": ["白色", "黑色"]}', '2026-07-08 15:23:43.559222', '2026-07-24 12:36:13.703024', 1);
+INSERT INTO `shop_product` VALUES (3, '三阶初学者套装', '适合新手入门的三阶魔方套装，包含教程和配件', 29.90, 39.90, 150, '[]', 'products/product_3_9e79361c_tBy2pvd.png', 1, 567, '{"颜色": ["白色"]}', '2026-07-08 15:23:43.568172', '2026-07-24 12:36:17.004180', 1);
+INSERT INTO `shop_product` VALUES (4, '四阶魔方', '经典四阶魔方，结构稳定，适合进阶玩家', 79.90, 99.90, 60, '[]', 'products/product_4_0d3de778_dFZnKAk.png', 1, 89, '{"颜色": ["白色", "黑色"]}', '2026-07-08 15:23:43.575344', '2026-07-24 12:36:21.095764', 2);
+INSERT INTO `shop_product` VALUES (5, '四阶磁力魔方', '四阶磁力版本，手感顺滑，定位精准', 129.90, 159.90, 40, '[]', 'products/product_5_2007a332_NcOYjYD.png', 1, 56, '{"颜色": ["黑色"]}', '2026-07-08 15:23:43.583150', '2026-07-24 12:36:25.256343', 2);
+INSERT INTO `shop_product` VALUES (6, '五阶魔方', '五阶高阶魔方，挑战你的极限', 109.90, 139.90, 50, '[]', 'products/product_6_d1976c7c_wmXKpYt.png', 1, 45, '{"颜色": ["白色", "黑色"]}', '2026-07-08 15:23:43.590697', '2026-07-24 12:36:27.203926', 3);
+INSERT INTO `shop_product` VALUES (7, '金字塔魔方', '经典异形魔方，四面体结构，锻炼空间思维', 39.90, 49.90, 70, '[]', 'products/product_7_0dc034d4_2Da42c3.png', 1, 123, '{"颜色": ["白色", "黑色"]}', '2026-07-08 15:23:43.598135', '2026-07-24 12:36:30.958319', 4);
+INSERT INTO `shop_product` VALUES (8, '斜转魔方', '斜转异形魔方，独特的转动方式，趣味性强', 44.90, 59.90, 64, '[]', 'products/product_8_de39b2c0_j5Ncxy5.png', 1, 79, '{"颜色": ["白色"]}', '2026-07-08 15:23:43.605257', '2026-07-24 12:36:33.217125', 4);
+INSERT INTO `shop_product` VALUES (9, '魔方底座', '亚克力材质，透明美观，展示你的魔方收藏', 15.90, 19.90, 200, '[]', 'products/product_9_e1586723_PL7ybRT.png', 1, 345, '{"颜色": ["透明", "黑色"]}', '2026-07-08 15:23:43.613682', '2026-07-24 12:36:35.089266', 5);
+INSERT INTO `shop_product` VALUES (10, '魔方润滑油', '专业魔方硅油，提升顺滑度，延长魔方寿命', 12.90, 16.90, 180, '[]', 'products/product_10_93196cdd_i2JHjdE.png', 1, 289, '{"规格": ["10ml", "30ml"]}', '2026-07-08 15:23:43.622100', '2026-07-24 12:36:37.993388', 5);
+INSERT INTO `shop_product` VALUES (11, '魔方贴纸套装', '高品质PVC贴纸，多种配色可选，更换方便', 9.90, 12.90, 120, '[]', 'products/product_11_37982974_z2RPaLL.png', 1, 178, '{"类型": ["三阶", "四阶", "五阶"]}', '2026-07-08 15:23:43.629648', '2026-07-24 12:36:40.538033', 5);
+INSERT INTO `shop_product` VALUES (12, '比赛专用魔方', 'WCA认证比赛用魔方，极致性能，专为竞技设计', 159.90, 199.90, 29, '[]', 'products/product_12_17af95aa_rJLqvJR.png', 1, 24, '{"颜色": ["黑色"]}', '2026-07-08 15:23:43.637838', '2026-07-24 12:36:42.586243', 6);
 
 -- ----------------------------
 -- Table structure for shop_product_category
 -- ----------------------------
 DROP TABLE IF EXISTS `shop_product_category`;
-CREATE TABLE `shop_product_category`  (
+CREATE TABLE `shop_product_category` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `icon` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `icon` varchar(100) NOT NULL,
   `sort_order` int NOT NULL,
-  `description` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `description` longtext NOT NULL,
   `created_at` datetime(6) NOT NULL,
-  `parent_id` bigint NULL DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  INDEX `shop_product_categor_parent_id_545fc4e9_fk_shop_prod`(`parent_id` ASC) USING BTREE,
-  CONSTRAINT `shop_product_categor_parent_id_545fc4e9_fk_shop_prod` FOREIGN KEY (`parent_id`) REFERENCES `shop_product_category` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  `parent_id` bigint DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `shop_product_categor_parent_id_545fc4e9_fk_shop_prod` (`parent_id`),
+  CONSTRAINT `shop_product_categor_parent_id_545fc4e9_fk_shop_prod` FOREIGN KEY (`parent_id`) REFERENCES `shop_product_category` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of shop_product_category
@@ -1477,18 +1619,18 @@ INSERT INTO `shop_product_category` VALUES (6, '比赛专用', '', 6, '', '2026-
 -- Table structure for timer_record
 -- ----------------------------
 DROP TABLE IF EXISTS `timer_record`;
-CREATE TABLE `timer_record`  (
+CREATE TABLE `timer_record` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `cube_type` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `method` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `cube_type` varchar(10) NOT NULL,
+  `method` varchar(20) NOT NULL,
   `time_ms` int NOT NULL,
-  `scramble` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `scramble` longtext NOT NULL,
   `created_at` datetime(6) NOT NULL,
   `user_id` bigint NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  INDEX `timer_record_user_id_eedfa320_fk_accounts_user_id`(`user_id` ASC) USING BTREE,
-  CONSTRAINT `timer_record_user_id_eedfa320_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`id`),
+  KEY `timer_record_user_id_eedfa320_fk_accounts_user_id` (`user_id`),
+  CONSTRAINT `timer_record_user_id_eedfa320_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of timer_record
