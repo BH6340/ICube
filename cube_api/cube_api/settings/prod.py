@@ -9,35 +9,37 @@
     1. DEBUG = False（禁用调试模式）
     2. SECRET_KEY（通过环境变量配置）
     3. ALLOWED_HOSTS（通过环境变量配置）
-    4. CORS_ALLOWED_ORIGINS（通过环境变量配置）
+    4. CORS_ALLOWED_ORIGINS（根据环境变量生成来源列表）
     5. DATABASES（生产环境数据库配置）
     6. CACHES（生产环境 Redis 配置）
     7. STATIC_ROOT（静态文件收集目录）
 """
 import os
-# 继承开发环境配置，然后覆盖生产环境特有的配置
+
+# 继承开发环境配置，再覆盖生产环境差异项
 from .dev import *
 
 # ==================== 安全配置 ====================
 
 # 生产环境必须禁用调试模式
-# DEBUG=True 会暴露敏感信息，存在安全风险
+# DEBUG = True 会暴露详细错误信息，不可用于生产环境
 DEBUG = False
 
-# 密钥：生产环境必须通过环境变量 SECRET_KEY 配置
-# 默认为 dev.py 中的密钥（仅作为 fallback，实际生产应设置环境变量）
+# Django 加密签名密钥，生产环境必须通过 SECRET_KEY 覆盖
+# 默认值仅作为启动兜底，不应在真实生产环境使用
 SECRET_KEY = os.getenv('SECRET_KEY', SECRET_KEY)
 
-# 允许访问的主机列表
-# 通过环境变量 ALLOWED_HOSTS 配置，格式为逗号分隔的主机名列表
-# 默认包含 Docker 容器内部访问的主机名（icube_api、api）和本地回环地址
+# ALLOWED_HOSTS 使用逗号分隔的主机名，不包含协议和端口
+# 额外保留 Docker 服务名、容器名和本地回环地址
 ALLOWED_HOSTS = [
     h.strip() for h in os.getenv('ALLOWED_HOSTS', '').split(',') if h.strip()
 ] + ['localhost', '127.0.0.1', 'icube_api', 'api']
 
 # ==================== CORS 配置 ====================
 
-# 通过环境变量配置允许的前端来源
+# ALLOWED_ORIGIN 应为不含协议的主机名，代码会生成 HTTP 与 HTTPS 来源
+# 注意：本文件继承 dev.py 的 CORS_ALLOW_ALL_ORIGINS = True；
+# 若未显式覆盖为 False，下方白名单不会形成限制
 _allowed_origin = os.getenv('ALLOWED_ORIGIN', '')
 CORS_ALLOWED_ORIGINS = [
     f"{scheme}://{_allowed_origin}"
@@ -48,11 +50,12 @@ CORS_ALLOWED_ORIGINS = [
     "https://localhost",
 ]
 
-# 允许携带凭证（Cookie、Authorization 等）
+# 允许跨源请求携带 Cookie、Authorization 等凭证
 CORS_ALLOW_CREDENTIALS = True
 
 # ==================== 数据库配置 ====================
 
+# 生产数据库参数优先从环境变量读取
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -72,23 +75,21 @@ DATABASES = {
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        # Redis 地址：Docker 环境中使用服务名 'redis'
+        # Docker 网络内通过 redis 服务名连接
         'LOCATION': os.getenv('REDIS_URL', 'redis://redis:6379/1'),
-        'OPTIONS': REDIS_BASE_OPTIONS,  # 复用 dev.py 中定义的基础配置
+        # 复用 dev.py 的阻塞连接池与 JSON 序列化配置
+        'OPTIONS': REDIS_BASE_OPTIONS,
         'KEY_PREFIX': 'icube_prod',    # 生产环境使用独立的键前缀
-        'TIMEOUT': 86400,              # 默认缓存超时时间：24小时
+        'TIMEOUT': 86400,              # 默认缓存有效期：24 小时
     }
 }
 
 # ==================== django-unfold 配置 ====================
 
-# X_FRAME_OPTIONS：Unfold 需要嵌入 iframe，必须设为 SAMEORIGIN
-# 生产环境继承 dev.py 的 UNFOLD_SETTINGS，此处仅显式覆盖安全头
+# 允许同源页面嵌入管理后台，满足 Unfold 组件需求
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 # ==================== 静态文件配置 ====================
 
-# 静态文件收集目录
-# 运行 python manage.py collectstatic 时，所有静态文件会被收集到这个目录
-# Nginx 需要配置指向这个目录来提供静态文件服务
+# collectstatic 输出目录，由 Nginx 通过共享卷提供静态资源
 STATIC_ROOT = os.path.join(BASE_DIR, 'collected_static')
