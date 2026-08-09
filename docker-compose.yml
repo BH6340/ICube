@@ -16,7 +16,7 @@ services:
       MYSQL_ROOT_HOST: '%'
       MYSQL_DATABASE: icube_db
       MYSQL_USER: icube_api
-      MYSQL_PASSWORD: icube123
+      MYSQL_PASSWORD: ${DB_PASSWORD:-icube123}
     volumes:
       # 持久化数据库数据，容器重建后仍保留
       - mysql_data:/var/lib/mysql
@@ -63,7 +63,7 @@ services:
       # MySQL 连接参数，db 为 Compose 网络内的服务名
       - DB_NAME=icube_db
       - DB_USER=icube_api
-      - DB_PASSWORD=icube123
+      - DB_PASSWORD=${DB_PASSWORD:-icube123}
       - DB_HOST=db
       - DB_PORT=3306
       # 生产域名、跨域来源和支付宝回调主机由宿主机环境变量传入
