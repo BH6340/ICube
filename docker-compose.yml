@@ -20,9 +20,9 @@ services:
       - ./cube_api/mysql.conf:/etc/mysql/conf.d/mysql.cnf
       # MySQL 首次初始化时自动执行初始化脚本
       - ./init_data.sql:/docker-entrypoint-initdb.d/02_init_data.sql
-    ports:
-      # 允许宿主机直接连接 MySQL；仅容器内部访问时可移除
-      - "3306:3306"
+    # ports:
+    #   # 允许宿主机直接连接 MySQL；仅容器内部访问时可移除
+    #   - "3306:3306"
     healthcheck:
       # API 必须等待 MySQL 可接受连接，不能只依赖容器启动状态
       test: ["CMD-SHELL", "MYSQL_PWD=icube_root123 mysqladmin ping -h localhost -uroot || exit 1"]
@@ -49,7 +49,7 @@ services:
       - icube_network
 
   api:
-    # Django + Gunicorn 后端服务
+    # Django + Gunicorn 后端服务，业务代码在构建时写入镜像
     build:
       context: ./cube_api
       dockerfile: Dockerfile
@@ -69,11 +69,9 @@ services:
       - ALLOWED_ORIGIN=${ALLOWED_ORIGIN:-}
       - SERVER_HOST=${SERVER_HOST:-localhost}
     volumes:
-      # 绑定后端源码，宿主机修改可直接反映到容器
-      - ./cube_api:/app
-      # 与 Nginx 共享用户上传文件
-      - ./media:/app/media
-      # collectstatic 产物通过命名卷交给 Nginx      - media_volume:/app/media
+      # 用户上传文件保存在宿主机，容器重建后仍保留且便于备份
+      - ./cube_api/media:/app/media
+      # collectstatic 产物通过命名卷交给 Nginx
       - collected_static:/app/collected_static
     depends_on:
       # 等待 MySQL 健康检查通过后再启动
@@ -86,21 +84,18 @@ services:
       - icube_network
 
   front:
-    # 构建 Vue 前端，并将 dist 目录共享给 Nginx
+    # 多阶段构建 Vue，并由容器内 Nginx 在 80 端口提供 dist
     build:
       context: ./cube_front
       dockerfile: Dockerfile
     container_name: icube_front
     restart: always
-    volumes:
-      # 前端构建产物共享卷
-      - front_dist:/app/dist
     networks:
       - icube_network
 
   nginx:
-    # 统一提供前端页面、静态文件、媒体文件和 API 反向代理
-    image: nginx:latest
+    # 公网网关：反向代理 API 和前端，并直接提供媒体及 Django 静态文件
+    image: nginx:1.28-alpine
     container_name: icube_nginx
     restart: always
     ports:
@@ -111,12 +106,10 @@ services:
       - ./nginx/conf.d:/etc/nginx/conf.d
       - ./nginx/ssl:/etc/nginx/ssl
       # 与 API 共享媒体文件和 collectstatic 产物
-      - ./media:/usr/share/nginx/html/media
+      - ./cube_api/media:/usr/share/nginx/html/media
       - collected_static:/usr/share/nginx/html/static
-      # Vue 构建产物作为 SPA 根目录
-      - front_dist:/usr/share/nginx/html
     depends_on:
-      # 此处只控制启动顺序，不代表服务已完成就绪
+      # 仅控制启动顺序；运行状态由各服务的 restart 策略保障
       - api
       - front
     networks:
@@ -126,9 +119,8 @@ volumes:
   # 数据持久化卷
   mysql_data:
   redis_data:
-  # 跨服务共享的构建产物卷
+  # API 与 Nginx 共享 Django collectstatic 产物
   collected_static:
-  front_dist:
 
 networks:
   # 所有服务通过服务名在同一桥接网络内通信

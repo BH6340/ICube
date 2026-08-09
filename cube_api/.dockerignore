@@ -1,0 +1,27 @@
+# Python 缓存与测试产物
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# 本地运行数据由 Compose 单独挂载，不应写入镜像
+logs/
+log/
+media/
+collected_static/
+db.sqlite3
+*.sqlite3
+
+# 环境变量和支付密钥必须通过部署环境提供
+.env
+.env.*
+cube_api/apps/shop/keys/
+
+# 编辑器与版本控制元数据
+.git/
+.gitignore
+.idea/
+.vscode/
+.trae/

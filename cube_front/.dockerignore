@@ -1,0 +1,19 @@
+# 本地依赖、构建产物和工具缓存由容器重新生成
+node_modules/
+dist/
+.vite/
+.cache/
+
+# npm 日志和本地环境变量不进入生产镜像
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env
+.env.*
+
+# 编辑器与版本控制元数据
+.git/
+.gitignore
+.idea/
+.vscode/
+.trae/
