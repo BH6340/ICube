@@ -1,10 +1,12 @@
-version: '3.8'
+# Docker Compose v2+ 使用 Compose Specification，无需声明 version
 
 services:
   db:
+    # MySQL 主数据库
     image: mysql:8.0
     container_name: icube_db
     restart: always
+    # 仅在 mysql_data 为空、数据库首次初始化时生效
     environment:
       MYSQL_ROOT_PASSWORD: icube_root123
       MYSQL_ROOT_HOST: '%'
@@ -12,75 +14,92 @@ services:
       MYSQL_USER: icube_api
       MYSQL_PASSWORD: icube123
     volumes:
+      # 持久化数据库数据，容器重建后仍保留
       - mysql_data:/var/lib/mysql
+      # 加载项目自定义 MySQL 配置
       - ./cube_api/mysql.conf:/etc/mysql/conf.d/mysql.cnf
+      # MySQL 首次初始化时自动执行初始化脚本
       - ./init_data.sql:/docker-entrypoint-initdb.d/02_init_data.sql
     ports:
+      # 允许宿主机直接连接 MySQL；仅容器内部访问时可移除
       - "3306:3306"
-    # 👇 新增：健康检查，确保 MySQL 真正可用
     healthcheck:
-      # 仅使用 mysqladmin ping 检查数据库基础连通性
+      # API 必须等待 MySQL 可接受连接，不能只依赖容器启动状态
       test: ["CMD-SHELL", "MYSQL_PWD=icube_root123 mysqladmin ping -h localhost -uroot || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 10
-      start_period: 45s # 给 MySQL 8.0 留足数据初始化启动的时间
+      # 首次初始化数据期间不累计健康检查失败次数
+      start_period: 45s
     networks:
       - icube_network
 
   redis:
+    # 缓存、JWT 黑名单及 Session 存储
     image: redis:7-alpine
     container_name: icube_redis
     restart: always
     volumes:
+      # 持久化 Redis 数据，避免容器重建后缓存数据立即丢失
       - redis_data:/data
     ports:
+      # 允许宿主机调试 Redis；仅容器内部访问时可移除
       - "6379:6379"
     networks:
       - icube_network
 
   api:
+    # Django + Gunicorn 后端服务
     build:
       context: ./cube_api
       dockerfile: Dockerfile
     container_name: icube_api
     restart: always
     environment:
+      # 显式使用生产配置
       - DJANGO_SETTINGS_MODULE=cube_api.settings.prod
+      # MySQL 连接参数，db 为 Compose 网络内的服务名
       - DB_NAME=icube_db
       - DB_USER=icube_api
       - DB_PASSWORD=icube123
       - DB_HOST=db
       - DB_PORT=3306
+      # 生产域名、跨域来源和支付宝回调主机由宿主机环境变量传入
       - ALLOWED_HOSTS=${ALLOWED_HOSTS:-}
       - ALLOWED_ORIGIN=${ALLOWED_ORIGIN:-}
       - SERVER_HOST=${SERVER_HOST:-localhost}
     volumes:
+      # 绑定后端源码，宿主机修改可直接反映到容器
       - ./cube_api:/app
-      - media_volume:/app/media
+      # 与 Nginx 共享用户上传文件
+      - ./media:/app/media
+      # collectstatic 产物通过命名卷交给 Nginx      - media_volume:/app/media
       - collected_static:/app/collected_static
-    # 👇 修改：等待 db 变成 healthy 状态再启动后端 API
     depends_on:
+      # 等待 MySQL 健康检查通过后再启动
       db:
         condition: service_healthy
+      # 仅等待 Redis 容器启动，不检查 Redis 是否已可接受连接
       redis:
         condition: service_started
     networks:
       - icube_network
 
   front:
+    # 构建 Vue 前端，并将 dist 目录共享给 Nginx
     build:
       context: ./cube_front
       dockerfile: Dockerfile
     container_name: icube_front
     restart: always
     volumes:
-      # - ./cube_front:/app
+      # 前端构建产物共享卷
       - front_dist:/app/dist
     networks:
       - icube_network
 
   nginx:
+    # 统一提供前端页面、静态文件、媒体文件和 API 反向代理
     image: nginx:latest
     container_name: icube_nginx
     restart: always
@@ -88,24 +107,30 @@ services:
       - "80:80"
       - "443:443"
     volumes:
+      # Nginx 站点配置和 HTTPS 证书
       - ./nginx/conf.d:/etc/nginx/conf.d
       - ./nginx/ssl:/etc/nginx/ssl
-      - media_volume:/usr/share/nginx/html/media
+      # 与 API 共享媒体文件和 collectstatic 产物
+      - ./media:/usr/share/nginx/html/media
       - collected_static:/usr/share/nginx/html/static
+      # Vue 构建产物作为 SPA 根目录
       - front_dist:/usr/share/nginx/html
     depends_on:
+      # 此处只控制启动顺序，不代表服务已完成就绪
       - api
       - front
     networks:
       - icube_network
 
 volumes:
+  # 数据持久化卷
   mysql_data:
   redis_data:
-  media_volume:
+  # 跨服务共享的构建产物卷
   collected_static:
   front_dist:
 
 networks:
+  # 所有服务通过服务名在同一桥接网络内通信
   icube_network:
     driver: bridge

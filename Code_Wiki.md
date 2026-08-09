@@ -206,6 +206,22 @@ cube_api/
 
 ### 5.1 dev.py — 基础配置（[dev.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py)）
 
+**文件结构：**
+
+```
+1. 路径配置（BASE_DIR、sys.path）
+2. 安全配置（SECRET_KEY、DEBUG、ALLOWED_HOSTS）
+3. 应用配置（INSTALLED_APPS）
+4. 中间件配置（MIDDLEWARE）
+5. 数据库配置（DATABASES）
+6. 缓存配置（CACHES、Redis）
+7. DRF 配置（REST_FRAMEWORK）
+8. JWT 配置（SIMPLE_JWT）
+9. 其他业务配置（FORUM_CONFIG、SPECTACULAR_SETTINGS）
+10. 日志配置（LOGGING）
+11. CORS 配置
+```
+
 **路径注入**（[L40-L50](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L40-L50)）：
 
 - `sys.path.insert(0, cube_api/cube_api/)` → 可直接 `import utils`、`from apps.xxx import ...`
