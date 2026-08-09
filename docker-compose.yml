@@ -20,9 +20,9 @@ services:
       - ./cube_api/mysql.conf:/etc/mysql/conf.d/mysql.cnf
       # MySQL 首次初始化时自动执行初始化脚本
       - ./init_data.sql:/docker-entrypoint-initdb.d/02_init_data.sql
-    # ports:
-    #   # 允许宿主机直接连接 MySQL；仅容器内部访问时可移除
-    #   - "3306:3306"
+    ports:
+      # 本地直接连接；服务器远程连接使用 SSH 隧道，不向公网开放 MySQL
+      - "127.0.0.1:3306:3306"
     healthcheck:
       # API 必须等待 MySQL 可接受连接，不能只依赖容器启动状态
       test: ["CMD-SHELL", "MYSQL_PWD=icube_root123 mysqladmin ping -h localhost -uroot || exit 1"]
