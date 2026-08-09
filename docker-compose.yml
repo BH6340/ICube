@@ -4,6 +4,10 @@ services:
   db:
     # MySQL 主数据库
     image: mysql:8.0
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --bind-address=0.0.0.0
     container_name: icube_db
     restart: always
     # 仅在 mysql_data 为空、数据库首次初始化时生效
@@ -16,8 +20,6 @@ services:
     volumes:
       # 持久化数据库数据，容器重建后仍保留
       - mysql_data:/var/lib/mysql
-      # 加载项目自定义 MySQL 配置
-      - ./cube_api/mysql.conf:/etc/mysql/conf.d/mysql.cnf
       # MySQL 首次初始化时自动执行初始化脚本
       - ./init_data.sql:/docker-entrypoint-initdb.d/02_init_data.sql
     ports:
