@@ -47,10 +47,10 @@ ICube 是一个魔方学习与交流平台，前后端分离架构，涵盖：
 
 ```
 浏览器
-  ├─ /api/*    → Nginx → icube_api:8000 (Django/DRF，保留 /api/ 前缀)
-  ├─ /media/*  → Nginx → alias media_volume (30天缓存)
-  ├─ /static/* → Nginx → alias collected_static (30天缓存)
-  └─ /*        → Nginx → try_files → front_dist/index.html (SPA 回退)
+  ├─ /api/*    → 网关 Nginx → api:8000（Django/DRF，保留 /api/ 前缀）
+  ├─ /media/*  → 网关 Nginx → alias ./cube_api/media（30 天缓存）
+  ├─ /static/* → 网关 Nginx → alias collected_static（30 天缓存）
+  └─ /*        → 网关 Nginx → front:80 → 前端 Nginx（SPA 回退）
 ```
 
 本地开发：Vite dev server 接管前端，`/api` 与 `/media` 经 `vite.config.js` proxy → `127.0.0.1:8000`。
@@ -63,43 +63,37 @@ ICube 是一个魔方学习与交流平台，前后端分离架构，涵盖：
                         └─────────────────┬───────────────────┘
                                           ▼
                 ┌──────────────────────────────────────────────┐
-                │  nginx (icube_nginx)  :80 / :443            │
-                │  /api/*  → proxy_pass icube_api:8000        │
-                │  /media/* → alias media_volume (30d)        │
-                │  /static/*→ alias collected_static (30d)    │
-                │  /* → try_files front_dist/index.html       │
-                └──────┬──────────────┬──────────────┬───────┘
-            depends_on │     depends_on│     volume   │ front_dist
-                       ▼              ▼              ▼
-       ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
-       │  api (icube_api) │  │  front(icube_    │  │  Vue 构建产物     │
-       │  Django+DRF      │  │    front)        │  │  /app/dist        │
-       │  gunicorn :8000  │  │  node:20-alpine  │  └──────────────────┘
-       │  /app (源码卷)   │  │  npm run build   │
-       └────┬────────┬────┘  └──────────────────┘
-   depends_on│       │ volume
-   (healthy) │       │ media_volume + collected_static
-            ▼        ▼
-   ┌──────────────┐  ┌──────────────────┐
-   │ db (MySQL 8) │  │ redis (7-alpine) │
-   │ :3306        │  │ :6379            │
-   │ healthcheck  │  │                  │
-   │ start_period │  └──────────────────┘
-   │   45s        │
-   └──────────────┘
+                │  nginx (icube_nginx) :80                     │
+                │  /api/* → api:8000                           │
+                │  /media/*、/static/* → alias                 │
+                │  /* → front:80                               │
+                └──────────────┬────────────────┬──────────────┘
+                               ▼                ▼
+                 ┌────────────────────┐  ┌────────────────────┐
+                 │ api (icube_api)    │  │ front (icube_front)│
+                 │ Django + Gunicorn  │  │ Nginx + Vue dist   │
+                 │ 镜像内业务代码 :8000 │  │ 镜像内静态资源 :80   │
+                 └─────────┬──────────┘  └────────────────────┘
+                  depends_on│
+          ┌─────────────────┴─────────────────┐
+          ▼                                   ▼
+   ┌──────────────────┐              ┌──────────────────┐
+   │ db (MySQL 8.0)   │              │ redis (7-alpine) │
+   │ healthcheck      │              │ redis_data       │
+   │ start_period 45s │              └──────────────────┘
+   └──────────────────┘
 ```
 
 ### 2.3 数据卷
 
-| 卷名                 | 用途               | 挂载点                                                                |
-| ------------------ | ---------------- | ------------------------------------------------------------------ |
-| `mysql_data`       | MySQL 持久化        | `db:/var/lib/mysql`                                                |
-| `redis_data`       | Redis 持久化        | `redis:/data`                                                      |
-| `media_volume`     | 用户上传媒体           | `api:/app/media` ↔ `nginx:/usr/share/nginx/html/media`             |
-| `collected_static` | collectstatic 产物 | `api:/app/collected_static` ↔ `nginx:/usr/share/nginx/html/static` |
-| `front_dist`       | 前端构建产物           | `front:/app/dist` ↔ `nginx:/usr/share/nginx/html`                  |
+| 卷或目录                 | 用途                   | 挂载点                                                                |
+| ---------------------- | -------------------- | ------------------------------------------------------------------ |
+| `mysql_data`           | MySQL 持久化            | `db:/var/lib/mysql`                                                |
+| `redis_data`           | Redis 持久化            | `redis:/data`                                                      |
+| `collected_static`     | collectstatic 产物     | `api:/app/collected_static` ↔ `nginx:/usr/share/nginx/html/static` |
+| `./cube_api/media`     | 受 Git 管理及用户上传的媒体文件 | `api:/app/media` ↔ `nginx:/usr/share/nginx/html/media`             |
 
-所有服务共用自定义桥接网络 `icube_network`。
+前端 `dist` 在 Docker 构建阶段写入 `front` 镜像，不再使用 `front_dist` 卷。所有服务共用自定义桥接网络 `icube_network`。
 
 ***
 
@@ -157,7 +151,7 @@ cube_api/
 ├── manage.py
 ├── requirements.txt
 ├── Dockerfile
-├── mysql.conf                    # MySQL 字符集/认证插件配置
+├── mysql.conf                    # 历史配置文件，当前 Compose 不再挂载
 └── cube_api/
     ├── __init__.py
     ├── settings/
@@ -1291,103 +1285,105 @@ if (token) config.headers['Authorization'] = `Token ${token}`
 
 5 服务架构：
 
-| 服务        | image/build          | 关键配置                                                                                                                                                               |
-| --------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **db**    | `mysql:8.0`          | 端口 3306、healthcheck（`mysqladmin ping`，**start\_period 45s**）、挂载 `mysql.conf` + `init_data.sql`                                                                     |
-| **redis** | `redis:7-alpine`     | 端口 6379、`redis_data` 卷                                                                                                                                             |
-| **api**   | build `./cube_api`   | env: `DJANGO_SETTINGS_MODULE=cube_api.settings.prod` + DB/Redis/ALLOWED\_HOSTS 等；挂载 `./cube_api:/app` + media + collected\_static；depends\_on: db(healthy) + redis |
-| **front** | build `./cube_front` | 仅共享 `front_dist:/app/dist`（不挂源码）                                                                                                                                   |
-| **nginx** | `nginx:latest`       | 端口 80/443；挂载 conf.d/ssl + media + static + front\_dist；depends\_on: api + front                                                                                    |
+| 服务        | image/build          | 关键配置 |
+| --------- | -------------------- | -------- |
+| **db**    | `mysql:8.0`          | `mysql_data` 持久化；挂载 `init_data.sql`；`mysqladmin ping` 健康检查，`start_period: 45s`；宿主机仅监听 `127.0.0.1:3306` |
+| **redis** | `redis:7-alpine`     | `redis_data` 持久化；当前发布宿主机 `6379` |
+| **api**   | build `./cube_api`   | 业务代码写入镜像；挂载 `./cube_api/media` 与 `collected_static`；等待 db `service_healthy`、redis `service_started` |
+| **front** | build `./cube_front` | Vue `dist` 写入运行镜像，由容器内 Nginx 在 80 端口提供 |
+| **nginx** | `nginx:1.28-alpine`  | 发布 80/443；挂载网关配置、证书目录、媒体目录和 `collected_static`；依赖 api、front |
 
-> ⚠️ `version: '3.8'` 字段已过时，可移除。
+Compose v2 使用 Compose Specification，顶层 `version` 字段已经删除。后端与前端均采用多阶段构建且不挂载源码，容器运行的是构建时写入镜像的代码。
 
 ### 14.2 后端 Dockerfile（[cube\_api/Dockerfile](file:///e:/BH/PyStudy/ICube/cube_api/Dockerfile)）
 
-| 项         | 配置                                                                                                                                |
-| --------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| 基础镜像      | `python:3.13-slim`                                                                                                                |
-| apt 源     | 替换为清华源                                                                                                                            |
-| 系统依赖      | gcc、python3-dev、default-libmysqlclient-dev、pkg-config（mysqlclient 编译）                                                             |
-| Python 依赖 | 先 `pip install gunicorn`，再 `pip install -r requirements.txt`（清华源）                                                                 |
-| 分层缓存      | `COPY requirements.txt` → 安装 → `COPY . .`                                                                                         |
-| EXPOSE    | 8000                                                                                                                              |
-| 启动命令      | `gunicorn cube_api.wsgi:application --env DJANGO_SETTINGS_MODULE=cube_api.settings.prod --bind 0.0.0.0:8000 --workers 3 --reload` |
+| 阶段 | 配置 |
+| ---- | ---- |
+| builder | `python:3.13-slim`；安装 gcc、`default-libmysqlclient-dev`、pkg-config；将 gunicorn 和 `requirements.txt` 全部构建为 wheel |
+| runtime | `python:3.13-slim`；只安装 `libmariadb3` 和 builder 生成的 wheel，再复制项目代码 |
+| 启动 | 先执行 `python manage.py collectstatic --noinput`，再 `exec gunicorn ... --workers 3` |
 
-⚠️ **关键观察**：
-
-- 启动命令使用 `--reload`（配合源码挂载热更新，生产建议去掉）
-- **无 entrypoint.sh**，未自动执行 `migrate` 和 `collectstatic`，需手动执行
-- `gunicorn` 未写入 `requirements.txt`
+编译工具不会进入最终镜像。生产启动命令不包含 `--reload`；数据库 migration 不放在容器启动命令中，而由 `deploy.sh` 在服务切换前显式执行。
 
 ### 14.3 前端 Dockerfile（[cube\_front/Dockerfile](file:///e:/BH/PyStudy/ICube/cube_front/Dockerfile)）
 
-| 项      | 配置                                                      |
-| ------ | ------------------------------------------------------- |
-| 基础镜像   | `node:20-alpine`（**单阶段构建**）                             |
-| 依赖安装   | `npm install --registry=https://registry.npmmirror.com` |
-| 构建     | `npm run build`                                         |
-| EXPOSE | 5173                                                    |
-| 启动命令   | `npm run preview -- --host 0.0.0.0 --port 5173`         |
+| 阶段 | 配置 |
+| ---- | ---- |
+| builder | `node:20-alpine`；`npm ci` 严格使用锁文件；执行 `npm run build` 生成 `/app/dist` |
+| runtime | `nginx:1.28-alpine`；复制前端站点配置和 builder 的 `dist`；监听 80 |
 
-⚠️ preview 服务实际未被 nginx 访问（nginx 直接通过 `front_dist` 卷读取构建产物）。
+运行镜像不包含 Node.js、源码或 npm 依赖。`dist` 位于 `/usr/share/nginx/html`，不再使用 `npm run preview` 或 `front_dist` 卷。
 
 ### 14.4 Nginx 配置（[nginx/conf.d/icube.conf](file:///e:/BH/PyStudy/ICube/nginx/conf.d/icube.conf)）
 
-| 路径         | 处理方式                                                   |
-| ---------- | ------------------------------------------------------ |
-| `/api/`    | `proxy_pass http://icube_api:8000;`（**保留 /api/ 前缀**透传） |
-| `/media/`  | `alias /usr/share/nginx/html/media/;` `expires 30d;`   |
-| `/static/` | `alias /usr/share/nginx/html/static/;` `expires 30d;`  |
-| `/`        | `try_files $uri $uri/ /index.html;`（SPA 回退）            |
+| 路径         | 网关处理方式 |
+| ---------- | ------------ |
+| `/api/`    | `proxy_pass http://api:8000;`，保留 `/api/` 前缀，透传代理头，连接与读取超时 60s |
+| `/media/`  | `alias /usr/share/nginx/html/media/; expires 30d;` |
+| `/static/` | `alias /usr/share/nginx/html/static/; expires 30d;` |
+| `/`        | `proxy_pass http://front:80;` |
 
-proxy 头：Host/X-Real-IP/X-Forwarded-For/X-Forwarded-Proto 全透传；超时 60s。
+前端容器的 [nginx.conf](file:///e:/BH/PyStudy/ICube/cube_front/nginx.conf) 再负责静态资源：
 
-⚠️ **未配置项**：gzip、`client_max_body_size`（默认 1MB，后端允许 5MB）、HTTPS server 块、upstream 块。
+- `/assets/` 设置一年不可变缓存。
+- `index.html` 使用 `no-cache`。
+- `try_files $uri $uri/ /index.html` 完成 Vue Router history 模式 SPA 回退。
+
+当前未配置 gzip、`client_max_body_size` 和 HTTPS server 块。Compose 虽映射 443 并挂载证书目录，但站点配置只监听 80。
 
 ### 14.5 环境变量清单
 
-| 变量                                                            | 用途                       | 默认值                                                   |
-| ------------------------------------------------------------- | ------------------------ | ----------------------------------------------------- |
-| `DJANGO_SETTINGS_MODULE`                                      | Django 配置模块              | `cube_api.settings.prod`                              |
-| `DB_NAME` / `DB_USER` / `DB_PASSWORD` / `DB_HOST` / `DB_PORT` | 数据库连接                    | `icube_db` / `icube_api` / `icube123` / `db` / `3306` |
-| `SECRET_KEY`                                                  | Django 密钥                | fallback 到 dev.py 硬编码（生产必须覆盖）                         |
-| `ALLOWED_HOSTS`                                               | 允许主机（逗号分隔）               | 自动追加 localhost/127.0.0.1/icube\_api/api               |
-| `ALLOWED_ORIGIN`                                              | 前端 CORS 来源（域名，不含 scheme） | 自动拼接 http/https + localhost                           |
-| `SERVER_HOST`                                                 | 支付宝回调地址（服务器外网域名）         | `localhost`                                           |
-| `REDIS_URL`                                                   | Redis 连接地址               | `redis://redis:6379/1`                                |
-| `SITE_DOMAIN`                                                 | 站点域名（生成绝对 URL）           | `http://localhost:8000`                               |
-| `DJANGO_ENV`                                                  | 日志环境标识（`prod` 触发生产日志策略）  | `dev`                                                 |
-| `RUNNING_IN_DOCKER`                                           | 是否 Docker（决定日志目录）        | `false`（true 时写 `/var/log/icube/`）                    |
+| 变量 | Compose 注入值 | 说明 |
+| ---- | -------------- | ---- |
+| `DJANGO_SETTINGS_MODULE` | `cube_api.settings.prod` | 固定使用生产配置 |
+| `DB_NAME` / `DB_USER` / `DB_HOST` / `DB_PORT` | `icube_db` / `icube_api` / `db` / `3306` | 容器网络内使用服务名 `db` |
+| `DB_PASSWORD` | `${DB_PASSWORD:-icube123}` | `.env` 优先，未设置时使用默认值 |
+| `ALLOWED_HOSTS` | `${ALLOWED_HOSTS:-}` | 逗号分隔主机名，不带协议 |
+| `ALLOWED_ORIGIN` | `${ALLOWED_ORIGIN:-}` | 单个主机名或 IP，不带协议 |
+| `SERVER_HOST` | `${SERVER_HOST:-localhost}` | 支付宝回调主机，不带协议 |
+| `REDIS_URL` | 未显式注入 | `prod.py` 默认使用 `redis://redis:6379/1` |
 
-MySQL 容器内置：`MYSQL_ROOT_PASSWORD=icube_root123`、`MYSQL_DATABASE=icube_db`、`MYSQL_USER=icube_api`、`MYSQL_PASSWORD=icube123`。
+`prod.py` 支持读取 `SECRET_KEY`，但当前 Compose 尚未把宿主机 `SECRET_KEY` 传入 API。仅写入 `.env` 不会进入容器，需要同时在 `api.environment` 中映射。`.env` 值包含 `$` 时应使用单引号，避免 Compose 变量插值警告。
+
+MySQL 使用固定 root 密码，业务用户密码为 `${DB_PASSWORD:-icube123}`。生产环境应继续将 root 密码和 Django `SECRET_KEY` 外部化。
 
 ### 14.6 数据库初始化
 
-#### mysql.conf（[mysql.conf](file:///e:/BH/PyStudy/ICube/cube_api/mysql.conf)）
+MySQL 字符集和监听地址通过 Compose `command` 传入：
 
-```ini
-[mysqld]
-character-set-server=utf8mb4
-collation-server=utf8mb4_unicode_ci
-default-authentication-plugin=mysql_native_password
-bind-address = 0.0.0.0
+```yaml
+command:
+  - --character-set-server=utf8mb4
+  - --collation-server=utf8mb4_unicode_ci
+  - --bind-address=0.0.0.0
 ```
 
-- **utf8mb4**（支持 emoji）
-- **mysql\_native\_password** 认证插件（避免 MySQL 8 默认 caching\_sha2\_password 连接失败）
+`mysql.conf` 不再 bind mount，避免 Windows Docker Desktop 把文件映射为 `0777` 后被 MySQL 以 world-writable 为由忽略。
 
-#### init\_data.sql
-
-- MySQL 容器**首次启动**时由 `/docker-entrypoint-initdb.d/02_init_data.sql` 自动执行
-- 包含约 36 张表的建表语句 + 种子数据（16 个测试用户，密码 `pbkdf2_sha256` 哈希）
-- ⚠️ 表 collation 为 `utf8mb4_0900_ai_ci`，与 mysql.conf 中 `utf8mb4_unicode_ci` 不一致
+- `init_data.sql` 只在 `mysql_data` 为空时由 `/docker-entrypoint-initdb.d/02_init_data.sql` 自动执行。
+- 已有数据库不会重复导入初始化脚本。
+- 每次 `full` 或 `api` 发布由 `deploy.sh` 执行 `python manage.py migrate --noinput`。
+- MySQL 宿主机端口绑定为 `127.0.0.1:3306:3306`；服务器远程管理使用 SSH 隧道，不直接开放公网 3306。
 
 ### 14.7 媒体文件夹注意事项
 
-- **`/media`** **必须纳入 Git 版本控制并上传服务器**（项目规则明确要求）
+- **`cube_api/media` 必须纳入 Git 版本控制并上传服务器**（项目规则明确要求）
 - 包含公式库图片（`formulas/F2L_Images/`、`OLL_Images/`、`PLL_Images/`）、轮播图（`banners/`）、默认头像（`avatars/*.svg`）等业务必需资源
-- 生产环境 `media_volume` 卷由 `api:/app/media` 和 `nginx:/usr/share/nginx/html/media` 共享
-- ⚠️ `deploy.sh` 使用 `docker compose down -v` 会删除 `media_volume`，可能导致用户上传内容丢失（版本控制的 `cube_api/media/` 仍保留）
+- 生产环境使用宿主机绑定目录：`./cube_api/media:/app/media` 与 `./cube_api/media:/usr/share/nginx/html/media`
+- `deploy.sh full` 会在迁移历史根目录 `media/` 前备份新旧目录
+- 脚本不执行 `docker compose down -v`；生产环境也禁止手工执行，避免删除 MySQL 和 Redis 数据卷
+
+### 14.8 deploy.sh 发布流程
+
+```bash
+bash deploy.sh full   # 首次、全量或基础设施变更
+bash deploy.sh api    # 仅后端，包含 migration
+bash deploy.sh front  # 仅前端，不停止 API、不操作数据库
+```
+
+共同步骤：检查环境 → `git pull --ff-only` → 按模式构建 → 启动目标服务 → 重启网关 Nginx → 验证容器和 HTTP。`full`、`api` 还会等待 MySQL healthy、执行 migration，并检查 MySQL 与 Redis；`api`、`front` 要求服务器已经存在完整部署。
+
+目标容器重建后必须重启网关 Nginx，防止其继续使用旧容器 IP。脚本失败时会输出服务状态及最近 100 行日志。脚本由普通 Docker 用户运行，禁止 `sudo bash deploy.sh`。
 
 ***
 
@@ -1483,15 +1479,15 @@ return APIResponse(code=503, msg='支付宝配置异常')           # 服务不�
 
 ### 16.3 部署
 
-| # | 位置             | 问题                                                                     | 建议                             |
-| - | -------------- | ---------------------------------------------------------------------- | ------------------------------ |
-| 1 | deploy.sh L38  | root 密码占位符 `你的数据库密码` 未替换                                               | 替换为实际值或改用环境变量                  |
-| 2 | 后端 Dockerfile  | 未配置 entrypoint.sh 自动 migrate/collectstatic                             | 增加 entrypoint 脚本               |
-| 3 | nginx 配置       | 未配置 `client_max_body_size`（默认 1MB，后端允许 5MB）                            | 增加 `client_max_body_size 10m;` |
-| 4 | nginx 配置       | 未配置 HTTPS server 块（虽然 compose 暴露 443）                                  | 增加 SSL 配置                      |
-| 5 | 后端 Dockerfile  | `gunicorn --reload` 用于生产有性能开销                                          | 生产去掉 `--reload`                |
-| 6 | 前端 Dockerfile  | `npm run preview` 服务实际未被 nginx 访问                                      | 改为多阶段构建只产出 dist                |
-| 7 | init\_data.sql | 表 collation `utf8mb4_0900_ai_ci` 与 mysql.conf `utf8mb4_unicode_ci` 不一致 | 统一                             |
+| # | 位置 | 当前问题 | 建议 |
+| - | ---- | -------- | ---- |
+| 1 | docker-compose.yml api environment | `prod.py` 支持 `SECRET_KEY`，但 Compose 未将该变量传入 API | 增加 `SECRET_KEY=${SECRET_KEY}` 并在服务器安全配置 |
+| 2 | docker-compose.yml db environment | `MYSQL_ROOT_PASSWORD` 仍硬编码 | 改为受保护的环境变量或 Secret |
+| 3 | docker-compose.yml redis ports | Redis 使用 `6379:6379`，可能暴露到公网网卡 | 无宿主机访问需求时移除；否则绑定 `127.0.0.1` |
+| 4 | nginx 配置 | 未配置 `client_max_body_size`，默认 1MB 可能小于后端上传限制 | 增加合适的上传大小限制 |
+| 5 | nginx 配置 | Compose 映射 443，但没有 HTTPS server 块 | 配置证书、TLS 和 HTTP 跳转 |
+| 6 | redis/api/front | 缺少 Compose healthcheck，Nginx `depends_on` 只保证启动顺序 | 增加 Redis PING、API `/health/` 和前端 HTTP 检查 |
+| 7 | init\_data.sql | 表 collation `utf8mb4_0900_ai_ci` 与 Compose 的 `utf8mb4_unicode_ci` 不一致 | 统一排序规则 |
 
 ***
 
@@ -1512,52 +1508,49 @@ npm run dev
 ### 17.2 生产部署
 
 ```bash
-# 一键部署
-./deploy.sh
+# 首次部署或全量更新
+bash deploy.sh full
 
-# 手动构建/启动全部服务
-sudo docker compose up -d --build
+# 仅更新后端（自动 migration）
+bash deploy.sh api
 
-# 仅重启后端（代码修改后，因有 volume 挂载）
-sudo docker compose restart api
+# 仅更新前端
+bash deploy.sh front
 
-# 查看后端日志
-sudo docker compose logs -f api
+# 查看状态和日志
+docker compose ps
+docker compose logs -f api nginx
 
-# 数据库迁移（容器未自动执行）
-sudo docker compose exec api python manage.py migrate
-
-# 收集静态文件
-sudo docker compose exec api python manage.py collectstatic --noinput
-
-# 创建超级用户
-sudo docker compose exec api python manage.py createsuperuser
+# 创建超级用户（服务已运行）
+docker compose exec api python manage.py createsuperuser
 ```
+
+API 代码位于镜像内，代码更新后仅执行 `docker compose restart api` 不会加载新代码，必须重新构建镜像。API 容器启动时自动 `collectstatic`，数据库 migration 由 `deploy.sh full/api` 执行。
 
 ### 17.3 测试
 
 ```bash
 # 全部测试（自动切 SQLite 内存库 + Mock Redis + 禁用限流 + MD5）
-sudo docker compose exec api python manage.py test
+docker compose exec api python manage.py test
 
 # 单测试模块
-sudo docker compose exec api python manage.py test apps.forum.tests.test_models
+docker compose exec api python manage.py test apps.forum.tests.test_models
 ```
 
 ### 17.4 数据初始化
 
 ```bash
 # 初始化首页导航菜单（⚠️ 先 delete 再 insert，非幂等）
-sudo docker compose exec api python manage.py init_menus
+docker compose exec api python manage.py init_menus
 
 # 初始化商城商品（get_or_create，幂等）
-sudo docker compose exec api python manage.py init_shop_data
+docker compose exec api python manage.py init_shop_data
 
 # 从 Excel 导入 CFOP 公式（硬编码路径）
-sudo docker compose exec api python manage.py import_formulas
+docker compose exec api python manage.py import_formulas
 
 # 插入 F2L/OLL/PLL 目标状态
-sudo docker compose exec api python manage.py insert_cube_states
+docker compose exec api python manage.py insert_cube_states
 ```
 
 ### 17.5 API 文档
@@ -1615,4 +1608,3 @@ sudo docker compose exec api python manage.py insert_cube_states
 
 > 文档生成日期：2026-08-06
 > 基于代码库实际状态分析，所有引用均使用可点击的 `file://` 链接格式。
-
