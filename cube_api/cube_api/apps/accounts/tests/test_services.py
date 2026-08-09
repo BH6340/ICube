@@ -7,13 +7,240 @@ Accounts 模块服务层测试
     - Token 黑名单管理
     - 缓存服务
 """
-from django.test import TestCase
+import time
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
+
 from django.contrib.auth import get_user_model
+from django.test import SimpleTestCase, TestCase
+from loguru import logger
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.test import APIRequestFactory
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.accounts.authentication import CachedJWTAuthentication
 from apps.accounts.services import JWTCacheService, ProfileCacheService
 
 User = get_user_model()
+
+
+class AuthenticationLoggingTest(SimpleTestCase):
+    """Redis 与 JWT 认证日志测试"""
+
+    def setUp(self):
+        self.records = []
+        self.sink_id = logger.add(
+            lambda message: self.records.append(message.record),
+            level="DEBUG",
+        )
+
+    def tearDown(self):
+        logger.remove(self.sink_id)
+
+    def _messages(self, level):
+        return "\n".join(
+            record["message"]
+            for record in self.records
+            if record["level"].name == level
+        )
+
+    @patch(
+        'django_redis.get_redis_connection',
+        side_effect=ConnectionError('redis://:redis-password@localhost'),
+    )
+    def test_redis_connection_failure_logs_sanitized_error(self, _mock_connection):
+        with self.assertRaises(ConnectionError) as raised:
+            JWTCacheService._get_con()
+
+        messages = self._messages("ERROR")
+        self.assertIn("获取 Redis 连接失败", messages)
+        self.assertIn("ConnectionError", messages)
+        self.assertNotIn("redis-password", messages)
+        self.assertNotIn("redis-password", str(raised.exception))
+
+    def test_blacklist_query_failure_logs_sanitized_error(self):
+        connection = Mock()
+        connection.exists.side_effect = TimeoutError('redis-password')
+
+        with patch.object(JWTCacheService, '_get_con', return_value=connection):
+            with self.assertRaises(TimeoutError) as raised:
+                JWTCacheService.is_blacklisted('sensitive-jti')
+
+        messages = self._messages("ERROR")
+        self.assertIn("查询 JWT 黑名单失败", messages)
+        self.assertIn("TimeoutError", messages)
+        self.assertNotIn("sensitive-jti", messages)
+        self.assertNotIn("redis-password", messages)
+        self.assertNotIn("redis-password", str(raised.exception))
+
+    def test_blacklist_write_failure_logs_sanitized_error(self):
+        connection = Mock()
+        connection.setex.side_effect = ConnectionError('redis-password')
+        payload = {
+            'jti': 'sensitive-jti',
+            'exp': int(time.time()) + 300,
+        }
+
+        with patch.object(JWTCacheService, '_get_con', return_value=connection):
+            with self.assertRaises(ConnectionError) as raised:
+                JWTCacheService.add_to_blacklist(payload)
+
+        messages = self._messages("ERROR")
+        self.assertIn("写入 JWT 黑名单失败", messages)
+        self.assertIn("ConnectionError", messages)
+        self.assertNotIn("sensitive-jti", messages)
+        self.assertNotIn("redis-password", messages)
+        self.assertNotIn("redis-password", str(raised.exception))
+
+    def test_user_cache_read_failure_logs_sanitized_error(self):
+        authentication = CachedJWTAuthentication()
+
+        with patch(
+            'apps.accounts.authentication.cache.get',
+            side_effect=ConnectionError('redis-password'),
+        ):
+            with self.assertRaises(ConnectionError):
+                authentication.get_user({'user_id': 7})
+
+        messages = self._messages("ERROR")
+        self.assertIn("读取 JWT 用户缓存失败", messages)
+        self.assertIn("ConnectionError", messages)
+        self.assertNotIn("redis-password", messages)
+
+    def test_user_cache_write_failure_logs_sanitized_error(self):
+        authentication = CachedJWTAuthentication()
+        user = SimpleNamespace(id=7)
+
+        with patch(
+            'apps.accounts.authentication.cache.get',
+            return_value=None,
+        ), patch(
+            'apps.accounts.authentication.User.objects.get',
+            return_value=user,
+        ), patch(
+            'apps.accounts.authentication.cache.set',
+            side_effect=ConnectionError('redis-password'),
+        ):
+            with self.assertRaises(ConnectionError):
+                authentication.get_user({'user_id': 7})
+
+        messages = self._messages("ERROR")
+        self.assertIn("写入 JWT 用户缓存失败", messages)
+        self.assertIn("ConnectionError", messages)
+        self.assertNotIn("redis-password", messages)
+
+    def test_invalid_jwt_logs_warning_without_raw_token(self):
+        authentication = CachedJWTAuthentication()
+        request = APIRequestFactory().get(
+            '/api/forum/posts/',
+            HTTP_AUTHORIZATION='Token sensitive-raw-token',
+        )
+
+        with patch.object(
+            authentication,
+            'get_validated_token',
+            side_effect=AuthenticationFailed('sensitive-raw-token'),
+        ):
+            result = authentication.authenticate(request)
+
+        self.assertIsNone(result)
+        messages = self._messages("WARNING")
+        self.assertIn("JWT 验证失败", messages)
+        self.assertIn("AuthenticationFailed", messages)
+        self.assertIn("/api/forum/posts/", messages)
+        self.assertNotIn("sensitive-raw-token", messages)
+
+    def test_malformed_authorization_header_logs_warning(self):
+        authentication = CachedJWTAuthentication()
+        request = APIRequestFactory().get(
+            '/api/forum/posts/',
+            HTTP_AUTHORIZATION='Token',
+        )
+
+        try:
+            result = authentication.authenticate(request)
+        except AuthenticationFailed:
+            self.fail("畸形 Authorization 头不应抛出 AuthenticationFailed")
+
+        self.assertIsNone(result)
+        messages = self._messages("WARNING")
+        self.assertIn("JWT 验证失败", messages)
+        self.assertIn("/api/forum/posts/", messages)
+
+    def test_blacklisted_jwt_logs_warning_without_jti(self):
+        authentication = CachedJWTAuthentication()
+        request = APIRequestFactory().get(
+            '/api/forum/posts/',
+            HTTP_AUTHORIZATION='Token sensitive-raw-token',
+        )
+        validated_token = {'jti': 'sensitive-jti', 'user_id': 7}
+
+        with patch.object(
+            authentication,
+            'get_validated_token',
+            return_value=validated_token,
+        ), patch.object(JWTCacheService, 'is_blacklisted', return_value=True):
+            result = authentication.authenticate(request)
+
+        self.assertIsNone(result)
+        messages = self._messages("WARNING")
+        self.assertIn("JWT 已进入黑名单", messages)
+        self.assertIn("/api/forum/posts/", messages)
+        self.assertNotIn("sensitive-jti", messages)
+        self.assertNotIn("sensitive-raw-token", messages)
+
+    def test_valid_jwt_logs_debug_without_jti(self):
+        authentication = CachedJWTAuthentication()
+        request = APIRequestFactory().get(
+            '/api/forum/posts/',
+            HTTP_AUTHORIZATION='Token sensitive-raw-token',
+        )
+        validated_token = {'jti': 'sensitive-jti', 'user_id': 7}
+        user = SimpleNamespace(id=7)
+
+        with patch.object(
+            authentication,
+            'get_validated_token',
+            return_value=validated_token,
+        ), patch.object(
+            JWTCacheService,
+            'is_blacklisted',
+            return_value=False,
+        ), patch.object(authentication, 'get_user', return_value=user):
+            result = authentication.authenticate(request)
+
+        self.assertEqual(result, (user, validated_token))
+        messages = self._messages("DEBUG")
+        self.assertIn("JWT 验证成功", messages)
+        self.assertIn("user_id=7", messages)
+        self.assertNotIn("sensitive-jti", messages)
+        self.assertNotIn("sensitive-raw-token", messages)
+
+    def test_missing_user_logs_warning_and_returns_none(self):
+        authentication = CachedJWTAuthentication()
+        request = APIRequestFactory().get(
+            '/api/forum/posts/',
+            HTTP_AUTHORIZATION='Token sensitive-raw-token',
+        )
+        validated_token = {'jti': 'sensitive-jti', 'user_id': 7}
+
+        with patch.object(
+            authentication,
+            'get_validated_token',
+            return_value=validated_token,
+        ), patch.object(
+            JWTCacheService,
+            'is_blacklisted',
+            return_value=False,
+        ), patch.object(authentication, 'get_user', return_value=None):
+            result = authentication.authenticate(request)
+
+        self.assertIsNone(result)
+        warning_messages = self._messages("WARNING")
+        self.assertIn("JWT 对应用户不存在", warning_messages)
+        self.assertNotIn("sensitive-jti", warning_messages)
+        self.assertNotIn("sensitive-raw-token", warning_messages)
+        self.assertNotIn("JWT 验证成功", self._messages("DEBUG"))
 
 
 class JWTCacheServiceTest(TestCase):
@@ -65,6 +292,17 @@ class ProfileCacheServiceTest(TestCase):
             password='testpass2',
             username='user2'
         )
+        self.redis = ProfileCacheService._get_con()
+        self.addCleanup(self._clear_profile_cache)
+        self._clear_profile_cache()
+
+    def _clear_profile_cache(self):
+        keys = [
+            f"user:{user.id}:{relation}"
+            for user in (self.user1, self.user2)
+            for relation in ("following", "followers")
+        ]
+        self.redis.delete(*keys)
 
     def test_is_following_false_initially(self):
         """测试初始状态下未关注"""
@@ -118,6 +356,7 @@ class ProfileCacheServiceTest(TestCase):
     def test_update_follow_relation_unfollow(self):
         """测试更新关注关系（取消关注）"""
         self.user1.follow(self.user2)
+        self.user1.following.remove(self.user2)
 
         ProfileCacheService.update_follow_relation(
             from_user_id=self.user1.id,

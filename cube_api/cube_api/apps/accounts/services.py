@@ -16,6 +16,7 @@
 import datetime
 
 from django_redis import get_redis_connection
+from loguru import logger
 
 from .models import User
 
@@ -44,13 +45,23 @@ class JWTCacheService:
         Returns:
             redis-py 客户端实例
         """
-        from django_redis import get_redis_connection
-        con = get_redis_connection("default")
+        try:
+            from django_redis import get_redis_connection
+            con = get_redis_connection("default")
+        except Exception as exc:
+            logger.error(
+                "获取 Redis 连接失败: alias=default, exception_type={}",
+                type(exc).__name__,
+            )
+            exc.args = ("Redis 连接失败",)
+            raise
 
         # 测试环境兼容：如果 con 被 Django 代理层包装，
         # 通过 .client.get_client() 获取原生 redis-py 客户端实例
         if hasattr(con, 'client') and hasattr(con.client, 'get_client'):
-            return con.client.get_client()
+            con = con.client.get_client()
+
+        logger.debug("获取 Redis 连接成功: alias=default")
         return con
 
     @classmethod
@@ -83,7 +94,19 @@ class JWTCacheService:
         if remaining_seconds > 0:
             redis_key = f"jwt:blacklist:{jti}"
             # 只需要存个占位符 1 即可，关键在 TTL（自动过期）
-            con.setex(redis_key, remaining_seconds, 1)
+            try:
+                con.setex(redis_key, remaining_seconds, 1)
+            except Exception as exc:
+                logger.error(
+                    "写入 JWT 黑名单失败: exception_type={}",
+                    type(exc).__name__,
+                )
+                exc.args = ("Redis 黑名单写入失败",)
+                raise
+            logger.debug(
+                "写入 JWT 黑名单成功: ttl_seconds={}",
+                remaining_seconds,
+            )
 
     @classmethod
     def is_blacklisted(cls, jti: str) -> bool:
@@ -102,7 +125,15 @@ class JWTCacheService:
             return True
         con = cls._get_con()
         # exists() 返回 1 说明在黑名单中，返回 0 说明安全
-        return con.exists(f"jwt:blacklist:{jti}") == 1
+        try:
+            return con.exists(f"jwt:blacklist:{jti}") == 1
+        except Exception as exc:
+            logger.error(
+                "查询 JWT 黑名单失败: exception_type={}",
+                type(exc).__name__,
+            )
+            exc.args = ("Redis 黑名单查询失败",)
+            raise
 
 
 class ProfileCacheService:

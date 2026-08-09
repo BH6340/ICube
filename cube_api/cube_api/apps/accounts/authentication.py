@@ -69,10 +69,18 @@ class CachedJWTAuthentication(JWTAuthentication):
         cache_key = f"user_instance_cache_{user_id}"
 
         # 尝试从缓存获取用户 ID
-        cached_user_id = cache.get(cache_key)
+        try:
+            cached_user_id = cache.get(cache_key)
+        except Exception as exc:
+            logger.error(
+                "读取 JWT 用户缓存失败: user_id={}, exception_type={}",
+                user_id,
+                type(exc).__name__,
+            )
+            raise
 
         if cached_user_id:
-            logger.info("查询用户走的缓存（ID）")
+            logger.debug("JWT 用户缓存命中: user_id={}", user_id)
             # 根据缓存的 ID 从数据库获取完整 User 对象
             try:
                 return User.objects.get(id=cached_user_id)
@@ -82,10 +90,18 @@ class CachedJWTAuthentication(JWTAuthentication):
         # 缓存未命中，从数据库查询
         try:
             user = User.objects.get(id=user_id)
-            logger.info("查询用户走的数据库")
+            logger.debug("JWT 用户缓存未命中，查询数据库: user_id={}", user_id)
             # 只存储用户 ID，不存储完整对象
             # 缓存有效期：1小时（3600秒）
-            cache.set(cache_key, user.id, timeout=60*60)
+            try:
+                cache.set(cache_key, user.id, timeout=60*60)
+            except Exception as exc:
+                logger.error(
+                    "写入 JWT 用户缓存失败: user_id={}, exception_type={}",
+                    user_id,
+                    type(exc).__name__,
+                )
+                raise
             return user
         except User.DoesNotExist:
             return None
@@ -117,26 +133,50 @@ class CachedJWTAuthentication(JWTAuthentication):
         if header is None:
             return None
 
-        # 从 Authorization 头中提取原始 Token
-        raw_token = self.get_raw_token(header)
-        if raw_token is None:
-            return None
+        request_path = getattr(request, 'path', '')
 
         try:
+            # 从 Authorization 头中提取原始 Token
+            raw_token = self.get_raw_token(header)
+            if raw_token is None:
+                return None
+
             # 验证 Token 并解析载荷
             validated_token = self.get_validated_token(raw_token)
 
             # 检查 Token 是否在黑名单中（用于退出登录）
             jti = validated_token.get("jti")
             if JWTCacheService.is_blacklisted(jti):
+                logger.warning("JWT 已进入黑名单: path={}", request_path)
                 return None
 
             # 获取用户实例
             user = self.get_user(validated_token)
+            if user is None:
+                logger.warning("JWT 对应用户不存在: path={}", request_path)
+                return None
+
+            logger.debug(
+                "JWT 验证成功: user_id={}, path={}",
+                validated_token.get('user_id'),
+                request_path,
+            )
 
             # 返回认证结果：(user, validated_token) 元组
             return user, validated_token
-        except Exception:
+        except AuthenticationFailed as exc:
+            logger.warning(
+                "JWT 验证失败: path={}, exception_type={}",
+                request_path,
+                type(exc).__name__,
+            )
+            return None
+        except Exception as exc:
+            logger.error(
+                "JWT 认证异常: path={}, exception_type={}",
+                request_path,
+                type(exc).__name__,
+            )
             # 任何异常都返回 None，兼容只读接口
             # 异常包括：Token 过期、签名无效、用户不存在等
             return None
