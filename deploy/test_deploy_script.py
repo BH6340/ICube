@@ -11,9 +11,58 @@ class DeployScriptContractTest(unittest.TestCase):
     def setUpClass(cls):
         cls.content = DEPLOY_SCRIPT.read_text(encoding="utf-8")
 
+    def function_body(self, name):
+        start = self.content.index(f"{name}() {{")
+        end = self.content.index("\n}", start)
+        return self.content[start:end]
+
     def test_uses_safe_shell_and_fast_forward_pull(self):
         self.assertIn("set -Eeuo pipefail", self.content)
         self.assertIn("git pull --ff-only", self.content)
+
+    def test_supports_full_api_and_front_modes(self):
+        self.assertIn('DEPLOY_MODE="${1:-full}"', self.content)
+        self.assertIn("full|api|front)", self.content)
+        self.assertIn("用法：bash deploy.sh [full|api|front]", self.content)
+
+    def test_builds_only_the_selected_service_in_partial_modes(self):
+        self.assertIn("compose build --pull api", self.content)
+        self.assertIn("compose build --pull front", self.content)
+        self.assertIn("compose up -d --no-deps api", self.content)
+        self.assertIn("compose up -d --no-deps front", self.content)
+
+    def test_api_mode_migrates_without_building_front(self):
+        body = self.function_body("deploy_api")
+
+        self.assertIn("build_images api", body)
+        self.assertIn("stop_api_for_maintenance", body)
+        self.assertIn("wait_for_database", body)
+        self.assertIn("run_migrations", body)
+        self.assertNotIn("build_images front", body)
+
+    def test_front_mode_skips_api_and_database_steps(self):
+        body = self.function_body("deploy_front")
+
+        self.assertIn("build_images front", body)
+        self.assertIn("start_services front", body)
+        self.assertNotIn("stop_api_for_maintenance", body)
+        self.assertNotIn("wait_for_database", body)
+        self.assertNotIn("run_migrations", body)
+
+    def test_all_modes_restart_nginx_after_starting_target_services(self):
+        for function_name in ("deploy_full", "deploy_api", "deploy_front"):
+            with self.subTest(function_name=function_name):
+                body = self.function_body(function_name)
+                start_position = body.index("start_services")
+                restart_position = body.index("restart_nginx")
+                self.assertLess(start_position, restart_position)
+
+        self.assertIn("compose restart nginx", self.content)
+
+    def test_partial_modes_require_an_existing_full_deployment(self):
+        self.assertIn("ensure_existing_full_deployment", self.content)
+        self.assertIn("compose ps --services --all", self.content)
+        self.assertIn("请先执行 bash deploy.sh full", self.content)
 
     def test_allows_deployment_with_tracked_file_changes(self):
         self.assertNotIn(
