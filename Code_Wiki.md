@@ -1365,6 +1365,46 @@ command:
 - 每次 `full` 或 `api` 发布由 `deploy.sh` 执行 `python manage.py migrate --noinput`。
 - MySQL 宿主机端口绑定为 `127.0.0.1:3306:3306`；服务器远程管理使用 SSH 隧道，不直接开放公网 3306。
 
+#### Navicat 通过 SSH 隧道连接
+
+当前服务器 SSH 用户为 `bh`，公网 IP 为 `103.100.211.146`。SSH 账号只负责建立加密隧道，MySQL 账号负责数据库认证，两组凭据不能混用。
+
+首次使用公钥认证时，在本地 Windows PowerShell 执行：
+
+```powershell
+Get-Content "$env:USERPROFILE\.ssh\id_rsa.pub" |
+ssh bh@103.100.211.146 "umask 077; mkdir -p ~/.ssh; cat >> ~/.ssh/authorized_keys; chmod 700 ~/.ssh; chmod 600 ~/.ssh/authorized_keys"
+```
+
+公钥会写入服务器的 `/home/bh/.ssh/authorized_keys`。私钥 `C:\Users\Administrator\.ssh\id_rsa` 必须保留在本机，不能上传到服务器或提交 Git。配置完成后可测试：
+
+```powershell
+ssh -i "$env:USERPROFILE\.ssh\id_rsa" bh@103.100.211.146
+```
+
+Navicat 的「常规」页填写 MySQL 连接信息：
+
+| 配置项 | 值 |
+| ------ | -- |
+| 主机 | `127.0.0.1` |
+| 端口 | `3306` |
+| 用户名 | `icube_api` |
+| 密码 | 服务器 `.env` 中的 `DB_PASSWORD` |
+| 数据库 | `icube_db` |
+
+Navicat 的「SSH」页勾选 SSH 隧道并填写：
+
+| 配置项 | 值 |
+| ------ | -- |
+| 主机 | `103.100.211.146` |
+| 端口 | `22` |
+| 用户名 | `bh` |
+| 验证方式 | 公钥 |
+| 私钥 | `C:\Users\Administrator\.ssh\id_rsa` |
+| 通行短语 | 创建私钥时未设置则留空 |
+
+Navicat 中的「公钥」表示使用密钥对认证，但客户端实际选择的是本机私钥 `id_rsa`；`id_rsa.pub` 只放入服务器的 `authorized_keys`。如果出现 `1045 Access denied for user 'root' ... (using password: NO)`，说明 SSH 隧道已经建立，但 MySQL「常规」页错误使用了 `root` 且未发送密码，应改为 `icube_api` 和对应的 `DB_PASSWORD`。
+
 ### 14.7 媒体文件夹注意事项
 
 - **`cube_api/media` 必须纳入 Git 版本控制并上传服务器**（项目规则明确要求）
