@@ -15,6 +15,7 @@
 
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
+import { useUserStore } from '@/stores/user'
 
 /**
  * 错误提示防抖缓存：key=消息内容，value=上次提示的时间戳
@@ -88,8 +89,21 @@ service.interceptors.response.use(
         }
     },
     error => {
-        const error_msg = error.response?.data?.msg
-        showErrorMsg(!error_msg ? '请求服务器异常,请联系管理员' : error_msg)
+        const status = error.response?.status
+        const responseData = error.response?.data
+        const hadToken = Boolean(localStorage.getItem('token'))
+
+        if (status === 401 && hadToken) {
+            useUserStore().clearInfo()
+        }
+
+        const errorMsg = responseData?.msg
+            || (status === 401
+                ? (hadToken ? '登录已失效，请重新登录' : '请先登录')
+                : responseData?.detail)
+            || '请求服务器异常,请联系管理员'
+
+        showErrorMsg(errorMsg)
         return Promise.reject(error)
     }
 )
