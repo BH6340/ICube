@@ -6,35 +6,66 @@
 
 ### 7.2 数据模型（[models.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/models.py)）
 
-#### User（[L98-L298](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/models.py#L98-L298)）
+#### User（[L99-L304](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/models.py#L99-L304)）
 
-继承 `AbstractUser`，email 登录模型。
+继承 `AbstractUser`，email 登录模型。字段分四类：继承自父类原样保留、重写覆盖、本项目新增、显式移除。
 
-| 字段        | 类型            | 关键约束                                                |
-| --------- | ------------- | --------------------------------------------------- |
-| email     | EmailField    | unique, db\_index（登录用户名）                            |
-| username  | CharField(60) | unique, db\_index                                   |
-| bio       | TextField     | blank                                               |
-| image     | ImageField    | upload\_to='avatars/', null/blank                   |
-| followers | M2M("self")   | symmetrical=False, related\_name="following"（自关联关注） |
+**继承自 AbstractBaseUser / PermissionsMixin（原样保留）**：
 
-- 移除 `first_name`、`last_name`
-- `USERNAME_FIELD = "email"`、`REQUIRED_FIELDS = []`
+| 字段               | 类型              | 关键约束                          |
+| ---------------- | --------------- | ----------------------------- |
+| id               | BigAutoField    | 主键，自增                         |
+| password         | CharField(128)  | 哈希存储，`set_password` 写入        |
+| last_login       | DateTimeField   | null=True                     |
+| is_superuser     | BooleanField    | default=False                 |
+| groups           | M2M(Group)      | related\_name="user\_set"     |
+| user_permissions | M2M(Permission) | related\_name="user\_set"     |
+
+**继承自 AbstractUser（原样保留）**：
+
+| 字段          | 类型            | 关键约束                  |
+| ----------- | ------------- | --------------------- |
+| is_staff    | BooleanField  | default=False         |
+| is_active   | BooleanField  | default=True          |
+| date_joined | DateTimeField | default=timezone.now  |
+
+**重写覆盖**：
+
+| 字段       | 类型            | 关键约束                                                          |
+| -------- | ------------- | ------------------------------------------------------------- |
+| email    | EmailField    | unique, db\_index（登录用户名，`USERNAME_FIELD`）                      |
+| username | CharField(60) | unique, db\_index，`UnicodeUsernameValidator`，自定义 unique 错误提示 |
+
+**新增字段**：
+
+| 字段        | 类型           | 关键约束                                                |
+| --------- | ------------ | --------------------------------------------------- |
+| bio       | TextField    | blank                                               |
+| image     | ImageField   | upload\_to='avatars/', null/blank                   |
+| followers | M2M("self")  | symmetrical=False, related\_name="following"（自关联关注） |
+
+**移除字段**：`first_name`、`last_name` 设为 `None`。
+
+**认证与 Meta 配置**：
+
+- `USERNAME_FIELD = "email"`、`EMAIL_FIELD = "email"`、`REQUIRED_FIELDS = []`
 - `objects = UserManager()`
+- `Meta`：`app_label='accounts'`、`verbose_name="用户"`、`ordering=["-date_joined"]`
+- `__str__` 返回 `email`；`get_full_name`/`get_short_name` 返回 `username`
 
-**关注/取关操作**（[L211-L250](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/models.py#L211-L250)）：
+**关注/取关操作**（[L217-L256](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/models.py#L217-L256)）：
 
 - `follow(user)`：禁止关注自己；`following.add` 后用 `get_redis_connection` 双写 `sadd` 自己 following + 对方 followers
 - `unfollow(user)`：对称 `srem`
 
-**懒加载属性**（[L254-L298](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/models.py#L254-L298)）：
+**懒加载属性**（[L260-L304](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/models.py#L260-L304)）：
 
 - `followers_count`（property）：Redis `exists` 判断 → `scard`；未命中查库 + `sadd` 回写
 - `following_count`（property）：同上
 
 > 注：模型层缓存只 `sadd` 不写 `-1` 占位符，与 Service 层策略不同。
 
-#### UserManager（[L24-L95](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/models.py#L24-L95)）
+#### UserManager（[L25-L96](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/models.py#L25-L96)）
 
 - `create_user(email, password, **other)`：标准化 email、`set_unusable_password` 兜底
 - `create_superuser`：默认 `is_staff/is_superuser/is_active=True`
@@ -177,3 +208,65 @@ JWT Token 黑名单管理（无状态 JWT + 黑名单注销机制）。
 - **限流键**：`throttle_login_scope_{IP}_{email}`（滑动窗口算法）
 
 ***
+
+### 7.9 信号Signal（Signal.py）
+
+#### ⚠️ `ready()` 方法的注意事项
+
+- **避免执行耗时操作**：`ready()` 是在 Django 启动时执行的，如果里面有很慢的代码（比如复杂查询），会拖慢整个项目的启动过程。
+- **只执行一次**：`ready()` 在 Django 的生命周期中只会被调用一次，适合做初始化工作。
+- **注意导入循环**：在 `ready()` 方法里导入模块时，要小心循环导入的问题。
+
+------
+
+#### 💎 总结：你什么时候需要用到 `apps.py`？
+
+- **必须**：你的应用中如果定义了信号（`signals.py`），就**必须**在 `apps.py` 的 `ready()` 方法中导入它。
+- **推荐**：当你需要在应用启动时，执行一些初始化的“打扫”或“准备”工作时。
+- **可选**：想给你的应用在后台改个更漂亮的名字时。
+
+### 7.10 后台管理（[admin.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/admin.py)）
+
+基于 django-unfold 定制用户后台，所有 Admin 类继承 `unfold.admin.ModelAdmin`（非原生 `admin.ModelAdmin`），提供 Tailwind CSS 样式、Tab 布局与高级过滤器。装饰器使用 Unfold 特有的 `@display`/`@action`（替代原生 `admin.display`/`admin.action`，额外支持样式参数）。
+
+#### UserAdmin（[L33-L311](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/admin.py#L33-L311)）
+
+`@admin.register(User)` 注册，针对 User 模型的后台管理。
+
+**列表页配置**：
+
+| 配置项                | 值                                                              | 说明                          |
+| ------------------ | -------------------------------------------------------------- | --------------------------- |
+| list_display       | avatar_preview, email, username, followers_count, following_count, date_joined, status_badge | 头像/状态为 `@display` 自定义列     |
+| list_display_links | email                                                          | 仅邮箱可点击进入编辑                  |
+| search_fields      | email, username                                                | 模糊搜索                        |
+| list_filter        | is_active, is_staff, date_joined                               | 侧边栏过滤                       |
+| list_per_page      | 50                                                             | 兼顾浏览效率与分页频率                 |
+| ordering           | -date_joined                                                   | 最新注册排前                      |
+
+**编辑页配置**：
+
+| 配置项               | 说明                                                                   |
+| ----------------- | -------------------------------------------------------------------- |
+| readonly_fields   | date_joined, last_login, password_display（密码哈希不展示明文）                 |
+| fieldsets         | 基本信息 / 权限控制 / 重要时间戳（collapse 折叠）/ 密码安全提示 四组                          |
+| filter_horizontal | groups, user_permissions（M2M 水平选择器）                                  |
+
+**自定义列**（`@display` 装饰器）：
+
+| 方法                | 说明                                                |
+| ----------------- | ------------------------------------------------- |
+| avatar_preview    | 40x40 圆形头像缩略图；无头像显示 N/A 占位；`escape` 防 XSS        |
+| status_badge      | is_active 渲染为绿/红 Badge 标签                         |
+| password_display  | 密码安全提示文本（不展示哈希），引导使用「修改密码」链接                      |
+| followers_count   | 取 `obj.followers_count`（Redis 缓存，O(1)）            |
+| following_count   | 取 `obj.following_count`（Redis 缓存，O(1)）            |
+
+**批量操作**（`@action` 装饰器）：
+
+| 方法             | 说明                                                       |
+| -------------- | -------------------------------------------------------- |
+| disable_users  | `queryset.update(is_active=False)` 批量禁用，`message_user` 反馈 |
+| enable_users   | `queryset.update(is_active=True)` 批量解冻                   |
+
+> 注：批量 `update()` 不触发 `save()` 与信号，适合纯状态切换；密码修改走 Django 内置 change_password 链接。
