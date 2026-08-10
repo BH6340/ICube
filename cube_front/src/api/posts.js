@@ -32,6 +32,14 @@ export const getPosts = (params) => {
 }
 
 /**
+ * 获取指定用户发布的公开帖子
+ */
+export const getUserPosts = (username, params = {}) => getPosts({
+  ...params,
+  author_username: username
+})
+
+/**
  * 获取帖子详情
  *
  * @param {number} id - 帖子 ID

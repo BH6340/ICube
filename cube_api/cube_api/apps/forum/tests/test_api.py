@@ -87,6 +87,39 @@ class ForumAPITest(TestCase):
         results = res.data.get('data', {}).get('results', [])
         self.assertGreaterEqual(len(results), 3)
 
+    def test_list_posts_filters_by_author_username(self):
+        """测试按作者用户名筛选已发布文章"""
+        other = User.objects.create_user(
+            email='other@example.com',
+            password='test123456',
+            username='other_author',
+        )
+        own_post = Post.objects.create(
+            title='目标作者文章',
+            content='测试内容内容内容',
+            author=self.user,
+            status='published',
+        )
+        Post.objects.create(
+            title='其他作者文章',
+            content='测试内容内容内容',
+            author=other,
+            status='published',
+        )
+        Post.objects.create(
+            title='目标作者草稿',
+            content='测试内容内容内容',
+            author=self.user,
+            status='draft',
+        )
+
+        response = self.client.get(
+            f'/api/forum/posts/?author_username={self.user.username}'
+        )
+
+        ids = [item['id'] for item in response.data['data']['results']]
+        self.assertEqual(ids, [own_post.id])
+
     def test_like_post(self):
         """测试点赞帖子"""
         post = Post.objects.create(
@@ -100,4 +133,4 @@ class ForumAPITest(TestCase):
         self.assertEqual(like_res.status_code, status.HTTP_200_OK)
 
         # 验证点赞状态
-        self.assertTrue(like_res.data.get('data', {}).get('liked', False))
+        self.assertTrue(like_res.data.get('liked', False))

@@ -17,6 +17,7 @@
 """
 from __future__ import annotations
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
 from django_redis import get_redis_connection
 
@@ -125,6 +126,11 @@ class User(AbstractUser):
         max_length=60,
         db_index=True,
         unique=True,
+        validators=[
+            UnicodeUsernameValidator(
+                message="用户名只能包含字母、数字和 @/./+/-/_ 字符"
+            )
+        ],
         error_messages={
             'unique': "该用户名已被使用",
         }

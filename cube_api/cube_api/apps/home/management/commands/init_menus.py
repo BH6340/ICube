@@ -21,6 +21,8 @@ class Command(BaseCommand):
              "match_paths": ["/timer"]},
             {"index": "5", "label": "交流论坛", "path": "/forum", "category": "main", "sort_order": 50,
              "match_paths": ["/forum"]},
+            {"index": "7", "label": "魔友", "path": "/users", "category": "main", "sort_order": 55,
+             "match_paths": ["/users"]},
             {"index": "6", "label": "魔方商店", "path": "/shop", "category": "main", "sort_order": 60,
              "match_paths": ["/shop"]},
         ]

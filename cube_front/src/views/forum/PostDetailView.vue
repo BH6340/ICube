@@ -331,7 +331,10 @@ const handleDelete = async () => {
  */
 const goToProfile = (username) => {
   if (username) {
-    router.push(`/profiles/info?username=${username}`)
+    router.push({
+      name: 'userProfile',
+      params: { username }
+    })
   }
 }
 

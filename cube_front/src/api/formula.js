@@ -122,6 +122,27 @@ export const getFormulaList = (params = {}) => {
 }
 
 /**
+ * 获取指定用户创建的公开自定义公式
+ */
+export const getUserCustomFormulas = (username, params = {}) =>
+  getFormulaList({
+    ...params,
+    author_username: username,
+    is_custom: true
+  })
+
+/**
+ * 获取指定用户公开收藏的公式
+ */
+export const getUserFormulaCollections = (username, params = {}) => {
+  return request({
+    url: `/api/formula/collections/users/${encodeURIComponent(username)}/`,
+    method: 'get',
+    params
+  })
+}
+
+/**
  * 获取公式详情
  *
  * @param {number} id - 公式 ID

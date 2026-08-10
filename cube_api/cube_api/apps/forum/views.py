@@ -24,6 +24,7 @@ from .serializers import (
 )
 from .services import PostCacheService, PostInteractionService, HotPostService
 from utils.common_response import APIResponse
+from utils.common_pagination import UnifiedPagination
 from utils.image_processor import process_image
 from apps.accounts.permissions import IsOwnerOrReadOnly
 
@@ -53,6 +54,7 @@ class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.filter(status='published').select_related('author').prefetch_related('tags', 'images')
     # 权限：登录用户可创建，只有作者可编辑/删除
     permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+    pagination_class = UnifiedPagination
     # 过滤器：搜索、排序、标签过滤
     filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
     search_fields = ['title', 'content']
@@ -88,6 +90,7 @@ class PostViewSet(viewsets.ModelViewSet):
         查询参数：
             - search: 关键词搜索（标题或内容）
             - tags__name: 标签名过滤
+            - author_username: 作者用户名
             - ordering: 排序字段
             - hot: 按热度排序（非空值启用）
 
@@ -95,6 +98,13 @@ class PostViewSet(viewsets.ModelViewSet):
             APIResponse: 包含帖子列表的响应
         """
         queryset = self.filter_queryset(self.get_queryset())
+
+        author_username = request.query_params.get('author_username', '').strip()
+        if author_username:
+            queryset = queryset.filter(
+                author__username=author_username,
+                author__is_active=True,
+            )
 
         # 按热度排序（查询参数 hot 存在时）
         hot = request.query_params.get('hot')

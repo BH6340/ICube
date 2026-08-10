@@ -122,6 +122,16 @@ const router = createRouter({
                     meta: { requiresAuth: true }
                 },
                 {
+                    path: 'users',
+                    name: 'userSearch',
+                    component: () => import('@/views/users/UserSearchView.vue')
+                },
+                {
+                    path: 'users/:username',
+                    name: 'userProfile',
+                    component: () => import('@/views/users/UserProfileView.vue')
+                },
+                {
                     path: 'shop',
                     name: 'shop',
                     component: () => import('@/views/ShopView.vue')

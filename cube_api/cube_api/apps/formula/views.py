@@ -16,9 +16,11 @@ from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly, AllowAny
 from rest_framework.exceptions import PermissionDenied
+from django.contrib.auth import get_user_model
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import F, Q
 from django.db import models
+from django.shortcuts import get_object_or_404
 
 from .models import CubeCategory, CubeState, Formula, FormulaTag, FormulaCollection
 from .serializers import (
@@ -28,7 +30,10 @@ from .serializers import (
 from .permissions import IsAdminOrReadOnly, IsAdminOrCustomCreator
 from .services import FormulaMatchService
 from .filters import FormulaFilter
+from utils.common_pagination import UnifiedPagination
 from utils.common_response import APIResponse
+
+User = get_user_model()
 
 
 class CubeCategoryViewSet(viewsets.ModelViewSet):
@@ -307,6 +312,7 @@ class FormulaViewSet(viewsets.ModelViewSet):
     """
     queryset = Formula.objects.select_related('category', 'target_state').prefetch_related('tag_relations__tag')
     permission_classes = [IsAuthenticatedOrReadOnly, IsAdminOrCustomCreator]
+    pagination_class = UnifiedPagination
     filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
     search_fields = ['name', 'notation', 'description']
     ordering_fields = ['category', 'difficulty', 'created_at', 'view_count']
@@ -714,6 +720,7 @@ class FormulaCollectionViewSet(viewsets.ModelViewSet):
     queryset = FormulaCollection.objects.select_related('formula', 'user')
     serializer_class = FormulaSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = UnifiedPagination
     filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
     search_fields = ['formula__name', 'formula__notation']
     ordering_fields = ['formula__difficulty', 'formula__name']
@@ -777,6 +784,38 @@ class FormulaCollectionViewSet(viewsets.ModelViewSet):
 
         serializer = FormulaListSerializer(formulas, many=True, context={'request': request})
         return APIResponse(data=serializer.data)
+
+    @action(
+        detail=False,
+        methods=['GET'],
+        url_path=r'users/(?P<username>[^/]+)',
+        permission_classes=[AllowAny],
+    )
+    def user_collections(self, request, username=None):
+        """获取指定启用用户公开收藏的公式列表"""
+        user = get_object_or_404(
+            User,
+            username=username,
+            is_active=True,
+        )
+        collections = FormulaCollection.objects.filter(
+            user=user,
+        ).select_related(
+            'formula__category',
+            'formula__target_state',
+            'formula__created_by',
+        ).prefetch_related(
+            'formula__tag_relations__tag',
+        ).order_by('-created_at')
+
+        page = self.paginate_queryset(collections)
+        formulas = [item.formula for item in page]
+        serializer = FormulaListSerializer(
+            formulas,
+            many=True,
+            context={'request': request},
+        )
+        return self.get_paginated_response(serializer.data)
 
     def create(self, request, *args, **kwargs):
         """

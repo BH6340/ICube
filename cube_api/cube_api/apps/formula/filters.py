@@ -35,7 +35,17 @@ class FormulaFilter(django_filters.FilterSet):
     difficulty = django_filters.BaseInFilter(field_name='difficulty', lookup_expr='in')
     # 作者支持多值过滤（逗号分隔多个作者ID）
     created_by = django_filters.BaseInFilter(field_name='created_by', lookup_expr='in')
+    author_username = django_filters.CharFilter(
+        field_name='created_by__username',
+        lookup_expr='exact',
+    )
 
     class Meta:
         model = Formula
-        fields = ['category', 'is_custom', 'difficulty', 'created_by']
+        fields = [
+            'category',
+            'is_custom',
+            'difficulty',
+            'created_by',
+            'author_username',
+        ]

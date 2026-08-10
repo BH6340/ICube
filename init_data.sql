@@ -1431,7 +1431,7 @@ CREATE TABLE `home_navigationmenu` (
   `match_paths` json NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index` (`index`)
-) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of home_navigationmenu
@@ -1441,6 +1441,7 @@ INSERT INTO `home_navigationmenu` VALUES (13, '2', '教程', '/tutorials', 'main
 INSERT INTO `home_navigationmenu` VALUES (14, '3', '公式库', '/formulas', 'main', 30, '["/formulas"]');
 INSERT INTO `home_navigationmenu` VALUES (15, '4', '计时器', '/timer', 'main', 40, '["/timer"]');
 INSERT INTO `home_navigationmenu` VALUES (16, '5', '交流论坛', '/forum', 'main', 50, '["/forum"]');
+INSERT INTO `home_navigationmenu` VALUES (23, '7', '魔友', '/users', 'main', 55, '["/users"]');
 INSERT INTO `home_navigationmenu` VALUES (17, '6', '魔方商店', '/shop', 'main', 60, '["/shop"]');
 INSERT INTO `home_navigationmenu` VALUES (18, 'p-1', '返回首页', '/', 'profile', 10, '[]');
 INSERT INTO `home_navigationmenu` VALUES (19, 'p-2', '个人信息', '/profiles/info', 'profile', 20, '["/profiles/info"]');

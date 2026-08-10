@@ -353,6 +353,36 @@ class ProfileCacheServiceTest(TestCase):
         result = ProfileCacheService.is_following(self.user1.id, self.user2.id)
         self.assertTrue(result)
 
+    def test_update_follow_relation_rebuilds_missing_cache(self):
+        """缓存缺失时更新关系不会把增量误当完整集合"""
+        user3 = User.objects.create_user(
+            email='user3@example.com',
+            password='testpass3',
+            username='user3',
+        )
+        self.addCleanup(
+            self.redis.delete,
+            f"user:{user3.id}:following",
+            f"user:{user3.id}:followers",
+        )
+        self.user1.following.add(user3)
+        self.user1.following.add(self.user2)
+
+        ProfileCacheService.update_follow_relation(
+            from_user_id=self.user1.id,
+            to_user_id=self.user2.id,
+            is_follow=True,
+        )
+
+        self.assertEqual(
+            ProfileCacheService.get_following_ids(self.user1.id),
+            {self.user2.id, user3.id},
+        )
+        self.assertEqual(
+            ProfileCacheService.get_followers_count(self.user2.id),
+            1,
+        )
+
     def test_update_follow_relation_unfollow(self):
         """测试更新关注关系（取消关注）"""
         self.user1.follow(self.user2)

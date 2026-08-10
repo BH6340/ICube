@@ -173,12 +173,20 @@ class ProfileSerializer(serializers.ModelSerializer):
     following_count = serializers.SerializerMethodField()
     # 公式收藏数量
     collection_count = serializers.SerializerMethodField()
+    # 已发布文章数量
+    post_count = serializers.SerializerMethodField()
+    # 自创公式数量
+    custom_formula_count = serializers.SerializerMethodField()
     # 头像 URL（标准化处理）
     image = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ('username', 'bio', 'image', 'following', 'followers_count', 'following_count', 'collection_count')
+        fields = (
+            'username', 'bio', 'image', 'following',
+            'followers_count', 'following_count', 'collection_count',
+            'post_count', 'custom_formula_count'
+        )
 
     def get_image(self, obj):
         """
@@ -223,7 +231,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         Returns:
             粉丝数量
         """
-        return ProfileCacheService.get_followers_count(obj.id)
+        return obj.followers.filter(is_active=True).count()
 
     @extend_schema_field(serializers.IntegerField)
     def get_following_count(self, obj) -> int:
@@ -236,7 +244,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         Returns:
             关注数量
         """
-        return ProfileCacheService.get_following_count(obj.id)
+        return obj.following.filter(is_active=True).count()
 
     @extend_schema_field(serializers.IntegerField)
     def get_collection_count(self, obj) -> int:
@@ -250,6 +258,16 @@ class ProfileSerializer(serializers.ModelSerializer):
             公式收藏数量
         """
         return ProfileCacheService.get_collection_count(obj.id)
+
+    @extend_schema_field(serializers.IntegerField)
+    def get_post_count(self, obj) -> int:
+        """获取已发布文章数量"""
+        return obj.posts.filter(status='published').count()
+
+    @extend_schema_field(serializers.IntegerField)
+    def get_custom_formula_count(self, obj) -> int:
+        """获取自创公式数量"""
+        return obj.custom_formulas.filter(is_custom=True).count()
 
 
 class ProfileListSerializer(serializers.ModelSerializer):

@@ -331,11 +331,12 @@ class ProfileCacheService:
         """
         更新关注关系（数据一致性控制核心）
 
-        当发生关注或取关动作时，同步更新 Redis 中的两个集合：
+        当发生关注或取关动作时，从数据库重建 Redis 中的两个完整集合：
             - from_user_id 的 following 集合
             - to_user_id 的 followers 集合
 
-        使用 Pipeline 批量操作，确保原子性。
+        重建后再应用本次变更，兼容数据库更新前后两种调用顺序，避免缓存
+        冷启动时把单次增量误当成完整关系集合。
 
         Args:
             from_user_id: 发起关注/取关的用户 ID
@@ -346,19 +347,42 @@ class ProfileCacheService:
         following_key = f"user:{from_user_id}:following"
         followers_key = f"user:{to_user_id}:followers"
 
-        pipe = con.pipeline()
+        try:
+            from_user = User.objects.get(id=from_user_id)
+            following_ids = set(
+                from_user.following.values_list('id', flat=True)
+            )
+        except User.DoesNotExist:
+            following_ids = set()
+
+        try:
+            to_user = User.objects.get(id=to_user_id)
+            followers_ids = set(
+                to_user.followers.values_list('id', flat=True)
+            )
+        except User.DoesNotExist:
+            followers_ids = set()
+
         if is_follow:
-            # 关注动作：添加到集合
-            pipe.sadd(following_key, to_user_id)
-            pipe.srem(following_key, -1)  # 移除可能存在的 -1 空集合占位符
-
-            pipe.sadd(followers_key, from_user_id)
-            pipe.srem(followers_key, -1)
+            following_ids.add(to_user_id)
+            followers_ids.add(from_user_id)
         else:
-            # 取关动作：从集合中移除
-            pipe.srem(following_key, to_user_id)
-            pipe.srem(followers_key, from_user_id)
+            following_ids.discard(to_user_id)
+            followers_ids.discard(from_user_id)
 
-            # 可选优化：如果剔除后集合变空了，可以顺手塞个 -1 进去防止它变成未命中状态
-            # 这里交给未来的定时任务或下一次懒加载重建更轻量
+        pipe = con.pipeline()
+        pipe.delete(following_key, followers_key)
+
+        if following_ids:
+            pipe.sadd(following_key, *following_ids)
+        else:
+            pipe.sadd(following_key, -1)
+            pipe.expire(following_key, 600)
+
+        if followers_ids:
+            pipe.sadd(followers_key, *followers_ids)
+        else:
+            pipe.sadd(followers_key, -1)
+            pipe.expire(followers_key, 600)
+
         pipe.execute()

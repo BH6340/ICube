@@ -518,7 +518,10 @@ const submitEditProfile = async () => {
 
 // 点击行跳转查看空间
 const viewOtherProfile = (username) => {
-  router.push(`/profiles/info?username=${username}`)
+  router.push({
+    name: 'userProfile',
+    params: { username }
+  })
 }
 
 // 跳转到订单页面

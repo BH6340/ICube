@@ -15,6 +15,8 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from rest_framework import status
 
+from apps.forum.models import Post
+from apps.formula.models import Formula
 from .base import AccountsBaseTestCase
 
 User = get_user_model()
@@ -85,6 +87,20 @@ class AuthAPITest(AccountsBaseTestCase):
         new_username = response.data['user']['username']
         self.assertNotEqual(new_username, 'sameusername')
         self.assertTrue(new_username.startswith('sameusername_'))
+
+    def test_register_rejects_username_with_slash(self):
+        """测试注册时拒绝无法用于公开主页路径的用户名"""
+        data = {
+            'user': {
+                'email': 'invalid-username@example.com',
+                'password': 'newpass123456',
+                'username': 'invalid/name'
+            }
+        }
+
+        response = self.client.post('/api/users/register', data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_login_success(self):
         """测试用户登录成功"""
@@ -194,7 +210,7 @@ class ProfileDetailAPITest(AccountsBaseTestCase):
 
     def test_get_profile_detail_success(self):
         """测试获取用户资料详情"""
-        response = self.client.get(f'/api/profiles/{self.user2.username}/')
+        response = self.client.get(f'/api/profiles/{self.user2.username}')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('profiles', response.data)
@@ -202,23 +218,153 @@ class ProfileDetailAPITest(AccountsBaseTestCase):
 
     def test_get_profile_list_success(self):
         """测试获取用户列表"""
-        response = self.client.get('/api/profiles/')
+        response = self.client.get('/api/profiles')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('profiles', response.data)
         self.assertGreaterEqual(len(response.data['profiles']), 2)
 
-    def test_follow_user_success(self):
-        """测试关注用户成功"""
-        response = self.client.post(f'/api/profiles/{self.user2.username}/follow/')
+    def test_search_profiles_matches_partial_username_anonymously(self):
+        """匿名用户可按部分用户名搜索，且不泄露邮箱"""
+        response = APIClient().get('/api/profiles?search=user')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.user2.refresh_from_db()
-        self.assertEqual(self.user2.followers_count, 1)
+        self.assertEqual(response.data['code'], 100)
+        usernames = [
+            item['username']
+            for item in response.data['data']['results']
+        ]
+        self.assertIn(self.user.username, usernames)
+        self.assertNotIn('email', response.data['data']['results'][0])
+
+    def test_search_profiles_prioritizes_case_insensitive_exact_match(self):
+        """大小写不敏感的完整匹配排在模糊匹配之前"""
+        User.objects.create_user(
+            email='prefix@example.com',
+            password='test123456',
+            username=f'{self.user.username}_extra',
+        )
+
+        response = self.client.get(
+            f'/api/profiles?search={self.user.username.upper()}'
+        )
+
+        self.assertEqual(
+            response.data['data']['results'][0]['username'],
+            self.user.username,
+        )
+
+    def test_search_profiles_with_blank_keyword_returns_empty_page(self):
+        """空关键词不枚举用户"""
+        response = self.client.get('/api/profiles?search=%20')
+
+        self.assertEqual(response.data['data']['count'], 0)
+        self.assertEqual(response.data['data']['results'], [])
+
+    def test_search_profiles_excludes_inactive_users(self):
+        """搜索结果排除停用用户"""
+        self.user2.is_active = False
+        self.user2.save(update_fields=['is_active'])
+
+        response = self.client.get(
+            f'/api/profiles?search={self.user2.username}'
+        )
+
+        self.assertEqual(response.data['data']['results'], [])
+
+    def test_search_profiles_returns_following_state(self):
+        """登录用户搜索时返回正确关注状态"""
+        self.user.following.add(self.user2)
+
+        response = self.client.get(
+            f'/api/profiles?search={self.user2.username}'
+        )
+
+        self.assertTrue(response.data['data']['results'][0]['following'])
+
+    def test_profile_detail_supports_search_and_dotted_usernames(self):
+        """搜索保留字和含点用户名均可访问公开主页"""
+        for index, username in enumerate(('search', 'dot.user'), start=1):
+            User.objects.create_user(
+                email=f'route-user-{index}@example.com',
+                password='test123456',
+                username=username,
+            )
+
+            response = self.client.get(f'/api/profiles/{username}')
+
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(response.data['profiles']['username'], username)
+
+    def test_profile_counts_only_public_posts_and_custom_formulas(self):
+        """公开资料只统计已发布文章和自创公式"""
+        Post.objects.create(
+            title='公开文章',
+            content='公开内容',
+            author=self.user,
+            status='published',
+        )
+        Post.objects.create(
+            title='草稿文章',
+            content='草稿内容',
+            author=self.user,
+            status='draft',
+        )
+        Formula.objects.create(
+            name='用户公式',
+            notation='R U',
+            created_by=self.user,
+            is_custom=True,
+        )
+        Formula.objects.create(
+            name='非自创公式',
+            notation='L U',
+            created_by=self.user,
+            is_custom=False,
+        )
+
+        response = self.client.get(f'/api/profiles/{self.user.username}')
+        profile = response.data['profiles']
+
+        self.assertEqual(profile['post_count'], 1)
+        self.assertEqual(profile['custom_formula_count'], 1)
+
+    def test_inactive_profile_returns_not_found(self):
+        """停用用户的公开资料不可访问"""
+        self.user2.is_active = False
+        self.user2.save(update_fields=['is_active'])
+
+        response = self.client.get(f'/api/profiles/{self.user2.username}')
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_profile_relation_counts_exclude_inactive_users(self):
+        """公开关系统计与仅展示启用用户的列表口径一致"""
+        inactive_user = User.objects.create_user(
+            email='inactive-relation@example.com',
+            password='test123456',
+            username='inactive_relation',
+            is_active=False,
+        )
+        self.user.following.add(inactive_user)
+        inactive_user.following.add(self.user)
+
+        response = self.client.get(f'/api/profiles/{self.user.username}')
+        profile = response.data['profiles']
+
+        self.assertEqual(profile['following_count'], 0)
+        self.assertEqual(profile['followers_count'], 0)
+
+    def test_follow_user_success(self):
+        """测试关注用户成功"""
+        response = self.client.post(f'/api/profiles/{self.user2.username}/follow')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(self.user.following.filter(pk=self.user2.pk).exists())
 
     def test_follow_self_fails(self):
         """测试关注自己失败"""
-        response = self.client.post(f'/api/profiles/{self.user.username}/follow/')
+        response = self.client.post(f'/api/profiles/{self.user.username}/follow')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['code'], 103)
@@ -228,14 +374,14 @@ class ProfileDetailAPITest(AccountsBaseTestCase):
         # 先关注
         self.user.follow(self.user2)
 
-        response = self.client.delete(f'/api/profiles/{self.user2.username}/follow/')
+        response = self.client.delete(f'/api/profiles/{self.user2.username}/follow')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_get_following_list_success(self):
         """测试获取关注列表"""
         self.user.follow(self.user2)
 
-        response = self.client.get(f'/api/profiles/{self.user.username}/following/')
+        response = self.client.get(f'/api/profiles/{self.user.username}/following')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('profiles', response.data)
@@ -244,13 +390,43 @@ class ProfileDetailAPITest(AccountsBaseTestCase):
         """测试获取粉丝列表"""
         self.user2.follow(self.user)
 
-        response = self.client.get(f'/api/profiles/{self.user.username}/followers/')
+        response = self.client.get(f'/api/profiles/{self.user.username}/followers')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('profiles', response.data)
 
+    def test_get_following_list_supports_pagination(self):
+        """传分页参数时关注列表返回统一分页结构"""
+        self.user.following.add(self.user2)
+
+        response = self.client.get(
+            f'/api/profiles/{self.user.username}/following?page=1&page_size=20'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['data']['count'], 1)
+        self.assertEqual(
+            response.data['data']['results'][0]['username'],
+            self.user2.username,
+        )
+
+    def test_get_followers_list_supports_pagination(self):
+        """传分页参数时粉丝列表返回统一分页结构"""
+        self.user2.following.add(self.user)
+
+        response = self.client.get(
+            f'/api/profiles/{self.user.username}/followers?page=1&page_size=20'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['data']['count'], 1)
+        self.assertEqual(
+            response.data['data']['results'][0]['username'],
+            self.user2.username,
+        )
+
     def test_follow_without_authentication_fails(self):
         """测试未认证用户关注失败"""
         client = APIClient()
-        response = client.post(f'/api/profiles/{self.user2.username}/follow/')
+        response = client.post(f'/api/profiles/{self.user2.username}/follow')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

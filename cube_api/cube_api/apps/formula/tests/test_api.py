@@ -12,6 +12,7 @@ Formula 模块 API 接口测试
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from rest_framework import status
+from rest_framework.test import APIClient
 
 from .base import FormulaBaseTestCase, FormulaAPITestCase, FormulaAdminAPITestCase
 from apps.formula.models import CubeCategory, CubeState, Formula, FormulaTag, FormulaCollection
@@ -232,6 +233,35 @@ class FormulaAPITest(FormulaBaseTestCase):
         response = self.client.get('/api/formula/formulas/?search=测试')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    def test_filter_custom_formulas_by_author_username_anonymously(self):
+        """测试匿名用户按作者用户名筛选自创公式"""
+        custom = Formula.objects.create(
+            category=self.category,
+            name='公开自创公式',
+            notation='R U',
+            created_by=self.user,
+            is_custom=True,
+        )
+        Formula.objects.create(
+            category=self.category,
+            name='其他自创公式',
+            notation='L U',
+            created_by=self.admin_user,
+            is_custom=True,
+        )
+
+        response = self.client.get(
+            f'/api/formula/formulas/'
+            f'?author_username={self.user.username}&is_custom=true'
+        )
+
+        ids = [item['id'] for item in response.data['data']['results']]
+        self.assertEqual(ids, [custom.id])
+        self.assertTrue(all(
+            item['is_custom']
+            for item in response.data['data']['results']
+        ))
+
 
 class FormulaMatchAPITest(FormulaBaseTestCase):
     """公式匹配 API 测试"""
@@ -316,6 +346,87 @@ class FormulaCollectionAPITest(FormulaBaseTestCase):
         """测试按难度筛选收藏"""
         response = self.client.get('/api/formula/collections/?difficulty=1')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_public_user_collections_are_readable_anonymously(self):
+        """测试匿名用户可读取公开公式收藏"""
+        FormulaCollection.objects.create(user=self.user, formula=self.formula)
+
+        response = APIClient().get(
+            f'/api/formula/collections/users/{self.user.username}/'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['code'], 100)
+        self.assertEqual(
+            response.data['data']['results'][0]['id'],
+            self.formula.id,
+        )
+
+    def test_public_user_collections_support_dotted_username(self):
+        """测试含点用户名可读取公开公式收藏"""
+        self.user.username = 'formula.user'
+        self.user.save(update_fields=['username'])
+        FormulaCollection.objects.create(user=self.user, formula=self.formula)
+
+        response = APIClient().get(
+            f'/api/formula/collections/users/{self.user.username}/'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data['data']['results'][0]['id'],
+            self.formula.id,
+        )
+
+    def test_public_user_collections_do_not_include_other_users(self):
+        """测试公开公式收藏仅返回目标用户数据"""
+        FormulaCollection.objects.create(user=self.user, formula=self.formula)
+        other_user = User.objects.create_user(
+            email='formula_other@example.com',
+            password='test123456',
+            username='formula_other',
+        )
+        other_formula = Formula.objects.create(
+            category=self.category,
+            name='其他用户收藏',
+            notation='L U',
+        )
+        FormulaCollection.objects.create(
+            user=other_user,
+            formula=other_formula,
+        )
+
+        response = APIClient().get(
+            f'/api/formula/collections/users/{self.user.username}/'
+        )
+
+        ids = [item['id'] for item in response.data['data']['results']]
+        self.assertEqual(ids, [self.formula.id])
+
+    def test_public_user_collections_return_not_found_for_missing_user(self):
+        """测试不存在用户的公开公式收藏返回 404"""
+        response = APIClient().get(
+            '/api/formula/collections/users/missing_user/'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_public_user_collections_return_not_found_for_inactive_user(self):
+        """测试停用用户的公开公式收藏返回 404"""
+        self.user.is_active = False
+        self.user.save(update_fields=['is_active'])
+
+        response = APIClient().get(
+            f'/api/formula/collections/users/{self.user.username}/'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_private_collections_still_require_authentication(self):
+        """测试私有收藏列表仍需要登录"""
+        response = APIClient().get('/api/formula/collections/')
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
 class FormulaTagAPITest(FormulaBaseTestCase):

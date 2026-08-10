@@ -344,4 +344,32 @@ const handleDropdownCommand = async (command) => {
   font-weight: 500;
   color: #409EFF;
 }
+
+@media (max-width: 768px) {
+  .nav-menu {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding-inline: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+
+  .nav-menu::-webkit-scrollbar {
+    display: none;
+  }
+
+  .logo-section {
+    margin-right: 4px;
+  }
+
+  .cart-section,
+  .auth-section {
+    flex-shrink: 0;
+    padding-inline: 8px;
+  }
+}
 </style>

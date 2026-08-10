@@ -67,8 +67,19 @@ export function logoutApi() {
  */
 export function getProfileApi(username) {
   return request({
-    url: `/api/profiles/${username}`,
+    url: `/api/profiles/${encodeURIComponent(username)}`,
     method: 'get'
+  })
+}
+
+/**
+ * 按用户名搜索用户
+ */
+export function searchUsersApi(params = {}) {
+  return request({
+    url: '/api/profiles',
+    method: 'get',
+    params
   })
 }
 
@@ -76,12 +87,14 @@ export function getProfileApi(username) {
  * 获取指定用户的关注列表
  *
  * @param {string} username - 目标用户的用户名
+ * @param {Object} [params] - 分页参数
  * @returns {Promise<Object>} 响应数据，包含关注用户列表
  */
-export function getFollowingListApi(username) {
+export function getFollowingListApi(username, params) {
   return request({
-    url: `/api/profiles/${username}/following`,
-    method: 'get'
+    url: `/api/profiles/${encodeURIComponent(username)}/following`,
+    method: 'get',
+    params
   })
 }
 
@@ -89,12 +102,14 @@ export function getFollowingListApi(username) {
  * 获取指定用户的粉丝列表
  *
  * @param {string} username - 目标用户的用户名
+ * @param {Object} [params] - 分页参数
  * @returns {Promise<Object>} 响应数据，包含粉丝列表
  */
-export function getFollowersListApi(username) {
+export function getFollowersListApi(username, params) {
   return request({
-    url: `/api/profiles/${username}/followers`,
-    method: 'get'
+    url: `/api/profiles/${encodeURIComponent(username)}/followers`,
+    method: 'get',
+    params
   })
 }
 
@@ -106,7 +121,7 @@ export function getFollowersListApi(username) {
  */
 export function followUserApi(username) {
   return request({
-    url: `/api/profiles/${username}/follow`,
+    url: `/api/profiles/${encodeURIComponent(username)}/follow`,
     method: 'post'
   })
 }
@@ -119,7 +134,7 @@ export function followUserApi(username) {
  */
 export function unfollowUserApi(username) {
   return request({
-    url: `/api/profiles/${username}/follow`,
+    url: `/api/profiles/${encodeURIComponent(username)}/follow`,
     method: 'delete'
   })
 }

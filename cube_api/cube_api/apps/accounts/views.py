@@ -19,6 +19,7 @@ from drf_spectacular.utils import extend_schema, OpenApiRequest, OpenApiResponse
 from rest_framework.decorators import action
 from rest_framework import status, viewsets, generics
 from django.contrib.auth import authenticate
+from django.db.models import Case, IntegerField, Value, When
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
@@ -26,6 +27,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticate
 from .models import User
 from .serializers import UserSerializer, ProfileSerializer, UserUpdateSerializer, ProfileListSerializer
 from utils.common_response import APIResponse
+from utils.common_pagination import UnifiedPagination
 from .services import ProfileCacheService, JWTCacheService
 from .throttles import LoginRateThrottle
 
@@ -325,11 +327,13 @@ class ProfileDetailView(viewsets.ReadOnlyModelViewSet):
         - 动态选择序列化器：列表使用轻量级的 ProfileListSerializer
         - 关注操作同时更新数据库和 Redis 缓存
     """
-    queryset = User.objects.all()
+    queryset = User.objects.filter(is_active=True)
     serializer_class = ProfileSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
+    pagination_class = UnifiedPagination
     # 使用 username 作为查找字段（更友好的 URL）
     lookup_field = 'username'
+    lookup_value_regex = r'[^/]+'
 
     def get_serializer_class(self):
         """
@@ -343,6 +347,8 @@ class ProfileDetailView(viewsets.ReadOnlyModelViewSet):
         """
         if self.action in ['following', 'followers']:
             return ProfileListSerializer
+        if self.action == 'list' and 'search' in self.request.query_params:
+            return ProfileListSerializer
         return self.serializer_class
 
     def list(self, request, *args, **kwargs):
@@ -352,6 +358,29 @@ class ProfileDetailView(viewsets.ReadOnlyModelViewSet):
         Returns:
             APIResponse: 包含用户资料列表的响应（包裹在 'profiles' 键中）
         """
+        if 'search' in request.query_params:
+            keyword = request.query_params.get('search', '').strip()
+            queryset = self.get_queryset().none()
+
+            if keyword:
+                queryset = self.get_queryset().filter(
+                    username__icontains=keyword
+                ).annotate(
+                    exact_match=Case(
+                        When(username__iexact=keyword, then=Value(0)),
+                        default=Value(1),
+                        output_field=IntegerField(),
+                    )
+                ).order_by('exact_match', 'username')
+
+            page = self.paginate_queryset(queryset)
+            serializer = self.get_serializer(
+                page,
+                many=True,
+                context={'request': request},
+            )
+            return self.get_paginated_response(serializer.data)
+
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         return APIResponse(profiles=serializer.data)
@@ -442,10 +471,25 @@ class ProfileDetailView(viewsets.ReadOnlyModelViewSet):
         profile_user = self.get_object()
 
         # 获取该用户关注的所有人
-        following_queryset = profile_user.following.all()
+        following_queryset = profile_user.following.filter(
+            is_active=True
+        ).order_by('username')
 
         # 序列化，传递 request 上下文确保关注状态能正确计算
-        serializer = self.get_serializer(following_queryset, many=True, context={'request': request})
+        if 'page' in request.query_params or 'page_size' in request.query_params:
+            page = self.paginate_queryset(following_queryset)
+            serializer = self.get_serializer(
+                page,
+                many=True,
+                context={'request': request},
+            )
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(
+            following_queryset,
+            many=True,
+            context={'request': request},
+        )
 
         return APIResponse(profiles=serializer.data)
 
@@ -466,9 +510,24 @@ class ProfileDetailView(viewsets.ReadOnlyModelViewSet):
         profile_user = self.get_object()
 
         # 获取粉丝集合
-        followers_queryset = profile_user.followers.all()
+        followers_queryset = profile_user.followers.filter(
+            is_active=True
+        ).order_by('username')
 
         # 序列化，传递 request 上下文确保关注状态能正确计算
-        serializer = self.get_serializer(followers_queryset, many=True, context={'request': request})
+        if 'page' in request.query_params or 'page_size' in request.query_params:
+            page = self.paginate_queryset(followers_queryset)
+            serializer = self.get_serializer(
+                page,
+                many=True,
+                context={'request': request},
+            )
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(
+            followers_queryset,
+            many=True,
+            context={'request': request},
+        )
 
         return APIResponse(profiles=serializer.data)
