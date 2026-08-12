@@ -32,8 +32,6 @@
 
 ## 项目截图
 
-> 截图待补充，建议放置在 `cube_front/public/screenshots/` 目录下。
-
 | 首页 | 公式库 | 3D 魔方演示 |
 |:---:|:---:|:---:|
 | ![首页](cube_front/public/screenshots/home.png) | ![公式库](cube_front/public/screenshots/formula-library.png) | ![3D魔方](cube_front/public/screenshots/cube-3d.png) |
@@ -57,10 +55,13 @@
 git clone <仓库地址>
 cd ICube
 
-# 2. 一键启动前后端开发服务器
+# 2. 首次配置：创建虚拟环境、数据库、Redis、安装依赖、初始化数据
+#    详见下方「启动方式 → 方式二：手动启动」第 1-5 步
+
+# 3. 一键启动前后端开发服务器
 powershell -ExecutionPolicy Bypass -File .\dev-local.ps1 start
 
-# 3. 关闭服务
+# 4. 关闭服务
 powershell -ExecutionPolicy Bypass -File .\dev-local.ps1 stop
 ```
 
@@ -81,13 +82,36 @@ cp .env.example .env
 bash deploy.sh full
 ```
 
+```
+.env配置
+
+# ========== 必须修改 ==========
+# 允许访问的主机：填你的服务器公网IP或域名，多个用逗号分隔
+ALLOWED_HOSTS=公网IP,localhost
+
+# 允许的前端跨域来源：填域名即可，脚本会自动加 http/https 前缀
+# 没域名就填公网IP，例如 123.45.67.89
+ALLOWED_ORIGIN=公网IP
+
+# 支付宝回调地址（没接支付宝先随便填，后面改）
+SERVER_HOST=回调地址
+
+# ========== 可选修改（安全性建议改）==========
+# Django 生产环境 SECRET_KEY（改个随机长字符串，至少 32 位）
+# 虽然 docker-compose.yml 里没直接引用，但建议在 settings 里加环境变量读取
+SECRET_KEY='随机生成的长字符串'
+
+# 数据库密码（和 docker-compose.yml 里的 MYSQL_PASSWORD 保持一致就行，默认不用改）
+DB_PASSWORD=icube123
+```
+
 ---
 
 ## 环境要求
 
 | 依赖 | 版本 | 说明 |
 |------|------|------|
-| Python | 3.13+ | 本地开发固定使用 `E:\software\python\python313\env\cube_api\Scripts\python.exe` |
+| Python | 3.13+ | python解释器 |
 | Node.js | 18+ | 前端构建环境 |
 | MySQL | 8.0 | 主数据库 |
 | Redis | 7+ | 缓存、JWT 黑名单、Session |
@@ -483,6 +507,8 @@ ICube/
 
 #### 方式一：一键启停脚本 `dev-local.ps1`（推荐）
 
+> 前提：已完成首次配置（Python 环境、MySQL 数据库、Redis、npm install），见下方方式二第 1-5 步。
+
 ```powershell
 # 启动前后端（后端 127.0.0.1:8000 + 前端 localhost:5173）
 powershell -ExecutionPolicy Bypass -File .\dev-local.ps1 start
@@ -502,20 +528,92 @@ powershell -ExecutionPolicy Bypass -File .\dev-local.ps1 stop
 
 **注意**：后端使用 `--noreload` 启动，修改代码后需 `stop` + `start`；前端 Vite 支持热更新。
 
-#### 方式二：手动启动
+#### 方式二：手动启动（首次完整配置）
 
-```bash
-# 后端
+> 首次拉取代码后需完成以下 6 步前置配置，后续启动可直接用 `dev-local.ps1` 或仅执行第 5、6 步。
+
+**第 1 步：创建 Python 虚拟环境并安装依赖**
+
+```powershell
+# 创建虚拟环境（需 Python 3.13+）
+python -m venv E:\software\python\python313\env\cube_api
+
+# 激活虚拟环境
+E:\software\python\python313\env\cube_api\Scripts\Activate.ps1
+
+# 安装后端依赖
 cd cube_api
-python manage.py runserver 8000 --settings=cube_api.settings.dev
+pip install -r requirements.txt
+```
 
-# 前端
+**第 2 步：创建 MySQL 数据库和用户**
+
+```sql
+-- 登录 MySQL 后执行
+CREATE DATABASE icube CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+CREATE USER 'icube_api'@'localhost' IDENTIFIED BY 'icube123?';
+GRANT ALL PRIVILEGES ON icube.* TO 'icube_api'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+> 数据库名 `icube`、用户 `icube_api`、密码 `icube123?` 与 `dev.py` 默认配置一致。如需修改，通过环境变量 `DB_NAME` / `DB_USER` / `DB_PASSWORD` 覆盖。
+
+**第 3 步：启动 Redis**
+
+```powershell
+# 确保 Redis 运行在 127.0.0.1:6379
+redis-server --daemonize yes
+# 或 Windows 下直接启动 redis-server.exe
+```
+
+**第 4 步：初始化数据库（二选一）**
+
+**方案 A：导入初始数据（推荐，包含公式、用户、轮播图等完整数据）**
+
+```powershell
+# 导入 init_data.sql（包含建表语句 + 全部初始数据）
+mysql -u icube_api -p icube < init_data.sql
+
+# 标记迁移状态为已完成（因为 init_data.sql 直接建表，跳过了 Django migrate 记录）
+cd cube_api
+python manage.py migrate --fake
+```
+
+**方案 B：从零建表（空数据库，无初始数据）**
+
+```powershell
+cd cube_api
+# 执行 Django 迁移，根据模型创建空表
+python manage.py migrate
+
+# 创建超级用户（用于后台管理）
+python manage.py createsuperuser
+```
+
+> 方案 B 启动后需通过后台管理 (`/admin/`) 手动添加导航菜单、轮播图、公式分类等数据。
+
+**第 5 步：安装前端依赖**
+
+```powershell
 cd cube_front
 npm install
+```
+
+**第 6 步：启动服务**
+
+```powershell
+# 后端（保持窗口运行）
+cd cube_api
+python manage.py runserver 127.0.0.1:8000 --settings=cube_api.settings.dev
+
+# 前端（新开窗口）
+cd cube_front
 npm run dev
 ```
 
-前端 `http://localhost:5173`，后端 `http://localhost:8000`，Vite 已配置 `/api` 和 `/media` 代理。
+前端 `http://localhost:5173`，后端 `http://127.0.0.1:8000`，Vite 已配置 `/api` 和 `/media` 代理。
+
+> 后续开发中，如需修改后端代码自动重载，去掉 `--noreload` 参数；`dev-local.ps1` 默认使用 `--noreload` 以便后台运行。
 
 ### 服务器部署（Linux + Docker Compose）
 
