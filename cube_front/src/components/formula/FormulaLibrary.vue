@@ -77,9 +77,8 @@
               </div>
               <div class="formula-footer">
                 <div class="footer-left">
-                  <span class="category-tag">{{ formula.category?.name }}</span>
-                  <span v-if="formula.author" class="author-separator">&nbsp;&nbsp;&nbsp;&nbsp;by&nbsp;&nbsp;</span>
-                  <span v-if="formula.author" class="author-name">{{ formula.author.username }}</span>
+                  <span class="category-tag">公式分类：{{ formula.category?.name }}</span>
+                  <span v-if="formula.author" class="author-name">作者：{{ formula.author.username }}</span>
                 </div>
                 <div class="footer-right">
                   <el-button
@@ -126,17 +125,17 @@
                 <span class="label">逆公式：</span>
                 <code class="notation">{{ selectedFormula.inverse_notation }}</code>
               </div>
-              <div class="detail-item">
+              <div class="detail-item detail-meta-item">
                 <span class="label">分类：</span>
                 <el-tag size="small">{{ selectedFormula.category?.name }}</el-tag>
               </div>
-              <div class="detail-item">
+              <div class="detail-item detail-meta-item">
                 <span class="label">难度：</span>
                 <el-tag :type="difficultyTagType(selectedFormula.difficulty)" size="small">
                   {{ difficultyLabel(selectedFormula.difficulty) }}
                 </el-tag>
               </div>
-              <div v-if="selectedFormula.author" class="detail-item">
+              <div v-if="selectedFormula.author" class="detail-item detail-meta-item">
                 <span class="label">作者：</span>
                 <span>{{ selectedFormula.author.username }}</span>
               </div>
@@ -484,11 +483,6 @@ onMounted(() => {
   color: #909399;
 }
 
-.author-separator {
-  font-size: 12px;
-  color: #909399;
-}
-
 .author-name {
   font-size: 12px;
   color: #606266;
@@ -549,6 +543,7 @@ onMounted(() => {
 .footer-left {
   display: flex;
   align-items: center;
+  gap: 24px;
 }
 
 .collected {
@@ -601,6 +596,11 @@ onMounted(() => {
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
+}
+
+.detail-info.compact .detail-item.detail-meta-item {
+  flex-direction: row;
+  align-items: center;
 }
 
 .detail-info.compact .detail-item .label {
