@@ -288,6 +288,7 @@ const handleFormulaClick = async (formula) => {
 const isCollected = (formulaId) => {
   return collectedFormulaIds.value.includes(formulaId);
 };
+const isLoggedIn = () => Boolean(localStorage.getItem('token'));
 const isFormulaAuthor = (formula) => {
   const user = JSON.parse(localStorage.getItem('user') || 'null');
   return user && formula.author && formula.author.id === user.id;
@@ -297,6 +298,11 @@ const handleEditFormula = (formula) => {
   showEditor.value = true;
 };
 const loadCollections = async () => {
+  if (!isLoggedIn()) {
+    collectedFormulaIds.value = [];
+    return;
+  }
+
   try {
     const res = await getMyCollections();
     if (res.code === 100) {
@@ -308,6 +314,11 @@ const loadCollections = async () => {
   }
 };
 const toggleCollection = async (formula) => {
+  if (!isLoggedIn()) {
+    ElMessage.warning('请先登录');
+    return;
+  }
+
   if (isCollected(formula.id)) {
     try {
       await removeCollection(formula.id);
