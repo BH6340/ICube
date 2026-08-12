@@ -3,6 +3,23 @@
     <el-row :gutter="20">
       <el-col :xs="24" :sm="8" :md="6">
         <div class="sidebar">
+          <el-card shadow="never" class="search-card">
+            <template #header>
+              <span>搜索公式</span>
+            </template>
+            <el-input v-model="searchKeyword" placeholder="输入公式名称或记号" prefix-icon="Search" clearable
+              @keyup.enter="handleSearch" @clear="handleSearch" @input="handleSearch" />
+          </el-card>
+          
+          <el-card shadow="never" class="filter-card">
+            <template #header>
+              <span>作者筛选</span>
+            </template>
+            <el-select v-model="selectedAuthor" @change="handleFilterChange" placeholder="选择作者" clearable>
+              <el-option v-for="author in authorList" :key="author.id" :value="author.id" :label="author.username" />
+            </el-select>
+          </el-card>
+
           <el-card shadow="never" class="category-card">
             <template #header>
               <span>公式分类</span>
@@ -22,22 +39,6 @@
             </el-checkbox-group>
           </el-card>
 
-          <el-card shadow="never" class="filter-card">
-            <template #header>
-              <span>作者筛选</span>
-            </template>
-            <el-select v-model="selectedAuthor" @change="handleFilterChange" placeholder="选择作者" clearable>
-              <el-option v-for="author in authorList" :key="author.id" :value="author.id" :label="author.username" />
-            </el-select>
-          </el-card>
-
-          <el-card shadow="never" class="search-card">
-            <template #header>
-              <span>搜索公式</span>
-            </template>
-            <el-input v-model="searchKeyword" placeholder="输入公式名称或记号" prefix-icon="Search" clearable
-              @keyup.enter="handleSearch" @clear="handleSearch" @input="handleSearch" />
-          </el-card>
         </div>
       </el-col>
 

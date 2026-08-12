@@ -3,6 +3,14 @@
     <el-row :gutter="20">
       <el-col :xs="24" :sm="8" :md="6">
         <div class="sidebar">
+          <el-card shadow="never" class="search-card">
+            <template #header>
+              <span>搜索商品</span>
+            </template>
+            <el-input v-model="searchKeyword" placeholder="输入商品名称" prefix-icon="Search" clearable
+              @keyup.enter="handleSearch" @clear="handleSearch" @input="handleSearch" />
+          </el-card>
+
           <el-card shadow="never" class="category-card">
             <template #header>
               <span>商品分类</span>
@@ -44,13 +52,7 @@
             </div>
           </el-card>
 
-          <el-card shadow="never" class="search-card">
-            <template #header>
-              <span>搜索商品</span>
-            </template>
-            <el-input v-model="searchKeyword" placeholder="输入商品名称" prefix-icon="Search" clearable
-              @keyup.enter="handleSearch" @clear="handleSearch" @input="handleSearch" />
-          </el-card>
+          
         </div>
       </el-col>
 
