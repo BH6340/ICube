@@ -162,27 +162,32 @@ const router = createRouter({
                 {
                     path: 'profiles/info',
                     name: 'profileInfo',
-                    component: () => import('@/views/profiles/InfoView.vue')
+                    component: () => import('@/views/profiles/InfoView.vue'),
+                    meta: { requiresAuth: true }
                 },
                 {
                     path: 'profiles/collections',
                     name: 'profileCollections',
-                    component: () => import('@/views/profiles/CollectionView.vue')
+                    component: () => import('@/views/profiles/CollectionView.vue'),
+                    meta: { requiresAuth: true }
                 },
                 {
                     path: 'profiles/orders',
                     name: 'profileOrders',
-                    component: () => import('@/views/profiles/OrderView.vue')
+                    component: () => import('@/views/profiles/OrderView.vue'),
+                    meta: { requiresAuth: true }
                 },
                 {
                     path: 'profiles/posts',
                     name: 'profilePosts',
-                    component: () => import('@/views/profiles/MyPostsView.vue')
+                    component: () => import('@/views/profiles/MyPostsView.vue'),
+                    meta: { requiresAuth: true }
                 },
                 {
                     path: 'profiles/data',
                     name: 'profileData',
-                    component: () => import('@/views/profiles/MyDataView.vue')
+                    component: () => import('@/views/profiles/MyDataView.vue'),
+                    meta: { requiresAuth: true }
                 },
                 {
                     path: 'profiles/addresses',
@@ -203,6 +208,16 @@ const router = createRouter({
             component: () => import('@/views/RegisterView.vue')
         }
     ]
+})
+
+router.beforeEach((to) => {
+    const requiresAuth = to.matched.some((route) => route.meta.requiresAuth)
+
+    if (requiresAuth && !localStorage.getItem('token')) {
+        return { name: 'login' }
+    }
+
+    return true
 })
 
 export default router
