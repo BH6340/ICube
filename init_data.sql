@@ -1,4 +1,4 @@
-USE icube_db;
+USE `icube`;
 /*
  Navicat Premium Data Transfer
 
@@ -12,7 +12,7 @@ USE icube_db;
  Target Server Version : 9.1.0
  File Encoding         : 65001
 
- Date: 08/08/2026 13:54:22
+ Date: 12/08/2026 12:43:32
 */
 
 SET NAMES utf8mb4;
@@ -37,7 +37,7 @@ CREATE TABLE `accounts_user` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `accounts_user_username_6088629e_uniq` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of accounts_user
@@ -47,7 +47,7 @@ INSERT INTO `accounts_user` VALUES (2, 'pbkdf2_sha256$1200000$r3OXdjnkCUkkD8dsYw
 INSERT INTO `accounts_user` VALUES (3, 'pbkdf2_sha256$1200000$cJ7IS2DNMwk53YoArSUDWB$09KSEoIzAND7FptTUGF69r9Wfvn58LXDiUOYaa8Uq3U=', NULL, 0, 0, 1, '2026-05-11 14:58:56.644541', 'bh03@qq.com', 'bh03', '这是bh03的简介', 'avatars/avatar_3_599f7828_JWU26XE.svg');
 INSERT INTO `accounts_user` VALUES (4, 'pbkdf2_sha256$1200000$1U3JbJi7IJmftkdvH2cafI$KnEY+mhMfb+DHo9EadnmWPWuVq28sDswnhG/Ixxit8s=', NULL, 0, 0, 1, '2026-05-11 14:59:20.745717', 'bh04@qq.com', 'bh04', '这是bh04的简介', 'avatars/avatar_4_07eddaaf_WeeKHJx.svg');
 INSERT INTO `accounts_user` VALUES (5, 'pbkdf2_sha256$1200000$WRHGASrWYmCTFXQaZUwadz$N5eocKcaXp0pYcZnT07NhKqhsvi6OFje6EPCUWnO7uk=', NULL, 0, 0, 1, '2026-05-11 19:11:36.539452', 'bh05@qq.com', 'bh05', '魔方爱好者', 'avatars/avatar_5_42c5b22d_JMH7ua4.svg');
-INSERT INTO `accounts_user` VALUES (6, 'pbkdf2_sha256$1200000$okkHb5GNQKwfvBOnAQJ5de$oTBOGz7ODepDV/+iQKHXc8wnGcmzwO0FtbbmGwdt4I8=', '2026-07-24 14:13:00.721822', 1, 1, 1, '2026-05-12 08:26:47.622264', 'baihao6340@163.com', '', '', 'avatars/avatar_6_65294af4_B6xyUSz.svg');
+INSERT INTO `accounts_user` VALUES (6, 'pbkdf2_sha256$1200000$okkHb5GNQKwfvBOnAQJ5de$oTBOGz7ODepDV/+iQKHXc8wnGcmzwO0FtbbmGwdt4I8=', '2026-08-12 10:06:19.523694', 1, 1, 1, '2026-05-12 08:26:47.622264', 'baihao6340@163.com', '', '', 'avatars/avatar_6_65294af4_B6xyUSz.svg');
 INSERT INTO `accounts_user` VALUES (7, 'pbkdf2_sha256$1200000$RYFGlCvA1CDRxSNdklva6T$kXTRELt9ADjwvXRzQ7vBw4qlYiKkYsHbLDMtsdqHy7c=', NULL, 0, 0, 1, '2026-05-12 10:31:45.718088', 'bh06@qq.com', 'bh06', '', 'avatars/avatar_7_4a4a872f_GADdPGB.svg');
 INSERT INTO `accounts_user` VALUES (8, 'pbkdf2_sha256$1200000$DnUCKmEqnGwe6dgpusKgbv$dWypTxpzl3XsLQTHMtP2kVzzgSlZGrPXhDQvoFrI04I=', NULL, 0, 0, 1, '2026-06-03 10:52:12.092033', 'bh06@163.com', 'bh06_1', '', 'avatars/avatar_8_539a8195_i4KcIT3.svg');
 INSERT INTO `accounts_user` VALUES (9, 'pbkdf2_sha256$1200000$ftzQsmKyRLAeMfinPTKybA$HhvTRYfZhcto+EM0AkQcrw40kW595wOvrUz9i6d0/dY=', NULL, 0, 0, 1, '2026-06-03 14:36:26.343585', 'bh07@qq.com', 'bh07', '', 'avatars/avatar_9_f143219d_ZijIf6X.svg');
@@ -71,7 +71,7 @@ CREATE TABLE `accounts_user_followers` (
   KEY `accounts_user_followers_to_user_id_6dddd47f_fk_accounts_user_id` (`to_user_id`),
   CONSTRAINT `accounts_user_follow_from_user_id_1e8ec42b_fk_accounts_` FOREIGN KEY (`from_user_id`) REFERENCES `accounts_user` (`id`),
   CONSTRAINT `accounts_user_followers_to_user_id_6dddd47f_fk_accounts_user_id` FOREIGN KEY (`to_user_id`) REFERENCES `accounts_user` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of accounts_user_followers
@@ -375,7 +375,7 @@ CREATE TABLE `django_migrations` (
   `name` varchar(255) NOT NULL,
   `applied` datetime(6) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of django_migrations
@@ -416,6 +416,7 @@ INSERT INTO `django_migrations` VALUES (34, 'shop', '0002_alter_cart_options_alt
 INSERT INTO `django_migrations` VALUES (35, 'timer', '0002_alter_timerrecord_options', '2026-07-24 14:05:11.194775');
 INSERT INTO `django_migrations` VALUES (36, 'shop', '0003_address', '2026-07-24 16:24:47.401734');
 INSERT INTO `django_migrations` VALUES (37, 'formula', '0004_add_custom_category_fields', '2026-07-29 09:25:48.148352');
+INSERT INTO `django_migrations` VALUES (38, 'home', '0003_add_user_navigation', '2026-08-10 14:56:42.498308');
 
 -- ----------------------------
 -- Table structure for django_session
@@ -635,7 +636,7 @@ INSERT INTO `formula_formula` VALUES (354, 'PLL-18', 'R2\' u\' R U\' R U R\' u R
 INSERT INTO `formula_formula` VALUES (355, 'PLL-19', 'R U R\' y\' R2\' u\' R U\' R\' U R\' u R2', 'R2 u\' R U\' R U R\' u R2\' y R U\' R\'', NULL, 'formulas/PLL_Images/PLL_019.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.511134', 6, NULL, 3, 0);
 INSERT INTO `formula_formula` VALUES (356, 'PLL-20', 'R2\' u R\' U R\' U\' R u\' R2\' y\' R\' U R', 'R\' U\' R y R2\' u R\' U R U\' R u\' R2\'', NULL, 'formulas/PLL_Images/PLL_020.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.537408', 6, NULL, 3, 0);
 INSERT INTO `formula_formula` VALUES (357, 'PLL-21', 'R\' d\' F R2\' u R\' U R U\' R u\' R2', 'R2 u R\' U R\' U\' R u\' R2\' F\' d R', NULL, 'formulas/PLL_Images/PLL_021.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.561603', 6, NULL, 3, 0);
-INSERT INTO `formula_formula` VALUES (360, 'F2L-31-BR', 'R\' U R\' F R F\' U R U2 R\' U R', 'R\' U\' R U2 R\' U\' F R\' F\' R U\' R', NULL, 'formula_thumbnails/F2L-31-BR_cropped_thumbnail_BdeDWNJ.webp', 4, '', 1, '2026-07-28 10:07:26.658056', 7, 10, 1, 0);
+INSERT INTO `formula_formula` VALUES (360, 'F2L-31-BR', 'R\' U R\' F R F\' U R U2 R\' U R', 'R\' U\' R U2 R\' U\' F R\' F\' R U\' R', NULL, 'formula_thumbnails/F2L-31-BR_cropped_thumbnail_BdeDWNJ.webp', 4, '', 1, '2026-07-28 10:07:26.658056', 7, 10, 1, 5);
 
 -- ----------------------------
 -- Table structure for formula_formula_collection
@@ -1127,7 +1128,7 @@ INSERT INTO `forum_post` VALUES (5, '发布新帖子', '# 魔方
 ```
 公式如下
 python
-```', '', 27, 1, 0, 0, 0, 0, 0, 'published', 0, '2026-06-12 10:08:08.741039', '2026-06-12 10:52:53.080432', 10);
+```', '', 28, 1, 0, 0, 0, 0, 0, 'deleted', 0, '2026-06-12 10:08:08.741039', '2026-06-12 10:52:53.080432', 10);
 INSERT INTO `forum_post` VALUES (6, '再发一篇新帖子（修改）', '# CFOP 速拧学习方法
 
 ## 什么是 CFOP？
@@ -1198,15 +1199,15 @@ CFOP 是目前最主流的魔方速拧解法，由四个步骤组成：
 INSERT INTO `forum_post` VALUES (9, '返回格式测试', '这是教程内容，使用Markdown格式...', '', 0, 0, 0, 0, 0, 0, 0, 'deleted', 0, '2026-06-12 10:38:10.289770', '2026-06-12 10:38:10.289796', 10);
 INSERT INTO `forum_post` VALUES (10, 'F2L公式', '![F2L-07](/media/formulas/F2L_Images/F2L_007.png)
 
-# 发文测试，F2L', '', 34, 0, 0, 0, 0, 0, 0, 'published', 0, '2026-07-25 10:01:52.570561', '2026-07-25 12:07:25.090391', 10);
-INSERT INTO `forum_post` VALUES (11, '111111', '![F2L-05](/media/formulas/F2L_Images/F2L_005.png)![F2L-10](/media/formulas/F2L_Images/F2L_010.png)![admin](/media/forum/posts/2026/07/admin.png)![bh01](/media/forum/posts/2026/07/bh01_m3QZaCZ.png)![admin](/media/forum/posts/2026/07/admin_g2v0Okt.png)', '', 16, 0, 0, 0, 0, 0, 0, 'published', 0, '2026-07-25 10:53:46.442350', '2026-07-25 12:07:44.919342', 10);
+# 发文测试，F2L', '', 35, 0, 0, 0, 0, 0, 0, 'published', 0, '2026-07-25 10:01:52.570561', '2026-07-25 12:07:25.090391', 10);
+INSERT INTO `forum_post` VALUES (11, '111111', '![F2L-05](/media/formulas/F2L_Images/F2L_005.png)![F2L-10](/media/formulas/F2L_Images/F2L_010.png)![admin](/media/forum/posts/2026/07/admin.png)![bh01](/media/forum/posts/2026/07/bh01_m3QZaCZ.png)![admin](/media/forum/posts/2026/07/admin_g2v0Okt.png)', '', 17, 0, 0, 0, 0, 0, 0, 'deleted', 0, '2026-07-25 10:53:46.442350', '2026-07-25 12:07:44.919342', 10);
 INSERT INTO `forum_post` VALUES (12, '测试多图帖子', '![F2L-01](/media/formulas/F2L_Images/F2L_001.png)
 ![F2L-02](/media/formulas/F2L_Images/F2L_002.png)
-![F2L-03](/media/formulas/F2L_Images/F2L_003.png)', '', 0, 0, 0, 0, 0, 0, 0, 'published', 0, '2026-07-25 10:57:30.527408', '2026-07-25 10:57:30.527435', 10);
+![F2L-03](/media/formulas/F2L_Images/F2L_003.png)', '', 1, 0, 0, 0, 0, 0, 0, 'deleted', 0, '2026-07-25 10:57:30.527408', '2026-07-25 10:57:30.527435', 10);
 INSERT INTO `forum_post` VALUES (13, '111111', '![F2L-09](/media/formulas/F2L_Images/F2L_009.png)
 ![F2L-07](/media/formulas/F2L_Images/F2L_007.png)
 ![F2L-03](/media/formulas/F2L_Images/F2L_003.png)
-![admin_cropped](/media/forum/posts/2026/07/admin_cropped_compressed.webp)', '', 26, 0, 0, 1, 0, 0, 0, 'published', 0, '2026-07-25 11:00:14.679846', '2026-07-25 15:01:42.047184', 10);
+![admin_cropped](/media/forum/posts/2026/07/admin_cropped_compressed.webp)', '', 27, 0, 0, 1, 0, 0, 0, 'deleted', 0, '2026-07-25 11:00:14.679846', '2026-07-25 15:01:42.047184', 10);
 
 -- ----------------------------
 -- Table structure for forum_post_collect
@@ -1441,13 +1442,13 @@ INSERT INTO `home_navigationmenu` VALUES (13, '2', '教程', '/tutorials', 'main
 INSERT INTO `home_navigationmenu` VALUES (14, '3', '公式库', '/formulas', 'main', 30, '["/formulas"]');
 INSERT INTO `home_navigationmenu` VALUES (15, '4', '计时器', '/timer', 'main', 40, '["/timer"]');
 INSERT INTO `home_navigationmenu` VALUES (16, '5', '交流论坛', '/forum', 'main', 50, '["/forum"]');
-INSERT INTO `home_navigationmenu` VALUES (23, '7', '魔友', '/users', 'main', 55, '["/users"]');
 INSERT INTO `home_navigationmenu` VALUES (17, '6', '魔方商店', '/shop', 'main', 60, '["/shop"]');
 INSERT INTO `home_navigationmenu` VALUES (18, 'p-1', '返回首页', '/', 'profile', 10, '[]');
 INSERT INTO `home_navigationmenu` VALUES (19, 'p-2', '个人信息', '/profiles/info', 'profile', 20, '["/profiles/info"]');
 INSERT INTO `home_navigationmenu` VALUES (20, 'p-3', '公式收藏', '/profiles/collections', 'profile', 30, '["/profiles/collections"]');
 INSERT INTO `home_navigationmenu` VALUES (21, 'p-4', '我的数据', '/profiles/data', 'profile', 40, '["/profiles/data"]');
 INSERT INTO `home_navigationmenu` VALUES (22, 'p-5', '我的帖子', '/profiles/posts', 'profile', 50, '["/profiles/posts"]');
+INSERT INTO `home_navigationmenu` VALUES (23, '7', '魔友', '/users', 'main', 55, '["/users"]');
 
 -- ----------------------------
 -- Table structure for shop_address
@@ -1631,12 +1632,13 @@ CREATE TABLE `timer_record` (
   PRIMARY KEY (`id`),
   KEY `timer_record_user_id_eedfa320_fk_accounts_user_id` (`user_id`),
   CONSTRAINT `timer_record_user_id_eedfa320_fk_accounts_user_id` FOREIGN KEY (`user_id`) REFERENCES `accounts_user` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Records of timer_record
 -- ----------------------------
 INSERT INTO `timer_record` VALUES (1, '3x3', 'layer', 6781, 'U\' L\' U2 R2 L2 F U\' D2 B\' U2 R\' U2 D\' F\' U\' R U2 D\' U\' D R', '2026-07-19 19:16:21.537969', 10);
 INSERT INTO `timer_record` VALUES (3, '3x3', 'cfop', 19541, 'U\' F2 L2 D B\' U\' B R\' B D\' L D2 L\' B2 L\' U\' F\' R\' F\' D2 R\'', '2026-07-19 20:04:39.390944', 1);
+INSERT INTO `timer_record` VALUES (4, '3x3', 'layer', 16461, 'R\' F\' U F\' L R\' U R D\' B2 U2 R\' U\' B\' L B D\' F R\' B D2', '2026-08-12 10:04:24.803698', 10);
 
 SET FOREIGN_KEY_CHECKS = 1;
