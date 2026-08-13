@@ -1,5 +1,8 @@
 {
   "appId": "com.icube.app",
   "appName": "ICube",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "cleartext": true
+  }
 }
