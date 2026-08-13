@@ -42,6 +42,7 @@ class UserSerializer(serializers.ModelSerializer):
         - image: 头像 URL（通过 SerializerMethodField 处理）
     """
     # 头像 URL：通过 SerializerMethodField 动态生成
+    # 当你需要返回的数据在数据库模型（Model）中没有直接对应的字段，或者该字段的值需要经过复杂的逻辑计算、数据库查询或权限判断才能生成时，使用 SerializerMethodField。
     image = serializers.SerializerMethodField()
 
     class Meta:
