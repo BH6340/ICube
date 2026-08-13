@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ICube</string>
+    <string name="title_activity_main">ICube</string>
+    <string name="package_name">com.icube.app</string>
+    <string name="custom_url_scheme">com.icube.app</string>
+</resources>

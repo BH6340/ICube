@@ -310,11 +310,11 @@ class FormulaViewSet(viewsets.ModelViewSet):
         - select_related: 预加载分类和目标状态
         - prefetch_related: 预加载标签关联
     """
-    queryset = Formula.objects.select_related('category', 'target_state').prefetch_related('tag_relations__tag')
+    queryset = Formula.objects.select_related('category', 'target_state', 'created_by').prefetch_related('tag_relations__tag')
     permission_classes = [IsAuthenticatedOrReadOnly, IsAdminOrCustomCreator]
     pagination_class = UnifiedPagination
     filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
-    search_fields = ['name', 'notation', 'description', 'author__username', 'category__name']
+    search_fields = ['name', 'notation', 'description', 'created_by__username', 'category__name']
     ordering_fields = ['category', 'difficulty', 'created_at', 'view_count']
     # 默认排序：分类 → 名称
     ordering = ['category', 'name']
@@ -767,6 +767,16 @@ class FormulaCollectionViewSet(viewsets.ModelViewSet):
         if difficulty:
             difficulty_values = difficulty.split(',')
             queryset = queryset.filter(formula__difficulty__in=difficulty_values)
+
+        # 关键词搜索（公式名、记号、作者、分类名）
+        search = request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                models.Q(formula__name__icontains=search) |
+                models.Q(formula__notation__icontains=search) |
+                models.Q(formula__created_by__username__icontains=search) |
+                models.Q(formula__category__name__icontains=search)
+            )
 
         # 自定义排序
         ordering = request.query_params.get('ordering')

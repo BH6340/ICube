@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+
+# Capacitor Android 构建产物（android/ 目录本身需要提交）
+android/app/build/
+android/.gradle/
+android/local.properties
+android/captures/
+android/.idea/
+*.iml
