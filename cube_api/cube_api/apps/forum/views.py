@@ -77,6 +77,8 @@ class PostViewSet(viewsets.ModelViewSet):
         """
         if self.action == 'list':
             return PostListSerializer
+        if self.action in ['my_posts', 'collected']:
+            return PostListSerializer
         if self.action in ['create', 'update', 'partial_update']:
             return PostCreateUpdateSerializer
         return PostSerializer
@@ -331,7 +333,7 @@ class PostViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(posts, many=True, context={'request': request})
         return APIResponse(posts=serializer.data)
 
-    @action(detail=False, methods=['GET'])
+    @action(detail=False, methods=['GET'], permission_classes=[IsAuthenticated])
     def collected(self, request):
         """
         获取当前用户收藏的帖子

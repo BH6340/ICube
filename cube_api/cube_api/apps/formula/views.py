@@ -314,7 +314,7 @@ class FormulaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly, IsAdminOrCustomCreator]
     pagination_class = UnifiedPagination
     filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
-    search_fields = ['name', 'notation', 'description']
+    search_fields = ['name', 'notation', 'description', 'author__username', 'category__name']
     ordering_fields = ['category', 'difficulty', 'created_at', 'view_count']
     # 默认排序：分类 → 名称
     ordering = ['category', 'name']
