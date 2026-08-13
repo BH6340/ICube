@@ -41,6 +41,7 @@
 
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import { useRouteLoading } from '@/stores/routeLoading'
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -217,7 +218,17 @@ router.beforeEach((to) => {
         return { name: 'login' }
     }
 
+    useRouteLoading().start(to.fullPath)
     return true
+})
+
+router.afterEach(() => {
+    useRouteLoading().finish()
+})
+
+router.onError((error, to) => {
+    console.error('路由加载失败:', error)
+    useRouteLoading().fail(to?.fullPath || window.location.pathname)
 })
 
 export default router

@@ -5,8 +5,16 @@
         <TopHeader />
       </el-header>
 
-      <el-main>
-        <router-view />
+      <el-main class="route-main">
+        <RouteErrorState v-if="status === 'error'" />
+
+        <template v-else>
+          <div class="route-content" :class="{ 'route-content-loading': overlayVisible }">
+            <router-view />
+          </div>
+
+          <RouteLoadingMask :visible="overlayVisible" />
+        </template>
       </el-main>
 
       <el-footer>
@@ -31,6 +39,19 @@
  */
 import TopHeader from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
+import RouteErrorState from '@/components/common/RouteErrorState.vue'
+import RouteLoadingMask from '@/components/common/RouteLoadingMask.vue'
+import { onBeforeUnmount, onMounted } from 'vue'
+import { useRouteLoading } from '@/stores/routeLoading'
+
+const {
+  status,
+  overlayVisible,
+  setLayoutMounted
+} = useRouteLoading()
+
+onMounted(() => setLayoutMounted(true))
+onBeforeUnmount(() => setLayoutMounted(false))
 </script>
 
 <style>
@@ -39,5 +60,30 @@ import Footer from '@/components/Footer.vue'
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
+}
+
+.route-main {
+  position: relative;
+  min-height: calc(100vh - 180px);
+}
+
+.route-content {
+  min-height: inherit;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.2s ease, transform 0.2s ease, filter 0.2s ease;
+}
+
+.route-content-loading {
+  opacity: 0.38;
+  filter: blur(0.6px);
+  transform: translateY(4px);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-content {
+    transition: none;
+  }
 }
 </style>
