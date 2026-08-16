@@ -32,11 +32,11 @@ export default defineConfig({
     // 开发环境代理：与 cube_front 一致，/api 和 /media 转发到本地后端
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:8000',
+        target: 'http://103.100.211.146',
         changeOrigin: true,
       },
       '/media': {
-        target: 'http://127.0.0.1:8000',
+        target: 'http://103.100.211.146',
         changeOrigin: true,
       },
     },

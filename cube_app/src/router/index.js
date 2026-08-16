@@ -29,7 +29,7 @@ const routes = [
     path: '/timer',
     name: 'Timer',
     component: () => import('@/views/TimerView.vue'),
-    meta: { title: '计时器', requiresAuth: true },
+    meta: { title: '计时器' },
   },
   {
     path: '/forum',

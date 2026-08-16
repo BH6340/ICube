@@ -279,12 +279,15 @@ function stopTimer() {
   history.value.unshift(record)
   saveToStorage()
 
-  createTimerRecord({
-    cube_type: record.cube_type,
-    method: record.method,
-    time_ms: record.time_ms,
-    scramble: record.scramble,
-  }).catch(() => {})
+  // 仅登录时同步后端，离线模式纯本地
+  if (localStorage.getItem('token')) {
+    createTimerRecord({
+      cube_type: record.cube_type,
+      method: record.method,
+      time_ms: record.time_ms,
+      scramble: record.scramble,
+    }).catch(() => {})
+  }
 
   generateScramble()
 }
@@ -333,8 +336,16 @@ function confirmClear() {
   }).catch(() => {})
 }
 
-// ─── 数据记录（后端） ────────────────────────────────
+// ─── 数据记录（后端 / 本地降级） ──────────────────────
 async function loadRecords(reset = false) {
+  // 无 Token 时使用本地记录
+  if (!localStorage.getItem('token')) {
+    recordList.value = history.value.slice()
+    recordFinished.value = true
+    recordLoading.value = false
+    return
+  }
+
   if (reset) {
     recordPage.value = 1
     recordFinished.value = false
@@ -361,6 +372,8 @@ async function loadRecords(reset = false) {
       recordPage.value++
     }
   } catch {
+    // 后端请求失败时降级到本地记录
+    recordList.value = history.value.slice()
     recordFinished.value = true
   } finally {
     recordLoading.value = false
