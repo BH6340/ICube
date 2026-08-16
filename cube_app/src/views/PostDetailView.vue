@@ -142,7 +142,7 @@ watch(
 
 <template>
   <div class="page">
-    <van-nav-bar title="帖子详情" left-arrow @click-left="router.back()" fixed placeholder />
+    <van-nav-bar title="帖子详情" left-arrow @click-left="router.back()" placeholder />
 
     <div v-if="loading" class="loading-wrap">
       <van-loading size="36px">加载中...</van-loading>

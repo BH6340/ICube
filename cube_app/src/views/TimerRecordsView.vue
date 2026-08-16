@@ -143,7 +143,7 @@ onMounted(() => {
 
 <template>
   <div class="page">
-    <van-nav-bar title="我的记录" left-arrow @click-left="router.back()" fixed placeholder />
+    <van-nav-bar title="我的记录" left-arrow @click-left="router.back()" placeholder />
 
     <!-- 筛选 -->
     <van-dropdown-menu>

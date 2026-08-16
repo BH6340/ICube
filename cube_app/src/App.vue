@@ -93,10 +93,9 @@ body {
 }
 
 .app-container {
-  height: 100vh;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  padding-top: env(safe-area-inset-top);
 }
 
 .app-content {

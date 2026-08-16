@@ -3,6 +3,7 @@
   "appName": "ICube",
   "webDir": "dist",
   "server": {
-    "cleartext": true
+    "cleartext": true,
+    "androidScheme": "http"
   }
 }

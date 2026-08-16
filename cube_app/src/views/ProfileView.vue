@@ -147,7 +147,7 @@ onMounted(() => {
 
 <template>
   <div class="page">
-    <van-nav-bar title="个人中心" fixed placeholder />
+    <van-nav-bar title="个人中心" placeholder />
 
     <div class="page-content">
       <!-- 未登录状态 -->

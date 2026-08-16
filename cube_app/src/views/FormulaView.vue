@@ -203,7 +203,7 @@ watch(() => route.query.filter, (filter) => {
 
 <template>
   <div class="formula-page">
-    <van-nav-bar :title="collectedOnly ? '我的收藏' : '公式库'" fixed placeholder />
+    <van-nav-bar :title="collectedOnly ? '我的收藏' : '公式库'" placeholder />
 
     <!-- 搜索栏 -->
     <van-search

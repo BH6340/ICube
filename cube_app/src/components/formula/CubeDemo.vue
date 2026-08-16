@@ -130,7 +130,7 @@ const initThree = () => {
   scene.add(cameraLight)
 
   camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100)
-  camera.position.set(4, 4, 6)
+  camera.position.set(5, 5, 7)
 
   renderer = new THREE.WebGLRenderer({ antialias: true })
   renderer.setSize(width, height)
@@ -381,7 +381,7 @@ const resetToFormulaState = async () => {
 
   if (controls && camera) {
     new Tween(camera.position, tweenGroup)
-      .to({ x: 4, y: 4, z: 6 }, 300)
+      .to({ x: 5, y: 5, z: 7 }, 300)
       .easing(Easing.Quadratic.Out)
       .start()
 

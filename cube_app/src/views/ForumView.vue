@@ -7,7 +7,7 @@
  */
 defineOptions({ name: 'ForumView' })
 
-import { ref, watch, onActivated } from 'vue'
+import { ref, watch, onMounted, onActivated } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { showToast } from 'vant'
 import PostCard from '@/components/forum/PostCard.vue'
@@ -118,6 +118,13 @@ watch(() => route.query.filter, (filter) => {
   }
 }, { immediate: true })
 
+// 首次挂载时加载数据（无 filter 参数时也加载）
+onMounted(() => {
+  if (postList.value.length === 0) {
+    loadPosts(true)
+  }
+})
+
 // keep-alive 重新激活时，如果 filter 变化则重新加载
 onActivated(() => {
   if (route.query.filter === 'my_posts' && activeTab.value !== 3) {
@@ -129,7 +136,7 @@ onActivated(() => {
 
 <template>
   <div class="page">
-    <van-nav-bar title="论坛" fixed placeholder />
+    <van-nav-bar title="论坛" placeholder />
 
     <!-- 搜索栏 -->
     <van-search
