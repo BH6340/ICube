@@ -1,6 +1,7 @@
 <template>
   <div class="page">
     <div class="timer-tab">
+      <van-nav-bar title="计时" placeholder />
       <ScrambleText :scramble="scramble" @refresh="generateScramble" />
 
       <van-dropdown-menu class="type-selector">
