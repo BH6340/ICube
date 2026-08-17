@@ -14,6 +14,7 @@ import NotationKeyboard from '@/components/formula/NotationKeyboard.vue'
 import ImageCropper from '@/components/ImageCropper.vue'
 import FreeCropper from '@/components/FreeCropper.vue'
 import { cropAndCompress } from '@/utils/image-compress'
+import { preprocessImage, multiPassOCR } from '@/utils/ocr-helper'
 import { buildMediaUrl } from '@/utils/media-url'
 import { getFormulaList, getFormulaCategories, getMyCollections, getMyCustomFormulas, addCollection, removeCollection, createFormula } from '@/api/formula'
 import { getDownloadedFormulas, getDownloadedIds, batchDownload, isDownloaded } from '@/utils/formula-download'
@@ -445,26 +446,21 @@ async function onOcrCropConfirm(cropRegion) {
   showOcrCropper.value = false
   ocrLoading.value = true
   try {
-    // 裁剪图片区域
     const img = new Image()
     img.src = ocrCropSrc.value
     await new Promise((resolve) => { img.onload = resolve })
     const canvas = document.createElement('canvas')
     canvas.width = cropRegion.width
     canvas.height = cropRegion.height
-    const ctx = canvas.getContext('2d')
-    ctx.drawImage(img, cropRegion.x, cropRegion.y, cropRegion.width, cropRegion.height, 0, 0, cropRegion.width, cropRegion.height)
-    const croppedDataUrl = canvas.toDataURL('image/png')
+    canvas.getContext('2d').drawImage(img, cropRegion.x, cropRegion.y, cropRegion.width, cropRegion.height, 0, 0, cropRegion.width, cropRegion.height)
 
-    // OCR 识别
-    const { default: Tesseract } = await import('tesseract.js')
-    const result = await Tesseract.recognize(croppedDataUrl, 'eng', {
-      tessedit_char_whitelist: "RLUDFBMESxyzrludfb'2 ",
-    })
-    const cleaned = cleanNotation(result.data.text)
-    if (cleaned) {
-      addForm.value.notation = cleaned
-      updateDifficulty(cleaned)
+    const procCanvas = preprocessImage(canvas)
+    const dataUrl = procCanvas.toDataURL('image/png')
+
+    const best = await multiPassOCR(dataUrl, procCanvas)
+    if (best.cleaned) {
+      addForm.value.notation = best.cleaned
+      updateDifficulty(best.cleaned)
       showToast({ type: 'success', message: '识别成功' })
     } else {
       showToast('未识别到有效公式')
@@ -482,7 +478,8 @@ function onOcrCropCancel() {
 
 function cleanNotation(text) {
   let cleaned = text.replace(/[′ʼ`´]/g, "'")
-  const tokens = cleaned.split(/\s+/).filter(Boolean)
+  cleaned = cleaned.replace(/[（［【]/g, ' ').replace(/[）］】]/g, ' ')
+  const tokens = cleaned.split(/[\s,]+/).filter(Boolean)
   const validPattern = /^[RLUDFBMESxyzrludfb]['2]?$/
   return tokens.filter(t => validPattern.test(t)).join(' ')
 }

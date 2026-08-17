@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OCR 公式识别测试</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, sans-serif; background: #f5f5f5; padding: 16px; color: #333; }
+    h1 { font-size: 1.2rem; margin-bottom: 16px; }
+    .section { background: #fff; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+    .section-title { font-weight: 600; margin-bottom: 8px; font-size: 0.9rem; }
+    button { padding: 8px 16px; border: none; border-radius: 6px; background: #1989fa; color: #fff; font-size: 0.85rem; cursor: pointer; margin: 4px 4px 4px 0; }
+    button:hover { opacity: 0.85; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    input[type=file] { display: none; }
+    .canvas-wrap { position: relative; display: inline-block; max-width: 100%; overflow: hidden; border-radius: 4px; }
+    canvas { display: block; max-width: 100%; }
+    #cropCanvas { cursor: crosshair; touch-action: none; }
+    .preview-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+    .preview-item { text-align: center; }
+    .preview-item canvas { border: 1px solid #eee; border-radius: 4px; max-width: 300px; }
+    .preview-item .label { font-size: 0.75rem; color: #999; margin-top: 4px; }
+    .result { font-family: 'Cascadia Code', Consolas, monospace; font-size: 1rem; padding: 12px; background: #f7f8fa; border-radius: 6px; word-break: break-all; margin-top: 8px; }
+    .raw-result { font-size: 0.8rem; color: #666; padding: 8px; background: #fafafa; border-radius: 4px; margin-top: 4px; white-space: pre-wrap; word-break: break-all; }
+    .params { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+    .param { display: flex; align-items: center; gap: 4px; font-size: 0.8rem; }
+    .param input[type=range] { width: 100px; }
+    .param .val { color: #1989fa; min-width: 30px; }
+    .param select { font-size: 0.8rem; }
+    .loading { display: none; text-align: center; padding: 20px; }
+    .loading.show { display: block; }
+    .hint { font-size: 0.75rem; color: #999; margin-top: 4px; }
+    .status { font-size: 0.8rem; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-top: 4px; }
+    .status.success { background: #e6f7e6; color: #52c41a; }
+    .status.error { background: #fff0f0; color: #ff4d4f; }
+    .pass-result { padding: 8px 12px; background: #f7f8fa; border-radius: 4px; margin-top: 4px; font-size: 0.8rem; }
+    .pass-result .conf { color: #1989fa; font-weight: 600; }
+    .checkbox-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
+    .checkbox-item { display: flex; align-items: center; gap: 4px; font-size: 0.8rem; cursor: pointer; }
+    .checkbox-item input { cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>OCR 公式识别测试工具 v2</h1>
+
+  <div class="section">
+    <div class="section-title">1. 选择图片</div>
+    <button onclick="document.getElementById('fileInput').click()">选择图片</button>
+    <input type="file" id="fileInput" accept="image/*">
+    <div class="hint">选择图片后在下方裁剪公式区域</div>
+  </div>
+
+  <div class="section" id="cropSection" style="display:none;">
+    <div class="section-title">2. 裁剪公式区域（拖拽画矩形）</div>
+    <div class="canvas-wrap">
+      <canvas id="cropCanvas"></canvas>
+    </div>
+    <div style="margin-top:8px;">
+      <button onclick="resetCrop()">重置裁剪</button>
+      <button onclick="runOCR()" id="ocrBtn">识别公式</button>
+    </div>
+  </div>
+
+  <div class="section" id="paramSection" style="display:none;">
+    <div class="section-title">3. 预处理参数</div>
+
+    <div class="checkbox-row">
+      <label class="checkbox-item">
+        <input type="checkbox" id="otsuToggle" checked>
+        <span>Otsu 自动阈值</span>
+      </label>
+      <label class="checkbox-item">
+        <input type="checkbox" id="dilateToggle" checked>
+        <span>膨胀加固笔画</span>
+      </label>
+      <label class="checkbox-item">
+        <input type="checkbox" id="multipassToggle" checked>
+        <span>多轮识别取最优</span>
+      </label>
+      <label class="checkbox-item">
+        <input type="checkbox" id="padToggle" checked>
+        <span>白边填充</span>
+      </label>
+      <label class="checkbox-item">
+        <input type="checkbox" id="segmentToggle" checked>
+        <span>投影分割识别</span>
+      </label>
+    </div>
+
+    <div class="params">
+      <div class="param">
+        <label>放大倍数</label>
+        <input type="range" id="scaleParam" min="1" max="6" value="4" step="0.5">
+        <span class="val" id="scaleVal">4</span>
+      </div>
+      <div class="param">
+        <label>二值化阈值</label>
+        <input type="range" id="thresholdParam" min="0" max="255" value="120" disabled>
+        <span class="val" id="thresholdVal">120</span>
+      </div>
+      <div class="param">
+        <label>对比度</label>
+        <input type="range" id="contrastParam" min="0.5" max="4" value="2" step="0.1">
+        <span class="val" id="contrastVal">2.0</span>
+      </div>
+    </div>
+    <div class="hint">勾选 Otsu 自动阈值后将忽略手动阈值设置</div>
+  </div>
+
+  <div class="loading" id="loadingDiv">
+    <div style="font-size:0.9rem;" id="loadingText">正在识别中...</div>
+  </div>
+
+  <div class="section" id="previewSection" style="display:none;">
+    <div class="section-title">4. 预处理预览</div>
+    <div class="preview-row">
+      <div class="preview-item">
+        <canvas id="origCanvas"></canvas>
+        <div class="label">裁剪原图</div>
+      </div>
+      <div class="preview-item">
+        <canvas id="procCanvas"></canvas>
+        <div class="label">预处理后</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="resultSection" style="display:none;">
+    <div class="section-title">5. 最终结果</div>
+    <div class="result" id="cleanedResult">-</div>
+    <div id="passesDiv"></div>
+    <div class="section-title" style="margin-top:12px;">最佳原始 OCR 输出</div>
+    <div class="raw-result" id="rawResult">-</div>
+    <div id="statusDiv"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script>
+    let sourceImage = null
+    let cropRect = null
+    let isDrawing = false
+    let startX = 0, startY = 0
+    const cropCanvas = document.getElementById('cropCanvas')
+    const cropCtx = cropCanvas.getContext('2d')
+
+    // 参数控件
+    const scaleParam = document.getElementById('scaleParam')
+    const thresholdParam = document.getElementById('thresholdParam')
+    const contrastParam = document.getElementById('contrastParam')
+    const otsuToggle = document.getElementById('otsuToggle')
+    const dilateToggle = document.getElementById('dilateToggle')
+    const multipassToggle = document.getElementById('multipassToggle')
+    const padToggle = document.getElementById('padToggle')
+
+    scaleParam.oninput = () => document.getElementById('scaleVal').textContent = scaleParam.value
+    thresholdParam.oninput = () => document.getElementById('thresholdVal').textContent = thresholdParam.value
+    contrastParam.oninput = () => document.getElementById('contrastVal').textContent = parseFloat(contrastParam.value).toFixed(1)
+
+    otsuToggle.onchange = () => {
+      thresholdParam.disabled = otsuToggle.checked
+    }
+
+    // 图片选择
+    document.getElementById('fileInput').addEventListener('change', (e) => {
+      const file = e.target.files[0]
+      if (!file) return
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        const img = new Image()
+        img.onload = () => {
+          sourceImage = img
+          drawSourceImage()
+          document.getElementById('cropSection').style.display = ''
+          document.getElementById('paramSection').style.display = ''
+          cropRect = null
+        }
+        img.src = ev.target.result
+      }
+      reader.readAsDataURL(file)
+    })
+
+    function drawSourceImage() {
+      const maxW = Math.min(sourceImage.width, 600)
+      const scale = maxW / sourceImage.width
+      cropCanvas.width = sourceImage.width * scale
+      cropCanvas.height = sourceImage.height * scale
+      cropCtx.drawImage(sourceImage, 0, 0, cropCanvas.width, cropCanvas.height)
+    }
+
+    // 裁剪交互
+    function getPos(e) {
+      const rect = cropCanvas.getBoundingClientRect()
+      const t = e.touches ? e.touches[0] : e
+      return { x: t.clientX - rect.left, y: t.clientY - rect.top }
+    }
+
+    function onStart(e) {
+      e.preventDefault()
+      const pos = getPos(e)
+      isDrawing = true
+      startX = pos.x
+      startY = pos.y
+      cropRect = { x: pos.x, y: pos.y, w: 0, h: 0 }
+    }
+
+    function onMove(e) {
+      if (!isDrawing) return
+      e.preventDefault()
+      const pos = getPos(e)
+      cropRect = {
+        x: Math.min(startX, pos.x),
+        y: Math.min(startY, pos.y),
+        w: Math.abs(pos.x - startX),
+        h: Math.abs(pos.y - startY),
+      }
+      redraw()
+    }
+
+    function onEnd(e) {
+      isDrawing = false
+    }
+
+    function redraw() {
+      drawSourceImage()
+      if (cropRect && cropRect.w > 0 && cropRect.h > 0) {
+        cropCtx.fillStyle = 'rgba(0,0,0,0.5)'
+        cropCtx.fillRect(0, 0, cropCanvas.width, cropRect.y)
+        cropCtx.fillRect(0, cropRect.y, cropRect.x, cropRect.h)
+        cropCtx.fillRect(cropRect.x + cropRect.w, cropRect.y, cropCanvas.width - cropRect.x - cropRect.w, cropRect.h)
+        cropCtx.fillRect(0, cropRect.y + cropRect.h, cropCanvas.width, cropCanvas.height - cropRect.y - cropRect.h)
+        cropCtx.strokeStyle = '#1989fa'
+        cropCtx.lineWidth = 2
+        cropCtx.strokeRect(cropRect.x, cropRect.y, cropRect.w, cropRect.h)
+      }
+    }
+
+    cropCanvas.addEventListener('mousedown', onStart)
+    cropCanvas.addEventListener('mousemove', onMove)
+    cropCanvas.addEventListener('mouseup', onEnd)
+    cropCanvas.addEventListener('touchstart', onStart, { passive: false })
+    cropCanvas.addEventListener('touchmove', onMove, { passive: false })
+    cropCanvas.addEventListener('touchend', onEnd)
+
+    function resetCrop() {
+      cropRect = null
+      drawSourceImage()
+    }
+
+    // ─── Otsu 自动阈值算法 ─────────────────────────────
+    function otsuThreshold(grayData) {
+      const histogram = new Array(256).fill(0)
+      for (let i = 0; i < grayData.length; i++) {
+        histogram[grayData[i]]++
+      }
+      const total = grayData.length
+      let sumAll = 0
+      for (let i = 0; i < 256; i++) sumAll += i * histogram[i]
+
+      let sumBg = 0, weightBg = 0, maxVariance = 0, bestThreshold = 0
+      for (let t = 0; t < 256; t++) {
+        weightBg += histogram[t]
+        if (weightBg === 0) continue
+        const weightFg = total - weightBg
+        if (weightFg === 0) break
+        sumBg += t * histogram[t]
+        const meanBg = sumBg / weightBg
+        const meanFg = (sumAll - sumBg) / weightFg
+        const variance = weightBg * weightFg * (meanBg - meanFg) ** 2
+        if (variance > maxVariance) {
+          maxVariance = variance
+          bestThreshold = t
+        }
+      }
+      return bestThreshold
+    }
+
+    // ─── 膨胀操作（加固笔画） ─────────────────────────
+    function dilate(canvas, iterations = 1) {
+      const ctx = canvas.getContext('2d')
+      for (let iter = 0; iter < iterations; iter++) {
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        const src = imgData.data
+        const dst = new Uint8ClampedArray(src.length)
+        const w = canvas.width, h = canvas.height
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            const idx = (y * w + x) * 4
+            // 取 3x3 邻域最大值（白色=255=前景）
+            let max = 0
+            for (let dy = -1; dy <= 1; dy++) {
+              for (let dx = -1; dx <= 1; dx++) {
+                const nx = x + dx, ny = y + dy
+                if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+                  const nidx = (ny * w + nx) * 4
+                  if (src[nidx] > max) max = src[nidx]
+                }
+              }
+            }
+            dst[idx] = dst[idx + 1] = dst[idx + 2] = max
+            dst[idx + 3] = 255
+          }
+        }
+        ctx.putImageData(new ImageData(dst, w, h), 0, 0)
+      }
+    }
+
+    // ─── 检测是否为干净二值图 ───────────────────────
+    function isCleanBinaryImage(grayValues) {
+      let binaryCount = 0
+      for (const g of grayValues) {
+        if (g < 30 || g > 225) binaryCount++
+      }
+      return binaryCount / grayValues.length > 0.9
+    }
+
+    // ─── 白边填充 ──────────────────────────────────
+    function padCanvas(canvas, pw, ph) {
+      const padSize = Math.max(20, Math.round(pw * 0.1))
+      const paddedCanvas = document.createElement('canvas')
+      paddedCanvas.width = pw + padSize * 2
+      paddedCanvas.height = ph + padSize * 2
+      const paddedCtx = paddedCanvas.getContext('2d')
+      paddedCtx.fillStyle = '#ffffff'
+      paddedCtx.fillRect(0, 0, paddedCanvas.width, paddedCanvas.height)
+      paddedCtx.drawImage(canvas, padSize, padSize)
+      return paddedCanvas
+    }
+
+    // ─── 图片预处理（自适应） ────────────────────────
+    function preprocessImage(cropCanvas2, useOtsu, fixedThreshold, contrast, scaleFactor, useDilate, usePad) {
+      // 放大
+      const procCanvas = document.createElement('canvas')
+      let pw = cropCanvas2.width * scaleFactor
+      let ph = cropCanvas2.height * scaleFactor
+      procCanvas.width = pw
+      procCanvas.height = ph
+      const procCtx = procCanvas.getContext('2d')
+      procCtx.imageSmoothingEnabled = true
+      procCtx.imageSmoothingQuality = 'high'
+      procCtx.drawImage(cropCanvas2, 0, 0, pw, ph)
+
+      // 采样灰度，判断是否为干净二值图
+      const probeData = procCtx.getImageData(0, 0, pw, ph).data
+      const probeGray = []
+      for (let i = 0; i < probeData.length; i += 4) {
+        probeGray.push(probeData[i] * 0.299 + probeData[i + 1] * 0.587 + probeData[i + 2] * 0.114)
+      }
+
+      if (isCleanBinaryImage(probeGray)) {
+        // 干净图：跳过强预处理，仅白边填充
+        document.getElementById('thresholdVal').textContent = '跳过（干净图）'
+        const final = usePad ? padCanvas(procCanvas, pw, ph) : procCanvas
+        return { canvas: final, threshold: -1, isClean: true }
+      }
+
+      // 脏图：完整预处理管线
+      const imgData = procCtx.getImageData(0, 0, pw, ph)
+      const data = imgData.data
+      const grayValues = []
+      for (let i = 0; i < data.length; i += 4) {
+        const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114
+        let val = ((gray / 255 - 0.5) * contrast + 0.5) * 255
+        val = Math.max(0, Math.min(255, val))
+        grayValues.push(Math.round(val))
+      }
+
+      const threshold = useOtsu ? otsuThreshold(grayValues) : fixedThreshold
+      document.getElementById('thresholdVal').textContent = threshold + (useOtsu ? ' (Otsu)' : '')
+
+      for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+        const val = grayValues[j] < threshold ? 0 : 255
+        data[i] = data[i + 1] = data[i + 2] = val
+        data[i + 3] = 255
+      }
+      procCtx.putImageData(imgData, 0, 0)
+
+      if (useDilate) {
+        dilate(procCanvas, 1)
+      }
+
+      const final = usePad ? padCanvas(procCanvas, pw, ph) : procCanvas
+      return { canvas: final, threshold, isClean: false }
+    }
+
+    // ─── 单轮 OCR ─────────────────────────────────────
+    async function singlePass(dataUrl, psm) {
+      const result = await Tesseract.recognize(dataUrl, 'eng', {
+        // 白名单包含括号()和撇号'，避免 (U 被当成单 blob、撇号被丢弃
+        tessedit_char_whitelist: "RLUDFBMESxyzrludfb'2() ",
+        tessedit_pageseg_mode: psm,
+        tessedit_ocr_engine_mode: '2',
+        preserve_interword_spaces: '1',
+        user_defined_dpi: '300',
+      })
+      return {
+        text: result.data.text,
+        confidence: result.data.confidence,
+        psm: psm,
+      }
+    }
+
+    // ─── 投影分割字符级识别 ─────────────────────────
+    async function segmentAndRecognize(canvas) {
+      const ctx = canvas.getContext('2d')
+      const w = canvas.width, h = canvas.height
+      const imgData = ctx.getImageData(0, 0, w, h)
+      const data = imgData.data
+
+      const binary = new Uint8Array(w * h)
+      for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+        const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114
+        binary[j] = gray < 128 ? 1 : 0
+      }
+
+      // 行投影
+      const rowHist = new Array(h).fill(0)
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          rowHist[y] += binary[y * w + x]
+        }
+      }
+
+      const rows = []
+      let inRow = false, rowStart = 0
+      for (let y = 0; y < h; y++) {
+        if (rowHist[y] >= 2) {
+          if (!inRow) { inRow = true; rowStart = y }
+        } else {
+          if (inRow) { rows.push({ start: rowStart, end: y - 1 }); inRow = false }
+        }
+      }
+      if (inRow) rows.push({ start: rowStart, end: h - 1 })
+
+      let fullText = ''
+      let charIdx = 0
+
+      for (const row of rows) {
+        const rowH = row.end - row.start + 1
+
+        // 列投影
+        const colHist = new Array(w).fill(0)
+        for (let x = 0; x < w; x++) {
+          for (let y = row.start; y <= row.end; y++) {
+            colHist[x] += binary[y * w + x]
+          }
+        }
+
+        const chars = []
+        let inChar = false, charStart = 0
+        for (let x = 0; x < w; x++) {
+          if (colHist[x] >= 1) {
+            if (!inChar) { inChar = true; charStart = x }
+          } else {
+            if (inChar) { chars.push({ start: charStart, end: x - 1 }); inChar = false }
+          }
+        }
+        if (inChar) chars.push({ start: charStart, end: w - 1 })
+
+        for (const char of chars) {
+          const charW = char.end - char.start + 1
+          if (charW < 3) continue
+          const pad = 15
+          const charCanvas = document.createElement('canvas')
+          charCanvas.width = charW + pad * 2
+          charCanvas.height = rowH + pad * 2
+          const charCtx = charCanvas.getContext('2d')
+          charCtx.fillStyle = '#ffffff'
+          charCtx.fillRect(0, 0, charCanvas.width, charCanvas.height)
+          charCtx.drawImage(canvas, char.start, row.start, charW, rowH, pad, pad, charW, rowH)
+
+          charIdx++
+          document.getElementById('loadingText').textContent = `字符分割识别... 第 ${charIdx} 个字符`
+
+          const dataUrl = charCanvas.toDataURL('image/png')
+          const r = await Tesseract.recognize(dataUrl, 'eng', {
+            tessedit_char_whitelist: "RLUDFBMESxyzrludfb'2",
+            tessedit_pageseg_mode: '10',
+            tessedit_ocr_engine_mode: '2',
+          })
+          fullText += r.data.text.trim()
+        }
+
+        fullText += '\n'
+      }
+
+      return fullText
+    }
+
+    // ─── cleanNotation ────────────────────────────────
+    function cleanNotation(text) {
+      let cleaned = text.replace(/[′ʼ`´’]/g, "'")
+      // 撇号 ' 的常见误认：H、/、|、I
+      cleaned = cleaned.replace(/[/|]/g, "'")
+      cleaned = cleaned.replace(/H/g, "'")
+      // 小写 r 的常见误认：I（大写i）
+      cleaned = cleaned.replace(/I/g, 'r')
+      // W 是括号 ( 被误认的结果，直接删除
+      cleaned = cleaned.replace(/W/g, ' ')
+      // 删除所有括号（英文+中文）和换行/回车
+      cleaned = cleaned.replace(/[()（［【〕】｝〉>]/g, ' ')
+      cleaned = cleaned.replace(/[\n\r]/g, ' ')
+      // 分割粘连 token
+      const rawTokens = cleaned.split(/[\s,]+/).filter(Boolean)
+      const tokens = []
+      for (const t of rawTokens) {
+        if (t.length <= 2) {
+          tokens.push(t)
+        } else {
+          let i = 0
+          while (i < t.length) {
+            if (i + 1 < t.length && (t[i + 1] === "'" || t[i + 1] === "2")) {
+              tokens.push(t[i] + t[i + 1])
+              i += 2
+            } else {
+              tokens.push(t[i])
+              i += 1
+            }
+          }
+        }
+      }
+      const validPattern = /^[RLUDFBMESxyzrludfb]['2]?$/
+      return tokens.filter(t => validPattern.test(t)).join(' ')
+    }
+
+    // ─── 计算有效 token 数 ────────────────────────────
+    function countValidTokens(text) {
+      return cleanNotation(text).split(' ').filter(Boolean).length
+    }
+
+    // ─── 主识别流程 ───────────────────────────────────
+    async function runOCR() {
+      if (!sourceImage) return
+      if (!cropRect || cropRect.w < 10 || cropRect.h < 10) {
+        alert('请先在图片上拖拽选择公式区域')
+        return
+      }
+
+      document.getElementById('loadingDiv').classList.add('show')
+      document.getElementById('ocrBtn').disabled = true
+      document.getElementById('loadingText').textContent = '正在预处理图片...'
+
+      try {
+        const scale = cropCanvas.width / sourceImage.width
+        const sx = cropRect.x / scale
+        const sy = cropRect.y / scale
+        const sw = cropRect.w / scale
+        const sh = cropRect.h / scale
+
+        // 裁剪原图
+        const cropCanvas2 = document.createElement('canvas')
+        cropCanvas2.width = sw
+        cropCanvas2.height = sh
+        cropCanvas2.getContext('2d').drawImage(sourceImage, sx, sy, sw, sh, 0, 0, sw, sh)
+
+        // 预处理
+        const useOtsu = otsuToggle.checked
+        const fixedThreshold = parseInt(thresholdParam.value)
+        const contrast = parseFloat(contrastParam.value)
+        const scaleFactor = parseFloat(scaleParam.value)
+        const useDilate = dilateToggle.checked
+        const usePad = padToggle.checked
+
+        const { canvas: procCanvas, threshold, isClean } = preprocessImage(
+          cropCanvas2, useOtsu, fixedThreshold, contrast, scaleFactor, useDilate, usePad
+        )
+
+        // 显示预览
+        document.getElementById('previewSection').style.display = ''
+        document.getElementById('origCanvas').width = sw
+        document.getElementById('origCanvas').height = sh
+        document.getElementById('origCanvas').getContext('2d').drawImage(cropCanvas2, 0, 0)
+
+        document.getElementById('procCanvas').width = procCanvas.width
+        document.getElementById('procCanvas').height = procCanvas.height
+        document.getElementById('procCanvas').getContext('2d').drawImage(procCanvas, 0, 0)
+
+        const dataUrl = procCanvas.toDataURL('image/png')
+
+        // 多轮识别
+        const useMultipass = multipassToggle.checked
+        const psmModes = useMultipass ? ['7', '8', '13', '6'] : ['7']
+        const passes = []
+
+        for (let i = 0; i < psmModes.length; i++) {
+          document.getElementById('loadingText').textContent = `正在识别 (PSM ${psmModes[i]})... 第 ${i + 1}/${psmModes.length} 轮`
+          const pass = await singlePass(dataUrl, psmModes[i])
+          pass.cleaned = cleanNotation(pass.text)
+          pass.validTokens = countValidTokens(pass.text)
+          pass.score = pass.confidence * Math.max(1, pass.validTokens)
+          passes.push(pass)
+        }
+
+        // 投影分割字符级识别
+        if (segmentToggle.checked) {
+          document.getElementById('loadingText').textContent = '正在执行投影分割识别...'
+          try {
+            const segText = await segmentAndRecognize(procCanvas)
+            const segCleaned = cleanNotation(segText)
+            const segValidTokens = countValidTokens(segText)
+            passes.push({
+              text: segText,
+              confidence: 80,
+              psm: 'seg',
+              cleaned: segCleaned,
+              validTokens: segValidTokens,
+              score: 80 * Math.max(1, segValidTokens),
+            })
+          } catch (e) {
+            console.warn('segmentAndRecognize failed:', e)
+          }
+        }
+
+        // 选出最佳结果
+        passes.sort((a, b) => b.score - a.score)
+        const best = passes[0]
+
+        // 显示结果
+        document.getElementById('resultSection').style.display = ''
+        document.getElementById('rawResult').textContent = JSON.stringify(best.text)
+        document.getElementById('cleanedResult').textContent = best.cleaned || '(空)'
+
+        // 显示各轮结果对比
+        const passesDiv = document.getElementById('passesDiv')
+        passesDiv.innerHTML = '<div class="section-title" style="margin-top:12px;">各轮识别对比</div>'
+        for (const p of passes) {
+          passesDiv.innerHTML += `
+            <div class="pass-result">
+              <span class="conf">PSM ${p.psm}</span> | 置信度: ${p.confidence.toFixed(1)} | 有效token: ${p.validTokens} | 评分: ${p.score.toFixed(1)}<br>
+              原始: ${JSON.stringify(p.text)}<br>
+              清洗: <strong>${p.cleaned || '(空)'}</strong>
+            </div>
+          `
+        }
+
+        const statusDiv = document.getElementById('statusDiv')
+        const adaptTag = isClean
+          ? '自适应：跳过强预处理（检测为干净图）'
+          : `完整预处理（阈值 ${threshold}）`
+        if (best.cleaned) {
+          statusDiv.innerHTML = `<span class="status success">识别成功（PSM ${best.psm}，置信度 ${best.confidence.toFixed(1)}，${adaptTag}）</span>`
+        } else {
+          statusDiv.innerHTML = `<span class="status error">未识别到有效公式（${adaptTag}）</span>`
+        }
+      } catch (err) {
+        document.getElementById('resultSection').style.display = ''
+        document.getElementById('rawResult').textContent = err.message || String(err)
+        document.getElementById('cleanedResult').textContent = '(识别失败)'
+        document.getElementById('statusDiv').innerHTML = '<span class="status error">识别失败: ' + (err.message || err) + '</span>'
+      } finally {
+        document.getElementById('loadingDiv').classList.remove('show')
+        document.getElementById('ocrBtn').disabled = false
+      }
+    }
+  </script>
+</body>
+</html>

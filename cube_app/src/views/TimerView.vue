@@ -1,6 +1,6 @@
 <template>
   <div class="page">
-    <van-tabs v-model:active="activeTab" class="timer-tabs" @change="onTabChange" swipeable>
+    <van-tabs v-model:active="activeTab" class="timer-tabs" @change="onTabChange">
       <!-- ─── Tab 1: 计时器 ─── -->
       <van-tab title="计时器">
         <div class="timer-tab">
@@ -479,24 +479,12 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .page {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+  min-height: 100%;
 }
 
-/* Tab 容器：撑满剩余空间，内容区独立滚动 */
-.timer-tabs {
-  flex: 1;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
+/* Tab 容器：自然文档流，页面整体滚动 */
 .timer-tabs :deep(.van-tabs__content) {
-  flex: 1;
-  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
 }
 
 .timer-tab {

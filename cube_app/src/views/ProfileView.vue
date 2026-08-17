@@ -6,7 +6,7 @@
  */
 defineOptions({ name: 'ProfileView' })
 
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast, showLoadingToast, closeToast } from 'vant'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
@@ -229,6 +229,10 @@ async function doLogout() {
 
 // ─── 生命周期 ────────────────────────────────────────
 onMounted(() => {
+  loadStats()
+})
+
+onActivated(() => {
   loadStats()
 })
 

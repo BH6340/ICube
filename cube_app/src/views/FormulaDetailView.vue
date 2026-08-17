@@ -75,6 +75,22 @@
       <div class="edit-form">
         <div class="edit-title">编辑公式</div>
 
+        <!-- 图片选择 -->
+        <div class="edit-image" @click="showEditImageSheet = true">
+          <div class="image-upload">
+            <van-image
+              v-if="editThumbnailPreview"
+              width="100"
+              height="100"
+              :src="editThumbnailPreview"
+              fit="cover"
+              radius="8"
+            />
+            <van-icon v-else name="photo-o" size="40" color="#9ca3af" />
+          </div>
+          <span class="image-hint">点击选择公式图片</span>
+        </div>
+
         <van-field
           v-model="editForm.name"
           label="公式名"
@@ -97,6 +113,13 @@
             </van-tag>
           </template>
         </van-field>
+
+        <!-- OCR 识别按钮 -->
+        <div class="edit-ocr-section">
+          <van-button size="small" plain type="primary" icon="scan" :loading="editOcrLoading" @click="showEditOcrSheet = true">
+            从图片识别
+          </van-button>
+        </div>
 
         <NotationKeyboard v-model="editForm.notation" />
 
@@ -137,6 +160,40 @@
         </div>
       </div>
     </van-popup>
+
+    <!-- 编辑图片选择 ActionSheet -->
+    <van-action-sheet
+      v-model:show="showEditImageSheet"
+      :actions="editImageActions"
+      cancel-text="取消"
+      close-on-click-action
+      @select="onEditImageAction"
+    />
+
+    <!-- 编辑 OCR ActionSheet -->
+    <van-action-sheet
+      v-model:show="showEditOcrSheet"
+      :actions="editOcrActions"
+      cancel-text="取消"
+      close-on-click-action
+      @select="onEditOcrAction"
+    />
+
+    <!-- 编辑图片裁剪 -->
+    <ImageCropper
+      v-if="showEditCropper"
+      :src="editCropperSrc"
+      @confirm="onEditCropConfirm"
+      @cancel="onEditCropCancel"
+    />
+
+    <!-- 编辑 OCR 自由裁剪 -->
+    <FreeCropper
+      v-if="showEditOcrCropper"
+      :src="editOcrCropSrc"
+      @confirm="onEditOcrCropConfirm"
+      @cancel="onEditOcrCropCancel"
+    />
   </div>
 </template>
 
@@ -151,8 +208,14 @@ defineOptions({ name: 'FormulaDetailView' })
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
 import CubeDemo from '@/components/formula/CubeDemo.vue'
 import NotationKeyboard from '@/components/formula/NotationKeyboard.vue'
+import ImageCropper from '@/components/ImageCropper.vue'
+import FreeCropper from '@/components/FreeCropper.vue'
+import { cropAndCompress } from '@/utils/image-compress'
+import { preprocessImage, multiPassOCR } from '@/utils/ocr-helper'
+import { buildMediaUrl } from '@/utils/media-url'
 import { getFormulaDetail, getMyCollections, addCollection, removeCollection, updateFormula, getFormulaCategories } from '@/api/formula'
 import { useUserStore } from '@/stores/user'
 import { isDownloaded as checkDownloaded, downloadFormula, removeDownload } from '@/utils/formula-download'
@@ -172,6 +235,27 @@ const editShow = ref(false)
 const editLoading = ref(false)
 const editForm = ref({ name: '', notation: '', category_id: '', difficulty: 1, description: '' })
 const categoryOptions = ref([])
+
+// 编辑图片上传
+const editThumbnailFile = ref(null)
+const editThumbnailPreview = ref('')
+const showEditImageSheet = ref(false)
+const showEditCropper = ref(false)
+const editCropperSrc = ref('')
+const editImageActions = [
+  { name: '拍照', action: 'camera' },
+  { name: '从相册选择', action: 'gallery' },
+]
+
+// 编辑 OCR
+const showEditOcrSheet = ref(false)
+const showEditOcrCropper = ref(false)
+const editOcrCropSrc = ref('')
+const editOcrLoading = ref(false)
+const editOcrActions = [
+  { name: '拍照识别', action: 'camera' },
+  { name: '从相册识别', action: 'gallery' },
+]
 
 const canEdit = computed(() => {
   const d = detail.value
@@ -285,6 +369,8 @@ async function openEdit() {
     difficulty: Number(d.difficulty) || 1,
     description: d.description || '',
   }
+  editThumbnailFile.value = null
+  editThumbnailPreview.value = d.thumbnail ? buildMediaUrl(d.thumbnail) : ''
   // 加载分类选项
   if (categoryOptions.value.length === 0) {
     try {
@@ -328,6 +414,9 @@ async function submitEdit() {
     if (editForm.value.description.trim()) {
       formData.append('description', editForm.value.description.trim())
     }
+    if (editThumbnailFile.value) {
+      formData.append('thumbnail_file', editThumbnailFile.value)
+    }
     await updateFormula(detail.value.id, formData)
     showToast({ type: 'success', message: '修改成功' })
     editShow.value = false
@@ -335,6 +424,116 @@ async function submitEdit() {
   } catch {} finally {
     editLoading.value = false
   }
+}
+
+// ─── 编辑图片上传 ────────────────────────────────────
+function onEditImageAction(item) {
+  if (item.action === 'camera') selectEditFromCamera()
+  else if (item.action === 'gallery') selectEditFromGallery()
+}
+
+async function selectEditFromCamera() {
+  showEditImageSheet.value = false
+  try {
+    const photo = await Camera.getPhoto({
+      quality: 90,
+      resultType: CameraResultType.DataUrl,
+      source: CameraSource.Camera,
+    })
+    editCropperSrc.value = photo.dataUrl
+    showEditCropper.value = true
+  } catch {}
+}
+
+async function selectEditFromGallery() {
+  showEditImageSheet.value = false
+  try {
+    const photo = await Camera.getPhoto({
+      quality: 90,
+      resultType: CameraResultType.DataUrl,
+      source: CameraSource.Photos,
+    })
+    editCropperSrc.value = photo.dataUrl
+    showEditCropper.value = true
+  } catch {}
+}
+
+async function onEditCropConfirm(crop) {
+  showEditCropper.value = false
+  try {
+    editThumbnailFile.value = await cropAndCompress(editCropperSrc.value, crop, {
+      outputSize: 512,
+      quality: 0.85,
+    })
+    editThumbnailPreview.value = URL.createObjectURL(editThumbnailFile.value)
+  } catch {
+    showToast('图片处理失败')
+  }
+}
+
+function onEditCropCancel() {
+  showEditCropper.value = false
+}
+
+// ─── 编辑 OCR 识别 ────────────────────────────────────
+function onEditOcrAction(item) {
+  showEditOcrSheet.value = false
+  if (item.action === 'camera') selectEditOcrFromSource(CameraSource.Camera)
+  else if (item.action === 'gallery') selectEditOcrFromSource(CameraSource.Photos)
+}
+
+async function selectEditOcrFromSource(source) {
+  try {
+    const photo = await Camera.getPhoto({
+      quality: 90,
+      resultType: CameraResultType.DataUrl,
+      source,
+    })
+    editOcrCropSrc.value = photo.dataUrl
+    showEditOcrCropper.value = true
+  } catch {}
+}
+
+async function onEditOcrCropConfirm(cropRegion) {
+  showEditOcrCropper.value = false
+  editOcrLoading.value = true
+  try {
+    const img = new Image()
+    img.src = editOcrCropSrc.value
+    await new Promise((resolve) => { img.onload = resolve })
+    const canvas = document.createElement('canvas')
+    canvas.width = cropRegion.width
+    canvas.height = cropRegion.height
+    canvas.getContext('2d').drawImage(img, cropRegion.x, cropRegion.y, cropRegion.width, cropRegion.height, 0, 0, cropRegion.width, cropRegion.height)
+
+    const procCanvas = preprocessImage(canvas)
+    const dataUrl = procCanvas.toDataURL('image/png')
+
+    const best = await multiPassOCR(dataUrl, procCanvas)
+    if (best.cleaned) {
+      editForm.value.notation = best.cleaned
+      updateDifficulty(best.cleaned)
+      showToast({ type: 'success', message: '识别成功' })
+    } else {
+      showToast('未识别到有效公式')
+    }
+  } catch {
+    showToast('识别失败')
+  } finally {
+    editOcrLoading.value = false
+  }
+}
+
+function onEditOcrCropCancel() {
+  showEditOcrCropper.value = false
+}
+
+function cleanNotation(text) {
+  let cleaned = text.replace(/[′ʼ`´]/g, "'")
+  cleaned = cleaned.replace(/[（［【]/g, ' ').replace(/[）］】]/g, ' ')
+  const tokens = cleaned.split(/[\s,]+/).filter(Boolean)
+  const validPattern = /^[RLUDFBMESxyzrludfb]['2]?$/
+  return tokens.filter(t => validPattern.test(t)).join(' ')
 }
 </script>
 
@@ -414,5 +613,23 @@ async function submitEdit() {
 
 .edit-actions {
   margin-top: 20px;
+}
+
+.edit-image {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 16px;
+  cursor: pointer;
+}
+
+.edit-image:active {
+  opacity: 0.7;
+}
+
+.edit-ocr-section {
+  display: flex;
+  justify-content: flex-end;
+  padding: 4px 16px 8px;
 }
 </style>
