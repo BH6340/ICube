@@ -1,6 +1,6 @@
 <template>
   <div class="page">
-    <van-tabs v-model:active="activeTab" class="timer-tabs" @change="onTabChange">
+    <van-tabs v-model:active="activeTab" class="timer-tabs" @change="onTabChange" swipeable>
       <!-- ─── Tab 1: 计时器 ─── -->
       <van-tab title="计时器">
         <div class="timer-tab">
@@ -496,6 +496,7 @@ onBeforeUnmount(() => {
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
 .timer-tab {

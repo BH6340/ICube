@@ -8,10 +8,14 @@ defineOptions({ name: 'ProfileView' })
 
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { showToast } from 'vant'
+import { showToast, showLoadingToast, closeToast } from 'vant'
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
 import { useUserStore } from '@/stores/user'
 import { getProfileApi, updateProfileApi, logoutApi } from '@/api/user'
 import { buildMediaUrl } from '@/utils/media-url'
+import ImageCropper from '@/components/ImageCropper.vue'
+import { cropAndCompress } from '@/utils/image-compress'
+import { getDownloadCount } from '@/utils/formula-download'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -21,10 +25,10 @@ const avatarUrl = computed(() => buildMediaUrl(userStore.image))
 
 // 统计数据
 const stats = ref({
-  following_count: 0,
-  followers_count: 0,
   post_count: 0,
+  formula_count: 0,
   collection_count: 0,
+  download_count: 0,
 })
 
 // 编辑弹窗
@@ -32,6 +36,17 @@ const editShow = ref(false)
 const editForm = ref({ username: '', bio: '' })
 const editLoading = ref(false)
 const avatarFile = ref(null)
+const avatarPreview = ref('')
+
+// 头像选择
+const showAvatarSheet = ref(false)
+const showCropper = ref(false)
+const cropperSrc = ref('')
+const refreshing = ref(false)
+const avatarActions = [
+  { name: '拍照', action: 'camera' },
+  { name: '从相册选择', action: 'gallery' },
+]
 
 // ─── 数据加载 ────────────────────────────────────────
 async function loadStats() {
@@ -40,10 +55,10 @@ async function loadStats() {
     const res = await getProfileApi(userStore.username)
     const profile = res.data?.profiles || res.data || res.profiles || {}
     stats.value = {
-      following_count: profile.following_count || 0,
-      followers_count: profile.followers_count || 0,
       post_count: profile.post_count || 0,
+      formula_count: profile.custom_formula_count || 0,
       collection_count: profile.collection_count || 0,
+      download_count: getDownloadCount(),
     }
   } catch {
     // 静默失败
@@ -63,6 +78,14 @@ function goToCollected() {
   router.push({ path: '/formula', query: { filter: 'collected' } })
 }
 
+function goToMyFormulas() {
+  router.push({ path: '/formula', query: { filter: 'created' } })
+}
+
+function goToDownloads() {
+  router.push({ path: '/formula', query: { filter: 'downloaded' } })
+}
+
 function goToTimerRecords() {
   router.push('/timer?tab=records')
 }
@@ -73,13 +96,78 @@ function openEdit() {
     bio: userStore.bio || '',
   }
   avatarFile.value = null
+  avatarPreview.value = ''
   editShow.value = true
 }
 
-function onAvatarSelect(file) {
-  if (file && file.length > 0) {
-    avatarFile.value = file[0].file
+function selectAvatar() {
+  showAvatarSheet.value = true
+}
+
+function onAvatarAction(item) {
+  if (item.action === 'camera') selectFromCamera()
+  else if (item.action === 'gallery') selectFromGallery()
+}
+
+async function selectFromCamera() {
+  showAvatarSheet.value = false
+  try {
+    const photo = await Camera.getPhoto({
+      quality: 90,
+      resultType: CameraResultType.DataUrl,
+      source: CameraSource.Camera,
+    })
+    cropperSrc.value = photo.dataUrl
+    showCropper.value = true
+  } catch {
+    // 用户取消
   }
+}
+
+async function selectFromGallery() {
+  showAvatarSheet.value = false
+  try {
+    const photo = await Camera.getPhoto({
+      quality: 90,
+      resultType: CameraResultType.DataUrl,
+      source: CameraSource.Photos,
+    })
+    cropperSrc.value = photo.dataUrl
+    showCropper.value = true
+  } catch {
+    // 用户取消
+  }
+}
+
+async function onCropConfirm(crop) {
+  showCropper.value = false
+  showLoadingToast({ message: '正在上传头像...', forbidClick: true, duration: 0 })
+  try {
+    const file = await cropAndCompress(cropperSrc.value, crop, {
+      outputSize: 512,
+      quality: 0.85,
+    })
+    const formData = new FormData()
+    formData.append('avatar', file)
+    const res = await updateProfileApi(formData)
+    const userInfo = res.data?.user || res.user || {}
+    userStore.updateInfo({
+      image: userInfo.image || undefined,
+    })
+    if (editShow.value) {
+      avatarFile.value = file
+      avatarPreview.value = URL.createObjectURL(file)
+    }
+    closeToast()
+    showToast({ type: 'success', message: '头像更新成功' })
+  } catch {
+    closeToast()
+    showToast('头像上传失败')
+  }
+}
+
+function onCropCancel() {
+  showCropper.value = false
 }
 
 async function saveEdit() {
@@ -143,6 +231,11 @@ async function doLogout() {
 onMounted(() => {
   loadStats()
 })
+
+async function onRefresh() {
+  await loadStats()
+  refreshing.value = false
+}
 </script>
 
 <template>
@@ -150,6 +243,7 @@ onMounted(() => {
     <van-nav-bar title="个人中心" placeholder />
 
     <div class="page-content">
+      <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
       <!-- 未登录状态 -->
       <div v-if="!isLoggedIn" class="login-prompt">
         <van-icon name="user-circle-o" size="64" color="#d1d5db" />
@@ -167,12 +261,13 @@ onMounted(() => {
             height="64"
             :src="avatarUrl"
             fit="cover"
+            @click="selectAvatar"
           >
             <template #error>
               <div class="avatar-fallback">{{ userStore.username?.[0] || '?' }}</div>
             </template>
           </van-image>
-          <div class="user-info">
+          <div class="user-info" @click="openEdit">
             <div class="user-name">{{ userStore.username }}</div>
             <div class="user-bio">{{ userStore.bio || '这个人很懒，什么都没写' }}</div>
           </div>
@@ -180,33 +275,36 @@ onMounted(() => {
 
         <!-- 统计数据 -->
         <div class="stats-grid">
-          <div class="stat-item">
+          <div class="stat-item clickable" @click="goToMyPosts">
             <span class="stat-value">{{ stats.post_count }}</span>
             <span class="stat-label">帖子</span>
           </div>
-          <div class="stat-item">
+          <div class="stat-item clickable" @click="goToMyFormulas">
+            <span class="stat-value">{{ stats.formula_count }}</span>
+            <span class="stat-label">公式</span>
+          </div>
+          <div class="stat-item clickable" @click="goToCollected">
             <span class="stat-value">{{ stats.collection_count }}</span>
             <span class="stat-label">收藏</span>
           </div>
-          <div class="stat-item">
-            <span class="stat-value">{{ stats.following_count }}</span>
-            <span class="stat-label">关注</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-value">{{ stats.followers_count }}</span>
-            <span class="stat-label">粉丝</span>
+          <div class="stat-item clickable" @click="goToDownloads">
+            <span class="stat-value">{{ stats.download_count }}</span>
+            <span class="stat-label">下载</span>
           </div>
         </div>
 
         <!-- 快捷入口 -->
         <van-cell-group inset class="action-group">
           <van-cell title="我的帖子" icon="notes-o" is-link @click="goToMyPosts" />
-          <van-cell title="我的收藏" icon="star-o" is-link @click="goToCollected" />
+          <van-cell title="我的公式" icon="records-o" is-link @click="goToMyFormulas" />
+          <van-cell title="公式收藏" icon="star-o" is-link @click="goToCollected" />
+          <van-cell title="公式下载" icon="down" is-link @click="goToDownloads" />
           <van-cell title="个人数据" icon="chart-trending-o" is-link @click="goToTimerRecords" />
           <van-cell title="编辑资料" icon="edit" is-link @click="openEdit" />
           <van-cell title="退出登录" icon="cross" is-link @click="confirmLogout" class="logout-cell" />
         </van-cell-group>
       </template>
+      </van-pull-refresh>
     </div>
 
     <!-- 编辑资料弹窗 -->
@@ -219,26 +317,18 @@ onMounted(() => {
       <div class="edit-form">
         <div class="edit-title">编辑资料</div>
 
-        <div class="edit-avatar">
-          <van-uploader
-            :max-count="1"
-            :after-read="onAvatarSelect"
-            :preview-image="true"
-            :max-size="5 * 1024 * 1024"
-            @oversize="showToast('图片不能超过5MB')"
-          >
-            <div class="avatar-upload">
-              <van-image
-                v-if="avatarUrl && !avatarFile"
-                round
-                width="72"
-                height="72"
-                :src="avatarUrl"
-                fit="cover"
-              />
-              <van-icon v-else name="camera-o" size="32" color="#9ca3af" />
-            </div>
-          </van-uploader>
+        <div class="edit-avatar" @click="selectAvatar">
+          <div class="avatar-upload">
+            <van-image
+              v-if="avatarPreview || avatarUrl"
+              round
+              width="72"
+              height="72"
+              :src="avatarPreview || avatarUrl"
+              fit="cover"
+            />
+            <van-icon v-else name="camera-o" size="32" color="#9ca3af" />
+          </div>
         </div>
 
         <van-field
@@ -281,6 +371,23 @@ onMounted(() => {
         <p class="logout-hint">退出后需重新登录才能使用收藏、发帖等功能</p>
       </div>
     </van-dialog>
+
+    <!-- 头像选择 ActionSheet -->
+    <van-action-sheet
+      v-model:show="showAvatarSheet"
+      :actions="avatarActions"
+      cancel-text="取消"
+      close-on-click-action
+      @select="onAvatarAction"
+    />
+
+    <!-- 图片裁剪 -->
+    <ImageCropper
+      v-if="showCropper"
+      :src="cropperSrc"
+      @confirm="onCropConfirm"
+      @cancel="onCropCancel"
+    />
   </div>
 </template>
 
@@ -376,6 +483,14 @@ onMounted(() => {
   gap: 4px;
 }
 
+.stat-item.clickable {
+  cursor: pointer;
+}
+
+.stat-item.clickable:active {
+  opacity: 0.6;
+}
+
 .stat-value {
   font-size: 1.3rem;
   font-weight: 700;
@@ -412,6 +527,11 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   margin-bottom: 20px;
+  cursor: pointer;
+}
+
+.edit-avatar:active {
+  opacity: 0.7;
 }
 
 .avatar-upload {

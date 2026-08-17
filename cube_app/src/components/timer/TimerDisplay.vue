@@ -58,8 +58,8 @@ const hintText = {
 
 <style scoped>
 .timer-display {
-  height: 55vh;
-  min-height: 280px;
+  height: 40vh;
+  min-height: 200px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -91,7 +91,7 @@ const hintText = {
 }
 
 .time-value {
-  font-size: 3.5rem;
+  font-size: 2.8rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
@@ -100,14 +100,14 @@ const hintText = {
 }
 
 .time-unit {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: 500;
   opacity: 0.7;
   margin-left: 4px;
 }
 
 .hint-text {
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   font-weight: 500;
   opacity: 0.8;
 }

@@ -148,7 +148,7 @@ onActivated(() => {
     />
 
     <!-- 排序栏 -->
-    <van-tabs v-model:active="activeTab" @change="onTabChange" shrink>
+    <van-tabs v-model:active="activeTab" @change="onTabChange" shrink swipeable>
       <van-tab title="最新" />
       <van-tab title="最热" />
       <van-tab title="精华" />

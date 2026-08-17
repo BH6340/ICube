@@ -435,10 +435,7 @@ class FormulaSerializer(serializers.ModelSerializer):
 
             validated_data['thumbnail'] = processed_image
         elif thumbnail_path:
-            relative_path = thumbnail_path
-            if '/media/' in thumbnail_path:
-                relative_path = thumbnail_path.split('/media/')[1]
-            validated_data['_thumbnail_path'] = relative_path
+            pass  # 引用已有图片路径，在 super().create() 之后通过 formula.thumbnail.name 设置
 
         if not thumbnail_file and not thumbnail_path:
             formula_name = validated_data.get('name', '')
@@ -530,10 +527,7 @@ class FormulaSerializer(serializers.ModelSerializer):
 
             validated_data['thumbnail'] = processed_image
         elif thumbnail_path:
-            relative_path = thumbnail_path
-            if '/media/' in thumbnail_path:
-                relative_path = thumbnail_path.split('/media/')[1]
-            validated_data['_thumbnail_path'] = relative_path
+            pass  # 引用已有图片路径，在 super().update() 之后通过 formula.thumbnail.name 设置
 
         if not thumbnail_file and not thumbnail_path and not instance.thumbnail:
             formula_name = validated_data.get('name', instance.name)

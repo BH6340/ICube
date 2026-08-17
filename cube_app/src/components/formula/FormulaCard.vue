@@ -1,5 +1,17 @@
 <template>
-  <div class="formula-card" @click="$emit('click', formula)">
+  <div
+    class="formula-card"
+    :class="{ 'multi-select-mode': multiSelect, selected }"
+    @click="onClick"
+    @touchstart.passive="onTouchStart"
+    @touchend.passive="onTouchEnd"
+    @touchmove.passive="onTouchMove"
+  >
+    <!-- 多选指示器 -->
+    <div v-if="multiSelect" class="select-indicator">
+      <van-icon :name="selected ? 'checked' : 'circle'" :color="selected ? '#1989fa' : '#c8c9cc'" size="20" />
+    </div>
+
     <!-- 缩略图 -->
     <div class="card-thumb">
       <img
@@ -9,6 +21,7 @@
         class="thumb-img"
       />
       <van-icon v-else name="photo-o" size="40" class="thumb-placeholder" />
+      <van-icon v-if="downloaded" name="down" size="14" color="#07c160" class="downloaded-badge" />
     </div>
 
     <!-- 公式信息 -->
@@ -21,6 +34,7 @@
       <div class="card-footer">
         <span class="card-meta">{{ categoryName }} · {{ authorName }}</span>
         <van-icon
+          v-if="!multiSelect"
           :name="collected ? 'like' : 'like-o'"
           :color="collected ? '#ee0a24' : '#969799'"
           size="20"
@@ -37,24 +51,26 @@
  * FormulaCard.vue - 移动端公式卡片组件
  *
  * 布局：flex 横向，左侧缩略图（80×80px），右侧公式信息
+ * 支持长按进入多选模式
  */
 import { computed } from 'vue'
 import { buildMediaUrl } from '@/utils/media-url'
 
 const props = defineProps({
   formula: { type: Object, required: true },
-  collected: { type: Boolean, default: false }
+  collected: { type: Boolean, default: false },
+  downloaded: { type: Boolean, default: false },
+  multiSelect: { type: Boolean, default: false },
+  selected: { type: Boolean, default: false },
 })
 
-defineEmits(['click', 'collect'])
+const emit = defineEmits(['click', 'collect', 'longpress'])
 
-// 缩略图 URL：后端 FormulaSerializer 返回 thumbnail 字段（SerializerMethodField，只读）
 const thumbUrl = computed(() => {
   const path = props.formula.thumbnail
   return path ? buildMediaUrl(path) : ''
 })
 
-// 难度映射：后端 difficulty 为 IntegerField（1=基础 2=进阶 3+=困难）
 const diffKey = computed(() => Number(props.formula.difficulty))
 const difficultyText = computed(() => {
   const d = diffKey.value
@@ -69,9 +85,25 @@ const difficultyType = computed(() => {
   return 'danger'
 })
 
-// 分类名和作者名（兼容嵌套和扁平两种数据格式）
 const categoryName = computed(() => props.formula.category?.name || props.formula.category_name || '未分类')
 const authorName = computed(() => props.formula.author?.username || props.formula.author_username || '匿名')
+
+function onClick() {
+  emit('click', props.formula)
+}
+
+let longPressTimer = null
+function onTouchStart() {
+  longPressTimer = setTimeout(() => {
+    emit('longpress', props.formula)
+  }, 500)
+}
+function onTouchEnd() {
+  clearTimeout(longPressTimer)
+}
+function onTouchMove() {
+  clearTimeout(longPressTimer)
+}
 </script>
 
 <style scoped>
@@ -82,6 +114,22 @@ const authorName = computed(() => props.formula.author?.username || props.formul
   background: #fff;
   border-radius: 8px;
   margin-bottom: 8px;
+  transition: background-color 0.2s;
+}
+
+.formula-card.multi-select-mode {
+  padding-left: 8px;
+}
+
+.formula-card.selected {
+  background: #f0f9ff;
+  box-shadow: inset 3px 0 0 #1989fa;
+}
+
+.select-indicator {
+  display: flex;
+  align-items: center;
+  padding-right: 4px;
 }
 
 .card-thumb {
@@ -94,6 +142,7 @@ const authorName = computed(() => props.formula.author?.username || props.formul
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  position: relative;
 }
 
 .thumb-img {
@@ -104,6 +153,15 @@ const authorName = computed(() => props.formula.author?.username || props.formul
 
 .thumb-placeholder {
   color: #dcdee0;
+}
+
+.downloaded-badge {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  padding: 1px;
 }
 
 .card-info {

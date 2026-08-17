@@ -16,7 +16,7 @@
       <div class="info-section">
         <van-cell-group inset>
           <van-cell title="公式名" :value="detail.name" />
-          <van-cell title="记号" :value="detail.notation" />
+          <van-cell title="公式" :value="detail.notation" />
           <van-cell v-if="detail.inverse_notation" title="逆公式" :value="detail.inverse_notation" />
           <van-cell title="分类" :value="categoryName" />
           <van-cell title="难度">
@@ -32,22 +32,111 @@
           </van-cell>
         </van-cell-group>
 
-        <!-- 收藏按钮 -->
+        <!-- 收藏 + 下载按钮 -->
         <div class="action-section">
           <van-button
+            v-if="canEdit"
             block
-            :type="isCollected ? 'danger' : 'primary'"
-            :icon="isCollected ? 'like' : 'like-o'"
-            :loading="collectLoading"
-            @click="toggleCollect"
+            plain
+            type="primary"
+            icon="edit"
+            @click="openEdit"
+            style="margin-bottom: 12px;"
           >
-            {{ isCollected ? '取消收藏' : '收藏公式' }}
+            编辑公式
           </van-button>
+          <div class="action-row">
+            <van-button
+              class="action-btn"
+              :type="isCollected ? 'danger' : 'primary'"
+              :icon="isCollected ? 'like' : 'like-o'"
+              :loading="collectLoading"
+              @click="toggleCollect"
+            >
+              {{ isCollected ? '取消收藏' : '收藏' }}
+            </van-button>
+            <van-button
+              class="action-btn"
+              :type="isDownloaded ? 'success' : 'default'"
+              :icon="isDownloaded ? 'success' : 'down'"
+              @click="toggleDownload"
+            >
+              {{ isDownloaded ? '已下载' : '下载' }}
+            </van-button>
+          </div>
         </div>
       </div>
     </template>
 
     <van-empty v-else description="公式不存在或已删除" />
+
+    <!-- 编辑公式弹窗 -->
+    <van-popup v-model:show="editShow" position="bottom" round :style="{ maxHeight: '90%' }">
+      <div class="edit-form">
+        <div class="edit-title">编辑公式</div>
+
+        <van-field
+          v-model="editForm.name"
+          label="公式名"
+          placeholder="请输入公式名"
+          maxlength="200"
+        />
+
+        <van-field
+          v-model="editForm.notation"
+          label="公式"
+          placeholder="点击下方键盘输入"
+          readonly
+          type="textarea"
+          rows="1"
+          autosize
+        >
+          <template #button>
+            <van-tag v-if="editForm.notation" type="primary" size="medium">
+              {{ editForm.notation.trim().split(/\s+/).length }} 步
+            </van-tag>
+          </template>
+        </van-field>
+
+        <NotationKeyboard v-model="editForm.notation" />
+
+        <div class="edit-field-row">
+          <span class="edit-field-label">分类</span>
+          <select v-model="editForm.category_id" class="edit-select">
+            <option value="">不指定</option>
+            <option v-for="opt in categoryOptions" :key="opt.value" :value="opt.value">
+              {{ opt.text }}
+            </option>
+          </select>
+        </div>
+
+        <div class="edit-field-row">
+          <span class="edit-field-label">难度</span>
+          <van-radio-group v-model="editForm.difficulty" direction="horizontal">
+            <van-radio :name="1">基础</van-radio>
+            <van-radio :name="2">进阶</van-radio>
+            <van-radio :name="3">困难</van-radio>
+          </van-radio-group>
+        </div>
+
+        <van-field
+          v-model="editForm.description"
+          label="描述"
+          type="textarea"
+          placeholder="公式描述（选填）"
+          rows="2"
+          maxlength="500"
+          show-word-limit
+          autosize
+        />
+
+        <div class="edit-actions">
+          <van-button block type="primary" :loading="editLoading" @click="submitEdit">
+            保存修改
+          </van-button>
+        </div>
+      </div>
+    </van-popup>
   </div>
 </template>
 
@@ -63,15 +152,32 @@ import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import CubeDemo from '@/components/formula/CubeDemo.vue'
-import { getFormulaDetail, getMyCollections, addCollection, removeCollection } from '@/api/formula'
+import NotationKeyboard from '@/components/formula/NotationKeyboard.vue'
+import { getFormulaDetail, getMyCollections, addCollection, removeCollection, updateFormula, getFormulaCategories } from '@/api/formula'
+import { useUserStore } from '@/stores/user'
+import { isDownloaded as checkDownloaded, downloadFormula, removeDownload } from '@/utils/formula-download'
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 
 const loading = ref(true)
 const detail = ref(null)
 const isCollected = ref(false)
 const collectLoading = ref(false)
+const isDownloaded = ref(false)
+
+// 编辑状态
+const editShow = ref(false)
+const editLoading = ref(false)
+const editForm = ref({ name: '', notation: '', category_id: '', difficulty: 1, description: '' })
+const categoryOptions = ref([])
+
+const canEdit = computed(() => {
+  const d = detail.value
+  if (!d) return false
+  return d.is_custom && (d.created_by?.username === userStore.username || d.author?.username === userStore.username)
+})
 
 // 难度映射：后端 difficulty 为 IntegerField（1=基础 2=进阶 3+=困难）
 const diffKey = computed(() => Number(detail.value?.difficulty))
@@ -102,6 +208,7 @@ async function loadDetail(id) {
   loading.value = true
   detail.value = null
   isCollected.value = false
+  isDownloaded.value = checkDownloaded(Number(id))
 
   try {
     const res = await getFormulaDetail(id)
@@ -154,6 +261,81 @@ async function toggleCollect() {
     collectLoading.value = false
   }
 }
+
+function toggleDownload() {
+  if (!detail.value) return
+  if (isDownloaded.value) {
+    removeDownload(detail.value.id)
+    isDownloaded.value = false
+    showToast({ type: 'success', message: '已删除下载' })
+  } else {
+    downloadFormula(detail.value)
+    isDownloaded.value = true
+    showToast({ type: 'success', message: '已下载到本地' })
+  }
+}
+
+// ─── 编辑公式 ────────────────────────────────────────
+async function openEdit() {
+  const d = detail.value
+  editForm.value = {
+    name: d.name || '',
+    notation: d.notation || '',
+    category_id: d.category?.id || d.category_id || '',
+    difficulty: Number(d.difficulty) || 1,
+    description: d.description || '',
+  }
+  // 加载分类选项
+  if (categoryOptions.value.length === 0) {
+    try {
+      const res = await getFormulaCategories()
+      const cats = res.data.results || res.data || []
+      categoryOptions.value = cats.map(c => ({ text: c.name, value: c.id }))
+    } catch {}
+  }
+  editShow.value = true
+}
+
+function updateDifficulty(notation) {
+  const count = notation.trim().split(/\s+/).filter(Boolean).length
+  if (count <= 6) editForm.value.difficulty = 1
+  else if (count <= 10) editForm.value.difficulty = 2
+  else editForm.value.difficulty = 3
+}
+
+watch(() => editForm.value.notation, (val) => {
+  if (val) updateDifficulty(val)
+})
+
+async function submitEdit() {
+  if (!editForm.value.name.trim()) {
+    showToast('请输入公式名')
+    return
+  }
+  if (!editForm.value.notation.trim()) {
+    showToast('请输入公式')
+    return
+  }
+  editLoading.value = true
+  try {
+    const formData = new FormData()
+    formData.append('name', editForm.value.name.trim())
+    formData.append('notation', editForm.value.notation.trim())
+    if (editForm.value.category_id) {
+      formData.append('category_id', editForm.value.category_id)
+    }
+    formData.append('difficulty', editForm.value.difficulty)
+    if (editForm.value.description.trim()) {
+      formData.append('description', editForm.value.description.trim())
+    }
+    await updateFormula(detail.value.id, formData)
+    showToast({ type: 'success', message: '修改成功' })
+    editShow.value = false
+    await loadDetail(route.params.id)
+  } catch {} finally {
+    editLoading.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -185,5 +367,52 @@ async function toggleCollect() {
 
 .action-section {
   padding: 16px;
+}
+
+.action-row {
+  display: flex;
+  gap: 12px;
+}
+
+.action-btn {
+  flex: 1;
+}
+
+.edit-form {
+  padding: 20px 16px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.edit-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.edit-field-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+}
+
+.edit-field-label {
+  width: 65px;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.edit-select {
+  flex: 1;
+  border: none;
+  font-size: 14px;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.edit-actions {
+  margin-top: 20px;
 }
 </style>

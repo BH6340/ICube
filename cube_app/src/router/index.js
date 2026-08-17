@@ -14,6 +14,12 @@ const routes = [
     meta: { title: '登录', noTabbar: true },
   },
   {
+    path: '/register',
+    name: 'register',
+    component: () => import('@/views/RegisterView.vue'),
+    meta: { title: '注册', noTabbar: true },
+  },
+  {
     path: '/formula',
     name: 'Formula',
     component: () => import('@/views/FormulaView.vue'),
