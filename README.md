@@ -149,6 +149,21 @@ DB_PASSWORD=icube123
 | **HTTP 请求** | Axios 1.16 |
 | **富文本编辑** | Quill (@vueup/vue-quill) |
 
+### 移动端 (cube_app)
+
+> 与 `cube_front` 共用同一套 Django 后端 API，UI 框架从 Element Plus 替换为 Vant，3D 魔方演示复用 Three.js。
+
+| 技术栈 | 版本/说明 |
+|--------|----------|
+| **框架** | Vue 3.5 + Vite 8.0 |
+| **UI 组件** | Vant 4.9（自动导入） |
+| **跨平台** | Capacitor 8（Android） |
+| **3D 渲染** | Three.js 0.184 + @tweenjs/tween.js 25 |
+| **状态管理** | Pinia 3.0 |
+| **路由** | Vue Router 5.0（Hash 模式） |
+| **HTTP 请求** | Axios 1.16 |
+| **Markdown** | marked 18 |
+
 ---
 
 ## 项目结构
@@ -255,6 +270,41 @@ cube_front/
 ├── public/                      # 静态资源
 ├── scripts/CubeTest.html        # 3D 魔方测试页面
 └── package.json
+```
+
+### 移动端目录结构
+
+```
+cube_app/
+├── src/
+│   ├── App.vue                  # 根布局（Tabbar + 触摸滑动切换）
+│   ├── main.js                  # 入口（Pinia + Router + StatusBar 配置）
+│   ├── api/                     # API 接口封装
+│   │   ├── formula.js           # 公式库 API
+│   │   ├── forum.js             # 论坛 API
+│   │   ├── timer.js             # 计时器 API
+│   │   └── user.js              # 用户认证 API
+│   ├── components/              # 组件
+│   │   ├── formula/             # CubeDemo.vue（3D 演示）、FormulaCard.vue
+│   │   ├── forum/               # PostCard.vue、CommentSection.vue
+│   │   └── timer/               # ScrambleText.vue、TimerDisplay.vue
+│   ├── http/request.js          # Axios 请求封装（Token 前缀、401 清登录态、错误防抖）
+│   ├── router/index.js          # 路由配置（Hash 模式，4 主 Tab + 详情页）
+│   ├── stores/user.js           # 用户状态（Pinia + localStorage 持久化）
+│   ├── utils/media-url.js       # 媒体 URL 拼接（环境变量驱动）
+│   └── views/                   # 页面视图
+│       ├── LoginView.vue        # 登录页
+│       ├── FormulaView.vue      # 公式列表页
+│       ├── FormulaDetailView.vue # 公式详情页（含 3D 演示）
+│       ├── TimerView.vue        # 计时器页（双 Tab：计时 + 记录）
+│       ├── ForumView.vue        # 论坛列表页
+│       ├── PostDetailView.vue   # 帖子详情页（Markdown 渲染）
+│       └── ProfileView.vue      # 个人中心页
+├── android/                     # Android 原生工程
+├── capacitor.config.json        # Capacitor 配置（appId、androidScheme: http）
+├── vite.config.js               # Vite 配置（Vant 自动导入、proxy）
+├── .env                         # 开发环境变量（baseURL 为空走 proxy）
+└── .env.production              # 生产环境变量（后端 IP）
 ```
 
 ### 项目根目录脚本
@@ -401,6 +451,20 @@ ICube/
 12. **公式编辑器**：点击式键盘输入记号，图片上传或公式库选择
 13. **401 自动清除登录态**：响应拦截器检测 401 + 本地有 Token → 自动清除并提示
 14. **错误提示防抖**：相同错误 3 秒内只弹一次，配合 Element Plus grouping 合并
+
+### 移动端 App 特性
+
+1. **Capacitor WebView + Hash 路由**：`createWebHashHistory` 避免 WebView 加载本地文件时刷新 404
+2. **HTTP 明文访问**：`androidScheme: "http"` + `cleartext: true` + `network_security_config` 允许 WebView 访问后端 HTTP IP
+3. **计时器触屏状态机**：长按 500ms 进入就绪态（绿色），松手开始计时；支持 Ao5 去头去尾平均
+4. **离线降级**：计时器无 Token 时纯本地 `localStorage` 存储，登录后同步后端
+5. **3D 魔方移动端适配**：`onBeforeUnmount` 完整释放 geometry/material/renderer/cancelAnimationFrame/tweenGroup；`touch-action: none` 防触摸误滚动；高度 `50vh` 适配不同屏幕
+6. **Vant 自动导入**：`unplugin-auto-import` + `unplugin-vue-components` + `VantResolver`，无需手动 import
+7. **错误提示防抖**：相同错误 3 秒内只弹一次，配合 Vant `showToast`
+8. **401 自动清登录态**：响应拦截器检测 401 + 本地有 Token → 自动清除并提示
+9. **环境变量驱动 URL**：开发环境 baseURL 为空走 Vite proxy，生产环境拼接完整域名（WebView origin 为 localhost，相对路径无法访问后端）
+10. **keep-alive 缓存**：主 Tab 页缓存，详情页排除缓存；导航栏非 fixed 定位避免 keep-alive 激活时高度计算异常
+11. **触摸滑动切 Tab**：水平位移 >80px、水平 >1.5x 垂直位移、<500ms，排除 `van-swipe-cell` 区域
 
 ---
 
@@ -676,6 +740,43 @@ docker compose exec api python manage.py test             # 运行测试
 ```
 
 **持久化**：`mysql_data`、`redis_data` 数据卷；`./cube_api/media` 绑定目录；`init_data.sql` 仅首次启动执行；禁止 `docker compose down -v`。
+
+### 移动端 App 构建（Android APK）
+
+#### 环境要求
+
+| 依赖 | 版本 | 说明 |
+|------|------|------|
+| Node.js | 20.19+ / 22.12+ | 前端构建环境 |
+| JDK | 21 | Android 编译（JDK 25 不兼容 Gradle 8.x） |
+| Android SDK | Platform 36、Build-Tools | minSdk 24 / targetSdk 36 |
+
+#### 开发调试
+
+```powershell
+cd cube_app
+npm install        # 首次安装依赖
+npm run dev        # 启动 Vite dev server（端口 5174）
+```
+
+开发环境 API 和媒体请求通过 Vite proxy 代理到 `http://103.100.211.146`，可用浏览器直接调试。
+
+#### 构建 Debug APK
+
+```powershell
+# 1. 构建前端并同步到 Android 工程
+cd cube_app
+npm run cap:sync    # = vite build && npx cap sync android
+
+# 2. 构建 APK（需设置 JAVA_HOME 指向 JDK 21）
+$env:JAVA_HOME = "C:\Program Files\Microsoft\jdk-21.0.9.10-hotspot"
+cd android
+.\gradlew.bat assembleDebug
+```
+
+APK 输出路径：`cube_app/android/app/build/outputs/apk/debug/app-debug.apk`
+
+> **注意**：当前 release 构建未配置签名（`signingConfig`），如需发布到应用商店需自行生成 keystore 并配置 `android/app/build.gradle` 中的 `signingConfigs`。
 
 ---
 
