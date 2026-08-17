@@ -1,119 +1,111 @@
 <template>
   <div class="page">
-    <van-tabs v-model:active="activeTab" class="timer-tabs" @change="onTabChange">
-      <!-- ─── Tab 1: 计时器 ─── -->
-      <van-tab title="计时器">
-        <div class="timer-tab">
-          <ScrambleText :scramble="scramble" @refresh="generateScramble" />
+    <div class="timer-tab">
+      <ScrambleText :scramble="scramble" @refresh="generateScramble" />
 
-          <van-dropdown-menu class="type-selector">
-            <van-dropdown-item v-model="cubeType" :options="cubeOptions" @change="onTypeChange" />
-            <van-dropdown-item v-model="method" :options="methodOptions" />
-          </van-dropdown-menu>
+      <van-dropdown-menu class="type-selector">
+        <van-dropdown-item v-model="cubeType" :options="cubeOptions" @change="onTypeChange" />
+        <van-dropdown-item v-model="method" :options="methodOptions" />
+      </van-dropdown-menu>
 
-          <TimerDisplay
-            :state="timerState"
-            :elapsed="elapsed"
-            @touchstart="onTouchStart"
-            @touchend="onTouchEnd"
-          />
+      <TimerDisplay
+        :state="timerState"
+        :elapsed="elapsed"
+        @touchstart="onTouchStart"
+        @touchend="onTouchEnd"
+      />
 
-          <!-- 统计面板 -->
-          <div class="stats-panel">
-            <div class="stat-item">
-              <span class="stat-value">{{ history.length }}</span>
-              <span class="stat-label">次数</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-value">{{ bestTime ? formatTime(bestTime) + 's' : '--' }}</span>
-              <span class="stat-label">最快</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-value">{{ ao5 !== null ? formatTime(ao5) + 's' : '--' }}</span>
-              <span class="stat-label">Ao5</span>
-            </div>
-          </div>
-
-          <!-- 本地历史记录 -->
-          <div class="history-section">
-            <div class="history-header">
-              <span class="history-title">历史记录</span>
-              <van-button
-                v-if="history.length > 0"
-                size="mini"
-                type="danger"
-                plain
-                @click="confirmClear"
-              >清空</van-button>
-            </div>
-            <div class="history-list">
-              <van-swipe-cell
-                v-for="(record, index) in displayHistory"
-                :key="record.id"
-              >
-                <div class="history-item" @click="showDetail(record)">
-                  <span class="history-index">#{{ history.length - index }}</span>
-                  <span class="history-time">{{ formatTime(record.time_ms) }}</span>
-                  <span class="history-type">{{ record.cube_type }} · {{ methodLabel(record.method) }}</span>
-                  <van-icon name="arrow" size="12" color="#c8c9cc" />
-                </div>
-                <template #right>
-                  <van-button
-                    square
-                    type="danger"
-                    text="删除"
-                    class="delete-btn"
-                    @click="deleteRecord(index)"
-                  />
-                </template>
-              </van-swipe-cell>
-              <van-empty v-if="history.length === 0" description="暂无记录" image-size="60" />
-            </div>
-          </div>
+      <!-- 统计面板 -->
+      <div class="stats-panel">
+        <div class="stat-item">
+          <span class="stat-value">{{ history.length }}</span>
+          <span class="stat-label">次数</span>
         </div>
-      </van-tab>
+        <div class="stat-item">
+          <span class="stat-value">{{ bestTime ? formatTime(bestTime) + 's' : '--' }}</span>
+          <span class="stat-label">最快</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">{{ ao5 !== null ? formatTime(ao5) + 's' : '--' }}</span>
+          <span class="stat-label">Ao5</span>
+        </div>
+      </div>
 
-      <!-- ─── Tab 2: 数据记录 ─── -->
-      <van-tab title="数据记录">
-        <div class="records-tab">
-          <!-- 筛选 -->
-          <van-dropdown-menu>
+      <!-- 本地历史记录 -->
+      <div class="history-section">
+        <div class="history-header">
+          <span class="history-title">历史记录</span>
+          <van-button
+            v-if="history.length > 0"
+            size="mini"
+            type="danger"
+            plain
+            @click="confirmClear"
+          >清空</van-button>
+        </div>
+        <div class="history-list">
+          <van-swipe-cell
+            v-for="(record, index) in displayHistory"
+            :key="record.id"
+          >
+            <div class="history-item" @click="showDetail(record)">
+              <span class="history-index">#{{ history.length - index }}</span>
+              <span class="history-time">{{ formatTime(record.time_ms) }}</span>
+              <span class="history-type">{{ record.cube_type }} · {{ methodLabel(record.method) }}</span>
+              <van-icon name="arrow" size="12" color="#c8c9cc" />
+            </div>
+            <template #right>
+              <van-button
+                square
+                type="danger"
+                text="删除"
+                class="delete-btn"
+                @click="deleteRecord(index)"
+              />
+            </template>
+          </van-swipe-cell>
+          <van-empty v-if="history.length === 0" description="暂无记录" image-size="60" />
+        </div>
+      </div>
+
+      <!-- 数据记录（合并到历史记录下方） -->
+      <div ref="recordsSection" class="records-section">
+        <div class="records-header">
+          <span class="records-title">数据记录</span>
+          <van-dropdown-menu class="records-filter">
             <van-dropdown-item v-model="recordCubeType" :options="recordCubeOptions" @change="onRecordFilterChange" />
           </van-dropdown-menu>
-
-          <!-- 记录列表 -->
-          <div class="record-list-container">
-            <van-pull-refresh v-model="recordRefreshing" @refresh="onRecordRefresh">
-              <van-list
-                v-model:loading="recordLoading"
-                :finished="recordFinished"
-                finished-text="没有更多了"
-                @load="loadRecords"
-                :immediate-check="false"
-              >
-                <van-swipe-cell v-for="(record, index) in recordList" :key="record.id">
-                  <div class="record-item" @click="showDetail(record)">
-                    <span class="record-time">{{ formatTime(record.time_ms) }}</span>
-                    <div class="record-meta">
-                      <van-tag type="primary" size="mini">{{ record.cube_type }}</van-tag>
-                      <span class="record-method">{{ methodLabel(record.method) }}</span>
-                      <span class="record-date">{{ formatDateTime(record.created_at) }}</span>
-                    </div>
-                    <van-icon name="arrow" size="12" color="#c8c9cc" />
-                  </div>
-                  <template #right>
-                    <van-button square type="danger" text="删除" class="delete-btn" @click="confirmDeleteRecord(record, index)" />
-                  </template>
-                </van-swipe-cell>
-                <van-empty v-if="!recordLoading && recordList.length === 0" description="暂无计时记录" />
-              </van-list>
-            </van-pull-refresh>
-          </div>
         </div>
-      </van-tab>
-    </van-tabs>
 
-    <!-- 记录详情弹窗（两个 Tab 共用） -->
+        <van-pull-refresh v-model="recordRefreshing" @refresh="onRecordRefresh">
+          <van-list
+            v-model:loading="recordLoading"
+            :finished="recordFinished"
+            finished-text="没有更多了"
+            @load="loadRecords"
+            :immediate-check="false"
+          >
+            <van-swipe-cell v-for="(record, index) in recordList" :key="record.id">
+              <div class="record-item" @click="showDetail(record)">
+                <span class="record-time">{{ formatTime(record.time_ms) }}</span>
+                <div class="record-meta">
+                  <van-tag type="primary" size="mini">{{ record.cube_type }}</van-tag>
+                  <span class="record-method">{{ methodLabel(record.method) }}</span>
+                  <span class="record-date">{{ formatDateTime(record.created_at) }}</span>
+                </div>
+                <van-icon name="arrow" size="12" color="#c8c9cc" />
+              </div>
+              <template #right>
+                <van-button square type="danger" text="删除" class="delete-btn" @click="confirmDeleteRecord(record, index)" />
+              </template>
+            </van-swipe-cell>
+            <van-empty v-if="!recordLoading && recordList.length === 0" description="暂无计时记录" />
+          </van-list>
+        </van-pull-refresh>
+      </div>
+    </div>
+
+    <!-- 记录详情弹窗 -->
     <van-popup
       v-model:show="detailShow"
       position="bottom"
@@ -134,6 +126,17 @@
         </div>
       </div>
     </van-popup>
+
+    <!-- 通用确认弹窗 -->
+    <ConfirmDialog
+      v-model:show="confirmShow"
+      :title="confirmTitle"
+      :message="confirmMessage"
+      :confirm-text="confirmText"
+      :confirm-color="confirmColor"
+      :icon="confirmIcon"
+      @confirm="onConfirm"
+    />
   </div>
 </template>
 
@@ -141,20 +144,45 @@
 /**
  * TimerView.vue — 移动端计时器页面
  *
- * 两个 Tab：计时器（触屏状态机 + 本地历史） / 数据记录（后端记录列表）
+ * 单页：计时器 + 本地历史 + 数据记录（合并）
  * 触屏状态机：idle → holding → ready → running → idle
  */
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
-import { showToast, showConfirmDialog } from 'vant'
+import { showToast } from 'vant'
 import ScrambleText from '@/components/timer/ScrambleText.vue'
 import TimerDisplay from '@/components/timer/TimerDisplay.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { createTimerRecord, getTimerRecords, deleteTimerRecord } from '@/api/timer'
 
 const route = useRoute()
 
-// ─── Tab 状态 ────────────────────────────────────────
-const activeTab = ref(0)
+// ─── 通用确认弹窗 ────────────────────────────────────
+const confirmShow = ref(false)
+const confirmTitle = ref('')
+const confirmMessage = ref('')
+const confirmText = ref('确认')
+const confirmColor = ref('#ee0a24')
+const confirmIcon = ref('warning-o')
+let confirmCallback = null
+
+function showConfirm(options) {
+  confirmTitle.value = options.title || '确认操作'
+  confirmMessage.value = options.message || ''
+  confirmText.value = options.confirmText || '确认'
+  confirmColor.value = options.confirmColor || '#ee0a24'
+  confirmIcon.value = options.icon || 'warning-o'
+  confirmCallback = options.onConfirm || null
+  confirmShow.value = true
+}
+
+function onConfirm() {
+  confirmShow.value = false
+  confirmCallback?.()
+}
+
+// ─── 数据记录区域 ref ────────────────────────────────
+const recordsSection = ref()
 
 // ─── 常量 ────────────────────────────────────────────
 const STORAGE_KEY = 'icube_timer_history'
@@ -318,22 +346,34 @@ function showDetail(record) {
 
 function deleteRecord(index) {
   const record = history.value[index]
-  history.value.splice(index, 1)
-  saveToStorage()
-  if (record.server_id) {
-    deleteTimerRecord(record.server_id).catch(() => {})
-  }
+  showConfirm({
+    title: '删除记录',
+    message: `确认删除 ${formatTime(record.time_ms)} 的记录？`,
+    confirmText: '删除',
+    icon: 'delete-o',
+    onConfirm: () => {
+      history.value.splice(index, 1)
+      saveToStorage()
+      if (record.server_id) {
+        deleteTimerRecord(record.server_id).catch(() => {})
+      }
+      showToast({ type: 'success', message: '已删除' })
+    },
+  })
 }
 
 function confirmClear() {
-  showConfirmDialog({
+  showConfirm({
     title: '清空记录',
-    message: '确认清空所有本地记录？此操作不可撤销。',
-  }).then(() => {
-    history.value = []
-    saveToStorage()
-    showToast({ type: 'success', message: '已清空' })
-  }).catch(() => {})
+    message: `确认清空全部 ${history.value.length} 条本地记录？此操作不可撤销。`,
+    confirmText: '清空',
+    icon: 'delete',
+    onConfirm: () => {
+      history.value = []
+      saveToStorage()
+      showToast({ type: 'success', message: '已清空' })
+    },
+  })
 }
 
 // ─── 数据记录（后端 / 本地降级） ──────────────────────
@@ -390,24 +430,33 @@ function onRecordRefresh() {
 }
 
 function confirmDeleteRecord(record, index) {
-  showConfirmDialog({
+  showConfirm({
     title: '删除记录',
-    message: '确认删除这条计时记录？',
-  }).then(async () => {
-    try {
-      await deleteTimerRecord(record.id)
-      recordList.value.splice(index, 1)
-      showToast({ type: 'success', message: '已删除' })
-    } catch {}
-  }).catch(() => {})
+    message: `确认删除 ${formatTime(record.time_ms)} 的记录？`,
+    confirmText: '删除',
+    icon: 'delete-o',
+    onConfirm: async () => {
+      try {
+        await deleteTimerRecord(record.id)
+        recordList.value.splice(index, 1)
+        showToast({ type: 'success', message: '已删除' })
+      } catch {}
+    },
+  })
 }
 
-function onTabChange(name) {
-  // 切换到数据记录 Tab 时首次加载
-  if (name === 1 && !recordsLoaded) {
+function onTabChange() {
+  // 兼容旧调用，空实现
+}
+
+function scrollToRecords() {
+  if (!recordsLoaded) {
     recordsLoaded = true
     loadRecords(true)
   }
+  nextTick(() => {
+    recordsSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
 }
 
 // ─── localStorage 持久化 ────────────────────────────
@@ -457,11 +506,7 @@ function methodLabel(m) {
 // ─── 监听 route.query.tab ───────────────────────────
 watch(() => route.query.tab, (tab) => {
   if (tab === 'records') {
-    activeTab.value = 1
-    if (!recordsLoaded) {
-      recordsLoaded = true
-      loadRecords(true)
-    }
+    scrollToRecords()
   }
 }, { immediate: true })
 
@@ -482,14 +527,11 @@ onBeforeUnmount(() => {
   min-height: 100%;
 }
 
-/* Tab 容器：自然文档流，页面整体滚动 */
-.timer-tabs :deep(.van-tabs__content) {
-  -webkit-overflow-scrolling: touch;
-}
-
+/* 页面容器 */
 .timer-tab {
   display: flex;
   flex-direction: column;
+  padding-bottom: 16px;
 }
 
 .type-selector {
@@ -585,17 +627,27 @@ onBeforeUnmount(() => {
   height: 100%;
 }
 
-/* 数据记录 Tab */
-.records-tab {
-  display: flex;
-  flex-direction: column;
-  min-height: 60vh;
+/* 数据记录区域 */
+.records-section {
+  margin: 8px 12px 16px;
+  scroll-margin-top: 10px;
 }
 
-.record-list-container {
-  flex: 1;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+.records-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.records-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--van-text-color);
+}
+
+.records-filter {
+  flex: 0 0 auto;
 }
 
 .record-item {

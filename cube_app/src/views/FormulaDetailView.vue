@@ -34,17 +34,26 @@
 
         <!-- 收藏 + 下载按钮 -->
         <div class="action-section">
-          <van-button
-            v-if="canEdit"
-            block
-            plain
-            type="primary"
-            icon="edit"
-            @click="openEdit"
-            style="margin-bottom: 12px;"
-          >
-            编辑公式
-          </van-button>
+          <div v-if="canEdit" class="edit-delete-row" style="margin-bottom: 12px;">
+            <van-button
+              class="action-btn"
+              plain
+              type="primary"
+              icon="edit"
+              @click="openEdit"
+            >
+              编辑公式
+            </van-button>
+            <van-button
+              class="action-btn"
+              plain
+              type="danger"
+              icon="delete-o"
+              @click="confirmDelete"
+            >
+              删除公式
+            </van-button>
+          </div>
           <div class="action-row">
             <van-button
               class="action-btn"
@@ -220,16 +229,41 @@ import CubeDemo from '@/components/formula/CubeDemo.vue'
 import NotationKeyboard from '@/components/formula/NotationKeyboard.vue'
 import ImageCropper from '@/components/ImageCropper.vue'
 import FreeCropper from '@/components/FreeCropper.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { cropAndCompress } from '@/utils/image-compress'
 import { preprocessImage, multiPassOCR } from '@/utils/ocr-helper'
 import { buildMediaUrl } from '@/utils/media-url'
-import { getFormulaDetail, getMyCollections, addCollection, removeCollection, updateFormula, getFormulaCategories } from '@/api/formula'
+import { getFormulaDetail, getMyCollections, addCollection, removeCollection, updateFormula, deleteFormula, getFormulaCategories } from '@/api/formula'
 import { useUserStore } from '@/stores/user'
 import { isDownloaded as checkDownloaded, downloadFormula, removeDownload } from '@/utils/formula-download'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+
+// ─── 通用确认弹窗 ────────────────────────────────────
+const confirmShow = ref(false)
+const confirmTitle = ref('')
+const confirmMessage = ref('')
+const confirmText = ref('确认')
+const confirmColor = ref('#ee0a24')
+const confirmIcon = ref('warning-o')
+let confirmCallback = null
+
+function showConfirm(options) {
+  confirmTitle.value = options.title || '确认操作'
+  confirmMessage.value = options.message || ''
+  confirmText.value = options.confirmText || '确认'
+  confirmColor.value = options.confirmColor || '#ee0a24'
+  confirmIcon.value = options.icon || 'warning-o'
+  confirmCallback = options.onConfirm || null
+  confirmShow.value = true
+}
+
+function onConfirm() {
+  confirmShow.value = false
+  confirmCallback?.()
+}
 
 const loading = ref(true)
 const detail = ref(null)
@@ -387,6 +421,25 @@ function toggleDownload() {
 }
 
 // ─── 编辑公式 ────────────────────────────────────────
+function confirmDelete() {
+  showConfirm({
+    title: '删除公式',
+    message: `确认删除「${detail.value.name}」？此操作不可撤销。`,
+    confirmText: '删除',
+    icon: 'delete-o',
+    onConfirm: async () => {
+      try {
+        await deleteFormula(detail.value.id)
+        removeDownload(detail.value.id)
+        showToast({ type: 'success', message: '已删除' })
+        router.replace('/formula')
+      } catch {
+        // request.js 已处理错误提示
+      }
+    },
+  })
+}
+
 async function openEdit() {
   const d = detail.value
   editForm.value = {
@@ -596,6 +649,11 @@ function cleanNotation(text) {
 }
 
 .action-row {
+  display: flex;
+  gap: 12px;
+}
+
+.edit-delete-row {
   display: flex;
   gap: 12px;
 }

@@ -25,7 +25,7 @@ const currentTask = ref(loadingTasks[0])
 onMounted(() => {
   let taskIdx = 0
   progressTimer = setInterval(() => {
-    progress.value = Math.min(100, progress.value + 2 + Math.random() * 3)
+    progress.value = Math.min(100, progress.value + 2 + Math.random() * 2)
 
     const expectedTask = Math.floor((progress.value / 100) * loadingTasks.length)
     if (expectedTask !== taskIdx && expectedTask < loadingTasks.length) {
@@ -40,10 +40,10 @@ onMounted(() => {
         setTimeout(() => {
           const token = localStorage.getItem('token')
           router.replace(token ? '/formula' : '/login')
-        }, 300)
-      }, 200)
+        }, 200)
+      }, 100)
     }
-  }, 60)
+  }, 50)
 })
 
 onBeforeUnmount(() => {

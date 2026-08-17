@@ -41,7 +41,7 @@ const routes = [
     path: '/timer',
     name: 'Timer',
     component: () => import('@/views/TimerView.vue'),
-    meta: { title: '计时器' },
+    meta: { title: '计时' },
   },
   {
     path: '/forum',
