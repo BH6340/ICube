@@ -5,7 +5,13 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 const routes = [
   {
     path: '/',
-    redirect: '/formula',
+    redirect: '/splash',
+  },
+  {
+    path: '/splash',
+    name: 'splash',
+    component: () => import('@/views/SplashView.vue'),
+    meta: { title: '', noTabbar: true },
   },
   {
     path: '/login',

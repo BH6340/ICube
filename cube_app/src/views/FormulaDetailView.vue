@@ -100,12 +100,15 @@
 
         <van-field
           v-model="editForm.notation"
+          ref="editNotationInputRef"
           label="公式"
-          placeholder="点击下方键盘输入"
-          readonly
+          placeholder="点击输入或使用下方键盘"
           type="textarea"
           rows="1"
           autosize
+          inputmode="none"
+          @click="trackEditNotationCursor"
+          @keyup="trackEditNotationCursor"
         >
           <template #button>
             <van-tag v-if="editForm.notation" type="primary" size="medium">
@@ -121,7 +124,11 @@
           </van-button>
         </div>
 
-        <NotationKeyboard v-model="editForm.notation" />
+        <NotationKeyboard
+          v-model="editForm.notation"
+          :cursor-pos="editNotationCursor"
+          @update:cursor-pos="onEditNotationCursorChange"
+        />
 
         <div class="edit-field-row">
           <span class="edit-field-label">分类</span>
@@ -205,7 +212,7 @@
  */
 defineOptions({ name: 'FormulaDetailView' })
 
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
@@ -235,6 +242,26 @@ const editShow = ref(false)
 const editLoading = ref(false)
 const editForm = ref({ name: '', notation: '', category_id: '', difficulty: 1, description: '' })
 const categoryOptions = ref([])
+const editNotationCursor = ref(-1)
+const editNotationInputRef = ref()
+
+function trackEditNotationCursor() {
+  const el = editNotationInputRef.value?.$el?.querySelector('textarea')
+  if (el) {
+    editNotationCursor.value = el.selectionStart
+  }
+}
+
+function onEditNotationCursorChange(pos) {
+  editNotationCursor.value = pos
+  nextTick(() => {
+    const el = editNotationInputRef.value?.$el?.querySelector('textarea')
+    if (el) {
+      el.focus()
+      el.setSelectionRange(pos, pos)
+    }
+  })
+}
 
 // 编辑图片上传
 const editThumbnailFile = ref(null)

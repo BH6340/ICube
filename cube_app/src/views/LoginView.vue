@@ -30,6 +30,12 @@
         <router-link to="/register" class="register-link">
           没有账号？去注册
         </router-link>
+        <div class="guest-divider">
+          <span>或</span>
+        </div>
+        <van-button block plain class="guest-btn" @click="guestLogin">
+          游客登录
+        </van-button>
       </div>
     </van-form>
   </div>
@@ -60,6 +66,12 @@ async function onSubmit() {
   } finally {
     loading.value = false
   }
+}
+
+function guestLogin() {
+  localStorage.setItem('guest', '1')
+  showToast({ message: '游客模式' })
+  router.replace('/formula')
 }
 </script>
 
@@ -96,5 +108,29 @@ async function onSubmit() {
   margin-top: 1rem;
   font-size: 0.875rem;
   color: var(--van-primary-color);
+}
+
+.guest-divider {
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0;
+}
+
+.guest-divider::before,
+.guest-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--van-gray-4);
+}
+
+.guest-divider span {
+  padding: 0 0.75rem;
+  font-size: 0.75rem;
+  color: var(--van-gray-5);
+}
+
+.guest-btn {
+  color: var(--van-gray-7);
 }
 </style>

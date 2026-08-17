@@ -5,7 +5,7 @@
  * 筛选：范围（全部/我的收藏/我的下载）、分类、难度、排序。
  * 支持下拉刷新、上拉加载、搜索、长按多选、创建公式。
  */
-import { ref, computed, onMounted, watch, onActivated } from 'vue'
+import { ref, computed, onMounted, watch, onActivated, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { showToast } from 'vant'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
@@ -337,6 +337,27 @@ const thumbnailFile = ref(null)
 const thumbnailPath = ref('')
 const thumbnailPreview = ref('')
 
+const notationCursor = ref(-1)
+const notationInputRef = ref()
+
+function trackNotationCursor() {
+  const el = notationInputRef.value?.$el?.querySelector('textarea')
+  if (el) {
+    notationCursor.value = el.selectionStart
+  }
+}
+
+function onNotationCursorChange(pos) {
+  notationCursor.value = pos
+  nextTick(() => {
+    const el = notationInputRef.value?.$el?.querySelector('textarea')
+    if (el) {
+      el.focus()
+      el.setSelectionRange(pos, pos)
+    }
+  })
+}
+
 const showImageSheet = ref(false)
 const showCropper = ref(false)
 const cropperSrc = ref('')
@@ -653,15 +674,18 @@ async function submitAdd() {
           maxlength="200"
         />
 
-        <!-- 公式输入（readonly + 键盘） -->
+        <!-- 公式输入（可编辑 + 键盘） -->
         <van-field
           v-model="addForm.notation"
+          ref="notationInputRef"
           label="公式"
-          placeholder="点击下方键盘输入"
-          readonly
+          placeholder="点击输入或使用下方键盘"
           type="textarea"
           rows="1"
           autosize
+          inputmode="none"
+          @click="trackNotationCursor"
+          @keyup="trackNotationCursor"
         >
           <template #button>
             <van-tag v-if="addForm.notation" type="primary" size="medium">
@@ -678,7 +702,11 @@ async function submitAdd() {
         </div>
 
         <!-- 公式键盘 -->
-        <NotationKeyboard v-model="addForm.notation" />
+        <NotationKeyboard
+          v-model="addForm.notation"
+          :cursor-pos="notationCursor"
+          @update:cursor-pos="onNotationCursorChange"
+        />
 
         <!-- 分类 -->
         <div class="add-field-row">

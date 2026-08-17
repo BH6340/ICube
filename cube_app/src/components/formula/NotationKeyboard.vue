@@ -4,55 +4,78 @@
  *
  * 4 行布局，与 web 端 FormulaEditor 一致：
  *   R L U D F B | r l u d f b | M E S x y z | ' 2
- * 点击插入字符，修饰符附加到上一步末尾。
+ * 支持在光标位置插入字符（中间编辑）。
  */
 defineOptions({ name: 'NotationKeyboard' })
 
 const props = defineProps({
-  modelValue: { type: String, default: '' }
+  modelValue: { type: String, default: '' },
+  cursorPos: { type: Number, default: -1 }
 })
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'update:cursorPos'])
 
 const topRow = ['R', 'L', 'U', 'D', 'F', 'B']
 const middleRow = ['r', 'l', 'u', 'd', 'f', 'b']
 const bottomRow = ['M', 'E', 'S', 'x', 'y', 'z']
 const modifiers = ["'", '2']
 
+function getPos() {
+  const text = props.modelValue || ''
+  return props.cursorPos >= 0 && props.cursorPos <= text.length ? props.cursorPos : text.length
+}
+
 function addNotation(key) {
+  const text = props.modelValue || ''
+  const pos = getPos()
+  const before = text.slice(0, pos)
+  const after = text.slice(pos)
+
   if (key === "'" || key === '2') {
-    if (!props.modelValue.trim()) return
-    const lastStep = props.modelValue.split(/\s+/).pop()
-    const lastChar = lastStep.slice(-1)
-    if (lastChar !== "'" && lastChar !== '2') {
-      const steps = props.modelValue.trim().split(/\s+/)
-      steps[steps.length - 1] = lastStep + key
-      emit('update:modelValue', steps.join(' '))
-    }
+    const lastChar = before.slice(-1)
+    if (!lastChar || lastChar === ' ' || lastChar === "'" || lastChar === '2') return
+    emit('update:modelValue', before + key + after)
+    emit('update:cursorPos', pos + 1)
   } else {
-    emit('update:modelValue', props.modelValue + (props.modelValue ? ' ' : '') + key)
+    let prefix = before && !before.endsWith(' ') ? ' ' : ''
+    let suffix = after && !after.startsWith(' ') ? ' ' : ''
+    emit('update:modelValue', before + prefix + key + suffix + after)
+    emit('update:cursorPos', pos + prefix.length + key.length)
   }
 }
 
 function addSpace() {
-  if (!props.modelValue || props.modelValue.endsWith(' ')) return
-  emit('update:modelValue', props.modelValue + ' ')
+  const text = props.modelValue || ''
+  const pos = getPos()
+  const before = text.slice(0, pos)
+  const after = text.slice(pos)
+  if (before && !before.endsWith(' ')) {
+    emit('update:modelValue', before + ' ' + after)
+    emit('update:cursorPos', pos + 1)
+  }
 }
 
 function backspace() {
-  const trimmed = props.modelValue.trimEnd()
-  if (!trimmed) return
-  const lastChar = trimmed.slice(-1)
-  if (lastChar === "'" || lastChar === '2') {
-    emit('update:modelValue', trimmed.slice(0, -1))
+  const text = props.modelValue || ''
+  const pos = getPos()
+  if (pos === 0) return
+
+  const before = text.slice(0, pos)
+  const after = text.slice(pos)
+  const lastChar = before.slice(-1)
+
+  if (lastChar === "'" || lastChar === '2' || lastChar === ' ') {
+    emit('update:modelValue', before.slice(0, -1) + after)
+    emit('update:cursorPos', pos - 1)
   } else {
-    const steps = trimmed.split(/\s+/)
-    steps.pop()
-    emit('update:modelValue', steps.join(' '))
+    const tokenStart = before.lastIndexOf(' ') + 1
+    emit('update:modelValue', text.slice(0, tokenStart) + after)
+    emit('update:cursorPos', tokenStart)
   }
 }
 
 function clearAll() {
   emit('update:modelValue', '')
+  emit('update:cursorPos', 0)
 }
 </script>
 
