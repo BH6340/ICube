@@ -79,6 +79,10 @@ def _setup_logger():
 def _git_env():
     env = os.environ.copy()
     env.setdefault("GIT_TERMINAL_PROMPT", "0")
+    env.setdefault("GIT_AUTHOR_NAME", "ICube Server")
+    env.setdefault("GIT_AUTHOR_EMAIL", "icube@localhost")
+    env.setdefault("GIT_COMMITTER_NAME", "ICube Server")
+    env.setdefault("GIT_COMMITTER_EMAIL", "icube@localhost")
     return env
 
 
