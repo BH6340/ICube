@@ -2,6 +2,18 @@
 # --------------------------------------------------------------
 # ICube 服务端数据库转储脚本（crontab 入口）
 # 通过 Docker mysqldump 导出数据库到 init_data.sql 并推送到 Git
+# 手动一键执行
+# python server_db_dump.py
+
+# 或通过 shell 包装
+# bash scripts/server_backup.sh
+
+# 预览不执行
+# python server_db_dump.py --dry-run
+
+# 只导出不推送
+# python server_db_dump.py --no-push
+
 # 用法：每天 22:00 执行
 #   0 22 * * * /opt/icube/scripts/server_backup.sh >> /opt/icube/logs/server-backup-cron.log 2>&1
 # --------------------------------------------------------------
@@ -41,7 +53,7 @@ echo "  PROJECT_DIR = $PROJECT_DIR"
 echo "  PYTHON_BIN  = $PYTHON_BIN"
 echo "============================================================"
 
-"$PYTHON_BIN" "$PROJECT_DIR/server_db_dump.py"
+"$PYTHON_BIN" "$PROJECT_DIR/scripts/server_db_dump.py"
 RC=$?
 
 if [ "$RC" -eq 0 ]; then

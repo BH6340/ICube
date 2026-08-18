@@ -3,7 +3,7 @@ import unittest
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DEPLOY_SCRIPT = PROJECT_ROOT / "deploy.sh"
+DEPLOY_SCRIPT = PROJECT_ROOT / "scripts" / "deploy.sh"
 
 
 class DeployScriptContractTest(unittest.TestCase):
@@ -23,7 +23,7 @@ class DeployScriptContractTest(unittest.TestCase):
     def test_supports_full_api_and_front_modes(self):
         self.assertIn('DEPLOY_MODE="${1:-full}"', self.content)
         self.assertIn("full|api|front)", self.content)
-        self.assertIn("用法：bash deploy.sh [full|api|front]", self.content)
+        self.assertIn("用法：bash scripts/deploy.sh [full|api|front]", self.content)
 
     def test_builds_only_the_selected_service_in_partial_modes(self):
         self.assertIn("compose build --pull api", self.content)
@@ -62,7 +62,7 @@ class DeployScriptContractTest(unittest.TestCase):
     def test_partial_modes_require_an_existing_full_deployment(self):
         self.assertIn("ensure_existing_full_deployment", self.content)
         self.assertIn("compose ps --services --all", self.content)
-        self.assertIn("请先执行 bash deploy.sh full", self.content)
+        self.assertIn("请先执行 bash scripts/deploy.sh full", self.content)
 
     def test_allows_deployment_with_tracked_file_changes(self):
         self.assertNotIn(

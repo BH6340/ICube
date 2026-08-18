@@ -44,7 +44,7 @@ echo "============================================================"
 # 确保 REPO_PATH 指向项目根（覆盖脚本默认值）
 export REPO_PATH="$PROJECT_DIR"
 
-"$PYTHON_BIN" "$PROJECT_DIR/update_db_dump.py"
+"$PYTHON_BIN" "$PROJECT_DIR/scripts/update_db_dump.py"
 RC=$?
 
 if [ "$RC" -eq 0 ]; then

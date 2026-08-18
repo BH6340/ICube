@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ICube 服务器一键部署脚本
-# 用法：bash deploy.sh [full|api|front]，默认 full，禁止使用 sudo 运行整个脚本。
+# 用法：bash scripts/deploy.sh [full|api|front]，默认 full，禁止使用 sudo 运行整个脚本。
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -20,7 +20,7 @@ fail() {
 }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$SCRIPT_DIR"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 OLD_MEDIA_DIR="$PROJECT_DIR/media"
 NEW_MEDIA_DIR="$PROJECT_DIR/cube_api/media"
 BACKUP_ROOT="${ICUBE_BACKUP_DIR:-$HOME/icube-backups}"
@@ -34,7 +34,7 @@ compose() {
 }
 
 usage() {
-    echo "用法：bash deploy.sh [full|api|front]"
+    echo "用法：bash scripts/deploy.sh [full|api|front]"
     echo "  full   全量构建、迁移并启动全部服务（默认）"
     echo "  api    仅构建 API、执行数据库迁移并重启 Nginx"
     echo "  front  仅构建前端并重启 Nginx"
@@ -115,7 +115,7 @@ check_environment() {
     info "检查部署环境"
 
     if [ "${EUID:-$(id -u)}" -eq 0 ]; then
-        fail "请使用普通部署用户执行，不要运行 sudo bash deploy.sh"
+        fail "请使用普通部署用户执行，不要运行 sudo bash scripts/deploy.sh"
     fi
 
     require_command git
@@ -152,7 +152,7 @@ ensure_existing_full_deployment() {
             *$'\n'"$service"$'\n'*)
                 ;;
             *)
-                fail "未找到 $service 容器，请先执行 bash deploy.sh full"
+                fail "未找到 $service 容器，请先执行 bash scripts/deploy.sh full"
                 ;;
         esac
     done

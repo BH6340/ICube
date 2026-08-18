@@ -7,16 +7,16 @@ ICube 服务端数据库转储脚本
 首行加上 USE 语句，并推送到 Git 远程仓库。
 
 用法：
-  python server_db_dump.py              # 导出 + 推送
-  python server_db_dump.py --dry-run    # 预览不执行
-  python server_db_dump.py --no-push    # 只导出不推送
-  python server_db_dump.py --no-media   # 不提交媒体文件
+  python scripts/server_db_dump.py              # 导出 + 推送
+  python scripts/server_db_dump.py --dry-run    # 预览不执行
+  python scripts/server_db_dump.py --no-push    # 只导出不推送
+  python scripts/server_db_dump.py --no-media   # 不提交媒体文件
 
 环境变量（可通过 .env.backup 加载）：
   DB_NAME           数据库名（默认 icube_db）
   DB_ROOT_PASSWORD  MySQL root 密码（默认 icube_root123）
   OUTPUT_FILE       输出文件名（默认 init_data.sql）
-  REPO_PATH         项目根目录（默认当前目录）
+  REPO_PATH         项目根目录（默认自动检测为脚本上级目录）
   MEDIA_DIR         媒体目录（默认 cube_api/media）
 """
 
@@ -39,11 +39,15 @@ except ImportError:
         logger.addHandler(h)
     logger.setLevel(logging.INFO)
 
+# 脚本位于 scripts/ 子目录，向上取一层得到项目根目录
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+_PROJECT_ROOT = os.path.dirname(_SCRIPT_DIR)
+
 # ==================== 配置 ====================
 DB_NAME          = os.environ.get("DB_NAME", "icube_db")
 DB_ROOT_PASSWORD = os.environ.get("DB_ROOT_PASSWORD", "icube_root123")
 OUTPUT_FILE      = os.environ.get("OUTPUT_FILE", "init_data.sql")
-REPO_PATH        = os.path.abspath(os.environ.get("REPO_PATH", "."))
+REPO_PATH        = os.path.abspath(os.environ.get("REPO_PATH", _PROJECT_ROOT))
 MEDIA_DIR        = os.environ.get("MEDIA_DIR", "cube_api/media")
 
 DRY_RUN  = "--dry-run" in sys.argv
