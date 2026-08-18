@@ -86,14 +86,14 @@ onMounted(() => {
 
 onActivated(() => {
   downloadedIds.value = getDownloadedIds()
-  nextTick(() => {
-    const el = document.querySelector('.app-content')
+  setTimeout(() => {
+    const el = document.querySelector('.list-container')
     if (el) el.scrollTop = savedScrollTop.value
-  })
+  }, 100)
 })
 
 onDeactivated(() => {
-  const el = document.querySelector('.app-content')
+  const el = document.querySelector('.list-container')
   if (el) savedScrollTop.value = el.scrollTop
 })
 
