@@ -285,20 +285,26 @@ cube_app/
 │   │   ├── timer.js             # 计时器 API
 │   │   └── user.js              # 用户认证 API
 │   ├── components/              # 组件
-│   │   ├── formula/             # CubeDemo.vue（3D 演示）、FormulaCard.vue
+│   │   ├── common/              # ConfirmDialog.vue（居中卡片式确认弹窗）
+│   │   ├── formula/             # CubeDemo.vue（3D 演示）、FormulaCard.vue（含浏览量）
 │   │   ├── forum/               # PostCard.vue、CommentSection.vue
 │   │   └── timer/               # ScrambleText.vue、TimerDisplay.vue
+│   ├── composables/useTabReset.js # 双击导航栏重置筛选
 │   ├── http/request.js          # Axios 请求封装（Token 前缀、401 清登录态、错误防抖）
 │   ├── router/index.js          # 路由配置（Hash 模式，4 主 Tab + 详情页）
 │   ├── stores/user.js           # 用户状态（Pinia + localStorage 持久化）
+│   ├── styles/                  # 全局样式
+│   │   ├── theme.css           # 主题令牌（颜色/字号/间距/圆角/阴影）
+│   │   └── markdown.css        # 公共 Markdown 渲染样式
 │   ├── utils/media-url.js       # 媒体 URL 拼接（环境变量驱动）
 │   └── views/                   # 页面视图
 │       ├── LoginView.vue        # 登录页
-│       ├── FormulaView.vue      # 公式列表页
-│       ├── FormulaDetailView.vue # 公式详情页（含 3D 演示）
-│       ├── TimerView.vue        # 计时器页（双 Tab：计时 + 记录）
-│       ├── ForumView.vue        # 论坛列表页
-│       ├── PostDetailView.vue   # 帖子详情页（Markdown 渲染）
+│       ├── FormulaView.vue      # 公式列表页（滚动位置恢复 + 浏览量排序）
+│       ├── FormulaDetailView.vue # 公式详情页（含 3D 演示 + 删除公式）
+│       ├── TimerView.vue        # 计时器页（双 Tab：计时 + 记录 + 下拉刷新）
+│       ├── ForumView.vue        # 论坛列表页（四栏 + 收藏 Tab）
+│       ├── PostDetailView.vue   # 帖子详情页（Markdown 渲染 + 下拉刷新）
+│       ├── PostEditorView.vue   # 帖子编辑器（发表/编辑 + 图片 + 标签）
 │       └── ProfileView.vue      # 个人中心页
 ├── android/                     # Android 原生工程
 ├── capacitor.config.json        # Capacitor 配置（appId、androidScheme: http）
@@ -464,7 +470,20 @@ ICube/
 8. **401 自动清登录态**：响应拦截器检测 401 + 本地有 Token → 自动清除并提示
 9. **环境变量驱动 URL**：开发环境 baseURL 为空走 Vite proxy，生产环境拼接完整域名（WebView origin 为 localhost，相对路径无法访问后端）
 10. **keep-alive 缓存**：主 Tab 页缓存，详情页排除缓存；导航栏非 fixed 定位避免 keep-alive 激活时高度计算异常
-11. **触摸滑动切 Tab**：水平位移 >80px、水平 >1.5x 垂直位移、<500ms，排除 `van-swipe-cell` 区域
+11. **触摸滑动切 Tab**：水平位移 >80px、水平 >1.5x 垂直位移、<500ms，排除 `van-swipe-cell` 区域；弹窗显示时禁止滑动
+12. **全局主题令牌**：`src/styles/theme.css` 统一颜色/字号/间距/圆角/阴影变量，FormulaCard 等组件引用 CSS 变量替代硬编码
+13. **公共 Markdown 样式**：`src/styles/markdown.css` 供帖子详情和编辑器复用，消除重复样式
+14. **统一空状态**：全部 `van-empty` 统一 `image-size="80"`，视觉一致
+15. **统一危险色**：全 App 危险色统一为 Vant 标准 `#ee0a24`
+16. **自定义确认弹窗**：`ConfirmDialog.vue` 居中卡片式设计，渐变图标 + 竖向按钮，替代 Vant 默认 `showConfirmDialog`
+17. **公式详情滚动恢复**：`onDeactivated` 保存 `.list-container` 滚动位置，`onActivated` 延迟恢复
+18. **双击重置筛选**：双击导航栏"公式"Tab 重置筛选条件到默认状态（`useTabReset` composable）
+19. **公式浏览量排序**：公式卡片显示眼睛图标 + 浏览次数，排序选项新增"浏览量排序"
+20. **帖子发表/编辑/删除**：`PostEditorView.vue` 支持纯文本 + 图片插入 + 标签选择，FormData 提交兼容 Web 端 Markdown 格式
+21. **论坛收藏 Tab**：论坛列表新增"收藏"Tab（在"我的"右侧），展示已收藏帖子
+22. **帖子详情下拉刷新**：`van-pull-refresh` 包裹内容区，支持下拉刷新帖子详情和评论
+23. **计时数据同步**：计时完成后自动同步记录到后端并刷新本地列表；计时页支持页面级下拉刷新
+24. **添加公式防误滑**：添加公式弹窗显示时禁止左右滑动切 Tab
 
 ---
 
@@ -768,8 +787,7 @@ npm run dev        # 启动 Vite dev server（端口 5174）
 cd cube_app
 npm run cap:sync    # = vite build && npx cap sync android
 
-# 2. 构建 APK（需设置 JAVA_HOME 指向 JDK 21）
-$env:JAVA_HOME = "C:\Program Files\Microsoft\jdk-21.0.9.10-hotspot"
+# 2. 构建 APK（JDK 21 路径已写入 android/gradle.properties，无需手动设置）
 cd android
 .\gradlew.bat assembleDebug
 ```
