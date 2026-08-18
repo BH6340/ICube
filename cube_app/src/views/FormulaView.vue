@@ -5,7 +5,7 @@
  * 筛选：范围（全部/我的收藏/我的下载）、分类、难度、排序。
  * 支持下拉刷新、上拉加载、搜索、长按多选、创建公式。
  */
-import { ref, computed, onMounted, watch, onActivated, nextTick } from 'vue'
+import { ref, computed, onMounted, watch, onActivated, onDeactivated, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { showToast } from 'vant'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
@@ -18,9 +18,13 @@ import { preprocessImage, multiPassOCR } from '@/utils/ocr-helper'
 import { buildMediaUrl } from '@/utils/media-url'
 import { getFormulaList, getFormulaCategories, getMyCollections, getMyCustomFormulas, addCollection, removeCollection, createFormula } from '@/api/formula'
 import { getDownloadedFormulas, getDownloadedIds, batchDownload, isDownloaded } from '@/utils/formula-download'
+import { useTabReset } from '@/composables/useTabReset'
 
 const router = useRouter()
 const route = useRoute()
+
+const { resetTrigger } = useTabReset()
+const savedScrollTop = ref(0)
 
 // ─── 筛选状态 ────────────────────────────────────────
 const searchKeyword = ref('')
@@ -50,7 +54,8 @@ const difficultyOptions = [
 const sortOptions = [
   { text: '默认排序', value: 'default' },
   { text: '难度升序', value: 'difficulty_asc' },
-  { text: '难度降序', value: 'difficulty_desc' }
+  { text: '难度降序', value: 'difficulty_desc' },
+  { text: '浏览量排序', value: 'view_count' },
 ]
 
 // ─── 列表状态 ────────────────────────────────────────
@@ -80,8 +85,29 @@ onMounted(() => {
 })
 
 onActivated(() => {
-  // keep-alive 激活时刷新下载数据
   downloadedIds.value = getDownloadedIds()
+  nextTick(() => {
+    const el = document.querySelector('.app-content')
+    if (el) el.scrollTop = savedScrollTop.value
+  })
+})
+
+onDeactivated(() => {
+  const el = document.querySelector('.app-content')
+  if (el) savedScrollTop.value = el.scrollTop
+})
+
+function resetFilters() {
+  searchKeyword.value = ''
+  selectedRange.value = 'all'
+  selectedCategory.value = ''
+  selectedDifficulty.value = ''
+  sortBy.value = 'default'
+  resetList()
+}
+
+watch(resetTrigger, () => {
+  resetFilters()
 })
 
 function applyQueryFilter() {
@@ -100,7 +126,9 @@ function buildParams(page) {
   if (selectedDifficulty.value) params.difficulty = selectedDifficulty.value
   if (searchKeyword.value.trim()) params.search = searchKeyword.value.trim()
   if (sortBy.value !== 'default') {
-    params.ordering = sortBy.value === 'difficulty_asc' ? 'difficulty' : '-difficulty'
+    if (sortBy.value === 'difficulty_asc') params.ordering = 'difficulty'
+    else if (sortBy.value === 'difficulty_desc') params.ordering = '-difficulty'
+    else if (sortBy.value === 'view_count') params.ordering = '-view_count'
   }
   return params
 }
@@ -161,6 +189,8 @@ async function loadMore() {
       allDownloads.sort((a, b) => a.difficulty - b.difficulty)
     } else if (sortBy.value === 'difficulty_desc') {
       allDownloads.sort((a, b) => b.difficulty - a.difficulty)
+    } else if (sortBy.value === 'view_count') {
+      allDownloads.sort((a, b) => (b.view_count || 0) - (a.view_count || 0))
     }
     formulaList.value = allDownloads
     finished.value = true

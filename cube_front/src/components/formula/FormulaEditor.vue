@@ -43,11 +43,9 @@
             <label>难度</label>
             <select v-model="form.difficulty" class="form-select">
               <option value="">请选择难度</option>
-              <option :value="1">1 - 入门</option>
-              <option :value="2">2 - 简单</option>
-              <option :value="3">3 - 中等</option>
-              <option :value="4">4 - 困难</option>
-              <option :value="5">5 - 专家</option>
+              <option :value="1">1 - 基础</option>
+              <option :value="2">2 - 进阶</option>
+              <option :value="3">3 - 困难</option>
             </select>
           </div>
         </div>
@@ -599,7 +597,7 @@ const handleClose = () => {
   bottom: 0;
   background: rgba(0, 0, 0, 0.7);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   z-index: 9999;
   overflow-y: auto;

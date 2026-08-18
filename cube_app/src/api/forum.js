@@ -43,6 +43,33 @@ export function getCollectedPosts(params = {}) {
   return request({ url: '/api/forum/posts/collected/', method: 'get', params })
 }
 
+/** 创建帖子（FormData） */
+export function createPost(data) {
+  return request({ url: '/api/forum/posts/', method: 'post', data })
+}
+
+/** 更新帖子（FormData） */
+export function updatePost(id, data) {
+  return request({ url: `/api/forum/posts/${id}/`, method: 'put', data })
+}
+
+/** 删除帖子 */
+export function deletePost(id) {
+  return request({ url: `/api/forum/posts/${id}/`, method: 'delete' })
+}
+
+/** 上传帖子图片 */
+export function uploadPostImage(file) {
+  const formData = new FormData()
+  formData.append('image', file)
+  return request({ url: '/api/forum/posts/upload_image/', method: 'post', data: formData })
+}
+
+/** 获取标签列表 */
+export function getTags(params = {}) {
+  return request({ url: '/api/forum/tags/', method: 'get', params })
+}
+
 // ─── 评论接口 ──────────────────────────────────────
 
 /** 帖子评论列表 */

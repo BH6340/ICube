@@ -56,6 +56,18 @@ const routes = [
     meta: { title: '帖子详情', noTabbar: true },
   },
   {
+    path: '/forum/create',
+    name: 'PostCreate',
+    component: () => import('@/views/PostEditorView.vue'),
+    meta: { title: '发帖', noTabbar: true },
+  },
+  {
+    path: '/forum/edit/:id',
+    name: 'PostEdit',
+    component: () => import('@/views/PostEditorView.vue'),
+    meta: { title: '编辑帖子', noTabbar: true },
+  },
+  {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/ProfileView.vue'),

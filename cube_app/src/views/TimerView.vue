@@ -1,5 +1,6 @@
 <template>
   <div class="page">
+    <van-pull-refresh v-model="pageRefreshing" @refresh="onPageRefresh">
     <div class="timer-tab">
       <van-nav-bar title="计时" placeholder />
       <ScrambleText :scramble="scramble" @refresh="generateScramble" />
@@ -78,14 +79,13 @@
           </van-dropdown-menu>
         </div>
 
-        <van-pull-refresh v-model="recordRefreshing" @refresh="onRecordRefresh">
-          <van-list
-            v-model:loading="recordLoading"
-            :finished="recordFinished"
-            finished-text="没有更多了"
-            @load="loadRecords"
-            :immediate-check="false"
-          >
+        <van-list
+          v-model:loading="recordLoading"
+          :finished="recordFinished"
+          finished-text="没有更多了"
+          @load="loadRecords"
+          :immediate-check="false"
+        >
             <van-swipe-cell v-for="(record, index) in recordList" :key="record.id">
               <div class="record-item" @click="showDetail(record)">
                 <span class="record-time">{{ formatTime(record.time_ms) }}</span>
@@ -102,9 +102,9 @@
             </van-swipe-cell>
             <van-empty v-if="!recordLoading && recordList.length === 0" description="暂无计时记录" />
           </van-list>
-        </van-pull-refresh>
       </div>
     </div>
+    </van-pull-refresh>
 
     <!-- 记录详情弹窗 -->
     <van-popup
@@ -221,6 +221,7 @@ const recordList = ref([])
 const recordLoading = ref(false)
 const recordFinished = ref(false)
 const recordRefreshing = ref(false)
+const pageRefreshing = ref(false)
 const recordPage = ref(1)
 const recordPageSize = 20
 const recordCubeType = ref('')
@@ -315,7 +316,11 @@ function stopTimer() {
       method: record.method,
       time_ms: record.time_ms,
       scramble: record.scramble,
+    }).then(() => {
+      if (recordsLoaded) loadRecords(true)
     }).catch(() => {})
+  } else {
+    if (recordsLoaded) loadRecords(true)
   }
 
   generateScramble()
@@ -428,6 +433,14 @@ function onRecordFilterChange() {
 function onRecordRefresh() {
   loadRecords(true)
   recordRefreshing.value = false
+}
+
+async function onPageRefresh() {
+  generateScramble()
+  if (recordsLoaded) {
+    await loadRecords(true)
+  }
+  pageRefreshing.value = false
 }
 
 function confirmDeleteRecord(record, index) {
@@ -649,6 +662,11 @@ onBeforeUnmount(() => {
 
 .records-filter {
   flex: 0 0 auto;
+  box-shadow: none;
+}
+.records-filter :deep(.van-dropdown-menu__bar) {
+  box-shadow: none;
+  background: transparent;
 }
 
 .record-item {

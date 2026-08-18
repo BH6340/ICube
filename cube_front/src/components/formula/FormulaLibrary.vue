@@ -52,8 +52,10 @@
               </el-button>
               <el-select v-model="sortBy" @change="handleSortChange" style="width: 120px; margin-left: 10px">
                 <el-option label="默认排序" value="default" />
-                <el-option label="难度升序" value="difficulty_asc" />
-                <el-option label="难度降序" value="difficulty_desc" />
+              <el-option label="难度升序" value="difficulty_asc" />
+              <el-option label="难度降序" value="difficulty_desc" />
+              <el-option label="浏览量降序" value="views_desc" />
+              <el-option label="浏览量升序" value="views_asc" />
               </el-select>
             </div>
           </div>
@@ -78,6 +80,7 @@
               </div>
               <div class="formula-footer">
                 <div class="footer-left">
+                  <span class="view-count">浏览：{{ formula.view_count || 0 }}次</span>
                   <span class="category-tag">公式分类：{{ formula.category?.name }}</span>
                   <span v-if="formula.author" class="author-name">作者：{{ formula.author.username }}</span>
                 </div>
@@ -90,6 +93,16 @@
                       icon="Edit"
                   >
                     编辑
+                  </el-button>
+                  <el-button
+                      v-if="isFormulaAuthor(formula)"
+                      type="text"
+                      size="small"
+                      @click.stop="handleDeleteFormula(formula)"
+                      icon="Delete"
+                      style="color: #f56c6c"
+                  >
+                    删除
                   </el-button>
                   <el-button
                       type="text"
@@ -158,6 +171,10 @@
         </el-row>
       </div>
       <template #footer>
+        <div v-if="selectedFormula && isFormulaAuthor(selectedFormula)" style="text-align: left; flex: 1">
+          <el-button type="primary" size="small" @click="handleEditFormula(selectedFormula)" icon="Edit">编辑</el-button>
+          <el-button type="danger" size="small" @click="handleDeleteFormula(selectedFormula)" icon="Delete">删除</el-button>
+        </div>
         <el-button @click="showDetailDialog = false">关闭</el-button>
       </template>
     </el-dialog>
@@ -191,9 +208,9 @@
 
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { Picture, Star } from '@element-plus/icons-vue';
-import { getFormulaCategories, getFormulaList, getFormulaDetail, getMyCollections, addCollection, removeCollection, getFormulaAuthors } from '../../api/formula';
+import { getFormulaCategories, getFormulaList, getFormulaDetail, getMyCollections, addCollection, removeCollection, getFormulaAuthors, deleteFormula } from '../../api/formula';
 import CubeDemo from './CubeDemo.vue';
 import FormulaEditor from './FormulaEditor.vue';
 
@@ -234,13 +251,13 @@ const buildCategoryTree = (categories) => {
     if (!methods[cat.method]) {
       methods[cat.method] = {
         id: `method_${cat.method}`,
-        name: `${cat.order}阶 - ${cat.method}法`,
+        name: `${cat.order}阶 - ${cat.method}`,
         children: []
       };
     }
     methods[cat.method].children.push({
       id: cat.id,
-      name: cat.phase,
+      name: cat.name,
       raw: cat
     });
   });
@@ -296,6 +313,29 @@ const isFormulaAuthor = (formula) => {
 const handleEditFormula = (formula) => {
   editFormula.value = formula;
   showEditor.value = true;
+};
+const handleDeleteFormula = async (formula) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除公式「${formula.name}」吗？此操作不可恢复。`,
+      '删除确认',
+      { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' }
+    );
+  } catch {
+    return;
+  }
+  try {
+    const res = await deleteFormula(formula.id);
+    if (res.code === 100) {
+      ElMessage.success('删除成功');
+      showDetailDialog.value = false;
+      loadFormulas();
+    } else {
+      ElMessage.error(res.msg || '删除失败');
+    }
+  } catch (error) {
+    ElMessage.error('删除失败');
+  }
 };
 const loadCollections = async () => {
   if (!isLoggedIn()) {
@@ -353,7 +393,12 @@ const loadAuthors = async () => {
   try {
     const res = await getFormulaAuthors();
     if (res.code === 100) {
-      authorList.value = res.data.authors;
+      const seen = new Set();
+      authorList.value = (res.data.authors || []).filter(a => {
+        if (seen.has(a.id)) return false;
+        seen.add(a.id);
+        return true;
+      });
     }
   } catch (error) {
     console.error('加载作者列表失败', error);
@@ -379,7 +424,13 @@ const loadFormulas = async () => {
     params.search = searchKeyword.value.trim();
   }
   if (sortBy.value !== 'default') {
-    params.ordering = sortBy.value === 'difficulty_asc' ? 'difficulty' : '-difficulty';
+    const orderMap = {
+      difficulty_asc: 'difficulty',
+      difficulty_desc: '-difficulty',
+      views_desc: '-view_count',
+      views_asc: 'view_count'
+    };
+    params.ordering = orderMap[sortBy.value];
   }
   try {
     const res = await getFormulaList(params);
@@ -495,6 +546,11 @@ onMounted(() => {
   color: #909399;
 }
 
+.view-count {
+  font-size: 12px;
+  color: #909399;
+}
+
 .author-name {
   font-size: 12px;
   color: #606266;
@@ -570,6 +626,8 @@ onMounted(() => {
 
 .formula-detail {
   padding: 10px;
+  max-height: 65vh;
+  overflow-y: auto;
 }
 
 .detail-thumbnail {

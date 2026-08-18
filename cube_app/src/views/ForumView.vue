@@ -11,14 +11,14 @@ import { ref, watch, onMounted, onActivated } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { showToast } from 'vant'
 import PostCard from '@/components/forum/PostCard.vue'
-import { getPosts, getHotPosts, getMyPosts } from '@/api/forum'
+import { getPosts, getHotPosts, getMyPosts, getCollectedPosts } from '@/api/forum'
 
 const router = useRouter()
 const route = useRoute()
 
 // ─── 响应式状态 ──────────────────────────────────────
 const searchKeyword = ref('')
-const activeTab = ref(0)  // 0=最新 1=最热 2=精华 3=我的帖子
+const activeTab = ref(0)  // 0=最新 1=最热 2=精华 3=我的帖子 4=收藏
 const postList = ref([])
 const loading = ref(false)
 const finished = ref(false)
@@ -34,8 +34,8 @@ async function loadPosts(reset = false) {
     loading.value = true
   }
 
-  // "我的帖子"需登录
-  if (activeTab.value === 3 && !localStorage.getItem('token')) {
+  // "我的帖子"/"收藏"需登录
+  if ((activeTab.value === 3 || activeTab.value === 4) && !localStorage.getItem('token')) {
     showToast('请先登录')
     router.push({ name: 'login', query: { redirect: '/forum' } })
     loading.value = false
@@ -49,6 +49,9 @@ async function loadPosts(reset = false) {
     if (activeTab.value === 3) {
       // 我的帖子
       res = await getMyPosts(params)
+    } else if (activeTab.value === 4) {
+      // 收藏
+      res = await getCollectedPosts(params)
     } else if (activeTab.value === 1) {
       // 最热
       res = await getHotPosts({ days: 30, limit: 50 })
@@ -95,7 +98,7 @@ function onRefresh() {
 }
 
 function onSearch() {
-  if (activeTab.value === 1 || activeTab.value === 3) {
+  if (activeTab.value === 1 || activeTab.value === 3 || activeTab.value === 4) {
     activeTab.value = 0
   }
   loadPosts(true)
@@ -110,10 +113,22 @@ function goToDetail(id) {
   router.push({ name: 'PostDetail', params: { id } })
 }
 
+function goToCreate() {
+  if (!localStorage.getItem('token')) {
+    showToast('请先登录')
+    router.push({ name: 'login', query: { redirect: '/forum/create' } })
+    return
+  }
+  router.push({ name: 'PostCreate' })
+}
+
 // ─── 从个人中心跳转时，根据 query.filter 切换 Tab ────
 watch(() => route.query.filter, (filter) => {
   if (filter === 'my_posts') {
     activeTab.value = 3
+    loadPosts(true)
+  } else if (filter === 'collected') {
+    activeTab.value = 4
     loadPosts(true)
   }
 }, { immediate: true })
@@ -130,13 +145,20 @@ onActivated(() => {
   if (route.query.filter === 'my_posts' && activeTab.value !== 3) {
     activeTab.value = 3
     loadPosts(true)
+  } else if (route.query.filter === 'collected' && activeTab.value !== 4) {
+    activeTab.value = 4
+    loadPosts(true)
   }
 })
 </script>
 
 <template>
   <div class="page">
-    <van-nav-bar title="论坛" placeholder />
+    <van-nav-bar title="论坛" placeholder>
+      <template #right>
+        <van-icon name="edit" size="20" @click="goToCreate" />
+      </template>
+    </van-nav-bar>
 
     <!-- 搜索栏 -->
     <van-search
@@ -153,6 +175,7 @@ onActivated(() => {
       <van-tab title="最热" />
       <van-tab title="精华" />
       <van-tab title="我的" />
+      <van-tab title="收藏" />
     </van-tabs>
 
     <!-- 帖子列表 -->

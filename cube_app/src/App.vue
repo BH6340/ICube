@@ -14,7 +14,7 @@
       </router-view>
     </div>
     <van-tabbar v-if="!$route.meta.noTabbar" v-model="active" route :fixed="false" safe-area-inset-bottom>
-      <van-tabbar-item to="/formula" icon="search">公式</van-tabbar-item>
+      <van-tabbar-item to="/formula" icon="search" @click="onFormulaTap">公式</van-tabbar-item>
       <van-tabbar-item to="/timer" icon="clock-o">计时</van-tabbar-item>
       <van-tabbar-item to="/forum" icon="chat-o">论坛</van-tabbar-item>
       <van-tabbar-item to="/profile" icon="user-o">我的</van-tabbar-item>
@@ -25,10 +25,23 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useTabReset } from '@/composables/useTabReset'
 
 const active = ref(0)
 const router = useRouter()
 const route = useRoute()
+const { triggerReset } = useTabReset()
+
+let lastFormulaTap = 0
+function onFormulaTap() {
+  const now = Date.now()
+  if (now - lastFormulaTap < 400) {
+    triggerReset()
+    lastFormulaTap = 0
+  } else {
+    lastFormulaTap = now
+  }
+}
 
 const transitionName = ref('')
 
@@ -69,6 +82,7 @@ function onTouchStart(e) {
 
 function onTouchEnd(e) {
   if (route.meta.noTabbar) return
+  if (document.querySelector('.van-popup--show')) return
 
   const touch = e.changedTouches[0]
   const deltaX = touch.clientX - touchStartX

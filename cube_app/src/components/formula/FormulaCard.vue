@@ -32,7 +32,7 @@
       </div>
       <div class="card-notation">{{ formula.notation }}</div>
       <div class="card-footer">
-        <span class="card-meta">{{ categoryName }} · {{ authorName }}</span>
+        <span class="card-meta">{{ viewCount }}次 · {{ categoryName }} · {{ authorName }}</span>
         <van-icon
           v-if="!multiSelect"
           :name="collected ? 'like' : 'like-o'"
@@ -87,6 +87,7 @@ const difficultyType = computed(() => {
 
 const categoryName = computed(() => props.formula.category?.name || props.formula.category_name || '未分类')
 const authorName = computed(() => props.formula.author?.username || props.formula.author_username || '匿名')
+const viewCount = computed(() => props.formula.view_count || 0)
 
 function onClick() {
   emit('click', props.formula)

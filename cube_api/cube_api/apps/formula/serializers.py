@@ -467,8 +467,13 @@ class FormulaSerializer(serializers.ModelSerializer):
 
         # 根据分类自动关联状态（如果分类存在且公式没有关联状态）
         if formula.category and not formula.target_state:
-            # 查找该分类下的第一个状态
+            # 先精确匹配当前分类下的状态
             default_state = CubeState.objects.filter(category=formula.category).first()
+            # 回退：按同 phase 分类下的状态匹配（如自定义"四向F2L"回退到标准 F2L 状态）
+            if not default_state and formula.category.phase:
+                default_state = CubeState.objects.filter(
+                    category__phase=formula.category.phase
+                ).first()
             if default_state:
                 formula.target_state = default_state
                 formula.save()
@@ -576,7 +581,13 @@ class FormulaSerializer(serializers.ModelSerializer):
                 if formula.target_state and formula.target_state.category != category:
                     formula.target_state = None
                 if not formula.target_state:
+                    # 先精确匹配当前分类下的状态
                     default_state = CubeState.objects.filter(category=category).first()
+                    # 回退：按同 phase 分类下的状态匹配
+                    if not default_state and category.phase:
+                        default_state = CubeState.objects.filter(
+                            category__phase=category.phase
+                        ).first()
                     if default_state:
                         formula.target_state = default_state
                         formula.save()

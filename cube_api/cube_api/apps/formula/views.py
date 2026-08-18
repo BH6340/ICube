@@ -481,7 +481,7 @@ class FormulaViewSet(viewsets.ModelViewSet):
         Returns:
             APIResponse: 包含自定义公式列表的响应（带分页）
         """
-        formulas = self.get_queryset().filter(is_custom=True, created_by=request.user)
+        formulas = self.filter_queryset(self.get_queryset()).filter(is_custom=True, created_by=request.user)
         page = self.paginate_queryset(formulas)
 
         if page is not None:

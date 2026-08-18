@@ -12,7 +12,8 @@ import { useRouter, useRoute } from 'vue-router'
 import { showToast } from 'vant'
 import { marked } from 'marked'
 import CommentSection from '@/components/forum/CommentSection.vue'
-import { getPost, likePost, collectPost } from '@/api/forum'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import { getPost, likePost, collectPost, deletePost } from '@/api/forum'
 import { buildMediaUrl } from '@/utils/media-url'
 
 const router = useRouter()
@@ -23,6 +24,8 @@ const detail = ref(null)
 const loading = ref(true)
 const likeLoading = ref(false)
 const collectLoading = ref(false)
+const refreshing = ref(false)
+const deleteShow = ref(false)
 
 // ─── Markdown 渲染 ───────────────────────────────────
 // 配置 marked：GitHub 风味，换行转 <br>
@@ -62,7 +65,12 @@ async function loadDetail(id) {
     showToast('加载失败')
   } finally {
     loading.value = false
+    refreshing.value = false
   }
+}
+
+function onRefresh() {
+  if (route.params.id) loadDetail(route.params.id)
 }
 
 // ─── 互动操作 ────────────────────────────────────────
@@ -77,9 +85,8 @@ async function toggleLike() {
   likeLoading.value = true
   try {
     const res = await likePost(route.params.id)
-    const data = res.data || {}
-    detail.value.is_liked = data.liked ?? !detail.value.is_liked
-    detail.value.like_count = data.like_count ?? detail.value.like_count
+    detail.value.is_liked = res.liked ?? !detail.value.is_liked
+    detail.value.like_count = res.like_count ?? detail.value.like_count
   } catch {
     // 静默失败
   } finally {
@@ -98,9 +105,8 @@ async function toggleCollect() {
   collectLoading.value = true
   try {
     const res = await collectPost(route.params.id)
-    const data = res.data || {}
-    detail.value.is_collected = data.collected ?? !detail.value.is_collected
-    detail.value.collect_count = data.collect_count ?? detail.value.collect_count
+    detail.value.is_collected = res.collected ?? !detail.value.is_collected
+    detail.value.collect_count = res.collect_count ?? detail.value.collect_count
   } catch {
     // 静默失败
   } finally {
@@ -110,6 +116,25 @@ async function toggleCollect() {
 
 // ─── 工具函数 ────────────────────────────────────────
 const authorAvatar = computed(() => buildMediaUrl(detail.value?.author?.image))
+const isOwner = computed(() => {
+  if (!detail.value || !localStorage.getItem('token')) return false
+  return detail.value.author?.username === localStorage.getItem('username')
+})
+
+function goToEdit() {
+  router.push({ name: 'PostEdit', params: { id: route.params.id } })
+}
+
+async function onConfirmDelete() {
+  deleteShow.value = false
+  try {
+    await deletePost(route.params.id)
+    showToast({ type: 'success', message: '删除成功' })
+    router.replace('/forum')
+  } catch {
+    // request.js 已处理错误提示
+  }
+}
 const tagNames = computed(() => {
   const tags = detail.value?.tags || []
   return tags.map(t => (typeof t === 'object' ? t.name : t))
@@ -142,14 +167,18 @@ watch(
 
 <template>
   <div class="page">
-    <van-nav-bar title="帖子详情" left-arrow @click-left="router.back()" placeholder />
+    <van-nav-bar title="帖子详情" left-arrow @click-left="router.back()" placeholder>
+      <template v-if="isOwner" #right>
+        <van-icon name="edit" size="20" style="margin-right: 16px" @click="goToEdit" />
+        <van-icon name="delete-o" size="20" color="#ee0a24" @click="deleteShow = true" />
+      </template>
+    </van-nav-bar>
 
     <div v-if="loading" class="loading-wrap">
       <van-loading size="36px">加载中...</van-loading>
     </div>
 
-    <template v-else-if="detail">
-      <div class="page-content">
+    <van-pull-refresh v-else-if="detail" v-model="refreshing" @refresh="onRefresh" class="page-content">
         <!-- 帖子标题 -->
         <div class="post-header">
           <h1 class="post-title">
@@ -213,10 +242,18 @@ watch(
 
         <!-- 评论区 -->
         <CommentSection :post-id="route.params.id" />
-      </div>
-    </template>
+    </van-pull-refresh>
 
     <van-empty v-else description="帖子不存在或已删除" />
+
+    <ConfirmDialog
+      v-model:show="deleteShow"
+      title="删除帖子"
+      message="确定要删除这篇帖子吗？删除后不可恢复。"
+      confirm-text="删除"
+      confirm-color="#ee0a24"
+      @confirm="onConfirmDelete"
+    />
   </div>
 </template>
 
