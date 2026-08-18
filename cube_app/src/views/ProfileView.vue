@@ -366,7 +366,7 @@ async function onRefresh() {
       title="退出登录"
       show-cancel-button
       :before-close="() => !logoutLoading"
-      confirm-button-color="#ef4444"
+      confirm-button-color="#ee0a24"
       @confirm="doLogout"
     >
       <div class="logout-content">
@@ -512,7 +512,7 @@ async function onRefresh() {
 }
 
 .logout-cell {
-  color: #ef4444;
+  color: #ee0a24;
 }
 
 /* 编辑弹窗 */

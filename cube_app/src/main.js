@@ -8,6 +8,10 @@ import { Capacitor } from '@capacitor/core'
 // Vant 函数式组件（showToast 等）需手动引入样式
 import 'vant/es/toast/style'
 
+// 全局主题令牌
+import './styles/theme.css'
+import './styles/markdown.css'
+
 // 状态栏：白色背景，不覆盖 WebView，文字用深色（仅原生平台）
 if (Capacitor.isNativePlatform()) {
   StatusBar.setStyle({ style: Style.Light })

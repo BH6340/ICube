@@ -77,7 +77,7 @@
       </div>
     </template>
 
-    <van-empty v-else description="公式不存在或已删除" />
+    <van-empty v-else description="公式不存在或已删除" image-size="80" />
 
     <!-- 编辑公式弹窗 -->
     <van-popup v-model:show="editShow" position="bottom" round :style="{ maxHeight: '90%' }">

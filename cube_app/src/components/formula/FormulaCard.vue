@@ -112,35 +112,35 @@ function onTouchMove() {
 <style scoped>
 .formula-card {
   display: flex;
-  gap: 12px;
-  padding: 12px;
-  background: #fff;
-  border-radius: 8px;
-  margin-bottom: 8px;
+  gap: var(--icube-space-md);
+  padding: var(--icube-space-md);
+  background: var(--icube-bg-2);
+  border-radius: var(--icube-radius-md);
+  margin-bottom: var(--icube-space-sm);
   transition: background-color 0.2s;
 }
 
 .formula-card.multi-select-mode {
-  padding-left: 8px;
+  padding-left: var(--icube-space-sm);
 }
 
 .formula-card.selected {
   background: #f0f9ff;
-  box-shadow: inset 3px 0 0 #1989fa;
+  box-shadow: inset 3px 0 0 var(--icube-primary);
 }
 
 .select-indicator {
   display: flex;
   align-items: center;
-  padding-right: 4px;
+  padding-right: var(--icube-space-xs);
 }
 
 .card-thumb {
   flex-shrink: 0;
   width: 80px;
   height: 80px;
-  border-radius: 6px;
-  background: #f7f8fa;
+  border-radius: var(--icube-radius-sm);
+  background: var(--icube-bg-1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -155,7 +155,7 @@ function onTouchMove() {
 }
 
 .thumb-placeholder {
-  color: #dcdee0;
+  color: var(--van-text-color-3);
 }
 
 .downloaded-badge {
@@ -179,22 +179,22 @@ function onTouchMove() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--icube-space-sm);
 }
 
 .card-name {
   font-size: 15px;
   font-weight: 600;
-  color: #323233;
+  color: var(--icube-text-1);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .card-notation {
-  font-family: 'Cascadia Code', Consolas, monospace;
+  font-family: var(--icube-font-mono);
   font-size: 13px;
-  color: #646566;
+  color: var(--icube-text-2);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -207,8 +207,8 @@ function onTouchMove() {
 }
 
 .card-meta {
-  font-size: 12px;
-  color: #969799;
+  font-size: var(--icube-font-meta);
+  color: var(--icube-text-3);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

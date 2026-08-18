@@ -1,0 +1,48 @@
+/**
+ * ICube App 全局主题令牌
+ *
+ * 统一颜色、字号、间距、圆角、阴影，所有组件应引用这些变量。
+ * Vant 内置变量保持不变，此处补充自定义令牌。
+ */
+
+:root {
+  /* ── 颜色 ────────────────────────────── */
+  --icube-primary: #1989fa;
+  --icube-danger: #ee0a24;
+  --icube-success: #07c160;
+  --icube-warning: #ff976a;
+
+  --icube-text-1: #323233;
+  --icube-text-2: #646566;
+  --icube-text-3: #969799;
+
+  --icube-bg-1: #f7f8fa;
+  --icube-bg-2: #fff;
+  --icube-border: #ebedf0;
+
+  /* ── 字号 ────────────────────────────── */
+  --icube-font-title: 1.15rem;
+  --icube-font-subtitle: 1rem;
+  --icube-font-body: 0.92rem;
+  --icube-font-caption: 0.85rem;
+  --icube-font-meta: 0.78rem;
+
+  /* ── 间距（4 的倍数） ───────────────── */
+  --icube-space-xs: 4px;
+  --icube-space-sm: 8px;
+  --icube-space-md: 12px;
+  --icube-space-lg: 16px;
+  --icube-space-xl: 20px;
+
+  /* ── 圆角 ────────────────────────────── */
+  --icube-radius-sm: 6px;
+  --icube-radius-md: 8px;
+  --icube-radius-lg: 12px;
+
+  /* ── 阴影 ────────────────────────────── */
+  --icube-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --icube-shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+  /* ── 等宽字体 ─────────────────────────── */
+  --icube-font-mono: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+}

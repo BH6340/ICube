@@ -66,7 +66,7 @@
               />
             </template>
           </van-swipe-cell>
-          <van-empty v-if="history.length === 0" description="暂无记录" image-size="60" />
+          <van-empty v-if="history.length === 0" description="暂无记录" image-size="80" />
         </div>
       </div>
 
@@ -100,7 +100,7 @@
                 <van-button square type="danger" text="删除" class="delete-btn" @click="confirmDeleteRecord(record, index)" />
               </template>
             </van-swipe-cell>
-            <van-empty v-if="!recordLoading && recordList.length === 0" description="暂无计时记录" />
+            <van-empty v-if="!recordLoading && recordList.length === 0" description="暂无计时记录" image-size="80" />
           </van-list>
       </div>
     </div>

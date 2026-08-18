@@ -221,7 +221,7 @@ watch(
           <div class="interaction-item" @click="toggleLike">
             <van-icon
               :name="detail.is_liked ? 'good-job' : 'good-job-o'"
-              :color="detail.is_liked ? '#ef4444' : ''"
+              :color="detail.is_liked ? '#ee0a24' : ''"
               size="18"
             />
             <span :class="{ active: detail.is_liked }">{{ detail.like_count || 0 }}</span>
@@ -244,7 +244,7 @@ watch(
         <CommentSection :post-id="route.params.id" />
     </van-pull-refresh>
 
-    <van-empty v-else description="帖子不存在或已删除" />
+    <van-empty v-else description="帖子不存在或已删除" image-size="80" />
 
     <ConfirmDialog
       v-model:show="deleteShow"
@@ -327,87 +327,6 @@ watch(
   color: var(--van-text-color-3);
 }
 
-/* Markdown 正文 */
-.markdown-body {
-  padding: 16px;
-  font-size: 0.92rem;
-  line-height: 1.7;
-  color: var(--van-text-color);
-  word-break: break-word;
-}
-
-.markdown-body :deep(img) {
-  max-width: 100%;
-  height: auto;
-  border-radius: 6px;
-  margin: 8px 0;
-}
-
-.markdown-body :deep(h1),
-.markdown-body :deep(h2),
-.markdown-body :deep(h3) {
-  font-weight: 700;
-  margin: 16px 0 8px;
-}
-
-.markdown-body :deep(h1) { font-size: 1.3rem; }
-.markdown-body :deep(h2) { font-size: 1.15rem; }
-.markdown-body :deep(h3) { font-size: 1rem; }
-
-.markdown-body :deep(p) {
-  margin: 8px 0;
-}
-
-.markdown-body :deep(blockquote) {
-  border-left: 3px solid var(--van-primary-color);
-  padding: 4px 12px;
-  margin: 8px 0;
-  background: var(--van-background);
-  color: var(--van-text-color-2);
-  border-radius: 0 4px 4px 0;
-}
-
-.markdown-body :deep(code) {
-  background: var(--van-background);
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-size: 0.85em;
-  font-family: "Cascadia Code", "Fira Code", monospace;
-}
-
-.markdown-body :deep(pre) {
-  background: var(--van-background);
-  border: 1px solid var(--van-border-color);
-  border-radius: 6px;
-  padding: 12px;
-  overflow-x: auto;
-  margin: 8px 0;
-}
-
-.markdown-body :deep(pre code) {
-  background: none;
-  padding: 0;
-}
-
-.markdown-body :deep(ul),
-.markdown-body :deep(ol) {
-  padding-left: 1.5rem;
-  margin: 8px 0;
-}
-
-.markdown-body :deep(table) {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 8px 0;
-}
-
-.markdown-body :deep(th),
-.markdown-body :deep(td) {
-  border: 1px solid var(--van-border-color);
-  padding: 6px 10px;
-  text-align: left;
-}
-
 /* 标签 */
 .tag-row {
   display: flex;
@@ -440,7 +359,7 @@ watch(
 }
 
 .interaction-item .active {
-  color: #ef4444;
+  color: #ee0a24;
 }
 
 .interaction-item:nth-child(2) .active {

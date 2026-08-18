@@ -671,7 +671,7 @@ async function submitAdd() {
             @longpress="onCardLongPress"
           />
         </div>
-        <van-empty v-if="!listLoading && formulaList.length === 0" :description="createdOnly ? '暂无创建的公式' : collectedOnly ? '暂无收藏公式' : downloadedOnly ? '暂无下载公式' : '暂无公式数据'" />
+        <van-empty v-if="!listLoading && formulaList.length === 0" :description="createdOnly ? '暂无创建的公式' : collectedOnly ? '暂无收藏公式' : downloadedOnly ? '暂无下载公式' : '暂无公式数据'" image-size="80" />
       </van-list>
     </van-pull-refresh>
 

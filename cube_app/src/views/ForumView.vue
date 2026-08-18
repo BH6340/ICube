@@ -193,7 +193,7 @@ onActivated(() => {
           :post="post"
           @click="goToDetail"
         />
-        <van-empty v-if="!loading && postList.length === 0" description="暂无帖子" />
+        <van-empty v-if="!loading && postList.length === 0" description="暂无帖子" image-size="80" />
       </van-list>
     </van-pull-refresh>
   </div>

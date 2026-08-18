@@ -275,7 +275,7 @@ defineExpose({ reload: () => loadComments(true) })
         {{ loadingMore ? '加载中...' : '加载更多' }}
       </div>
 
-      <van-empty v-if="comments.length === 0" description="暂无评论" image-size="60" />
+      <van-empty v-if="comments.length === 0" description="暂无评论" image-size="80" />
     </template>
 
     <!-- 底部输入框 -->
@@ -409,7 +409,7 @@ defineExpose({ reload: () => loadComments(true) })
 }
 
 .action-btn.danger {
-  color: #ef4444;
+  color: #ee0a24;
 }
 
 /* 子评论 */

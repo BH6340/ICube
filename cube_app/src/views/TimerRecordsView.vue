@@ -173,7 +173,7 @@ onMounted(() => {
             <van-button square type="danger" text="删除" class="delete-btn" @click="confirmDelete(record, index)" />
           </template>
         </van-swipe-cell>
-        <van-empty v-if="!loading && recordList.length === 0" description="暂无计时记录" />
+        <van-empty v-if="!loading && recordList.length === 0" description="暂无计时记录" image-size="80" />
       </van-list>
     </div>
 
