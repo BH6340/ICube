@@ -1,4 +1,4 @@
-USE `icube_db`;
+USE icube_db;
 /*
  Navicat Premium Data Transfer
 
@@ -12,7 +12,7 @@ USE `icube_db`;
  Target Server Version : 80046
  File Encoding         : 65001
 
- Date: 17/08/2026 11:26:41
+ Date: 18/08/2026 09:04:24
 */
 
 SET NAMES utf8mb4;
@@ -51,7 +51,7 @@ INSERT INTO `accounts_user` VALUES (6, 'pbkdf2_sha256$1200000$okkHb5GNQKwfvBOnAQ
 INSERT INTO `accounts_user` VALUES (7, 'pbkdf2_sha256$1200000$RYFGlCvA1CDRxSNdklva6T$kXTRELt9ADjwvXRzQ7vBw4qlYiKkYsHbLDMtsdqHy7c=', NULL, 0, 0, 1, '2026-05-12 10:31:45.718088', 'bh06@qq.com', 'bh06', '', 'avatars/avatar_7_4a4a872f_GADdPGB.svg');
 INSERT INTO `accounts_user` VALUES (8, 'pbkdf2_sha256$1200000$DnUCKmEqnGwe6dgpusKgbv$dWypTxpzl3XsLQTHMtP2kVzzgSlZGrPXhDQvoFrI04I=', NULL, 0, 0, 1, '2026-06-03 10:52:12.092033', 'bh06@163.com', 'bh06_1', '', 'avatars/avatar_8_539a8195_i4KcIT3.svg');
 INSERT INTO `accounts_user` VALUES (9, 'pbkdf2_sha256$1200000$ftzQsmKyRLAeMfinPTKybA$HhvTRYfZhcto+EM0AkQcrw40kW595wOvrUz9i6d0/dY=', NULL, 0, 0, 1, '2026-06-03 14:36:26.343585', 'bh07@qq.com', 'bh07', '', 'avatars/avatar_9_f143219d_ZijIf6X.svg');
-INSERT INTO `accounts_user` VALUES (10, 'pbkdf2_sha256$1200000$jp60Dr1nt6eO4OfAqfD5Qv$yGPq7Od8NvPd5UZXv/PytTyviaCqWLBGPZFgB5vR06E=', NULL, 0, 0, 1, '2026-06-03 14:54:47.046829', 'bh08@qq.com', 'bh08', '新的个人介绍0817', 'avatars/admin_cropped_avatar_OkYvoNL.webp');
+INSERT INTO `accounts_user` VALUES (10, 'pbkdf2_sha256$1200000$jp60Dr1nt6eO4OfAqfD5Qv$yGPq7Od8NvPd5UZXv/PytTyviaCqWLBGPZFgB5vR06E=', NULL, 0, 0, 1, '2026-06-03 14:54:47.046829', 'bh08@qq.com', 'bh08', '新的个人介绍0817', 'avatars/upload_avatar_hmPz9pO.webp');
 INSERT INTO `accounts_user` VALUES (11, 'pbkdf2_sha256$1200000$HnHuO67UPNA3KGzqrdciHY$BEGRtyOatdrHIGDWKfQyC8zc2gE9HkTmxTtSBUUMtAM=', NULL, 0, 0, 1, '2026-06-05 09:55:05.648601', 'user1@example.com', '魔方小白', '魔方爱好者，欢迎交流！', 'avatars/avatar_11_50d05158_tAG2QVH.svg');
 INSERT INTO `accounts_user` VALUES (12, 'pbkdf2_sha256$1200000$K4RZs6x8mUSPOBiwKYSfpG$m1sUeywn5sSlmRjpG9NYv9v/CLItOlun+BLJpCPab9M=', NULL, 0, 0, 1, '2026-06-05 09:55:07.421317', 'user2@example.com', '速拧大神', '魔方爱好者，欢迎交流！', 'avatars/avatar_12_23b2b646_RidBlom.svg');
 INSERT INTO `accounts_user` VALUES (13, 'pbkdf2_sha256$1200000$NUI8BH6NjcYEnrSe8l5O4V$PR0PnTdasbMdgc3gewGRKWuk6CRdEaEkyoXrzhpLxSc=', NULL, 0, 0, 1, '2026-06-05 09:55:09.104099', 'user3@example.com', '公式收藏家', '魔方爱好者，欢迎交流！', 'avatars/avatar_13_61701999_4yQ9tw8.svg');
@@ -525,10 +525,10 @@ INSERT INTO `formula_formula` VALUES (241, 'F2L-03', 'R U R\'', 'R U\' R\'', NUL
 INSERT INTO `formula_formula` VALUES (242, 'F2L-04', 'y L\' U\' L', 'L\' U L y\'', NULL, 'formulas/F2L_Images/F2L_004.png', 1, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.537867', 4, NULL, 1, 1);
 INSERT INTO `formula_formula` VALUES (243, 'F2L-05', 'U\' R U R\' U R U R\'', 'R U\' R\' U\' R U\' R\' U', NULL, 'formulas/F2L_Images/F2L_005.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.560667', 4, NULL, 1, 0);
 INSERT INTO `formula_formula` VALUES (244, 'F2L-06', 'U\' R U\' R\' U y\' R\' U\' R', 'R\' U R y U\' R U R\' U', NULL, 'formulas/F2L_Images/F2L_006.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.590151', 4, NULL, 1, 0);
-INSERT INTO `formula_formula` VALUES (245, 'F2L-07', 'd R\' U\' R U\'2 R\' U R', 'R\' U\' R U\'2 R\' U R d\'', NULL, 'formulas/F2L_Images/F2L_007.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.615940', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (245, 'F2L-07', 'd R\' U\' R U\'2 R\' U R', 'R\' U\' R U\'2 R\' U R d\'', NULL, 'formulas/F2L_Images/F2L_007.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.615940', 4, NULL, 1, 2);
 INSERT INTO `formula_formula` VALUES (246, 'F2L-08', 'U\' R U R\' U2 R U\' R\'', 'R U R\' U2 R U\' R\' U', NULL, 'formulas/F2L_Images/F2L_008.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.639613', 4, NULL, 1, 0);
 INSERT INTO `formula_formula` VALUES (247, 'F2L-09', 'd R\' U\'2 R U\'2 R\' U R', 'R\' U\' R U\'2 R\' U\'2 R d\'', NULL, 'formulas/F2L_Images/F2L_009.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.663288', 4, NULL, 1, 0);
-INSERT INTO `formula_formula` VALUES (248, 'F2L-10', 'U\' R U2 R\' U2 R U\' R\'', 'R U R\' U2 R U2 R\' U', NULL, 'formulas/F2L_Images/F2L_010.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.687714', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (248, 'F2L-10', 'U\' R U2 R\' U2 R U\' R\'', 'R U R\' U2 R U2 R\' U', NULL, 'formulas/F2L_Images/F2L_010.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.687714', 4, NULL, 1, 1);
 INSERT INTO `formula_formula` VALUES (249, 'F2L-11', 'd\' L\' U2 L U\' L\' U L', 'L\' U\' L U L\' U2 L d', NULL, 'formulas/F2L_Images/F2L_011.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.712758', 4, NULL, 1, 0);
 INSERT INTO `formula_formula` VALUES (250, 'F2L-12', 'U R U\'2 R\' U R U\' R\'', 'R U R\' U\' R U\'2 R\' U\'', NULL, 'formulas/F2L_Images/F2L_012.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.739282', 4, NULL, 1, 0);
 INSERT INTO `formula_formula` VALUES (251, 'F2L-13', 'U\'2 R U R\' U R U\' R\'', 'R U R\' U\' R U\' R\' U\'2', NULL, 'formulas/F2L_Images/F2L_013.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:00.764307', 4, NULL, 1, 0);
@@ -551,7 +551,7 @@ INSERT INTO `formula_formula` VALUES (267, 'F2L-29', 'R U\' M\' U\' r\' U\'2 r U
 INSERT INTO `formula_formula` VALUES (268, 'F2L-30', 'r U\' r\' U\'2 r U M U R\'', 'R U\' M\' U\' r\' U\'2 r U r\'', NULL, 'formulas/F2L_Images/F2L_030.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.179353', 4, NULL, 1, 0);
 INSERT INTO `formula_formula` VALUES (269, 'F2L-31', 'L D R\' F R F\' R U\' R\' U D\' L\'', 'L D U\' R U R\' F R\' F\' R D\' L\'', NULL, 'formulas/F2L_Images/F2L_031.png', 3, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.204262', 4, NULL, 1, 0);
 INSERT INTO `formula_formula` VALUES (270, 'F2L-32', 'y\' R\' U R U R\' U R U\' R\' U\' R', 'R\' U R U R\' U\' R U\' R\' U\' R y', NULL, 'formulas/F2L_Images/F2L_032.png', 3, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.227837', 4, NULL, 1, 0);
-INSERT INTO `formula_formula` VALUES (271, 'F2L-33', 'R U\' R\' U\' R U\' R\' U R U R\'', 'R U\' R\' U\' R U R\' U R U R\'', NULL, 'formulas/F2L_Images/F2L_033.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.252616', 4, NULL, 1, 0);
+INSERT INTO `formula_formula` VALUES (271, 'F2L-33', 'R U\' R\' U\' R U\' R\' U R U R\'', 'R U\' R\' U\' R U R\' U R U R\'', NULL, 'formulas/F2L_Images/F2L_033.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.252616', 4, NULL, 1, 2);
 INSERT INTO `formula_formula` VALUES (272, 'F2L-34', 'y\' R\' U\'2 R U R\' U\' R', 'R\' U R U\' R\' U\'2 R y', NULL, 'formulas/F2L_Images/F2L_034.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.278801', 4, NULL, 1, 0);
 INSERT INTO `formula_formula` VALUES (273, 'F2L-35', 'R U R\' U\'2 R U R\' U\' R U R\'', 'R U\' R\' U R U\' R\' U\'2 R U\' R\'', NULL, 'formulas/F2L_Images/F2L_035.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.302506', 4, NULL, 1, 0);
 INSERT INTO `formula_formula` VALUES (274, 'F2L-36', 'R U2 R\' U\' R U R\'', 'R U\' R\' U R U2 R\'', NULL, 'formulas/F2L_Images/F2L_036.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.327577', 4, NULL, 1, 0);
@@ -560,7 +560,7 @@ INSERT INTO `formula_formula` VALUES (276, 'F2L-38', 'y L\' U L U\' L\' U L', 'L
 INSERT INTO `formula_formula` VALUES (277, 'F2L-39', 'R U R\' U\' R U R\'', 'R U\' R\' U R U\' R\'', NULL, 'formulas/F2L_Images/F2L_039.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.398335', 4, NULL, 1, 0);
 INSERT INTO `formula_formula` VALUES (278, 'F2L-40', 'R U\' R\' U R U\' R\'', 'R U R\' U\' R U R\'', NULL, 'formulas/F2L_Images/F2L_040.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.422076', 4, NULL, 1, 0);
 INSERT INTO `formula_formula` VALUES (279, 'F2L-41', 'y L\' U\' L U L\' U\' L', 'L\' U L U\' L\' U L y\'', NULL, 'formulas/F2L_Images/F2L_041.png', 2, 'F2L基础公式，用于构建前两层槽位', 0, '2026-07-07 11:16:01.445118', 4, NULL, 1, 0);
-INSERT INTO `formula_formula` VALUES (280, 'OLL-01', 'R\' U2 R U R\' U R', 'R\' U\' R U\' R\' U2 R', NULL, 'formulas/OLL_Images/OLL_001.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.471855', 5, NULL, 2, 0);
+INSERT INTO `formula_formula` VALUES (280, 'OLL-01', 'R\' U2 R U R\' U R', 'R\' U\' R U\' R\' U2 R', NULL, 'formulas/OLL_Images/OLL_001.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.471855', 5, NULL, 2, 3);
 INSERT INTO `formula_formula` VALUES (281, 'OLL-02', 'R U\' U\' R\' U\' R U\' R\'', 'R U R\' U R U U R\'', NULL, 'formulas/OLL_Images/OLL_002.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.495499', 5, NULL, 2, 0);
 INSERT INTO `formula_formula` VALUES (282, 'OLL-03', 'r U R\' U\' r\' F R F\'', 'F R\' F\' r U R U\' r\'', NULL, 'formulas/OLL_Images/OLL_003.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.519951', 5, NULL, 2, 1);
 INSERT INTO `formula_formula` VALUES (283, 'OLL-04', 'F\' r U R\' U\' r\' F R', 'R\' F\' r U R U\' r\' F', NULL, 'formulas/OLL_Images/OLL_004.png', 2, 'OLL公式，用于调整顶层朝向', 0, '2026-07-07 11:16:01.544489', 5, NULL, 2, 0);
@@ -638,8 +638,13 @@ INSERT INTO `formula_formula` VALUES (354, 'PLL-18', 'R2\' u\' R U\' R U R\' u R
 INSERT INTO `formula_formula` VALUES (355, 'PLL-19', 'R U R\' y\' R2\' u\' R U\' R\' U R\' u R2', 'R2 u\' R U\' R U R\' u R2\' y R U\' R\'', NULL, 'formulas/PLL_Images/PLL_019.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.511134', 6, NULL, 3, 0);
 INSERT INTO `formula_formula` VALUES (356, 'PLL-20', 'R2\' u R\' U R\' U\' R u\' R2\' y\' R\' U R', 'R\' U\' R y R2\' u R\' U R U\' R u\' R2\'', NULL, 'formulas/PLL_Images/PLL_020.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.537408', 6, NULL, 3, 0);
 INSERT INTO `formula_formula` VALUES (357, 'PLL-21', 'R\' d\' F R2\' u R\' U R U\' R u\' R2', 'R2 u R\' U R\' U\' R u\' R2\' F\' d R', NULL, 'formulas/PLL_Images/PLL_021.png', 3, 'PLL公式，用于调整顶层位置', 0, '2026-07-07 11:16:03.561603', 6, NULL, 3, 0);
-INSERT INTO `formula_formula` VALUES (360, 'F2L-31-BR', 'R\' U R\' F R F\' U R U2 R\' U R', 'R\' U\' R U2 R\' U\' F R\' F\' R U\' R', NULL, 'formula_thumbnails/F2L-31-BR_cropped_thumbnail_BdeDWNJ.webp', 4, '', 1, '2026-07-28 10:07:26.658056', 7, 10, 1, 11);
-INSERT INTO `formula_formula` VALUES (361, 'f2l-test', 'U\' r U\' R\' U R U r\'', 'r U\' R\' U\' R U r\' U', NULL, 'formula_thumbnails/upload_thumbnail.webp', 2, 'test', 1, '2026-08-17 10:57:48.808354', 4, 17, 1, 2);
+INSERT INTO `formula_formula` VALUES (360, 'F2L-31-BR', 'R\' U R\' F R F\' U R U2 R\' U R', 'R\' U\' R U2 R\' U\' F R\' F\' R U\' R', NULL, 'formula_thumbnails/upload_thumbnail_TQWFffl.webp', 3, '', 1, '2026-07-28 10:07:26.658056', 7, 10, 1, 17);
+INSERT INTO `formula_formula` VALUES (361, 'f2l-test', 'U\' r U\' R\' U R U r\'', 'r U\' R\' U\' R U r\' U', NULL, 'formula_thumbnails/upload_thumbnail.webp', 2, 'test', 1, '2026-08-17 10:57:48.808354', 4, 17, 1, 4);
+INSERT INTO `formula_formula` VALUES (362, 'f2l-test2', 'U r U\' r\' U\' L U F L\'', 'L F\' U\' L\' U r U r\' U\'', NULL, 'formula_thumbnails/upload_thumbnail_8JIHTQR.webp', 2, '', 1, '2026-08-17 14:26:12.807472', 4, 17, 1, 1);
+INSERT INTO `formula_formula` VALUES (363, 'F2L-33-FL', 'r U r\' U\' r\' F r F\'', 'F r\' F\' r U r U\' r\'', NULL, 'formula_thumbnails/upload_thumbnail_oRs5grb.webp', 2, '', 1, '2026-08-18 07:27:32.226169', 7, 10, 1, 11);
+INSERT INTO `formula_formula` VALUES (364, 'F2L-07-FR', 'U\'  r U\' R\' U R U r\'', 'r U\' R\' U\' R U r\' U', NULL, 'formula_thumbnails/upload_thumbnail_wq0n08e.webp', 2, '', 1, '2026-08-18 07:35:28.956940', 7, 10, 1, 11);
+INSERT INTO `formula_formula` VALUES (365, 'F2L-14-FR', 'r U\' r\' U2 r U r\'', 'r U\' r\' U2 r U r\'', NULL, 'formula_thumbnails/upload_thumbnail_ohBkJ2v.webp', 2, '', 1, '2026-08-18 07:47:32.763781', 7, 10, 1, 3);
+INSERT INTO `formula_formula` VALUES (366, 'F2L-10-BR', 'R2 F\' U\' F U R2', 'R2 U\' F\' U F R2', NULL, 'formulas/F2L_Images/F2L_010.png', 2, '', 1, '2026-08-18 08:37:07.914460', 4, 10, 1, 9);
 
 -- ----------------------------
 -- Table structure for formula_formula_collection
@@ -661,16 +666,11 @@ CREATE TABLE `formula_formula_collection`  (
 -- Records of formula_formula_collection
 -- ----------------------------
 INSERT INTO `formula_formula_collection` VALUES (1, '2026-07-08 13:56:42.438514', 239, 1);
-INSERT INTO `formula_formula_collection` VALUES (3, '2026-07-19 19:19:44.505921', 337, 10);
-INSERT INTO `formula_formula_collection` VALUES (4, '2026-07-19 19:19:45.873494', 338, 10);
-INSERT INTO `formula_formula_collection` VALUES (5, '2026-07-19 19:19:47.114288', 339, 10);
-INSERT INTO `formula_formula_collection` VALUES (6, '2026-07-19 19:19:47.914235', 340, 10);
-INSERT INTO `formula_formula_collection` VALUES (7, '2026-07-19 19:19:50.986141', 280, 10);
-INSERT INTO `formula_formula_collection` VALUES (8, '2026-07-19 19:19:51.870941', 281, 10);
-INSERT INTO `formula_formula_collection` VALUES (9, '2026-07-19 19:19:52.917981', 283, 10);
-INSERT INTO `formula_formula_collection` VALUES (10, '2026-07-19 19:19:53.676831', 282, 10);
 INSERT INTO `formula_formula_collection` VALUES (11, '2026-07-24 14:22:46.224749', 297, 1);
 INSERT INTO `formula_formula_collection` VALUES (12, '2026-08-17 08:26:31.622927', 360, 10);
+INSERT INTO `formula_formula_collection` VALUES (15, '2026-08-18 07:31:39.855433', 363, 10);
+INSERT INTO `formula_formula_collection` VALUES (16, '2026-08-18 07:44:15.241766', 364, 10);
+INSERT INTO `formula_formula_collection` VALUES (17, '2026-08-18 07:48:57.597638', 365, 10);
 
 -- ----------------------------
 -- Table structure for formula_formula_tag
@@ -1019,10 +1019,10 @@ CREATE TABLE `forum_comment_like`  (
 -- ----------------------------
 INSERT INTO `forum_comment_like` VALUES (36, 1, '2026-06-10 14:50:32.478033', 2, 10);
 INSERT INTO `forum_comment_like` VALUES (38, 1, '2026-06-10 15:48:20.216659', 7, 10);
-INSERT INTO `forum_comment_like` VALUES (39, 1, '2026-06-10 15:51:02.905028', 4, 10);
 INSERT INTO `forum_comment_like` VALUES (40, 1, '2026-06-10 15:51:13.022254', 14, 10);
 INSERT INTO `forum_comment_like` VALUES (41, 1, '2026-06-10 15:51:22.942431', 15, 10);
 INSERT INTO `forum_comment_like` VALUES (42, 0, '2026-07-19 15:31:36.696956', 9, 10);
+INSERT INTO `forum_comment_like` VALUES (43, 1, '2026-08-18 08:19:42.933607', 4, 10);
 
 -- ----------------------------
 -- Table structure for forum_post
@@ -1057,10 +1057,10 @@ CREATE TABLE `forum_post`  (
 -- ----------------------------
 -- Records of forum_post
 -- ----------------------------
-INSERT INTO `forum_post` VALUES (1, '【新手必看】三阶魔方零基础入门教程', '# 三阶魔方零基础入门教程\n\n## 前言\n魔方并不难，只要掌握了方法，任何人都可以学会还原三阶魔方。\n\n## 第一步：底层十字\n在底面拼出一个白色十字，且棱块侧面颜色与中心块对齐。\n\n## 第二步：底层角块\n完成白色面，同时底层四周颜色对齐。\n\n## 第三步：中层棱块\n还原第二层（中间层）的四个棱块。\n\n## 第四步：顶层十字\n在顶层拼出黄色十字。\n\n## 第五步：顶层面位\n将顶层全部变成黄色。\n\n## 第六步：顶层角块归位\n调整顶层角块位置。\n\n## 第七步：顶层棱块归位\n最后一步，完成整个魔方！\n\n祝大家早日学会魔方！🎉', '', 2, 1, 1, 0, 1, 1, 0, 'published', 0, '2026-06-05 09:55:10.802878', '2026-06-05 09:55:10.802918', 11);
+INSERT INTO `forum_post` VALUES (1, '【新手必看】三阶魔方零基础入门教程', '# 三阶魔方零基础入门教程\n\n## 前言\n魔方并不难，只要掌握了方法，任何人都可以学会还原三阶魔方。\n\n## 第一步：底层十字\n在底面拼出一个白色十字，且棱块侧面颜色与中心块对齐。\n\n## 第二步：底层角块\n完成白色面，同时底层四周颜色对齐。\n\n## 第三步：中层棱块\n还原第二层（中间层）的四个棱块。\n\n## 第四步：顶层十字\n在顶层拼出黄色十字。\n\n## 第五步：顶层面位\n将顶层全部变成黄色。\n\n## 第六步：顶层角块归位\n调整顶层角块位置。\n\n## 第七步：顶层棱块归位\n最后一步，完成整个魔方！\n\n祝大家早日学会魔方！🎉', '', 4, 1, 1, 0, 1, 1, 0, 'published', 0, '2026-06-05 09:55:10.802878', '2026-06-05 09:55:10.802918', 11);
 INSERT INTO `forum_post` VALUES (2, 'CFOP速拧教程 - F2L理解法', '# CFOP进阶教程：F2L理解法\n\n## 什么是F2L？\nF2L（First Two Layers）是CFOP速拧法的第二步，指同时还原前两层。\n\n## 核心思想\nF2L的本质是把一对\"角块+棱块\"组合起来放入正确的位置。\n\n## 常用F2L公式\n\n| 情况 | 公式 |\n|------|------|\n| 角棱相连 | `U R U\' R\'` |\n| 角棱分离 | `R U R\'` |\n| 角棱背面 | `R U2 R\' U R U R\'` |\n\n## 练习技巧\n1. 慢速练习，理解原理\n2. 找规律，观察相对位置\n3. 预判下一组\n\nF2L熟练后，成绩可轻松进入30秒！💪', '', 50, 2, 10, 1, 0, 1, 0, 'published', 0, '2026-06-05 09:55:10.823840', '2026-06-05 09:55:10.823875', 11);
-INSERT INTO `forum_post` VALUES (3, '魔方公式记忆技巧分享', '# 魔方公式记忆技巧\n\n## 肌肉记忆法\n不要死记硬背公式字母，而是通过反复练习形成肌肉记忆。\n\n## 分段记忆\n将长公式分成几个小段，逐段练习后连接。\n\n## 镜像对称\n很多公式是左右对称的，记住一个就能推导出另一个。\n\n## 故事联想\n为公式中的转动编一个故事，帮助记忆。\n\n## 每天10分钟\n坚持每天练习，比一次性练很久效果更好。\n\n大家有什么好的记忆方法？欢迎分享！', '', 15, 1, 3, 1, 0, 0, 0, 'published', 0, '2026-06-05 09:55:10.841141', '2026-06-05 09:55:10.841164', 11);
-INSERT INTO `forum_post` VALUES (4, '三阶魔方CFOP教程新标题', '这是教程内容，使用Markdown格式\r\n![bh01](http://127.0.0.1:8000/media/forum/posts/2026/07/bh01.png)', '', 30, 2, 1, 0, 0, 0, 0, 'published', 0, '2026-06-05 09:56:27.071163', '2026-07-19 15:29:33.899742', 10);
+INSERT INTO `forum_post` VALUES (3, '魔方公式记忆技巧分享', '# 魔方公式记忆技巧\n\n## 肌肉记忆法\n不要死记硬背公式字母，而是通过反复练习形成肌肉记忆。\n\n## 分段记忆\n将长公式分成几个小段，逐段练习后连接。\n\n## 镜像对称\n很多公式是左右对称的，记住一个就能推导出另一个。\n\n## 故事联想\n为公式中的转动编一个故事，帮助记忆。\n\n## 每天10分钟\n坚持每天练习，比一次性练很久效果更好。\n\n大家有什么好的记忆方法？欢迎分享！', '', 17, 1, 3, 1, 0, 0, 0, 'published', 0, '2026-06-05 09:55:10.841141', '2026-06-05 09:55:10.841164', 11);
+INSERT INTO `forum_post` VALUES (4, '三阶魔方CFOP教程新标题', '这是教程内容，使用Markdown格式\r\n![bh01_cropped](/media/forum/posts/2026/08/bh01_cropped_compressed.webp)', '', 40, 2, 1, 0, 0, 0, 0, 'published', 0, '2026-06-05 09:56:27.071163', '2026-08-18 08:06:46.898068', 10);
 INSERT INTO `forum_post` VALUES (5, '发布新帖子', '# 魔方\r\n## 标题二\r\n### 标题三\r\n```\r\n公式如下\r\npython\r\n```', '', 28, 1, 0, 0, 0, 0, 0, 'published', 0, '2026-06-12 10:08:08.741039', '2026-06-12 10:52:53.080432', 10);
 INSERT INTO `forum_post` VALUES (6, '再发一篇新帖子（修改）', '# CFOP 速拧学习方法\r\n\r\n## 什么是 CFOP？\r\n\r\nCFOP 是目前最主流的魔方速拧解法，由四个步骤组成：\r\n\r\n1. **C（Cross）**——底面十字\r\n2. **F（F2L）**——前两层\r\n3. **O（OLL）**——顶面朝向\r\n4. **P（PLL）**——顶层排列\r\n\r\n## 学习顺序建议\r\n\r\n| 阶段 | 内容                                 | 目标时间 |\r\n| ---- | ------------------------------------ | -------- |\r\n| 入门 | C + 4个基本公式                      | 60秒     |\r\n| 进阶 | F2L理解法 + 7个十字OLL + 4个PLL      | 30秒     |\r\n| 熟练 | F2L 41种情况 + 全部OLL(57) + PLL(21) | 15秒内   |\r\n\r\n## 实用技巧\r\n\r\n- **C**：八步内完成十字，学会盲拧预判\r\n- **F2L**：先理解“藏角藏棱”原理，不建议死记公式\r\n- **OLL**：先学十字后的7条，其他慢慢补充\r\n- **PLL**：优先学三棱换、三角换、邻角对棱换等高频公式\r\n\r\n## 资源推荐\r\n\r\n- 网站：`algdb.net` 公式库\r\n- 视频：J Perm 教学频道\r\n- App：Cube Station 计时练习\r\n\r\n> 每天练习20分钟，两个月基本可以进30秒。公式不是越多越好，**指法流畅**比记全更重要。', '', 4, 0, 0, 0, 0, 0, 0, 'deleted', 0, '2026-06-12 10:25:11.426914', '2026-06-12 10:47:10.140862', 10);
 INSERT INTO `forum_post` VALUES (7, '返回格式测试', '这是教程内容，使用Markdown格式...', '', 1, 0, 0, 0, 0, 0, 0, 'deleted', 0, '2026-06-12 10:28:11.697133', '2026-06-12 10:28:11.697157', 10);
@@ -1091,8 +1091,8 @@ CREATE TABLE `forum_post_collect`  (
 -- Records of forum_post_collect
 -- ----------------------------
 INSERT INTO `forum_post_collect` VALUES (6, '2026-06-07 10:37:12.153830', 2, 10);
-INSERT INTO `forum_post_collect` VALUES (8, '2026-06-21 10:59:24.454375', 3, 10);
 INSERT INTO `forum_post_collect` VALUES (10, '2026-07-25 14:46:08.519848', 13, 10);
+INSERT INTO `forum_post_collect` VALUES (11, '2026-08-18 08:18:15.589309', 3, 10);
 
 -- ----------------------------
 -- Table structure for forum_post_image
@@ -1113,7 +1113,6 @@ CREATE TABLE `forum_post_image`  (
 -- ----------------------------
 -- Records of forum_post_image
 -- ----------------------------
-INSERT INTO `forum_post_image` VALUES (1, 'forum/posts/2026/07/bh01.png', 'bh01_png', 0, '2026-07-19 15:26:43.578009', 4);
 INSERT INTO `forum_post_image` VALUES (2, 'formulas/F2L_Images/F2L_007.png', '公式缩略图', 0, '2026-07-25 10:20:30.594850', 10);
 INSERT INTO `forum_post_image` VALUES (3, 'forum/posts/2026/07/admin.png', 'admin_png', 0, '2026-07-25 10:54:42.501816', 11);
 INSERT INTO `forum_post_image` VALUES (4, 'forum/posts/2026/07/bh01_m3QZaCZ.png', 'bh01_png', 0, '2026-07-25 10:55:47.760011', 11);
@@ -1129,6 +1128,8 @@ INSERT INTO `forum_post_image` VALUES (14, 'formulas/F2L_Images/F2L_005.png', '�
 INSERT INTO `forum_post_image` VALUES (15, 'formulas/F2L_Images/F2L_010.png', '图片', 3, '2026-07-25 12:07:44.972344', 11);
 INSERT INTO `forum_post_image` VALUES (16, 'forum/posts/2026/07/admin_cropped_compressed.webp', 'admin_cropped_webp', 0, '2026-07-25 15:01:14.517408', NULL);
 INSERT INTO `forum_post_image` VALUES (17, 'forum/posts/2026/07/admin_cropped_compressed.webp', '图片', 3, '2026-07-25 15:01:42.061366', 13);
+INSERT INTO `forum_post_image` VALUES (18, 'forum/posts/2026/08/bh01_cropped_compressed.webp', 'bh01_cropped_webp', 0, '2026-08-18 08:06:31.335942', NULL);
+INSERT INTO `forum_post_image` VALUES (19, 'forum/posts/2026/08/bh01_cropped_compressed.webp', '图片', 1, '2026-08-18 08:06:46.907381', 4);
 
 -- ----------------------------
 -- Table structure for forum_post_like
@@ -1150,12 +1151,12 @@ CREATE TABLE `forum_post_like`  (
 -- Records of forum_post_like
 -- ----------------------------
 INSERT INTO `forum_post_like` VALUES (8, '2026-06-12 08:17:06.543084', 2, 10);
-INSERT INTO `forum_post_like` VALUES (9, '2026-06-21 10:59:23.514748', 3, 10);
-INSERT INTO `forum_post_like` VALUES (10, '2026-07-19 15:31:22.531791', 4, 10);
 INSERT INTO `forum_post_like` VALUES (11, '2026-07-19 23:28:46.715352', 2, 1);
 INSERT INTO `forum_post_like` VALUES (12, '2026-07-19 23:28:52.110702', 5, 1);
 INSERT INTO `forum_post_like` VALUES (13, '2026-07-19 23:28:56.340475', 4, 1);
 INSERT INTO `forum_post_like` VALUES (14, '2026-07-20 00:17:43.252321', 1, 1);
+INSERT INTO `forum_post_like` VALUES (16, '2026-08-18 08:16:28.456612', 4, 10);
+INSERT INTO `forum_post_like` VALUES (18, '2026-08-18 08:19:40.669577', 3, 10);
 
 -- ----------------------------
 -- Table structure for forum_post_tags
@@ -1499,11 +1500,11 @@ CREATE TABLE `timer_record`  (
 -- ----------------------------
 -- Records of timer_record
 -- ----------------------------
-INSERT INTO `timer_record` VALUES (1, '3x3', 'layer', 6781, 'U\' L\' U2 R2 L2 F U\' D2 B\' U2 R\' U2 D\' F\' U\' R U2 D\' U\' D R', '2026-07-19 19:16:21.537969', 10);
 INSERT INTO `timer_record` VALUES (3, '3x3', 'cfop', 19541, 'U\' F2 L2 D B\' U\' B R\' B D\' L D2 L\' B2 L\' U\' F\' R\' F\' D2 R\'', '2026-07-19 20:04:39.390944', 1);
-INSERT INTO `timer_record` VALUES (4, '3x3', 'cfop', 2567, 'B D\' F\' D\' F\' L F R\' L2 R2 U\' F B\' L D\' U\' R L\' R\' B U', '2026-08-16 18:03:25.928821', 10);
-INSERT INTO `timer_record` VALUES (5, '3x3', 'cfop', 9778, 'L D\' B\' D\' B\' U2 D F\' U B F B2 F D B L2 U B2 F R\' D\'', '2026-08-17 08:09:35.412168', 10);
 INSERT INTO `timer_record` VALUES (6, '3x3', 'cfop', 931, 'B U2 B U D B L F U2 L\' B R\' U D\' B R\' B2 D\' L\' B\' D\'', '2026-08-17 11:15:03.411426', 17);
 INSERT INTO `timer_record` VALUES (7, '3x3', 'cfop', 1819, 'F L\' D\' U2 L U\' B2 F\' R2 D2 R F L\' R\' U L2 B2 U B L2 U\'', '2026-08-17 11:15:08.862753', 17);
+INSERT INTO `timer_record` VALUES (8, '3x3', 'cfop', 3553, 'D2 R L R\' B2 R2 U\' B\' D2 U\' B\' F B R\' B\' D F2 B D2 U B', '2026-08-17 12:03:42.388427', 17);
+INSERT INTO `timer_record` VALUES (17, '3x3', 'cfop', 21527, 'U\' D\' L\' F2 D\' L D R D\' R U\' R2 B\' D F\' B\' F R\' D2 B U2', '2026-08-18 07:27:09.026084', 10);
+INSERT INTO `timer_record` VALUES (18, '3x3', 'cfop', 29056, 'L\' U\' R\' U\' B2 U\' L U\' B\' D2 F2 B\' D\' B2 R\' B\' L F L\' R D\'', '2026-08-18 07:53:46.274048', 10);
 
 SET FOREIGN_KEY_CHECKS = 1;
