@@ -279,3 +279,71 @@ JWT Token 黑名单管理（无状态 JWT + 黑名单注销机制）。
 | enable_users   | `queryset.update(is_active=True)` 批量解冻                   |
 
 > 注：批量 `update()` 不触发 `save()` 与信号，适合纯状态切换；密码修改走 Django 内置 change_password 链接。
+
+
+
+
+
+
+
+### 7.11 异步任务
+
+#### 如果要在 `accounts` 中加入异步，应该怎么改？（代码示例）
+
+虽然核心认证流程必须同步，但 `accounts` 模块中依然存在**非核心、耗时、允许延迟**的场景（例如：**用户修改资料上传头像后，异步生成缩略图/加水印**）。
+
+如果我们引入 Celery，代码层面通常会这样改造：
+
+##### 1. 定义异步任务 (`accounts/tasks.py`)
+
+Python
+
+```
+# accounts/tasks.py
+from celery import shared_task
+from .models import User
+from utils.image_processor import process_avatar_image # 假设这是你的图片处理工具
+
+@shared_task
+def async_process_user_avatar(user_id: int, image_path: str):
+    """
+    异步处理用户头像：缩放、裁剪、生成多尺寸
+    """
+    try:
+        user = User.objects.get(id=user_id)
+        # 执行耗时的图像处理与存储
+        processed_url = process_avatar_image(image_path)
+        
+        # 更新用户头像路径
+        user.image = processed_url
+        user.save(update_fields=['image'])
+    except User.DoesNotExist:
+        pass
+```
+
+##### 2. 在视图或序列化器中触发异步任务 (`accounts/serializers.py` 或 `views.py`)
+
+当用户上传头像并保存资料时，不直接在请求线程里处理图片，而是**把任务丢给消息队列，立刻响应前端**：
+
+Python
+
+```
+# accounts/serializers.py 中的部分逻辑
+class UserUpdateSerializer(serializers.ModelSerializer):
+    def update(self, instance, validated_data):
+        image = validated_data.get('image')
+        if image:
+            # 1. 先保存原始文件到临时目录
+            temp_path = save_temp_file(image)
+            
+            # 2. 触发 Celery 异步任务（主线程直接返回，不卡顿）
+            async_process_user_avatar.delay(instance.id, temp_path)
+            
+        # 更新其他基础字段（如 bio, username）
+        return super().update(instance, validated_data)
+```
+
+#### 总结
+
+- **现状**：你的 `accounts` 模块没有用到异步任务，所有逻辑均同步执行，这是因为认证与社交状态强依赖即时响应。
+- **扩展点**：未来如果需要加入**注册成功发送欢迎邮件、第三方登录绑定、或者大文件头像裁剪**，可以通过 `.delay()` 接入 Celery 异步任务。
