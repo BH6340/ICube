@@ -70,7 +70,6 @@ onBeforeUnmount(() => setLayoutMounted(false))
 .route-content {
   min-height: inherit;
   opacity: 1;
-  transform: translateY(0);
   transition: opacity 0.2s ease, transform 0.2s ease, filter 0.2s ease;
 }
 

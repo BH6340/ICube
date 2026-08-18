@@ -126,7 +126,7 @@
       </el-col>
     </el-row>
 
-    <el-dialog v-model="showDetailDialog" :title="selectedFormula?.name" width="900px">
+    <el-dialog v-model="showDetailDialog" :title="selectedFormula?.name" width="900px" append-to-body>
       <div v-if="selectedFormula" class="formula-detail">
         <el-row :gutter="20">
           <el-col :xs="24" :sm="8">
