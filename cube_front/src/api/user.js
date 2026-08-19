@@ -46,6 +46,62 @@ export function registerApi(data) {
 }
 
 /**
+ * 发送邮箱验证码
+ *
+ * @param {Object} data - { email, action: 'register'|'login'|'reset' }
+ * @returns {Promise<Object>} 响应数据
+ */
+export function sendCodeApi(data) {
+  return request({
+    url: '/api/users/send_code',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 验证码注册
+ *
+ * @param {Object} data - { email, code, password, username? }
+ * @returns {Promise<Object>} 响应数据，包含用户信息和 Token
+ */
+export function registerWithCodeApi(data) {
+  return request({
+    url: '/api/users/register_with_code',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 验证码登录
+ *
+ * @param {Object} data - { email, code }
+ * @returns {Promise<Object>} 响应数据，包含用户信息和 Token
+ */
+export function loginWithCodeApi(data) {
+  return request({
+    url: '/api/users/login_with_code',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 重置密码
+ *
+ * @param {Object} data - { email, code, new_password }
+ * @returns {Promise<Object>} 响应数据
+ */
+export function resetPasswordApi(data) {
+  return request({
+    url: '/api/users/reset_password',
+    method: 'post',
+    data
+  })
+}
+
+/**
  * 用户退出登录
  *
  * 清除服务端 Token（加入黑名单），前端需配合清除 localStorage。

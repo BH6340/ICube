@@ -26,6 +26,12 @@ const routes = [
     meta: { title: '注册', noTabbar: true },
   },
   {
+    path: '/forgot-password',
+    name: 'forgot-password',
+    component: () => import('@/views/ForgotPasswordView.vue'),
+    meta: { title: '找回密码', noTabbar: true },
+  },
+  {
     path: '/formula',
     name: 'Formula',
     component: () => import('@/views/FormulaView.vue'),

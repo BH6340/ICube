@@ -72,3 +72,21 @@ class LoginRateThrottle(SimpleRateThrottle):
             'scope': self.scope,
             'ident': f"{ident}_{email}"
         }
+
+
+class SendCodeRateThrottle(SimpleRateThrottle):
+    """
+    验证码发送限流类
+
+    同一 IP 每分钟最多发送 1 次验证码，防止滥用。
+    """
+    scope = 'send_code_scope'
+
+    def get_cache_key(self, request, view):
+        if view.action != 'send_code':
+            return None
+        ident = self.get_ident(request)
+        return self.cache_format % {
+            'scope': self.scope,
+            'ident': ident
+        }

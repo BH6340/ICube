@@ -347,6 +347,7 @@ else:
             'anon': '100/day',
             'user': '1000/day',
             'login_scope': '5/minute',  # LoginRateThrottle 每分钟最多尝试 5 次
+            'send_code_scope': '1/min',  # 验证码发送限流：同一IP每分钟1次
         },
         'DEFAULT_PAGINATION_CLASS': 'utils.common_pagination.UnifiedPagination',
         'PAGE_SIZE': 20,
@@ -362,6 +363,24 @@ if 'test' in sys.argv:
         from django.core.cache import cache
         return cache
     django_redis.get_redis_connection = mock_get_redis_connection
+
+# ==================== 邮件 SMTP 配置 ====================
+
+# 使用 QQ 邮箱 SMTP 服务发送验证码邮件
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.qq.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 465))
+EMAIL_USE_SSL = True
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# 测试环境使用内存后端，不实际发送邮件
+if 'test' in sys.argv:
+    EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+
+# 开发环境假邮箱后缀列表：匹配这些后缀的邮箱直接返回固定验证码 999999，不实际发送
+EMAIL_TEST_SUFFIXES = ['@test.com', '@example.com', '@fake.com']
 
 # ==================== 业务配置 ====================
 

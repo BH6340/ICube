@@ -14,7 +14,11 @@
     - 测试环境兼容：处理 Django 测试缓存代理层的特殊情况
 """
 import datetime
+import random
+import string
 
+from django.conf import settings
+from django.core.mail import send_mail
 from django_redis import get_redis_connection
 from loguru import logger
 
@@ -134,6 +138,144 @@ class JWTCacheService:
             )
             exc.args = ("Redis 黑名单查询失败",)
             raise
+
+
+class EmailCodeService:
+    """
+    邮箱验证码服务
+
+    负责验证码的生成、存储、发送和验证，支持注册、登录、重置密码三种场景。
+
+    Redis 键设计：
+        - email_code:{action}:{email}  — 验证码本身，TTL 5 分钟
+        - email_code:send_time:{action}:{email}  — 上次发送时间戳，TTL 60 秒（防重发）
+
+    测试模式：
+        - 假邮箱（后缀匹配 EMAIL_TEST_SUFFIXES）直接返回固定验证码 999999，不实际发送邮件
+        - 测试环境（'test' in sys.argv）所有邮箱均为假邮箱
+    """
+
+    CODE_PREFIX = 'email_code'
+    CODE_TTL = 300          # 验证码有效期 5 分钟
+    RESEND_INTERVAL = 60    # 重发间隔 60 秒
+    TEST_CODE = '999999'    # 测试模式固定验证码
+    CODE_LENGTH = 6         # 验证码位数
+
+    @staticmethod
+    def _get_con():
+        con = get_redis_connection("default")
+        if hasattr(con, 'client') and hasattr(con.client, 'get_client'):
+            return con.client.get_client()
+        return con
+
+    @classmethod
+    def _key(cls, action, email):
+        """验证码 Redis key"""
+        return f"{cls.CODE_PREFIX}:{action}:{email}"
+
+    @classmethod
+    def _send_time_key(cls, action, email):
+        """发送时间 Redis key"""
+        return f"{cls.CODE_PREFIX}:send_time:{action}:{email}"
+
+    @classmethod
+    def _is_test_email(cls, email):
+        """判断是否为假邮箱：测试环境全部为 True，开发环境匹配后缀列表"""
+        import sys
+        if 'test' in sys.argv:
+            return True
+        suffixes = getattr(settings, 'EMAIL_TEST_SUFFIXES', [])
+        email_lower = email.lower()
+        return any(email_lower.endswith(s.lower()) for s in suffixes)
+
+    @classmethod
+    def send_code(cls, action, email):
+        """
+        发送验证码
+
+        Args:
+            action: 场景（register / login / reset）
+            email: 邮箱地址
+
+        Returns:
+            tuple: (success: bool, msg: str)
+        """
+        con = cls._get_con()
+        send_time_key = cls._send_time_key(action, email)
+
+        # 检查重发间隔
+        if con.exists(send_time_key):
+            return False, "验证码已发送，请60秒后再试"
+
+        is_test = cls._is_test_email(email)
+
+        # 生成验证码
+        if is_test:
+            code = cls.TEST_CODE
+        else:
+            code = ''.join(random.choices(string.digits, k=cls.CODE_LENGTH))
+
+        # 存入 Redis
+        code_key = cls._key(action, email)
+        pipe = con.pipeline()
+        pipe.setex(code_key, cls.CODE_TTL, code)
+        pipe.setex(send_time_key, cls.RESEND_INTERVAL, int(datetime.datetime.now().timestamp()))
+        pipe.execute()
+
+        # 假邮箱不实际发送
+        if is_test:
+            logger.info("测试邮箱验证码: email={}, code={}", email, code)
+            return True, f"验证码已发送（测试模式：{cls.TEST_CODE}）"
+
+        # 真实发送邮件
+        subject_map = {
+            'register': 'ICube 注册验证码',
+            'login': 'ICube 登录验证码',
+            'reset': 'ICube 重置密码验证码',
+        }
+        subject = subject_map.get(action, 'ICube 验证码')
+        message = f"您的验证码是：{code}，5分钟内有效。如非本人操作请忽略此邮件。"
+
+        try:
+            send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [email])
+            logger.info("验证码邮件已发送: email={}, action={}", email, action)
+            return True, "验证码已发送"
+        except Exception as exc:
+            logger.error("验证码邮件发送失败: email={}, error={}", email, str(exc))
+            # 发送失败时清除 Redis 中的验证码和发送时间
+            con.delete(code_key, send_time_key)
+            return False, "验证码发送失败，请稍后重试"
+
+    @classmethod
+    def verify_code(cls, action, email, code):
+        """
+        验证码校验
+
+        Args:
+            action: 场景（register / login / reset）
+            email: 邮箱地址
+            code: 用户输入的验证码
+
+        Returns:
+            tuple: (valid: bool, msg: str)
+        """
+        con = cls._get_con()
+        code_key = cls._key(action, email)
+        stored_code = con.get(code_key)
+
+        if stored_code is None:
+            return False, "验证码已过期，请重新获取"
+
+        # Redis 返回 bytes，统一转为字符串比较
+        if isinstance(stored_code, bytes):
+            stored_code = stored_code.decode()
+
+        if stored_code != code:
+            return False, "验证码错误"
+
+        # 验证成功，删除验证码（一次性使用）
+        con.delete(code_key)
+        return True, "验证成功"
 
 
 class ProfileCacheService:

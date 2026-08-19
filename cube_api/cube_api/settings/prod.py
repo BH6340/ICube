@@ -93,3 +93,15 @@ X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 # collectstatic 输出目录，由 Nginx 通过共享卷提供静态资源
 STATIC_ROOT = os.path.join(BASE_DIR, 'collected_static')
+
+# ==================== 邮件 SMTP 配置 ====================
+
+# 生产环境通过环境变量覆盖邮件配置
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.qq.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 465))
+EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'True') == 'True'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
+# 生产环境不禁用任何邮箱后缀
+EMAIL_TEST_SUFFIXES = []

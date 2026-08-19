@@ -1,39 +1,34 @@
 <template>
   <div class="auth-container">
     <el-card class="auth-card">
-      <h2>注册 ICube 账号</h2>
-      <el-form :model="registerForm" :rules="rules" ref="registerRef" label-position="top">
-        <!-- 邮箱 -->
+      <h2>找回密码</h2>
+      <el-form :model="resetForm" :rules="rules" ref="resetRef" label-position="top">
         <el-form-item label="邮箱" prop="email">
-          <el-input v-model="registerForm.email" placeholder="请输入常用邮箱"/>
+          <el-input v-model="resetForm.email" placeholder="请输入注册邮箱"/>
         </el-form-item>
 
-        <!-- 验证码 -->
         <el-form-item label="验证码" prop="code">
           <div class="code-row">
-            <el-input v-model="registerForm.code" placeholder="请输入6位验证码" maxlength="6"/>
+            <el-input v-model="resetForm.code" placeholder="请输入6位验证码" maxlength="6"/>
             <el-button type="primary" plain :disabled="codeCountdown > 0" @click="handleSendCode">
               {{ codeCountdown > 0 ? `${codeCountdown}s` : '发送验证码' }}
             </el-button>
           </div>
         </el-form-item>
 
-        <!-- 密码 -->
-        <el-form-item label="密码" prop="password">
-          <el-input v-model="registerForm.password" type="password" show-password placeholder="设置密码"/>
+        <el-form-item label="新密码" prop="newPassword">
+          <el-input v-model="resetForm.newPassword" type="password" show-password placeholder="设置新密码"/>
         </el-form-item>
 
-        <!-- 确认密码 -->
         <el-form-item label="确认密码" prop="confirmPassword">
-          <el-input v-model="registerForm.confirmPassword" type="password" show-password placeholder="再次输入密码"/>
+          <el-input v-model="resetForm.confirmPassword" type="password" show-password placeholder="再次输入新密码"/>
         </el-form-item>
 
-        <el-button type="primary" class="full-width" @click="handleRegister(registerRef)">立即注册</el-button>
+        <el-button type="primary" class="full-width" @click="handleReset(resetRef)">重置密码</el-button>
 
         <div class="auth-footer">
-          <span>已有账号？</span>
           <el-link type="primary" :underline="false" style="font-size: 14px;" @click="$router.push('/login')">
-            去登录
+            返回登录
           </el-link>
         </div>
       </el-form>
@@ -43,21 +38,21 @@
 
 <script setup>
 import {ref, reactive, onBeforeUnmount} from 'vue'
+import {useRouter} from 'vue-router'
 import {ElMessage} from 'element-plus'
-import {registerWithCodeApi, sendCodeApi} from '@/api/user'
-import {useRouter} from "vue-router";
+import {sendCodeApi, resetPasswordApi} from '@/api/user'
 
 const router = useRouter()
-const registerRef = ref()
-const registerForm = reactive({
+const resetRef = ref()
+const resetForm = reactive({
   email: '',
   code: '',
-  password: '',
+  newPassword: '',
   confirmPassword: ''
 })
 
 const validatePass2 = (rule, value, callback) => {
-  if (value !== registerForm.password) {
+  if (value !== resetForm.newPassword) {
     callback(new Error('两次输入密码不一致!'))
   } else {
     callback()
@@ -70,8 +65,8 @@ const rules = {
     {type: 'email', message: '请输入正确的邮箱格式', trigger: ['blur', 'change']}
   ],
   code: [{required: true, message: '请输入验证码', trigger: 'blur'}],
-  password: [
-    {required: true, message: '请输入密码', trigger: 'blur'},
+  newPassword: [
+    {required: true, message: '请输入新密码', trigger: 'blur'},
     {min: 6, message: '密码长度不能少于 6 位', trigger: 'blur'}
   ],
   confirmPassword: [
@@ -80,7 +75,6 @@ const rules = {
   ]
 }
 
-// 验证码倒计时
 const codeCountdown = ref(0)
 let countdownTimer = null
 
@@ -100,12 +94,12 @@ onBeforeUnmount(() => {
 })
 
 const handleSendCode = async () => {
-  if (!registerForm.email) {
+  if (!resetForm.email) {
     ElMessage.warning('请先输入邮箱')
     return
   }
   try {
-    const res = await sendCodeApi({email: registerForm.email, action: 'register'})
+    const res = await sendCodeApi({email: resetForm.email, action: 'reset'})
     if (res.code === 100) {
       ElMessage.success(res.msg || '验证码已发送')
       startCountdown()
@@ -117,24 +111,24 @@ const handleSendCode = async () => {
   }
 }
 
-const handleRegister = async (formEl) => {
+const handleReset = async (formEl) => {
   if (!formEl) return
   await formEl.validate(async (valid) => {
     if (valid) {
       try {
-        const res = await registerWithCodeApi({
-          email: registerForm.email,
-          code: registerForm.code,
-          password: registerForm.password
+        const res = await resetPasswordApi({
+          email: resetForm.email,
+          code: resetForm.code,
+          new_password: resetForm.newPassword
         })
         if (res.code === 100) {
-          ElMessage.success('注册成功，请登录')
+          ElMessage.success('密码重置成功，请重新登录')
           await router.push('/login')
         } else {
-          ElMessage.error(res.msg || '注册失败')
+          ElMessage.error(res.msg || '重置失败')
         }
       } catch (err) {
-        console.error('注册失败', err)
+        console.error('重置密码失败', err)
       }
     }
   })

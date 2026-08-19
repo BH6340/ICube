@@ -25,11 +25,14 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
 
 from .models import User
-from .serializers import UserSerializer, ProfileSerializer, UserUpdateSerializer, ProfileListSerializer
+from .serializers import (
+    UserSerializer, ProfileSerializer, UserUpdateSerializer, ProfileListSerializer,
+    SendCodeSerializer, RegisterWithCodeSerializer, LoginWithCodeSerializer, ResetPasswordSerializer,
+)
 from utils.common_response import APIResponse
 from utils.common_pagination import UnifiedPagination
-from .services import ProfileCacheService, JWTCacheService
-from .throttles import LoginRateThrottle
+from .services import ProfileCacheService, JWTCacheService, EmailCodeService
+from .throttles import LoginRateThrottle, SendCodeRateThrottle
 
 
 class AuthViewSet(viewsets.GenericViewSet):
@@ -51,7 +54,7 @@ class AuthViewSet(viewsets.GenericViewSet):
         """
         动态添加限流
 
-        仅对登录操作添加 LoginRateThrottle，防止暴力破解。
+        login 动作添加 LoginRateThrottle，send_code 动作添加 SendCodeRateThrottle。
         默认限流（AnonRateThrottle、UserRateThrottle）仍有效。
 
         Returns:
@@ -60,6 +63,8 @@ class AuthViewSet(viewsets.GenericViewSet):
         throttles = super().get_throttles()
         if self.action == 'login':
             throttles.append(LoginRateThrottle())
+        elif self.action == 'send_code':
+            throttles.append(SendCodeRateThrottle())
         return throttles
 
     @extend_schema(
@@ -202,6 +207,142 @@ class AuthViewSet(viewsets.GenericViewSet):
         res_data['token'] = str(token.access_token)
 
         return APIResponse(user=res_data)
+
+    @extend_schema(
+        summary="发送邮箱验证码",
+        description="发送6位数字验证码到指定邮箱，支持注册/登录/重置密码三种场景",
+        request=SendCodeSerializer,
+        responses={200: OpenApiResponse(description='发送成功'), 400: OpenApiResponse(description='发送失败')}
+    )
+    @action(detail=False, methods=['POST'])
+    def send_code(self, request):
+        """
+        发送邮箱验证码
+
+        参数：email, action(register/login/reset)
+        - register: 检查邮箱未注册
+        - login/reset: 检查邮箱已注册
+        """
+        serializer = SendCodeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email']
+        action_type = serializer.validated_data['action']
+
+        # 场景校验
+        if action_type == 'register':
+            if User.objects.filter(email=email).exists():
+                return APIResponse(code=103, msg="该邮箱已注册", status=status.HTTP_400_BAD_REQUEST)
+        else:
+            if not User.objects.filter(email=email).exists():
+                return APIResponse(code=104, msg="该邮箱未注册", status=status.HTTP_400_BAD_REQUEST)
+
+        success, msg = EmailCodeService.send_code(action_type, email)
+        if success:
+            return APIResponse(msg=msg)
+        return APIResponse(code=105, msg=msg, status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(
+        summary="验证码注册",
+        description="使用邮箱+验证码+密码注册新用户，注册成功返回JWT Token",
+        request=RegisterWithCodeSerializer,
+        responses={201: OpenApiResponse(description='注册成功'), 400: OpenApiResponse(description='注册失败')}
+    )
+    @action(detail=False, methods=['POST'])
+    def register_with_code(self, request):
+        """验证码注册：验证码通过后创建用户并返回 JWT"""
+        serializer = RegisterWithCodeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email']
+        code = serializer.validated_data['code']
+        password = serializer.validated_data['password']
+        username = serializer.validated_data.get('username')
+
+        # 验证码校验
+        valid, msg = EmailCodeService.verify_code('register', email, code)
+        if not valid:
+            return APIResponse(code=106, msg=msg, status=status.HTTP_400_BAD_REQUEST)
+
+        # 邮箱已注册检查
+        if User.objects.filter(email=email).exists():
+            return APIResponse(code=103, msg="该邮箱已注册", status=status.HTTP_400_BAD_REQUEST)
+
+        # 用户名处理
+        if not username:
+            username = email.split('@')[0]
+        if User.objects.filter(username=username).exists():
+            counter = 1
+            while User.objects.filter(username=f"{username}_{counter}").exists():
+                counter += 1
+            username = f"{username}_{counter}"
+
+        user = User.objects.create_user(email=email, password=password, username=username)
+        user_serializer = UserSerializer(user)
+        token = RefreshToken.for_user(user)
+        res_data = user_serializer.data
+        res_data['token'] = str(token.access_token)
+        return APIResponse(user=res_data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(
+        summary="验证码登录",
+        description="使用邮箱+验证码免密登录，验证通过后返回JWT Token",
+        request=LoginWithCodeSerializer,
+        responses={200: OpenApiResponse(description='登录成功'), 400: OpenApiResponse(description='登录失败')}
+    )
+    @action(detail=False, methods=['POST'])
+    def login_with_code(self, request):
+        """验证码登录：验证码通过后查找用户并返回 JWT"""
+        serializer = LoginWithCodeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email']
+        code = serializer.validated_data['code']
+
+        valid, msg = EmailCodeService.verify_code('login', email, code)
+        if not valid:
+            return APIResponse(code=106, msg=msg, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return APIResponse(code=104, msg="该邮箱未注册", status=status.HTTP_400_BAD_REQUEST)
+
+        user_serializer = UserSerializer(user)
+        token = RefreshToken.for_user(user)
+        res_data = user_serializer.data
+        res_data['token'] = str(token.access_token)
+        return APIResponse(user=res_data)
+
+    @extend_schema(
+        summary="重置密码",
+        description="使用邮箱+验证码重置密码，重置后需重新登录",
+        request=ResetPasswordSerializer,
+        responses={200: OpenApiResponse(description='重置成功'), 400: OpenApiResponse(description='重置失败')}
+    )
+    @action(detail=False, methods=['POST'])
+    def reset_password(self, request):
+        """重置密码：验证码通过后设置新密码"""
+        serializer = ResetPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email']
+        code = serializer.validated_data['code']
+        new_password = serializer.validated_data['new_password']
+
+        valid, msg = EmailCodeService.verify_code('reset', email, code)
+        if not valid:
+            return APIResponse(code=106, msg=msg, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return APIResponse(code=104, msg="该邮箱未注册", status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.save()
+
+        # 清理用户实例缓存，使旧 Token 失效
+        from django.core.cache import cache
+        cache.delete(f"user_instance_cache_{user.id}")
+
+        return APIResponse(msg="密码重置成功，请重新登录")
 
     @action(detail=False, methods=['POST'], permission_classes=[IsAuthenticated])
     def logout(self, request):

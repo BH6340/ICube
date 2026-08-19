@@ -283,9 +283,7 @@ class ProfileListSerializer(serializers.ModelSerializer):
         - image: 头像 URL
         - following: 当前登录用户是否关注了该用户
     """
-    # 当前登录用户是否关注了该用户
     following = serializers.SerializerMethodField()
-    # 头像 URL（标准化处理）
     image = serializers.SerializerMethodField()
 
     class Meta:
@@ -293,32 +291,39 @@ class ProfileListSerializer(serializers.ModelSerializer):
         fields = ('username', 'bio', 'image', 'following')
 
     def get_image(self, obj):
-        """
-        处理头像 URL，添加 /media/ 前缀
-
-        Args:
-            obj: User 对象
-
-        Returns:
-            标准化的头像 URL
-        """
         from cube_api.utils.image_url import build_image_url
         return build_image_url(obj.image)
 
     @extend_schema_field(serializers.BooleanField)
     def get_following(self, obj):
-        """
-        判断当前登录用户是否关注了该用户
-
-        Args:
-            obj: 用户资料对象
-
-        Returns:
-            True：已关注
-            False：未关注或未登录
-        """
         request = self.context.get('request')
         if request is None or not request.user.is_authenticated:
             return False
-
         return ProfileCacheService.is_following(request.user.id, obj.id)
+
+
+class SendCodeSerializer(serializers.Serializer):
+    """发送验证码序列化器"""
+    email = serializers.EmailField()
+    action = serializers.ChoiceField(choices=['register', 'login', 'reset'])
+
+
+class RegisterWithCodeSerializer(serializers.Serializer):
+    """验证码注册序列化器"""
+    email = serializers.EmailField()
+    code = serializers.CharField(max_length=6)
+    password = serializers.CharField(write_only=True)
+    username = serializers.CharField(max_length=60, required=False)
+
+
+class LoginWithCodeSerializer(serializers.Serializer):
+    """验证码登录序列化器"""
+    email = serializers.EmailField()
+    code = serializers.CharField(max_length=6)
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    """重置密码序列化器"""
+    email = serializers.EmailField()
+    code = serializers.CharField(max_length=6)
+    new_password = serializers.CharField(write_only=True)

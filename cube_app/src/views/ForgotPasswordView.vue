@@ -1,27 +1,17 @@
 <template>
-  <div class="register-page">
-    <van-nav-bar title="注册" left-arrow @click-left="router.back()" />
-    <div class="register-header">
-      <h2>ICube</h2>
-      <p>创建你的魔方学习账号</p>
+  <div class="reset-page">
+    <van-nav-bar title="找回密码" left-arrow @click-left="router.back()" />
+    <div class="reset-header">
+      <h2>重置密码</h2>
+      <p>通过邮箱验证码重置密码</p>
     </div>
     <van-form @submit="onSubmit">
       <van-cell-group inset>
         <van-field
-          v-model="form.username"
-          name="username"
-          label="用户名"
-          placeholder="请输入用户名"
-          :rules="[
-            { required: true, message: '请填写用户名' },
-            { pattern: /^[a-zA-Z0-9_\u4e00-\u9fa5]{2,20}$/, message: '2-20位字母、数字、中文或下划线' }
-          ]"
-        />
-        <van-field
           v-model="form.email"
           name="email"
           label="邮箱"
-          placeholder="请输入邮箱"
+          placeholder="请输入注册邮箱"
           :rules="[
             { required: true, message: '请填写邮箱' },
             { pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: '邮箱格式不正确' }
@@ -42,13 +32,13 @@
           </template>
         </van-field>
         <van-field
-          v-model="form.password"
+          v-model="form.newPassword"
           type="password"
-          name="password"
-          label="密码"
-          placeholder="请输入密码"
+          name="newPassword"
+          label="新密码"
+          placeholder="请输入新密码"
           :rules="[
-            { required: true, message: '请填写密码' },
+            { required: true, message: '请填写新密码' },
             { pattern: /^.{6,20}$/, message: '密码长度6-20位' }
           ]"
         />
@@ -57,19 +47,19 @@
           type="password"
           name="confirmPassword"
           label="确认密码"
-          placeholder="请再次输入密码"
+          placeholder="请再次输入新密码"
           :rules="[
             { required: true, message: '请确认密码' },
             { validator: validateConfirm, message: '两次密码不一致' }
           ]"
         />
       </van-cell-group>
-      <div class="register-actions">
+      <div class="reset-actions">
         <van-button block type="primary" native-type="submit" :loading="loading">
-          注册
+          重置密码
         </van-button>
         <router-link to="/login" class="login-link">
-          已有账号？去登录
+          返回登录
         </router-link>
       </div>
     </van-form>
@@ -80,15 +70,12 @@
 import { reactive, ref, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast } from 'vant'
-import { registerWithCodeApi, sendCodeApi } from '@/api/user'
-import { useUserStore } from '@/stores/user'
+import { sendCodeApi, resetPasswordApi } from '@/api/user'
 
-const form = reactive({ username: '', email: '', code: '', password: '', confirmPassword: '' })
+const form = reactive({ email: '', code: '', newPassword: '', confirmPassword: '' })
 const loading = ref(false)
 const router = useRouter()
-const userStore = useUserStore()
 
-// 验证码倒计时
 const codeCountdown = ref(0)
 let countdownTimer = null
 
@@ -108,7 +95,7 @@ onBeforeUnmount(() => {
 })
 
 function validateConfirm() {
-  return form.password === form.confirmPassword
+  return form.newPassword === form.confirmPassword
 }
 
 async function handleSendCode() {
@@ -117,7 +104,7 @@ async function handleSendCode() {
     return
   }
   try {
-    const res = await sendCodeApi({ email: form.email, action: 'register' })
+    const res = await sendCodeApi({ email: form.email, action: 'reset' })
     if (res.code === 100) {
       showToast({ type: 'success', message: res.msg || '验证码已发送' })
       startCountdown()
@@ -132,18 +119,16 @@ async function handleSendCode() {
 async function onSubmit() {
   loading.value = true
   try {
-    const res = await registerWithCodeApi({
+    const res = await resetPasswordApi({
       email: form.email,
       code: form.code,
-      password: form.password,
-      username: form.username
+      new_password: form.newPassword
     })
     if (res.code === 100) {
-      userStore.setInfo(res.user)
-      showToast({ type: 'success', message: '注册成功' })
-      router.replace('/formula')
+      showToast({ type: 'success', message: '密码重置成功，请重新登录' })
+      router.replace('/login')
     } else {
-      showToast({ type: 'fail', message: res.msg || '注册失败' })
+      showToast({ type: 'fail', message: res.msg || '重置失败' })
     }
   } catch {
     // request.js 已统一处理错误提示
@@ -154,29 +139,29 @@ async function onSubmit() {
 </script>
 
 <style scoped>
-.register-page {
+.reset-page {
   min-height: 100vh;
   background: var(--van-gray-1);
 }
 
-.register-header {
+.reset-header {
   text-align: center;
   padding: 2rem 0 1.5rem;
 }
 
-.register-header h2 {
+.reset-header h2 {
   font-size: 1.8rem;
   font-weight: 700;
   color: var(--van-primary-color);
   margin-bottom: 0.3rem;
 }
 
-.register-header p {
+.reset-header p {
   color: var(--van-gray-6);
   font-size: 0.9rem;
 }
 
-.register-actions {
+.reset-actions {
   padding: 1rem 1rem;
 }
 
