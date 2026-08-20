@@ -231,15 +231,15 @@ class AuthViewSet(viewsets.GenericViewSet):
         # 场景校验
         if action_type == 'register':
             if User.objects.filter(email=email).exists():
-                return APIResponse(code=103, msg="该邮箱已注册", status=status.HTTP_400_BAD_REQUEST)
+                return APIResponse(code=103, msg="该邮箱已注册")
         else:
             if not User.objects.filter(email=email).exists():
-                return APIResponse(code=104, msg="该邮箱未注册", status=status.HTTP_400_BAD_REQUEST)
+                return APIResponse(code=104, msg="该邮箱未注册")
 
         success, msg = EmailCodeService.send_code(action_type, email)
         if success:
             return APIResponse(msg=msg)
-        return APIResponse(code=105, msg=msg, status=status.HTTP_400_BAD_REQUEST)
+        return APIResponse(code=105, msg=msg)
 
     @extend_schema(
         summary="验证码注册",
@@ -260,11 +260,11 @@ class AuthViewSet(viewsets.GenericViewSet):
         # 验证码校验
         valid, msg = EmailCodeService.verify_code('register', email, code)
         if not valid:
-            return APIResponse(code=106, msg=msg, status=status.HTTP_400_BAD_REQUEST)
+            return APIResponse(code=106, msg=msg)
 
         # 邮箱已注册检查
         if User.objects.filter(email=email).exists():
-            return APIResponse(code=103, msg="该邮箱已注册", status=status.HTTP_400_BAD_REQUEST)
+            return APIResponse(code=103, msg="该邮箱已注册")
 
         # 用户名处理
         if not username:
@@ -298,12 +298,12 @@ class AuthViewSet(viewsets.GenericViewSet):
 
         valid, msg = EmailCodeService.verify_code('login', email, code)
         if not valid:
-            return APIResponse(code=106, msg=msg, status=status.HTTP_400_BAD_REQUEST)
+            return APIResponse(code=106, msg=msg)
 
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            return APIResponse(code=104, msg="该邮箱未注册", status=status.HTTP_400_BAD_REQUEST)
+            return APIResponse(code=104, msg="该邮箱未注册")
 
         user_serializer = UserSerializer(user)
         token = RefreshToken.for_user(user)
@@ -328,12 +328,12 @@ class AuthViewSet(viewsets.GenericViewSet):
 
         valid, msg = EmailCodeService.verify_code('reset', email, code)
         if not valid:
-            return APIResponse(code=106, msg=msg, status=status.HTTP_400_BAD_REQUEST)
+            return APIResponse(code=106, msg=msg)
 
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            return APIResponse(code=104, msg="该邮箱未注册", status=status.HTTP_400_BAD_REQUEST)
+            return APIResponse(code=104, msg="该邮箱未注册")
 
         user.set_password(new_password)
         user.save()
