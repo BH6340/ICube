@@ -59,10 +59,13 @@ cd ICube
 #    详见下方「启动方式 → 方式二：手动启动」第 1-5 步
 
 # 3. 一键启动前后端开发服务器
-powershell -ExecutionPolicy Bypass -File .\dev-local.ps1 start
+.\scripts\dev-local.ps1 start
 
 # 4. 关闭服务
-powershell -ExecutionPolicy Bypass -File .\dev-local.ps1 stop
+.\scripts\dev-local.ps1 stop
+
+# 5. 重启服务
+.\scripts\dev-local.ps1 restart
 ```
 
 启动后访问 `http://localhost:5173`（前端），后端 API 运行在 `http://127.0.0.1:8000`。
@@ -103,6 +106,15 @@ SECRET_KEY='随机生成的长字符串'
 
 # 数据库密码（和 docker-compose.yml 里的 MYSQL_PASSWORD 保持一致就行，默认不用改）
 DB_PASSWORD=icube123
+
+# ========== 邮箱 SMTP 配置（验证码功能）==========
+# 发件邮箱地址（QQ邮箱→设置→账户→开启SMTP服务获取授权码）
+EMAIL_HOST_USER=your_qq@qq.com
+EMAIL_HOST_PASSWORD=你的QQ邮箱授权码
+# SMTP 开关：False 时所有邮箱用 999999 固定验证码（服务器端口被封时使用）
+EMAIL_SMTP_ENABLED=True
+# 发件人显示名称（收件人看到的名称）
+EMAIL_DISPLAY_NAME=ICube魔方平台
 ```
 
 ---
@@ -176,10 +188,10 @@ cube_api/
 │   ├── apps/                    # 应用模块
 │   │   ├── accounts/            # 用户管理
 │   │   │   ├── models.py        # 自定义 User 模型（关注关系、Redis 缓存）
-│   │   │   ├── views.py         # 注册、登录、关注、资料管理
+│   │   │   ├── views.py         # 注册、登录、验证码、关注、资料管理
 │   │   │   ├── authentication.py # CachedJWTAuthentication
-│   │   │   ├── services.py      # ProfileCacheService, JWTCacheService
-│   │   │   └── throttles.py     # 登录限流
+│   │   │   ├── services.py      # ProfileCacheService, JWTCacheService, EmailCodeService
+│   │   │   └── throttles.py     # 登录限流、验证码发送限流
 │   │   ├── forum/               # 论坛系统
 │   │   │   ├── models.py        # Post, Comment, Tag, Like, Collect, Report, PostImage
 │   │   │   ├── views.py         # 帖子 CRUD、点赞、收藏、评论、热门排行、图片上传
@@ -298,7 +310,9 @@ cube_app/
 │   │   └── markdown.css        # 公共 Markdown 渲染样式
 │   ├── utils/media-url.js       # 媒体 URL 拼接（环境变量驱动）
 │   └── views/                   # 页面视图
-│       ├── LoginView.vue        # 登录页
+│       ├── LoginView.vue        # 登录页（密码/验证码 Tab 切换 + 忘记密码链接）
+│       ├── RegisterView.vue     # 注册页（含邮箱验证码）
+│       ├── ForgotPasswordView.vue # 找回密码页（验证码重置密码）
 │       ├── FormulaView.vue      # 公式列表页（滚动位置恢复 + 浏览量排序）
 │       ├── FormulaDetailView.vue # 公式详情页（含 3D 演示 + 删除公式）
 │       ├── TimerView.vue        # 计时器页（双 Tab：计时 + 记录 + 下拉刷新）
@@ -317,10 +331,10 @@ cube_app/
 
 ```
 ICube/
-├── dev-local.ps1                # 本地开发一键启停脚本（PowerShell，不纳入 Git）
+├── scripts/dev-local.ps1        # 本地开发一键启停脚本（PowerShell）
 ├── deploy.sh                    # 服务器一键部署脚本（Bash）
 ├── docker-compose.yml           # Docker Compose 编排配置
-└── .env                         # 生产环境变量（不纳入 Git）
+└── .env                         # 环境变量（不纳入 Git）
 ```
 
 ---
@@ -329,6 +343,7 @@ ICube/
 
 ### 1. 用户系统
 - 注册/登录：邮箱+密码认证，登录限流保护
+- 验证码登录：邮箱验证码注册/登录/找回密码，SMTP 发送验证码
 - 用户资料：自定义头像、个人简介
 - 关注系统：关注/取消关注，Redis 缓存粉丝/关注数量
 - JWT 认证：Token 黑名单机制，退出登录即时失效
@@ -430,7 +445,7 @@ ICube/
 
 1. **Redis 缓存**：粉丝/关注数量、帖子浏览量、JWT 黑名单
 2. **统一响应格式**：`APIResponse` 统一封装，成功 `code=100`
-3. **限流保护**：登录接口限流 + 全局限流
+3. **限流保护**：登录接口限流 + 验证码发送限流 + 全局限流
 4. **软删除**：帖子和评论支持软删除
 5. **权限控制**：`IsOwnerOrReadOnly`、`IsAdminOrCustomCreator`
 6. **django-filter**：难度多选筛选、作者筛选
@@ -484,6 +499,7 @@ ICube/
 22. **帖子详情下拉刷新**：`van-pull-refresh` 包裹内容区，支持下拉刷新帖子详情和评论
 23. **计时数据同步**：计时完成后自动同步记录到后端并刷新本地列表；计时页支持页面级下拉刷新
 24. **添加公式防误滑**：添加公式弹窗显示时禁止左右滑动切 Tab
+25. **邮箱验证码认证**：Web/APP 双端同步支持验证码注册、验证码登录、找回密码；SMTP 开关控制是否实际发邮件
 
 ---
 
@@ -499,6 +515,10 @@ ICube/
 |------|------|------|
 | `/api/users/register/` | POST | 用户注册 |
 | `/api/users/login/` | POST | 用户登录（返回 Token） |
+| `/api/users/send_code/` | POST | 发送邮箱验证码 |
+| `/api/users/register_with_code/` | POST | 验证码注册 |
+| `/api/users/login_with_code/` | POST | 验证码登录 |
+| `/api/users/reset_password/` | POST | 验证码重置密码 |
 | `/api/users/logout/` | POST | 退出登录（JWT 黑名单） |
 | `/api/users/info/` | GET | 获取当前登录用户信息 |
 | `/api/users/` | GET | 获取用户列表 |
@@ -588,26 +608,30 @@ ICube/
 
 ### 本地开发启动（Windows）
 
-#### 方式一：一键启停脚本 `dev-local.ps1`（推荐）
+#### 方式一：一键启停脚本 `scripts/dev-local.ps1`（推荐）
 
 > 前提：已完成首次配置（Python 环境、MySQL 数据库、Redis、npm install），见下方方式二第 1-5 步。
 
 ```powershell
 # 启动前后端（后端 127.0.0.1:8000 + 前端 localhost:5173）
-powershell -ExecutionPolicy Bypass -File .\dev-local.ps1 start
+.\scripts\dev-local.ps1 start
 
 # 关闭前后端
-powershell -ExecutionPolicy Bypass -File .\dev-local.ps1 stop
+.\scripts\dev-local.ps1 stop
+
+# 重启前后端
+.\scripts\dev-local.ps1 restart
 ```
 
 **脚本特性**：
 - 后台运行，不占用终端
+- 自动从项目根目录 `.env` 读取环境变量注入子进程
 - PID + 进程启动时间双重校验，防止误杀
 - 端口检测，等待服务就绪（最多 60 秒）
 - 失败自动回滚已启动的服务
 - 日志分离保存到 `.dev-local/` 目录
 - 固定使用 `E:\software\python\python313\env\cube_api\Scripts\python.exe`
-- 不纳入 Git（通过 `.git/info/exclude` 排除）
+- 不纳入 Git（通过 `.gitignore` 排除）
 
 **注意**：后端使用 `--noreload` 启动，修改代码后需 `stop` + `start`；前端 Vite 支持热更新。
 

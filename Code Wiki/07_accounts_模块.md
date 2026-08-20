@@ -2,7 +2,7 @@
 
 ### 7.1 模块职责
 
-自定义用户认证与社交关系管理：email 登录、JWT 黑名单注销、用户资料管理、关注/粉丝关系（数据库 + Redis 双写双读）。
+自定义用户认证与社交关系管理：email 密码登录 + 邮箱验证码注册/登录/找回密码、JWT 黑名单注销、用户资料管理、关注/粉丝关系（数据库 + Redis 双写双读）。
 
 ### 7.2 数据模型（[models.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/models.py)）
 
@@ -88,6 +88,10 @@
 | `/users/info`                    | UserView                     | GET/PUT/PATCH | IsAuthenticated              | 当前用户资料       |
 | `/users/register`                | AuthViewSet\@register        | POST          | AllowAny                     | 注册           |
 | `/users/login`                   | AuthViewSet\@login           | POST          | AllowAny + LoginRateThrottle | 登录获取 JWT     |
+| `/users/send_code`               | AuthViewSet\@send_code        | POST          | AllowAny + SendCodeRateThrottle | 发送邮箱验证码    |
+| `/users/register_with_code`      | AuthViewSet\@register_with_code | POST       | AllowAny                     | 验证码注册       |
+| `/users/login_with_code`         | AuthViewSet\@login_with_code | POST          | AllowAny                     | 验证码登录       |
+| `/users/reset_password`          | AuthViewSet\@reset_password   | POST          | AllowAny                     | 验证码重置密码     |
 | `/users/logout`                  | AuthViewSet\@logout          | POST          | IsAuthenticated              | 注销（jti 入黑名单） |
 | `/profiles/`                     | ProfileDetailView            | GET           | IsAuthenticatedOrReadOnly    | 用户列表         |
 | `/profiles/{username}`           | ProfileDetailView            | GET           | IsAuthenticatedOrReadOnly    | 用户详情         |
@@ -100,9 +104,13 @@
 #### AuthViewSet（[L33-L230](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/views.py#L33-L230)）
 
 - 继承 `GenericViewSet`，permission=`AllowAny`
-- `get_throttles()`：仅 `action=='login'` 时追加 `LoginRateThrottle`
+- `get_throttles()`：`action=='login'` 追加 `LoginRateThrottle`；`action=='send_code'` 追加 `SendCodeRateThrottle`
 - `register`（[L89-L122](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/views.py#L89-L122)）：用户名重名自动加 `_N` 后缀
 - `login`（[L164-L202](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/views.py#L164-L202)）：`authenticate(email, password)` 校验，失败 `code=102, 401`；成功 `RefreshToken.for_user` 生成 token
+- `send_code`：参数 `email` + `action`（register/login/reset）；register 检查邮箱未注册，login/reset 检查已注册；调用 `EmailCodeService.send_code`
+- `register_with_code`：验证码校验通过 → 创建用户 → 生成 JWT
+- `login_with_code`：验证码校验通过 → 查找用户 → 生成 JWT
+- `reset_password`：验证码校验通过 → `set_password` → 清理 JWT 缓存
 - `logout`（[L204-L230](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/views.py#L204-L230)）：`JWTCacheService.add_to_blacklist(request.auth)`
 
 #### UserView（[L233-L307](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/views.py#L233-L307)）
@@ -128,6 +136,10 @@
 | `UserUpdateSerializer`  | 资料更新           | `avatar` write\_only ImageField；`process_image(max_width=512, max_height=512, quality=85, crop_square=True, convert_webp=True)` 头像压缩转 WebP；**更新后** **`cache.delete(f"user_instance_cache_{id}")`** |
 | `ProfileSerializer`     | 用户详情（含关注状态+统计） | `following`/`followers_count`/`following_count` 走 `ProfileCacheService`；`collection_count` 直接查库                                                                                                    |
 | `ProfileListSerializer` | 关注/粉丝列表（轻量）    | 去除计数字段，仅 `username/bio/image/following`                                                                                                                                                            |
+| `SendCodeSerializer`    | 发送验证码         | `email` + `action`（register/login/reset）                                                                                                                                                          |
+| `RegisterWithCodeSerializer` | 验证码注册   | `email` + `code`(6位) + `password` + `username`(可选)                                                                                                                                                |
+| `LoginWithCodeSerializer` | 验证码登录       | `email` + `code`(6位)                                                                                                                                                                              |
+| `ResetPasswordSerializer` | 验证码重置密码     | `email` + `code`(6位) + `new_password`                                                                                                                                                              |
 
 ### 7.6 服务层（[services.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/services.py)）
 
@@ -167,6 +179,40 @@ JWT Token 黑名单管理（无状态 JWT + 黑名单注销机制）。
 - -1 占位符防穿透（10 分钟 TTL）
 - Pipeline 批量减少网络往返
 - 测试环境兼容（Django 缓存代理穿透）
+
+#### EmailCodeService（[services.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/services.py)）
+
+邮箱验证码服务：生成、存储、发送、验证。支持注册/登录/找回密码三种场景。
+
+**配置项**（settings）：
+
+| 配置 | 值 | 说明 |
+| --- | --- | --- |
+| `CODE_LENGTH` | 6 | 验证码位数 |
+| `CODE_TTL` | 300 | 验证码有效期（秒） |
+| `RESEND_INTERVAL` | 60 | 重发间隔（秒） |
+| `TEST_CODE` | `999999` | 测试模式固定验证码 |
+| `EMAIL_SMTP_ENABLED` | `True`/`False` | SMTP 开关，False 时所有邮箱用 999999 |
+| `EMAIL_TEST_SUFFIXES` | `['@test.com', ...]` | 假邮箱后缀列表（开发环境） |
+
+**缓存键**：
+
+- `email_code:{action}:{email}` → 验证码（String，TTL 5 分钟）
+- `email_code:send_time:{action}:{email}` → 发送时间戳（String，TTL 60 秒）
+
+| 方法 | 逻辑 |
+| --- | --- |
+| `send_code(action, email)` | 检查重发间隔 → 判断假邮箱/SMTP开关 → 生成验证码 → 存入 Redis → 真邮箱调 `send_mail` 发送 |
+| `verify_code(action, email, code)` | 从 Redis 取验证码比对 → 成功后删除验证码 |
+| `_is_test_email(email)` | 测试环境全部 True；开发环境匹配 `EMAIL_TEST_SUFFIXES` |
+| `_get_con()` | 兼容测试环境的 Redis 连接 |
+
+**SMTP 开关机制**：`EMAIL_SMTP_ENABLED=False` 时，所有邮箱都用 `999999` 固定验证码，不实际发送邮件。适用于服务器 SMTP 端口被封的场景。
+
+**测试模式**：
+
+- `@test.com` / `@example.com` / `@fake.com` 后缀邮箱直接返回 `999999`
+- `python manage.py test` 环境下所有邮箱均为假邮箱
 
 ### 7.7 认证与权限
 
@@ -215,6 +261,13 @@ JWT Token 黑名单管理（无状态 JWT + 黑名单注销机制）。
   2. `request.data.get('user', {}).get('email', '')` 为空 → None
   3. `ident = self.get_ident(request)` 处理 X-Forwarded-For
 - **限流键**：`throttle_login_scope_{IP}_{email}`（滑动窗口算法）
+
+#### SendCodeRateThrottle
+
+- 继承 `SimpleRateThrottle`
+- `scope = 'send_code_scope'`（settings 中 `10/min`，开发环境）
+- 仅对 `action=='send_code'` 生效
+- 按 IP 限流，防止验证码接口被滥用
 
 ***
 
