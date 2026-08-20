@@ -1,9 +1,9 @@
 ﻿<#
 .SYNOPSIS
-本地后台启动或关闭 ICube 前后端开发服务器。
+本地后台启动或关闭 ICube 后端、Web 前端和移动端开发服务器。
 
 .PARAMETER Action
-可选值为 start 或 stop，省略时默认执行 start。
+可选值为 start、stop 或 restart，省略时默认执行 start。
 
 .EXAMPLE
 .\scripts\dev-local.ps1 start
@@ -30,6 +30,20 @@ $root = Split-Path $PSScriptRoot -Parent
 $runtimeDir = Join-Path $root '.dev-local'
 $pythonPath = 'E:\software\python\python313\env\cube_api\Scripts\python.exe'
 $npmCommand = Get-Command npm.cmd -ErrorAction SilentlyContinue
+
+# 从 .env 读取环境变量（如有），注入到子进程
+$envFile = Join-Path $root '.env'
+if (Test-Path $envFile) {
+    Get-Content $envFile | ForEach-Object {
+        $line = $_.Trim()
+        if ($line -and -not $line.StartsWith('#') -and $line.Contains('=')) {
+            $parts = $line -split '=', 2
+            $key = $parts[0].Trim()
+            $val = $parts[1].Trim()
+            Set-Item -Path "Env:$key" -Value $val
+        }
+    }
+}
 
 # 每项服务包含启动命令、监听端口、PID 状态文件和日志路径。
 $services = @(
@@ -58,6 +72,16 @@ $services = @(
         PidFile = Join-Path $runtimeDir 'frontend.json'
         OutputLog = Join-Path $runtimeDir 'frontend.out.log'
         ErrorLog = Join-Path $runtimeDir 'frontend.err.log'
+    },
+    [PSCustomObject]@{
+        Name = 'app'
+        Port = 5174
+        FilePath = $(if ($npmCommand) { $npmCommand.Source } else { $null })
+        Arguments = @('run', 'dev')
+        WorkingDirectory = Join-Path $root 'cube_app'
+        PidFile = Join-Path $runtimeDir 'app.json'
+        OutputLog = Join-Path $runtimeDir 'app.out.log'
+        ErrorLog = Join-Path $runtimeDir 'app.err.log'
     }
 )
 
@@ -148,7 +172,7 @@ function Stop-ServiceProcess {
     }
 }
 
-# 校验本地依赖后依次启动后端和前端；任一失败则回滚本次已启动服务。
+# 校验本地依赖后依次启动后端、前端和移动端；任一失败则回滚本次已启动服务。
 function Start-All {
     if (-not (Test-Path $pythonPath)) {
         throw "Python not found: $pythonPath"
@@ -195,11 +219,12 @@ function Start-All {
         throw
     }
 
-    Write-Output 'Frontend: http://localhost:5173'
     Write-Output 'Backend:  http://127.0.0.1:8000'
+    Write-Output 'Frontend: http://localhost:5173'
+    Write-Output 'App:      http://localhost:5174'
 }
 
-# 逆序关闭服务，先停止前端，再停止后端。
+# 逆序关闭服务，先停止移动端，再停止前端，最后停止后端。
 function Stop-All {
     for ($i = $services.Count - 1; $i -ge 0; $i--) {
         Stop-ServiceProcess $services[$i]
