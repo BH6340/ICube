@@ -17,7 +17,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('start', 'stop')]
+    [ValidateSet('start', 'stop', 'restart')]
     [string]$Action = 'start'
 )
 
@@ -181,8 +181,7 @@ function Start-All {
                 -RedirectStandardOutput $service.OutputLog `
                 -RedirectStandardError $service.ErrorLog `
                 -WindowStyle Hidden `
-                -PassThru `
-                -NoNewWindow
+                -PassThru
 
             Save-ManagedProcess -Service $service -Process $process
             $started += $service
@@ -207,8 +206,11 @@ function Stop-All {
     }
 }
 
-# 根据命令行参数分派启动或关闭操作。
+# 根据命令行参数分派启动、关闭或重启操作。
 if ($Action -eq 'start') {
+    Start-All
+} elseif ($Action -eq 'restart') {
+    Stop-All
     Start-All
 } else {
     Stop-All
