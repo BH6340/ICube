@@ -347,7 +347,7 @@ else:
             'anon': '100/day',
             'user': '1000/day',
             'login_scope': '5/minute',  # LoginRateThrottle 每分钟最多尝试 5 次
-            'send_code_scope': '1/min',  # 验证码发送限流：同一IP每分钟1次
+            'send_code_scope': '10/min',  # 验证码发送限流：开发环境放宽到每分钟10次
         },
         'DEFAULT_PAGINATION_CLASS': 'utils.common_pagination.UnifiedPagination',
         'PAGE_SIZE': 20,
@@ -373,7 +373,8 @@ EMAIL_PORT = int(os.getenv('EMAIL_PORT', 465))
 EMAIL_USE_SSL = True
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+EMAIL_DISPLAY_NAME = os.getenv('EMAIL_DISPLAY_NAME', 'ICube魔方平台')
+DEFAULT_FROM_EMAIL = f'"{EMAIL_DISPLAY_NAME}" <{EMAIL_HOST_USER}>' if EMAIL_HOST_USER else EMAIL_HOST_USER
 
 # 测试环境使用内存后端，不实际发送邮件
 if 'test' in sys.argv:
