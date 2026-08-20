@@ -111,6 +111,8 @@ services:
       # 与 API 共享媒体文件和 collectstatic 产物
       - ./cube_api/media:/usr/share/nginx/html/media
       - collected_static:/usr/share/nginx/html/static
+      # APK 下载目录
+      - ./downloads:/usr/share/nginx/html/apk
     depends_on:
       # 仅控制启动顺序；运行状态由各服务的 restart 策略保障
       - api
