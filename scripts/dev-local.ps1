@@ -6,10 +6,13 @@
 可选值为 start 或 stop，省略时默认执行 start。
 
 .EXAMPLE
-powershell -ExecutionPolicy Bypass -File .\scripts\dev-local.ps1 start
+.\scripts\dev-local.ps1 start
 
 .EXAMPLE
-powershell -ExecutionPolicy Bypass -File .\scripts\dev-local.ps1 stop
+.\scripts\dev-local.ps1 restart
+
+.EXAMPLE
+.\scripts\dev-local.ps1 stop
 #>
 [CmdletBinding()]
 param(
@@ -178,7 +181,8 @@ function Start-All {
                 -RedirectStandardOutput $service.OutputLog `
                 -RedirectStandardError $service.ErrorLog `
                 -WindowStyle Hidden `
-                -PassThru
+                -PassThru `
+                -NoNewWindow
 
             Save-ManagedProcess -Service $service -Process $process
             $started += $service
