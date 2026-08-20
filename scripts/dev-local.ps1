@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
 本地后台启动或关闭 ICube 前后端开发服务器。
 
@@ -49,7 +49,7 @@ $services = @(
     [PSCustomObject]@{
         Name = 'frontend'
         Port = 5173
-        FilePath = if ($npmCommand) { $npmCommand.Source } else { $null }
+        FilePath = $(if ($npmCommand) { $npmCommand.Source } else { $null })
         Arguments = @('run', 'dev')
         WorkingDirectory = Join-Path $root 'cube_front'
         PidFile = Join-Path $runtimeDir 'frontend.json'
