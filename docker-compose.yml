@@ -78,6 +78,7 @@ services:
       - EMAIL_HOST_USER=${EMAIL_HOST_USER:-}
       - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD:-}
       - EMAIL_DISPLAY_NAME=${EMAIL_DISPLAY_NAME:-ICube魔方平台}
+      - EMAIL_SMTP_ENABLED=${EMAIL_SMTP_ENABLED:-True}
     volumes:
       # 用户上传文件保存在宿主机，容器重建后仍保留且便于备份
       - ./cube_api/media:/app/media

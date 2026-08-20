@@ -383,6 +383,9 @@ if 'test' in sys.argv:
 # 开发环境假邮箱后缀列表：匹配这些后缀的邮箱直接返回固定验证码 999999，不实际发送
 EMAIL_TEST_SUFFIXES = ['@test.com', '@example.com', '@fake.com']
 
+# SMTP 发送开关：False 时所有邮箱都用 999999 固定验证码（服务器端口被封时使用）
+EMAIL_SMTP_ENABLED = os.getenv('EMAIL_SMTP_ENABLED', 'True') == 'True'
+
 # ==================== 业务配置 ====================
 
 # 论坛模块配置

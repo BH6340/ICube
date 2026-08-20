@@ -210,7 +210,8 @@ class EmailCodeService:
         is_test = cls._is_test_email(email)
 
         # 生成验证码
-        if is_test:
+        smtp_enabled = getattr(settings, 'EMAIL_SMTP_ENABLED', True)
+        if is_test or not smtp_enabled:
             code = cls.TEST_CODE
         else:
             code = ''.join(random.choices(string.digits, k=cls.CODE_LENGTH))
@@ -222,10 +223,10 @@ class EmailCodeService:
         pipe.setex(send_time_key, cls.RESEND_INTERVAL, int(datetime.datetime.now().timestamp()))
         pipe.execute()
 
-        # 假邮箱不实际发送
-        if is_test:
-            logger.info("测试邮箱验证码: email={}, code={}", email, code)
-            return True, f"验证码已发送（测试模式：{cls.TEST_CODE}）"
+        # 假邮箱或 SMTP 未启用时不实际发送
+        if is_test or not smtp_enabled:
+            logger.info("验证码（未发邮件）: email={}, code={}, smtp_enabled={}", email, code, smtp_enabled)
+            return True, "验证码已发送"
 
         # 真实发送邮件
         subject_map = {

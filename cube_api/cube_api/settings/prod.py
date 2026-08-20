@@ -106,3 +106,6 @@ EMAIL_DISPLAY_NAME = os.getenv('EMAIL_DISPLAY_NAME', 'ICube魔方平台')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', f'"{EMAIL_DISPLAY_NAME}" <{EMAIL_HOST_USER}>' if EMAIL_HOST_USER else EMAIL_HOST_USER)
 # 生产环境不禁用任何邮箱后缀
 EMAIL_TEST_SUFFIXES = []
+
+# SMTP 发送开关：False 时所有邮箱都用 999999 固定验证码（服务器端口被封时使用）
+EMAIL_SMTP_ENABLED = os.getenv('EMAIL_SMTP_ENABLED', 'True') == 'True'
