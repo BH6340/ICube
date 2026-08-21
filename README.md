@@ -779,6 +779,8 @@ docker compose exec api python manage.py test             # 运行测试
 /api/*    → Nginx → api:8000
 /media/*  → Nginx → ./cube_api/media
 /static/* → Nginx → collected_static
+/docs/*   → Nginx → ./docs（Docsify 文档站点）
+/apk/*    → Nginx → ./downloads（APK 下载目录）
 /*        → Nginx → front:80 → Vue SPA
 ```
 
