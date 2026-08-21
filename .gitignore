@@ -114,3 +114,12 @@ debug-formula-categories-500.md
 init_data.sql.backup
 .trae-html-designs/
 scripts/build-apk.sh
+
+# CLAUDE.md（AI 辅助编码配置文件，不需要版本控制）
+CLAUDE.md
+cube_api/CLAUDE.md
+cube_front/CLAUDE.md
+.claude/
+.claudeignore
+cube_api/.claudeignore
+cube_front/.claudeignore
