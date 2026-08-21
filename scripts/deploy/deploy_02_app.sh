@@ -24,10 +24,10 @@ if [ "$USER" = "root" ]; then
     fail "此脚本不能以 root 运行，请先 su - bh"
 fi
 
-# ---------- 进入项目目录（兼容脚本在 deploy/ 下直接跑或从别处跑）----------
+# ---------- 进入项目目录（兼容脚本在 scripts/deploy/ 下直接跑或从别处跑）----------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# 脚本在 ICube/deploy/ 时，ICube 目录是 SCRIPT_DIR 的父级
-PROJECT_DIR_DEFAULT="$(cd "$SCRIPT_DIR/.." && pwd)"
+# 脚本在 ICube/scripts/deploy/ 时，ICube 目录是 SCRIPT_DIR 向上两级
+PROJECT_DIR_DEFAULT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # 如果 PROJECT_DIR_DEFAULT 下没有 docker-compose.yml，那说明脚本是被单独复制来跑的，走 ~/ICube
 if [ -f "$PROJECT_DIR_DEFAULT/docker-compose.yml" ]; then
     PROJECT_DIR="$PROJECT_DIR_DEFAULT"
@@ -255,6 +255,6 @@ echo -e "如果尚未创建超级管理员，可执行："
 echo -e "  ${YELLOW}cd ~/ICube && docker compose exec api python manage.py createsuperuser${NC}"
 echo ""
 echo -e "后续步骤："
-echo -e "  1. （可选，有域名时）执行 ${YELLOW}sudo bash deploy/deploy_03_https.sh${NC} 配置 HTTPS"
-echo -e "  2. 更新代码执行 ${YELLOW}bash deploy/deploy_update.sh${NC}"
+echo -e "  1. （可选，有域名时）执行 ${YELLOW}sudo bash scripts/deploy/deploy_03_https.sh${NC} 配置 HTTPS"
+echo -e "  2. 更新代码执行 ${YELLOW}bash scripts/deploy/deploy_update.sh${NC}"
 echo ""

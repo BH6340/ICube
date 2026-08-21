@@ -1,0 +1,22 @@
+序号,公式编号,公式内容,公式图片名称
+001,1-1,(R U' R) U (R U R U') (R' U' R2),PLL_001
+002,1-2,(R2' U) (R U R' U') (R' U') (R' U R'),PLL_002
+003,1-3,M2 U M2 U2 M2 U M2,PLL_003
+004,1-4,(M2 U M2 U) (M上 U2) (M2 U2) (M上 U2),PLL_004
+005,1-5,x' R2 D2 (R' U' R) D2 (R' U R') x,PLL_005
+006,1-6,x' (R U' R) D2 (R' U R) D2 R2 x,PLL_006
+007,1-7,(R2 U R' U') y (R U R' U')2 (R U R') y' (R U' R2),PLL_007
+008,2-1,(R U R' U') (R' F R2 U' R' U') (R U R' F'),PLL_008
+009,2-2,(R U R' F') (R U R' U') (R' F R2 U' R' U'),PLL_009
+010,2-3,z (U' R D') (R2 U R' U') (R2 U) D R',PLL_010
+011,2-4,F (R U' R' U') (R U R' F') (R U R' U') (R' F R F'),PLL_011
+012,2-5,U' (R' U R U') R2' b' x (R' U R) y' (R U R' U' R2),PLL_012
+013,2-6,(R' U R' d') (R' F') (R2 U' R' U) (R' F R F),PLL_013
+014,2-7,(R U' U') (R' U2) (R B' R' U') (R U R B) R2' U,PLL_014
+015,2-8,(R' U2) (R U' U') (R' F R U R' U') (R' F' R2 U'),PLL_015
+016,3-1,z (R' U R') z' (R U2 L' U R') z (U R') z' (R U2 L' U R'),PLL_016
+017,3-2,z (U' R D') (R2 U R' U') z' (R U R') z (R2 U R') D R',PLL_017
+018,3-3,(R2' u') (R U' R) U (R' u R2') y (R U' R'),PLL_018
+019,3-4,(R U R') y' (R2' u') (R U' R' U) (R' u R2),PLL_019
+020,3-5,(R2' u R') (U R' U') (R u' R2') y' (R' U R),PLL_020
+021,3-6,(R' d' F) (R2' u R') U (R U' R) u' R2,PLL_021

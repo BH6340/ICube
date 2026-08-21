@@ -26,7 +26,7 @@ fi
 
 # ---------- 定位项目目录 ----------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR_DEFAULT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_DIR_DEFAULT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 if [ -f "$PROJECT_DIR_DEFAULT/docker-compose.yml" ]; then
     PROJECT_DIR="$PROJECT_DIR_DEFAULT"
 else

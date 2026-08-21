@@ -1,0 +1,58 @@
+序号,公式编号,公式内容,公式图片名称
+001,1-1,R’ U2 R U R’ U R,OLL_001
+002,1-2,R U’ U’ R’ U’ R U’ R’,OLL_002
+003,1-3,(r U R’ U’) (r’ F R F’),OLL_003
+004,1-4,F’ (r U R’ U’) (r’ F R),OLL_004
+005,1-5,(R2 D’) (R U’ U’) (R’ D) (R U’ U’ R),OLL_005
+006,1-6,(R U U R’ U’) (R U R’ U’) (R U’ R’),OLL_006
+007,1-7,R U’ U’ (R2’ U’) (R2 U’) R2’ U2 R,OLL_007
+008,2-1,F (R U R’ U’) F’,OLL_008
+009,2-2,f (R U R’ U’) f’,OLL_009
+010,2-3,B’ U’ (R’ U R B),OLL_010
+011,2-4,(R U R’ U’) (R’ F R F’),OLL_011
+012,2-5,F (R U R’ U’)2 F’,OLL_012
+013,2-6,F’ (L’ U’ L U)2 F,OLL_013
+014,2-7,f (R U R’ U’)2 f’,OLL_014
+015,3-1,(F R U R’ U’ F’) (f R U R’ U’ f’),OLL_015
+016,3-2,(f R U R’ U’ f’) U’ (F R U R’ U’ F’),OLL_016
+017,3-3,(f R U R’ U’ f’) U (F R U R’ U’ F’),OLL_017
+018,3-4,(R U’ U’) (R2’ F R F’) U2 (R’ F R F’),OLL_018
+019,3-5,(r’ U2) (R U R’ U) r,OLL_019
+020,3-6,(r U’ U’) (R’ U’ R U’ r’),OLL_020
+021,3-7,r U R’ U R U U r’,OLL_021
+022,3-8,r’ U’ R U’ R’ U2 r,OLL_022
+023,4-1,F (R U’ R’ U’) (R U R’ F’),OLL_023
+024,4-2,R U’ U’ (R2’ F R F’) (R U’ U’ R’),OLL_024
+025,4-3,(R B’) (R2 F) (R2 B) (R2 F’) R,OLL_025
+026,4-4,(R’ F) (R2 B’) (R2 F’) (R2 B) R’,OLL_026
+027,4-5,r’ U2 (R U R’ U’) (R U R’ U) r,OLL_027
+028,4-6,r U (R’ U R U’)2 U’ r’,OLL_028
+029,4-7,(R U R’ U) (R’ F R F’) U2 (R’ F R F’),OLL_029
+030,4-8,F (R U R’ U) y’ (R’ U2) (R’ F R F’),OLL_030
+031,4-9,(M下 U) (R U R’ U’) M上 (R’ F R F’),OLL_031
+032,5-1,(R U R’ U’) (R’ F) (R2 U R’ U’) F’,OLL_032
+033,5-2,(R U R’ U) (R’ F R F’) (R U’ U’ R’),OLL_033
+034,5-3,(r U R’ U’) (r’ R) (U R U’ R’),OLL_034
+035,5-4,(R U R’ U’) r R’ (U R U’ r’),OLL_035
+036,5-5,(R’ U’) (R’ F R F’) (U R),OLL_036
+037,5-6,(R U R’ U’) x D’ (R’ U R) E’,OLL_037
+038,5-7,(R U R’ U) (R U’ R’ U’) (R’ F R F’),OLL_038
+039,5-8,(R’ U’ R U’) (R’ U R U) (l U’ R’ U),OLL_039
+040,5-9,(F R U R’ U’ F’) U (F R U R’ U’ F’),OLL_040
+041,5-10,(r U R’ U) (R’ F R F’) R U2 r’,OLL_041
+042,6-1,(R U) (B’ U’) (R’ U R B R’),OLL_042
+043,6-2,(R’ U’ F) (U R U’) (R’ F’ R),OLL_043
+044,6-3,R’ F (R U R’ U’) F’ (U R),OLL_044
+045,6-4,L F’ (L’ U’ L U) F (U’ L’),OLL_045
+046,6-5,(R U R’ U R U2 R’) (F R U R’ U’ F’),OLL_046
+047,6-6,(R’ U’ R U’ R’ U2 R) (F R U R’ U’ F’),OLL_047
+048,6-7,(r’ U2 R U R’ U r) (R U2 R’ U’ R U’ R’),OLL_048
+049,6-8,(r U2 R’ U’ R U’ r’) (R’ U2 R U R’ U R),OLL_049
+050,7-1,(r U r’) (R U R’ U’) (r U’ r’),OLL_050
+051,7-2,(l’ U’ l) (L’ U’ L U) (l’ U l),OLL_051
+052,7-3,R’ F (R U R’ F’ R) y’ (R U’ R’),OLL_052
+053,7-4,F (U R U’) (R2’ F’) (R U R U’ R’),OLL_053
+054,7-5,(R’ U’ R U’) (R’ U) y’ (R’ U R B),OLL_054
+055,7-6,(r U r’) (U R U’ R’)2 (r U’ r’),OLL_055
+056,7-7,R’ F (U R U’) (R2’ F’) (R2 U R’ U’ R),OLL_056
+057,7-8,(r’ R U) (R U R’ U’) (r2 R2’) (U R U’ r’),OLL_057
