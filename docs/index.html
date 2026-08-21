@@ -377,16 +377,20 @@
       }
       tocEl.innerHTML = '';
 
-      // 获取当前文档标题
+      // 获取当前文档标题（优先用侧边栏文件名，不用正文 H1）
       var docTitle = '';
-      var h1 = document.querySelector('.markdown-section h1');
-      if (h1) {
-        docTitle = h1.textContent.trim();
+      var activeLink = document.querySelector('.sidebar-nav a.active');
+      if (activeLink) {
+        docTitle = activeLink.textContent.trim();
       } else {
-        // 从侧边栏 active 链接获取
-        var activeLink = document.querySelector('.sidebar-nav a.active');
-        if (activeLink) docTitle = activeLink.textContent.trim();
-        else docTitle = 'ICube 文档';
+        // 兜底：从 URL hash 解析文件名
+        var hash = location.hash.replace(/^#\//, '').split('?')[0];
+        if (hash) {
+          var name = hash.split('/').pop().replace(/\.md$/i, '');
+          docTitle = decodeURIComponent(name);
+        } else {
+          docTitle = 'ICube 文档';
+        }
       }
 
       // 标题区
