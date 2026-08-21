@@ -259,7 +259,7 @@
       name: 'ICube 🧊',
       repo: '',
       loadSidebar: true,
-      subMaxLevel: 3,
+      subMaxLevel: 0,
       search: { placeholder: '搜索文档', noData: '没有找到结果', depth: 3 },
       copyCode: { buttonText: '复制', errorText: '复制失败', successText: '已复制' },
       auto2top: true,
@@ -267,24 +267,62 @@
       plugins: [
         function (hook) {
           hook.doneEach(function () {
-            setTimeout(makeCollapsibleGroups, 50);
-            setTimeout(buildTOC, 100);
+            buildTOC();
           });
         }
       ]
     };
 
     // ===== 侧边栏分组折叠 =====
+    // 用 MutationObserver 监听 sidebar-nav 渲染完成
+    (function () {
+      var sidebarObserver = new MutationObserver(function (mutations) {
+        mutations.forEach(function (m) {
+          m.addedNodes.forEach(function (node) {
+            if (node.nodeType === 1 && node.classList && node.classList.contains('sidebar-nav')) {
+              makeCollapsibleGroups();
+              sidebarObserver.disconnect();
+            }
+          });
+        });
+      });
+
+      // 先尝试立即执行（可能已渲染）
+      function tryInit() {
+        var nav = document.querySelector('.sidebar-nav');
+        if (nav && nav.children.length > 0) {
+          makeCollapsibleGroups();
+          return true;
+        }
+        return false;
+      }
+
+      // 轮询等待 sidebar-nav 出现
+      var attempts = 0;
+      var pollTimer = setInterval(function () {
+        if (tryInit() || attempts > 50) {
+          clearInterval(pollTimer);
+        }
+        attempts++;
+      }, 100);
+
+      // 同时用 MutationObserver 兜底
+      var app = document.getElementById('app');
+      if (app) {
+        sidebarObserver.observe(app, { childList: true, subtree: true });
+      }
+    })();
+
     function makeCollapsibleGroups() {
-      var topLevelItems = document.querySelectorAll('.sidebar-nav > ul > li');
+      var nav = document.querySelector('.sidebar-nav');
+      if (!nav) return;
+      var topLevelItems = nav.querySelectorAll(':scope > ul > li');
       topLevelItems.forEach(function (li) {
         var childUl = li.querySelector(':scope > ul');
-        if (!childUl) return; // 没有子项的（如"首页"）跳过
+        if (!childUl) return;
 
-        // 已经处理过则跳过
         if (li.querySelector('.nav-group-header')) return;
 
-        // 获取分组标题文本（li 的直接文本节点）
         var titleText = '';
         li.childNodes.forEach(function (node) {
           if (node.nodeType === 3 && node.textContent.trim()) {
@@ -297,39 +335,33 @@
         }
         if (!titleText) return;
 
-        // 移除原始文本节点
         li.childNodes.forEach(function (node) {
           if (node.nodeType === 3) node.textContent = '';
         });
 
-        // 创建分组标题
         var header = document.createElement('div');
         header.className = 'nav-group-header';
         header.innerHTML = '<span class="caret">▶</span><span>' + titleText + '</span>';
 
-        // 包装子项
         var wrapper = document.createElement('div');
         wrapper.className = 'nav-group-children';
-        wrapper.style.maxHeight = '9999px';
+        wrapper.style.maxHeight = childUl.offsetHeight + 'px';
+        wrapper.style.overflow = 'hidden';
+        wrapper.style.transition = 'max-height 0.2s ease';
 
-        // 移动子 ul 到 wrapper
-        if (childUl) {
-          wrapper.appendChild(childUl);
-        }
+        wrapper.appendChild(childUl);
 
-        // 插入到 li 最前面
         li.insertBefore(header, li.firstChild);
         li.insertBefore(wrapper, header.nextSibling);
 
-        // 点击折叠/展开
         header.addEventListener('click', function (e) {
           e.preventDefault();
+          e.stopPropagation();
           header.classList.toggle('collapsed');
-          wrapper.classList.toggle('collapsed');
-          if (wrapper.classList.contains('collapsed')) {
+          if (header.classList.contains('collapsed')) {
             wrapper.style.maxHeight = '0';
           } else {
-            wrapper.style.maxHeight = '9999px';
+            wrapper.style.maxHeight = wrapper.scrollHeight + 'px';
           }
         });
       });
