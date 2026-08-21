@@ -4,33 +4,466 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ICube 文档</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧊</text></svg>">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
-    .cover-main h1 { font-size: 2.5rem; }
+    /* ===== 变量 ===== */
+    :root {
+      --theme: #42b983;
+      --text: #333;
+      --text-light: #666;
+      --text-faded: #999;
+      --border: #e8e8e8;
+      --bg: #fff;
+      --bg-sidebar: #fafafa;
+      --bg-code: #f6f8fa;
+      --bg-hover: #f0f7f4;
+      --sidebar-w: 280px;
+      --toc-w: 240px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      font-size: 15px;
+      line-height: 1.8;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ===== 主体布局 ===== */
+    .content {
+      margin-left: var(--sidebar-w);
+      margin-right: var(--toc-w);
+      transition: margin-left 0.25s ease, margin-right 0.25s ease;
+    }
+    body.sidebar-collapsed .content { margin-left: 0; }
+    body.toc-collapsed .content { margin-right: 0; }
+
+    .markdown-section {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 2.5rem 2rem 5rem;
+    }
+
+    /* ===== 左侧边栏 ===== */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: var(--sidebar-w);
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      transition: transform 0.25s ease;
+      z-index: 100;
+    }
+    body.sidebar-collapsed .sidebar { transform: translateX(-100%); }
+
+    .sidebar-toggle {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 200;
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: var(--text-light);
+      transition: all 0.15s;
+    }
+    body:not(.sidebar-collapsed) .sidebar-toggle {
+      left: calc(var(--sidebar-w) - 44px);
+    }
+    .sidebar-toggle:hover { background: var(--bg-hover); color: var(--theme); }
+
+    .sidebar .app-name {
+      padding: 1.25rem 1.5rem 0.5rem;
+    }
+    .sidebar .app-name-link {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #1a1a2e !important;
+      text-decoration: none !important;
+    }
+
+    /* 搜索框 */
+    .search {
+      padding: 0 1rem 0.5rem;
+    }
+    .search input {
+      width: 100%;
+      font-size: 0.85rem;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: white;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .search input:focus { border-color: var(--theme); }
+
+    /* 导航链接 */
+    .sidebar nav {
+      padding: 0.5rem 0.75rem 2rem;
+    }
+    .sidebar nav a {
+      color: var(--text) !important;
+      text-decoration: none !important;
+      font-size: 0.85rem;
+      padding: 0.3rem 0.5rem;
+      border-radius: 4px;
+      display: block;
+      transition: all 0.12s;
+    }
+    .sidebar nav a:hover { background: var(--bg-hover); color: #1a1a2e !important; }
+    .sidebar nav a.active {
+      color: #1a1a2e !important;
+      font-weight: 600;
+      background: #f0f0f0;
+    }
+    .sidebar nav > ul > li > a {
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: var(--text-faded) !important;
+      margin-top: 0.6rem;
+      cursor: default;
+      pointer-events: none;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .sidebar nav > ul > li > ul { padding-left: 0; }
+    .sidebar nav > ul > li > ul > li > a { padding-left: 1rem; }
+
+    /* sidebar-collapse 插件样式 */
+    .sidebar-nav .arrow {
+      font-size: 0.7rem;
+      transition: transform 0.2s;
+    }
+    .sidebar-nav .collapse-active > a .arrow { transform: rotate(90deg); }
+
+    /* ===== 右侧 TOC ===== */
+    .toc-sidebar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: var(--toc-w);
+      background: var(--bg-sidebar);
+      border-left: 1px solid var(--border);
+      overflow-y: auto;
+      transition: transform 0.25s ease;
+      z-index: 100;
+      padding: 1.25rem 1rem 2rem;
+    }
+    body.toc-collapsed .toc-sidebar { transform: translateX(100%); }
+
+    .toc-toggle {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 200;
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: var(--text-light);
+      transition: all 0.15s;
+    }
+    body:not(.toc-collapsed) .toc-toggle {
+      right: calc(var(--toc-w) - 44px);
+    }
+    .toc-toggle:hover { background: var(--bg-hover); color: var(--theme); }
+
+    .toc-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-faded);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.75rem;
+      padding-left: 0.5rem;
+    }
+    .toc-list { list-style: none; }
+    .toc-list li { margin: 0; }
+    .toc-list a {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--text-light);
+      text-decoration: none !important;
+      padding: 0.2rem 0.5rem;
+      border-left: 2px solid transparent;
+      border-radius: 0;
+      transition: all 0.12s;
+      line-height: 1.5;
+    }
+    .toc-list a:hover { color: #1a1a2e; }
+    .toc-list a.toc-active {
+      color: #1a1a2e;
+      border-left-color: #1a1a2e;
+      font-weight: 500;
+    }
+    .toc-list .toc-h2 { padding-left: 1rem; }
+    .toc-list .toc-h3 { padding-left: 1.75rem; font-size: 0.75rem; }
+
+    /* ===== Typora 风格内容区 ===== */
+    .markdown-section h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin: 0 0 1.25rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .markdown-section h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin: 2rem 0 0.85rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .markdown-section h3 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: #2c3e50;
+      margin: 1.5rem 0 0.6rem;
+    }
+    .markdown-section h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      margin: 1.25rem 0 0.5rem;
+    }
+    .markdown-section p {
+      margin: 0.6rem 0;
+      color: var(--text);
+    }
+    .markdown-section a {
+      color: var(--theme);
+      text-decoration: none;
+    }
+    .markdown-section a:hover { text-decoration: underline; }
+    .markdown-section a:visited { color: var(--theme); }
+
+    /* 列表 */
+    .markdown-section ul, .markdown-section ol {
+      margin: 0.6rem 0;
+      padding-left: 1.5rem;
+    }
+    .markdown-section li { margin: 0.25rem 0; }
+
+    /* 表格 — Typora 风格 */
+    .markdown-section table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: 0;
+    }
+    .markdown-section table thead {
+      background: #f2f2f2;
+    }
+    .markdown-section table thead th {
+      font-weight: 600;
+      padding: 0.6rem 0.85rem;
+      text-align: left;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .markdown-section table tbody td {
+      padding: 0.5rem 0.85rem;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .markdown-section table tbody tr:nth-child(even) { background: #fafafa; }
+
+    /* 代码块 — Typora 风格浅色 */
+    .markdown-section code {
+      font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
+      font-size: 0.85em;
+      padding: 0.12rem 0.35rem;
+      background: var(--bg-code);
+      border-radius: 3px;
+      color: #c7254e;
+    }
+    .markdown-section pre {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+      overflow-x: auto;
+      line-height: 1.6;
+    }
+    .markdown-section pre code {
+      background: none;
+      color: var(--text);
+      padding: 0;
+      font-size: 0.85rem;
+    }
+
+    /* 引用块 */
+    .markdown-section blockquote {
+      border-left: 4px solid var(--theme);
+      background: rgba(66, 185, 131, 0.05);
+      padding: 0.6rem 1.1rem;
+      margin: 1rem 0;
+      color: var(--text-light);
+      border-radius: 0 4px 4px 0;
+    }
+    .markdown-section blockquote p { margin: 0.2rem 0; }
+
+    /* 分割线 */
+    .markdown-section hr {
+      border: none;
+      height: 1px;
+      background: var(--border);
+      margin: 2rem 0;
+    }
+
+    /* 图片 */
+    .markdown-section img {
+      max-width: 100%;
+      border-radius: 4px;
+    }
+
+    /* 复制按钮 */
+    .docsify-copy-code-button {
+      background: rgba(0,0,0,0.05) !important;
+      color: var(--text-light) !important;
+      border-radius: 4px !important;
+      font-size: 0.72rem !important;
+      padding: 2px 8px !important;
+    }
+    .docsify-copy-code-button:hover { background: rgba(0,0,0,0.1) !important; }
+
+    /* 滚动条 */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+
+    /* 响应式 */
+    @media (max-width: 900px) {
+      :root { --toc-w: 0px; }
+      .toc-sidebar, .toc-toggle { display: none; }
+      .content { margin-right: 0; }
+    }
+    @media (max-width: 600px) {
+      :root { --sidebar-w: 260px; }
+      .markdown-section { padding: 1.5rem 1rem 3rem; }
+      .markdown-section h1 { font-size: 1.4rem; }
+      .markdown-section h2 { font-size: 1.15rem; }
+    }
   </style>
 </head>
 <body>
+  <button class="sidebar-toggle" onclick="document.body.classList.toggle('sidebar-collapsed')">&#9776;</button>
+  <button class="toc-toggle" onclick="document.body.classList.toggle('toc-collapsed')">&#9776;</button>
   <div id="app"></div>
+
   <script>
     window.$docsify = {
-      name: 'ICube 文档',
+      name: 'ICube 🧊',
       repo: '',
       loadSidebar: true,
       subMaxLevel: 3,
-      search: {
-        placeholder: '搜索文档',
-        noData: '没有找到结果',
-        depth: 3
-      },
-      copyCode: {
-        buttonText: '复制',
-        errorText: '复制失败',
-        successText: '已复制'
-      },
+      search: { placeholder: '搜索文档', noData: '没有找到结果', depth: 3 },
+      copyCode: { buttonText: '复制', errorText: '复制失败', successText: '已复制' },
       auto2top: true,
-      relativePath: true
+      alias: { '/.*/_sidebar.md': '/_sidebar.md' },
+      plugins: [
+        function (hook) {
+          var tocTimer = null;
+          hook.doneEach(function () {
+            clearTimeout(tocTimer);
+            tocTimer = setTimeout(buildTOC, 100);
+          });
+        }
+      ]
     };
+
+    function buildTOC() {
+      var tocEl = document.querySelector('.toc-sidebar');
+      if (!tocEl) {
+        tocEl = document.createElement('aside');
+        tocEl.className = 'toc-sidebar';
+        document.body.appendChild(tocEl);
+      }
+      tocEl.innerHTML = '';
+
+      var title = document.createElement('div');
+      title.className = 'toc-title';
+      title.textContent = '本页目录';
+      tocEl.appendChild(title);
+
+      var headings = document.querySelectorAll('.markdown-section h1, .markdown-section h2, .markdown-section h3');
+      if (headings.length < 2) { tocEl.style.display = 'none'; return; }
+      tocEl.style.display = '';
+
+      var list = document.createElement('ul');
+      list.className = 'toc-list';
+
+      headings.forEach(function (h) {
+        if (!h.id) return;
+        var li = document.createElement('li');
+        var a = document.createElement('a');
+        a.href = '#' + h.id;
+        a.textContent = h.textContent;
+        a.setAttribute('data-target', h.id);
+        var level = h.tagName.toLowerCase();
+        a.className = 'toc-' + level;
+        li.appendChild(a);
+        list.appendChild(li);
+      });
+
+      tocEl.appendChild(list);
+
+      var links = tocEl.querySelectorAll('.toc-list a');
+      links.forEach(function (link) {
+        link.addEventListener('click', function (e) {
+          e.preventDefault();
+          var target = document.getElementById(this.getAttribute('data-target'));
+          if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      });
+
+      var scrollTimer = null;
+      window.addEventListener('scroll', function () {
+        clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(highlightTOC, 80);
+      });
+
+      function highlightTOC() {
+        var scrollY = window.scrollY;
+        var current = null;
+        headings.forEach(function (h) {
+          if (h.offsetTop - 80 <= scrollY) current = h;
+        });
+        links.forEach(function (link) {
+          link.classList.remove('toc-active');
+        });
+        if (current) {
+          var activeLink = tocEl.querySelector('.toc-list a[data-target="' + current.id + '"]');
+          if (activeLink) activeLink.classList.add('toc-active');
+        }
+      }
+      highlightTOC();
+    }
   </script>
   <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/docsify.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.min.js"></script>
