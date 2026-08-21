@@ -20,265 +20,138 @@
       --sidebar-w: 280px;
       --toc-w: 240px;
     }
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif;
-      font-size: 15px;
-      line-height: 1.8;
-      color: var(--text);
-      background: var(--bg);
+      font-size: 15px; line-height: 1.8; color: var(--text); background: var(--bg);
     }
 
     /* ===== 布局 ===== */
-    .content {
-      margin-left: var(--sidebar-w);
-      margin-right: var(--toc-w);
-      transition: margin-left 0.2s ease, margin-right 0.2s ease;
-    }
-    body.sidebar-collapsed .content { margin-left: 0 !important; }
+    .content { margin-left: var(--sidebar-w); margin-right: var(--toc-w); transition: margin-left 0.2s ease, margin-right 0.2s ease; }
+    body.nav-collapsed .content { margin-left: 0 !important; }
     body.toc-collapsed .content { margin-right: 0 !important; }
-
-    .markdown-section {
-      max-width: 820px;
-      margin: 0 auto;
-      padding: 2.5rem 2rem 5rem;
-    }
+    .markdown-section { max-width: 820px; margin: 0 auto; padding: 2.5rem 2rem 5rem; }
 
     /* ===== 左侧边栏 ===== */
     .sidebar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      bottom: 0;
-      width: var(--sidebar-w);
-      background: var(--bg-sidebar);
-      border-right: 1px solid var(--border);
-      overflow-y: auto;
-      overflow-x: hidden;
-      transition: margin-left 0.2s ease;
-      z-index: 100;
+      position: fixed; top: 0; left: 0; bottom: 0; width: var(--sidebar-w);
+      background: var(--bg-sidebar); border-right: 1px solid var(--border);
+      overflow-y: auto; overflow-x: hidden; transition: margin-left 0.2s ease; z-index: 100;
     }
-    body.sidebar-collapsed .sidebar { margin-left: calc(-1 * var(--sidebar-w)); }
+    body.nav-collapsed .sidebar { margin-left: calc(-1 * var(--sidebar-w)); }
 
-    /* 拖拽分隔条 */
     .sidebar-resizer {
-      position: fixed;
-      top: 0;
-      left: var(--sidebar-w);
-      bottom: 0;
-      width: 5px;
-      cursor: col-resize;
-      background: transparent;
-      z-index: 101;
-      transition: left 0.2s ease;
+      position: fixed; top: 0; left: var(--sidebar-w); bottom: 0; width: 5px;
+      cursor: col-resize; background: transparent; z-index: 101; transition: left 0.2s ease;
     }
     .sidebar-resizer:hover { background: var(--border); }
-    body.sidebar-collapsed .sidebar-resizer { display: none; }
+    body.nav-collapsed .sidebar-resizer { display: none; }
 
-    /* 折叠按钮 */
-    .sidebar-toggle {
-      position: fixed;
-      top: 14px;
-      left: calc(var(--sidebar-w) - 38px);
-      z-index: 200;
-      width: 28px;
-      height: 28px;
-      border: 1px solid var(--border);
-      border-radius: 5px;
-      background: var(--bg);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      color: var(--text-light);
-      transition: left 0.2s ease, background 0.15s;
+    /* 折叠按钮 — 注意：类名避免和 Docsify 内置冲突 */
+    .nav-toggle-btn {
+      position: fixed; top: 14px; left: calc(var(--sidebar-w) - 38px); z-index: 200;
+      width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 5px;
+      background: var(--bg); cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 14px; color: var(--text-light); transition: left 0.2s ease, background 0.15s;
     }
-    body.sidebar-collapsed .sidebar-toggle { left: 10px; }
-    .sidebar-toggle:hover { background: var(--bg-hover); color: var(--black); }
+    body.nav-collapsed .nav-toggle-btn { left: 10px; }
+    .nav-toggle-btn:hover { background: var(--bg-hover); color: var(--black); }
 
     /* Logo 区 */
-    .sidebar .app-name {
-      padding: 1rem 1.5rem 0.25rem;
-    }
+    .sidebar .app-name { padding: 1rem 1.5rem 0.25rem; }
     .sidebar .app-name-link {
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: var(--black) !important;
-      text-decoration: none !important;
+      font-size: 1.2rem; font-weight: 700; color: var(--black) !important; text-decoration: none !important;
     }
     .sidebar .app-name-link:visited { color: var(--black) !important; }
 
     /* 搜索框 */
-    .search {
-      padding: 0 1rem 0.5rem;
-    }
+    .search { padding: 0 1rem 0.5rem; }
     .search input {
-      width: 100%;
-      font-size: 0.85rem;
-      padding: 0.5rem 0.75rem;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background: white;
-      outline: none;
+      width: 100%; font-size: 0.85rem; padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border); border-radius: 6px; background: white; outline: none;
     }
     .search input:focus { border-color: var(--text-light); }
 
     /* 导航 */
-    .sidebar-nav {
-      padding: 0.5rem 0.5rem 2rem;
-    }
+    .sidebar-nav { padding: 0.5rem 0.5rem 2rem; }
     .sidebar-nav ul { list-style: none; }
 
-    /* 一级分组标题（无链接） */
-    .sidebar-nav > ul > li {
-      margin-top: 0.8rem;
-    }
+    /* 分组标题（可折叠） */
+    .sidebar-nav > ul > li { margin-top: 0.5rem; }
     .sidebar-nav > ul > li:first-child { margin-top: 0; }
-    .sidebar-nav > ul > li > a:not([href]),
-    .sidebar-nav > ul > li > a[href=""] {
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: var(--text-faded) !important;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      padding: 0.25rem 0.75rem;
-      cursor: default;
-      pointer-events: none;
-      border-bottom: 1px solid var(--border);
-      border-radius: 0;
-      margin-bottom: 0.25rem;
-    }
-    /* Docsify 渲染纯文本 li 时可能不带 <a>，处理纯文本节点 */
-    .sidebar-nav > ul > li {
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: var(--text-faded);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      padding: 0.25rem 0.75rem;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 0.25rem;
-    }
-    .sidebar-nav > ul > li > ul {
-      margin-top: 0.25rem;
-      border-bottom: none;
-    }
 
-    /* 二级链接 */
+    .nav-group-header {
+      display: flex; align-items: center; cursor: pointer; user-select: none;
+      font-size: 0.72rem; font-weight: 700; color: var(--text-faded);
+      text-transform: uppercase; letter-spacing: 1px;
+      padding: 0.4rem 0.75rem; border-bottom: 1px solid var(--border);
+    }
+    .nav-group-header .caret {
+      display: inline-block; width: 12px; height: 12px; margin-right: 6px;
+      transition: transform 0.15s ease; font-size: 10px; color: var(--text-faded);
+    }
+    .nav-group-header.collapsed .caret { transform: rotate(-90deg); }
+    .nav-group-header.collapsed { border-bottom: none; }
+    .nav-group-children { overflow: hidden; transition: max-height 0.2s ease; }
+    .nav-group-children.collapsed { max-height: 0 !important; }
+
+    /* 二级链接（文件名） */
     .sidebar-nav > ul > li > ul > li > a,
     .sidebar-nav > ul > li:first-child > a[href] {
-      display: block;
-      font-size: 0.85rem;
-      color: var(--text) !important;
-      text-decoration: none !important;
-      padding: 0.3rem 0.75rem;
-      border-radius: 4px;
-      transition: background 0.1s, color 0.1s;
+      display: block; font-size: 0.85rem; color: var(--text) !important;
+      text-decoration: none !important; padding: 0.3rem 0.75rem 0.3rem 1.5rem;
+      border-radius: 4px; transition: background 0.1s, color 0.1s;
     }
     .sidebar-nav > ul > li > ul > li > a:visited,
-    .sidebar-nav > ul > li:first-child > a[href]:visited {
-      color: var(--text) !important;
-    }
-    .sidebar-nav > ul > li > ul > li > a:hover {
-      background: var(--bg-hover);
-      color: var(--black) !important;
-    }
+    .sidebar-nav > ul > li:first-child > a[href]:visited { color: var(--text) !important; }
+    .sidebar-nav > ul > li > ul > li > a:hover { background: var(--bg-hover); color: var(--black) !important; }
     .sidebar-nav > ul > li > ul > li > a.active,
     .sidebar-nav > ul > li:first-child > a[href].active {
-      color: var(--black) !important;
-      font-weight: 600;
-      background: var(--bg-active);
+      color: var(--black) !important; font-weight: 600; background: var(--bg-active);
     }
-    .sidebar-nav > ul > li > ul > li > a.active:visited {
-      color: var(--black) !important;
-    }
-
-    /* 三级链接 */
-    .sidebar-nav > ul > li > ul > li > ul > li > a {
-      display: block;
-      font-size: 0.8rem;
-      color: var(--text-light) !important;
-      text-decoration: none !important;
-      padding: 0.25rem 0.75rem 0.25rem 1.5rem;
-      border-radius: 4px;
-    }
-    .sidebar-nav > ul > li > ul > li > ul > li > a:hover {
-      color: var(--black) !important;
-      background: var(--bg-hover);
-    }
-    .sidebar-nav > ul > li > ul > li > ul > li > a.active {
-      color: var(--black) !important;
-      font-weight: 600;
-    }
+    .sidebar-nav > ul > li > ul > li > a.active:visited { color: var(--black) !important; }
 
     /* ===== 右侧 TOC ===== */
     .toc-sidebar {
-      position: fixed;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      width: var(--toc-w);
-      background: var(--bg-sidebar);
-      border-left: 1px solid var(--border);
-      overflow-y: auto;
-      transition: margin-right 0.2s ease;
-      z-index: 100;
+      position: fixed; top: 0; right: 0; bottom: 0; width: var(--toc-w);
+      background: var(--bg-sidebar); border-left: 1px solid var(--border);
+      overflow-y: auto; transition: margin-right 0.2s ease; z-index: 100;
     }
     body.toc-collapsed .toc-sidebar { margin-right: calc(-1 * var(--toc-w)); }
 
-    .toc-toggle {
-      position: fixed;
-      top: 14px;
-      right: calc(var(--toc-w) - 38px);
-      z-index: 200;
-      width: 28px;
-      height: 28px;
-      border: 1px solid var(--border);
-      border-radius: 5px;
-      background: var(--bg);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      color: var(--text-light);
-      transition: right 0.2s ease, background 0.15s;
+    .toc-toggle-btn {
+      position: fixed; top: 14px; right: calc(var(--toc-w) - 38px); z-index: 200;
+      width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 5px;
+      background: var(--bg); cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 14px; color: var(--text-light); transition: right 0.2s ease, background 0.15s;
     }
-    body.toc-collapsed .toc-toggle { right: 10px; }
-    .toc-toggle:hover { background: var(--bg-hover); color: var(--black); }
+    body.toc-collapsed .toc-toggle-btn { right: 10px; }
+    .toc-toggle-btn:hover { background: var(--bg-hover); color: var(--black); }
 
-    .toc-title {
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: var(--text-faded);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      text-align: center;
-      margin: 3rem 0 1rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid var(--border);
+    .toc-header {
+      padding: 3rem 1rem 0.75rem; border-bottom: 1px solid var(--border); text-align: center;
     }
-    .toc-list { list-style: none; padding: 0 0.5rem; }
+    .toc-header-label {
+      font-size: 0.65rem; font-weight: 700; color: var(--text-faded);
+      text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 0.3rem;
+    }
+    .toc-header-title {
+      font-size: 0.85rem; font-weight: 600; color: var(--black);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .toc-list { list-style: none; padding: 0.5rem 0.5rem; }
     .toc-list li { margin: 0; }
     .toc-list a {
-      display: block;
-      font-size: 0.8rem;
-      color: var(--text-light) !important;
-      text-decoration: none !important;
-      padding: 0.2rem 0.5rem;
-      border-left: 2px solid transparent;
-      transition: all 0.1s;
-      line-height: 1.5;
+      display: block; font-size: 0.8rem; color: var(--text-light) !important;
+      text-decoration: none !important; padding: 0.22rem 0.5rem;
+      border-left: 2px solid transparent; transition: all 0.1s; line-height: 1.5;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .toc-list a:visited { color: var(--text-light) !important; }
     .toc-list a:hover { color: var(--black) !important; }
     .toc-list a.toc-active {
-      color: var(--black) !important;
-      border-left-color: var(--black);
-      font-weight: 500;
+      color: var(--black) !important; border-left-color: var(--black); font-weight: 500;
     }
     .toc-list .toc-h2 { padding-left: 1rem; }
     .toc-list .toc-h3 { padding-left: 1.75rem; font-size: 0.75rem; }
@@ -286,80 +159,57 @@
     /* ===== 内容区 — Typora 风格 ===== */
     .markdown-section h1 {
       font-size: 1.75rem; font-weight: 700; color: var(--black);
-      margin: 0 0 1.25rem; padding-bottom: 0.5rem;
-      border-bottom: 1px solid var(--border);
+      margin: 0 0 1.25rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
     }
     .markdown-section h2 {
       font-size: 1.35rem; font-weight: 700; color: var(--black);
-      margin: 2rem 0 0.85rem; padding-bottom: 0.35rem;
-      border-bottom: 1px solid var(--border);
+      margin: 2rem 0 0.85rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--border);
     }
-    .markdown-section h3 {
-      font-size: 1.15rem; font-weight: 600; color: var(--black);
-      margin: 1.5rem 0 0.6rem;
-    }
-    .markdown-section h4 {
-      font-size: 1rem; font-weight: 600; color: var(--text);
-      margin: 1.25rem 0 0.5rem;
-    }
+    .markdown-section h3 { font-size: 1.15rem; font-weight: 600; color: var(--black); margin: 1.5rem 0 0.6rem; }
+    .markdown-section h4 { font-size: 1rem; font-weight: 600; color: var(--text); margin: 1.25rem 0 0.5rem; }
     .markdown-section p { margin: 0.6rem 0; color: var(--text); }
-    .markdown-section a {
-      color: var(--text); text-decoration: underline;
-      text-decoration-color: var(--border);
-    }
+    .markdown-section a { color: var(--text); text-decoration: underline; text-decoration-color: var(--border); }
     .markdown-section a:hover { color: var(--black); text-decoration-color: var(--black); }
     .markdown-section a:visited { color: var(--text); }
-
     .markdown-section ul, .markdown-section ol { margin: 0.6rem 0; padding-left: 1.5rem; }
     .markdown-section li { margin: 0.25rem 0; }
-
     .markdown-section table {
       width: 100%; border-collapse: collapse; margin: 1rem 0;
       font-size: 0.9rem; border: 1px solid var(--border);
     }
     .markdown-section table thead { background: #f2f2f2; }
     .markdown-section table thead th {
-      font-weight: 600; padding: 0.6rem 0.85rem;
-      text-align: left; border: 1px solid var(--border); color: var(--text);
+      font-weight: 600; padding: 0.6rem 0.85rem; text-align: left; border: 1px solid var(--border); color: var(--text);
     }
-    .markdown-section table tbody td {
-      padding: 0.5rem 0.85rem; border: 1px solid var(--border); color: var(--text);
-    }
+    .markdown-section table tbody td { padding: 0.5rem 0.85rem; border: 1px solid var(--border); color: var(--text); }
     .markdown-section table tbody tr:nth-child(even) { background: #fafafa; }
-
     .markdown-section code {
       font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
-      font-size: 0.85em; padding: 0.12rem 0.35rem;
-      background: var(--bg-code); border-radius: 3px; color: #c7254e;
+      font-size: 0.85em; padding: 0.12rem 0.35rem; background: var(--bg-code); border-radius: 3px; color: #c7254e;
     }
     .markdown-section pre {
-      background: var(--bg-code); border: 1px solid var(--border);
-      border-radius: 6px; padding: 1rem 1.25rem; margin: 1rem 0;
-      overflow-x: auto; line-height: 1.6;
+      background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px;
+      padding: 1rem 1.25rem; margin: 1rem 0; overflow-x: auto; line-height: 1.6;
     }
     .markdown-section pre code { background: none; color: var(--text); padding: 0; font-size: 0.85rem; }
-
     .markdown-section blockquote {
-      border-left: 4px solid var(--border);
-      background: #f9f9f9; padding: 0.6rem 1.1rem; margin: 1rem 0;
-      color: var(--text-light); border-radius: 0 4px 4px 0;
+      border-left: 4px solid var(--border); background: #f9f9f9; padding: 0.6rem 1.1rem;
+      margin: 1rem 0; color: var(--text-light); border-radius: 0 4px 4px 0;
     }
     .markdown-section blockquote p { margin: 0.2rem 0; }
     .markdown-section hr { border: none; height: 1px; background: var(--border); margin: 2rem 0; }
     .markdown-section img { max-width: 100%; border-radius: 4px; }
-
     .docsify-copy-code-button {
       background: rgba(0,0,0,0.05) !important; color: var(--text-light) !important;
       border-radius: 4px !important; font-size: 0.72rem !important; padding: 2px 8px !important;
     }
-
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
 
     @media (max-width: 900px) {
       :root { --toc-w: 0px; }
-      .toc-sidebar, .toc-toggle { display: none; }
+      .toc-sidebar, .toc-toggle-btn { display: none; }
       .content { margin-right: 0; }
     }
     @media (max-width: 600px) {
@@ -369,31 +219,30 @@
   </style>
 </head>
 <body>
-  <button class="sidebar-toggle" onclick="toggleSidebar()">&#9776;</button>
+  <button class="nav-toggle-btn" id="navToggleBtn">☰</button>
   <div class="sidebar-resizer" id="sidebarResizer"></div>
-  <button class="toc-toggle" onclick="toggleTOC()">&#9776;</button>
+  <button class="toc-toggle-btn" id="tocToggleBtn">☰</button>
   <div id="app"></div>
 
   <script>
-    function toggleSidebar() {
-      document.body.classList.toggle('sidebar-collapsed');
-    }
-    function toggleTOC() {
+    // ===== 折叠按钮（避免和 Docsify 内置类名冲突） =====
+    document.getElementById('navToggleBtn').addEventListener('click', function() {
+      document.body.classList.toggle('nav-collapsed');
+    });
+    document.getElementById('tocToggleBtn').addEventListener('click', function() {
       document.body.classList.toggle('toc-collapsed');
-    }
+    });
 
-    // 拖拽调整侧边栏宽度
+    // ===== 拖拽调整侧边栏宽度 =====
     (function() {
       var resizer = document.getElementById('sidebarResizer');
       var isResizing = false;
-
       resizer.addEventListener('mousedown', function(e) {
         isResizing = true;
         document.body.style.cursor = 'col-resize';
         document.body.style.userSelect = 'none';
         e.preventDefault();
       });
-
       document.addEventListener('mousemove', function(e) {
         if (!isResizing) return;
         var newWidth = e.clientX;
@@ -401,13 +250,8 @@
         if (newWidth > 500) newWidth = 500;
         document.documentElement.style.setProperty('--sidebar-w', newWidth + 'px');
       });
-
       document.addEventListener('mouseup', function() {
-        if (isResizing) {
-          isResizing = false;
-          document.body.style.cursor = '';
-          document.body.style.userSelect = '';
-        }
+        if (isResizing) { isResizing = false; document.body.style.cursor = ''; document.body.style.userSelect = ''; }
       });
     })();
 
@@ -422,15 +266,76 @@
       alias: { '/.*/_sidebar.md': '/_sidebar.md' },
       plugins: [
         function (hook) {
-          var tocTimer = null;
           hook.doneEach(function () {
-            clearTimeout(tocTimer);
-            tocTimer = setTimeout(buildTOC, 100);
+            setTimeout(makeCollapsibleGroups, 50);
+            setTimeout(buildTOC, 100);
           });
         }
       ]
     };
 
+    // ===== 侧边栏分组折叠 =====
+    function makeCollapsibleGroups() {
+      var topLevelItems = document.querySelectorAll('.sidebar-nav > ul > li');
+      topLevelItems.forEach(function (li) {
+        var childUl = li.querySelector(':scope > ul');
+        if (!childUl) return; // 没有子项的（如"首页"）跳过
+
+        // 已经处理过则跳过
+        if (li.querySelector('.nav-group-header')) return;
+
+        // 获取分组标题文本（li 的直接文本节点）
+        var titleText = '';
+        li.childNodes.forEach(function (node) {
+          if (node.nodeType === 3 && node.textContent.trim()) {
+            titleText = node.textContent.trim();
+          }
+        });
+        if (!titleText) {
+          var firstLink = li.querySelector(':scope > a');
+          if (firstLink) titleText = firstLink.textContent.trim();
+        }
+        if (!titleText) return;
+
+        // 移除原始文本节点
+        li.childNodes.forEach(function (node) {
+          if (node.nodeType === 3) node.textContent = '';
+        });
+
+        // 创建分组标题
+        var header = document.createElement('div');
+        header.className = 'nav-group-header';
+        header.innerHTML = '<span class="caret">▶</span><span>' + titleText + '</span>';
+
+        // 包装子项
+        var wrapper = document.createElement('div');
+        wrapper.className = 'nav-group-children';
+        wrapper.style.maxHeight = '9999px';
+
+        // 移动子 ul 到 wrapper
+        if (childUl) {
+          wrapper.appendChild(childUl);
+        }
+
+        // 插入到 li 最前面
+        li.insertBefore(header, li.firstChild);
+        li.insertBefore(wrapper, header.nextSibling);
+
+        // 点击折叠/展开
+        header.addEventListener('click', function (e) {
+          e.preventDefault();
+          header.classList.toggle('collapsed');
+          wrapper.classList.toggle('collapsed');
+          if (wrapper.classList.contains('collapsed')) {
+            wrapper.style.maxHeight = '0';
+          } else {
+            wrapper.style.maxHeight = '9999px';
+          }
+        });
+      });
+    }
+
+    // ===== 右侧 TOC =====
     function buildTOC() {
       var tocEl = document.querySelector('.toc-sidebar');
       if (!tocEl) {
@@ -440,10 +345,25 @@
       }
       tocEl.innerHTML = '';
 
-      var title = document.createElement('div');
-      title.className = 'toc-title';
-      title.textContent = '本页目录';
-      tocEl.appendChild(title);
+      // 获取当前文档标题
+      var docTitle = '';
+      var h1 = document.querySelector('.markdown-section h1');
+      if (h1) {
+        docTitle = h1.textContent.trim();
+      } else {
+        // 从侧边栏 active 链接获取
+        var activeLink = document.querySelector('.sidebar-nav a.active');
+        if (activeLink) docTitle = activeLink.textContent.trim();
+        else docTitle = 'ICube 文档';
+      }
+
+      // 标题区
+      var header = document.createElement('div');
+      header.className = 'toc-header';
+      header.innerHTML =
+        '<div class="toc-header-label">当前文档</div>' +
+        '<div class="toc-header-title" title="' + docTitle + '">' + docTitle + '</div>';
+      tocEl.appendChild(header);
 
       var headings = document.querySelectorAll('.markdown-section h1, .markdown-section h2, .markdown-section h3');
       if (headings.length < 2) { tocEl.style.display = 'none'; return; }
@@ -454,10 +374,14 @@
 
       headings.forEach(function (h) {
         if (!h.id) return;
+        // 跳过 H1（已在标题区显示）
+        if (h.tagName === 'H1') return;
+
         var li = document.createElement('li');
         var a = document.createElement('a');
         a.href = '#' + h.id;
         a.textContent = h.textContent;
+        a.title = h.textContent;
         a.setAttribute('data-target', h.id);
         var level = h.tagName.toLowerCase();
         a.className = 'toc-' + level;
@@ -467,6 +391,7 @@
 
       tocEl.appendChild(list);
 
+      // 点击跳转
       var links = tocEl.querySelectorAll('.toc-list a');
       links.forEach(function (link) {
         link.addEventListener('click', function (e) {
@@ -476,16 +401,18 @@
         });
       });
 
+      // 滚动高亮
       var scrollTimer = null;
       window.addEventListener('scroll', function () {
         clearTimeout(scrollTimer);
         scrollTimer = setTimeout(highlightTOC, 80);
       });
 
+      var allHeadings = document.querySelectorAll('.markdown-section h2, .markdown-section h3');
       function highlightTOC() {
         var scrollY = window.scrollY;
         var current = null;
-        headings.forEach(function (h) {
+        allHeadings.forEach(function (h) {
           if (h.offsetTop - 80 <= scrollY) current = h;
         });
         links.forEach(function (link) { link.classList.remove('toc-active'); });
