@@ -25,6 +25,7 @@ import sys
 import subprocess
 import datetime
 import shutil
+import time
 
 try:
     from loguru import logger
@@ -53,6 +54,9 @@ MEDIA_DIR        = os.environ.get("MEDIA_DIR", "cube_api/media")
 DRY_RUN  = "--dry-run" in sys.argv
 NO_PUSH  = "--no-push" in sys.argv
 NO_MEDIA = "--no-media" in sys.argv
+
+PUSH_MAX_RETRIES = 3
+PUSH_RETRY_DELAY = 30  # 秒
 
 LOG_DIR  = os.path.join(REPO_PATH, "logs")
 LOG_FILE = os.path.join(LOG_DIR, f"server_dump_{datetime.datetime.now().strftime('%Y%m%d')}.log")
@@ -182,19 +186,51 @@ def git_push():
         logger.info("--no-push，跳过推送")
         return True
 
-    pr = _run(["git", "push"])
-    if pr.returncode != 0:
-        if "no upstream branch" in pr.stderr:
-            pr2 = _run(["git", "push", "--set-upstream", "origin", "main"])
-            if pr2.returncode != 0:
-                logger.error(f"git push 失败: {pr2.stderr.strip()}")
-                return False
-        else:
-            logger.error(f"git push 失败: {pr.stderr.strip()}")
-            return False
+    # push 前先 pull --rebase，避免远端有新提交时冲突
+    if not _git_pull_rebase():
+        logger.warning("git pull --rebase 失败，仍尝试推送")
 
-    logger.info("成功推送到远程仓库")
-    return True
+    # push，失败自动重试
+    for attempt in range(1, PUSH_MAX_RETRIES + 1):
+        pr = _run(["git", "push"])
+        if pr.returncode == 0:
+            logger.info("成功推送到远程仓库")
+            return True
+
+        # 首次失败时，如果是 no upstream branch，设置上游并重试
+        if attempt == 1 and "no upstream branch" in pr.stderr:
+            logger.info("设置 upstream 分支...")
+            pr2 = _run(["git", "push", "--set-upstream", "origin", "main"])
+            if pr2.returncode == 0:
+                logger.info("成功推送到远程仓库")
+                return True
+            logger.warning(f"首次 push 失败: {pr2.stderr.strip()}")
+        else:
+            logger.warning(f"第 {attempt} 次 push 失败: {pr.stderr.strip()}")
+
+        if attempt < PUSH_MAX_RETRIES:
+            logger.info(f"{PUSH_RETRY_DELAY} 秒后重试（{attempt}/{PUSH_MAX_RETRIES}）...")
+            time.sleep(PUSH_RETRY_DELAY)
+            # 重试前再 pull 一次，同步最新远端
+            _git_pull_rebase()
+
+    logger.error(f"git push 失败，已重试 {PUSH_MAX_RETRIES} 次")
+    return False
+
+
+def _git_pull_rebase():
+    """git pull --rebase，同步远端最新提交"""
+    logger.info("执行 git pull --rebase 同步远端...")
+    r = _run(["git", "pull", "--rebase"])
+    if r.returncode == 0:
+        logger.info("pull 成功")
+        return True
+    logger.warning(f"pull 失败: {r.stderr.strip() or r.stdout.strip()}")
+    # 如果 rebase 冲突，中止 rebase 回到原状态
+    if "rebase" in r.stderr.lower() or "rebase" in r.stdout.lower():
+        _run(["git", "rebase", "--abort"])
+        logger.warning("已中止 rebase，保留本地提交")
+    return False
 
 
 def main():
