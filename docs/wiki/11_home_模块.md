@@ -19,6 +19,7 @@
 | -------------------- | --------------------- | --- | -------- | ------------ |
 | `/navigation/menus/` | NavigationMenuViewSet | GET | AllowAny | 导航菜单（无分页）    |
 | `/banners/`          | BannerViewSet         | GET | AllowAny | 启用中的轮播图（无分页） |
+| `/app/version/`      | AppVersionView        | GET | AllowAny | APP 版本检查（读取 `app_version.json`，返回版本号、下载地址、更新说明） |
 
 ### 11.4 management/commands
 

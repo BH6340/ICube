@@ -138,6 +138,7 @@ if 'test' in sys.argv:
 | 配置项           | 值                  | 说明              |
 | -------------- | ------------------ | --------------- |
 | `STATIC_URL`   | `'static/'`        | 静态文件 URL 前缀     |
+| `STATICFILES_DIRS` | `[BASE_DIR / 'static']` | 项目级静态文件目录（自定义 admin 资源等） |
 | `MEDIA_ROOT`   | `BASE_DIR/media`  | 媒体文件物理存储路径      |
 | `MEDIA_URL`    | `'/media/'`        | 媒体文件访问 URL 前缀   |
 

@@ -133,6 +133,7 @@
 | 命令                   | 功能                                                |
 | -------------------- | ------------------------------------------------- |
 | `import_formulas`    | 从 Excel 导入 CFOP 公式（F2L/OLL/PLL），依赖 openpyxl，硬编码路径 |
+| `import_formulas_json` | 从 JSON 文件导入公式（含缩略图压缩 + WebP 转换）；`--force` 删除同名旧公式后重新导入 |
 | `insert_cube_states` | 插入 F2L/OLL/PLL 三个目标状态 + 批量更新公式 target\_state      |
 
 ***

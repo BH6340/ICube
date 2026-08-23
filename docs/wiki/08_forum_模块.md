@@ -183,4 +183,10 @@
 
 支持两类图片来源：用户上传 `/media/forum/posts/` + 公式库 `/media/formulas/`（跨模块引用 formula 应用图片）。
 
+### 8.10 management/commands
+
+| 命令 | 功能 |
+| --- | --- |
+| `import_articles` | 从 JSON 数据包导入文章（含图片压缩 + WebP 转换）；参数：`<data_dir>`（含 articles.json 和 images/）、`--author-id N`（默认 `baihao6340@163.com`）、`--force`（删除同标题旧文后重新导入） |
+
 ***

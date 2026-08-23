@@ -197,13 +197,15 @@ cube_api/
 │   │   │   ├── views.py         # 帖子 CRUD、点赞、收藏、评论、热门排行、图片上传
 │   │   │   ├── services.py      # PostCacheService, HotPostService
 │   │   │   ├── serializers.py   # PostImageSerializer、图片 URL 动态生成
-│   │   │   └── permissions.py   # IsOwnerOrReadOnly
+│   │   │   ├── permissions.py   # IsOwnerOrReadOnly
+│   │   │   └── management/commands/import_articles.py  # JSON 批量导入文章
 │   │   ├── home/                # 首页导航
 │   │   │   ├── models.py        # NavigationMenu、Banner 轮播图
-│   │   │   ├── views.py         # BannerViewSet
+│   │   │   ├── views.py         # BannerViewSet、AppVersionView
 │   │   │   ├── serializers.py   # BannerSerializer（图片 URL 动态生成）
 │   │   │   ├── admin.py         # BannerAdmin（图片预览、状态 Badge）
-│   │   │   └── urls.py          # 轮播图 API 路由
+│   │   │   ├── app_version.json # APP 版本信息（版本号、下载地址、更新说明）
+│   │   │   └── urls.py          # 轮播图 + 版本检查 API 路由
 │   │   ├── formula/             # 公式库系统
 │   │   │   ├── models.py        # CubeCategory, CubeState, Formula, FormulaTag, FormulaCollection
 │   │   │   ├── views.py         # 公式 CRUD、收藏管理、筛选搜索排序、浏览量统计
@@ -211,6 +213,7 @@ cube_api/
 │   │   │   ├── filters.py       # 公式筛选器（难度多选、作者筛选）
 │   │   │   ├── permissions.py   # IsAdminOrReadOnly, IsAdminOrCustomCreator
 │   │   │   ├── services.py      # FormulaMatchService（公式匹配）
+│   │   │   ├── management/commands/import_formulas_json.py  # JSON 批量导入公式
 │   │   │   └── urls.py          # 公式 API 路由
 │   │   ├── shop/                # 商城系统
 │   │   │   ├── models.py        # Product, Cart, Order, OrderItem
@@ -232,6 +235,12 @@ cube_api/
 │       ├── dev.py               # 开发环境配置
 │       ├── prod.py              # 生产环境配置
 │       └── logger_conf.py       # 日志配置
+├── static/                      # 项目级静态文件（collectstatic 纳入）
+│   └── admin/                   # Admin UX 优化资源
+│       ├── css/admin-ux.css     # 加载遮罩样式
+│       └── js/admin-ux.js        # 列表页无刷新、URL 同步、前进后退
+├── templates/                   # Django 模板
+│   └── admin/base_site.html     # Admin 基础模板（注入自定义 CSS/JS）
 ├── media/                       # 媒体文件（头像、公式缩略图、帖子图片）
 │   ├── avatars/
 │   ├── formulas/
@@ -241,6 +250,8 @@ cube_api/
 │   ├── regenerate_inverse.py    # 逆公式生成
 │   └── update_difficulty.py     # 难度更新
 └── manage.py
+
+> JSON 批量导入命令：`python manage.py import_formulas_json <file.json> [--force]`（公式）、`python manage.py import_articles <data_dir> [--author-id N] [--force]`（文章），均含图片压缩 + WebP 转换
 ```
 
 ### 前端目录结构
@@ -331,10 +342,17 @@ cube_app/
 
 ```
 ICube/
-├── scripts/dev-local.ps1        # 本地开发一键启停脚本（PowerShell）
-├── deploy.sh                    # 服务器一键部署脚本（Bash）
-├── docker-compose.yml           # Docker Compose 编排配置
-└── .env                         # 环境变量（不纳入 Git）
+├── scripts/
+│   ├── dev-local.ps1             # 本地开发一键启停脚本（PowerShell）
+│   ├── deploy.sh                 # 服务器一键部署脚本（Bash）
+│   ├── build-apk.ps1             # APK 构建+上传脚本（从 package.json 读版本号，生成带版本号文件名）
+│   ├── server_db_dump.py         # 服务端数据库导出（mysqldump + git push，自动重试）
+│   ├── update_db_dump.py         # 本地数据库导出（pymysql）
+│   ├── backup.sh                 # 本地一键备份包装
+│   └── server_backup.sh          # 服务端一键备份包装（适合 cron）
+├── docker-compose.yml            # Docker Compose 编排配置
+├── .env                          # 环境变量（不纳入 Git）
+└── .env.example                  # 环境变量模板（参考用）
 ```
 
 ---
@@ -441,6 +459,15 @@ ICube/
 | formula | FormulaAdmin | 公式缩略图预览、难度分级展示 |
 | home | BannerAdmin | 图片预览、状态 Badge、批量启用/禁用 |
 
+**Admin UX 优化**（[base_site.html](file:///e:/BH/PyStudy/ICube/cube_api/templates/admin/base_site.html) | [admin-ux.css](file:///e:/BH/PyStudy/ICube/cube_api/static/admin/css/admin-ux.css) | [admin-ux.js](file:///e:/BH/PyStudy/ICube/cube_api/static/admin/js/admin-ux.js)）：
+
+- **列表页无刷新**：筛选器、分页、排序、搜索通过 fetch 局部替换 `#changelist`，不整页跳转
+- **加载遮罩**：页面切换时显示 spinner 遮罩，防止白屏闪烁；`popstate` 支持浏览器前进/后退
+- **URL 同步**：`history.pushState` 保持地址栏与筛选状态一致
+- **中文侧边栏**：各应用 `apps.py` 设置 `verbose_name`（用户/主页/计时器等）
+- **Nginx 代理**：`/admin/` 反代到 `api:8000`；`/static/admin/` 独立缓存 7 天
+- **静态文件目录**：`settings/dev.py` 新增 `STATICFILES_DIRS = [BASE_DIR / 'static']`，collectstatic 时纳入自定义 admin 资源
+
 ### 后端优化
 
 1. **Redis 缓存**：粉丝/关注数量、帖子浏览量、JWT 黑名单
@@ -469,7 +496,7 @@ ICube/
 9. **公式跳转联动**：首页精选公式 → 路由 query 传 ID → 自动打开详情弹窗
 10. **轮播图组件**：渐变遮罩、悬停暂停、加载占位符、指示器美化
 11. **图片裁剪组件**：Canvas 1:1 固定比例，滚轮缩放、防抖拖拽、实时预览
-12. **公式编辑器**：点击式键盘输入记号，图片上传或公式库选择
+12. **公式编辑器**：点击式键盘输入记号，图片上传或公式库选择；支持「复制公式」从已有公式快速填充表单
 13. **401 自动清除登录态**：响应拦截器检测 401 + 本地有 Token → 自动清除并提示
 14. **错误提示防抖**：相同错误 3 秒内只弹一次，配合 Element Plus grouping 合并
 
@@ -500,6 +527,9 @@ ICube/
 23. **计时数据同步**：计时完成后自动同步记录到后端并刷新本地列表；计时页支持页面级下拉刷新
 24. **添加公式防误滑**：添加公式弹窗显示时禁止左右滑动切 Tab
 25. **邮箱验证码认证**：Web/APP 双端同步支持验证码注册、验证码登录、找回密码；SMTP 开关控制是否实际发邮件
+26. **公式复制**：添加/编辑公式弹窗内可从已有公式列表选择，一键复制名称、记号、分类、难度、缩略图
+27. **新建分类**：添加公式弹窗内可创建自定义分类（名称/阶数/方法/阶段），无需切换到后台
+28. **APP 版本检查**：个人中心页检查更新，对比 `package.json` 版本号，发现新版本弹窗提示下载
 
 ---
 
@@ -601,6 +631,7 @@ ICube/
 | `/api/home/navigation/menus/{id}/` | PUT/DELETE | 更新/删除菜单 |
 | `/api/home/banners/` | GET/POST | 轮播图列表/创建 |
 | `/api/home/banners/{id}/` | PUT/PATCH/DELETE | 更新/删除轮播图 |
+| `/api/home/app/version/` | GET | APP 版本检查（返回最新版本号、下载地址、更新说明） |
 
 ---
 
