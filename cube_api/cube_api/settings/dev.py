@@ -267,6 +267,9 @@ USE_TZ = False                  # 使用本地时间，不启用时区感知 dat
 # 静态文件 URL 前缀（当前为相对路径）
 STATIC_URL = 'static/'
 
+# 项目级静态文件目录（存放自定义 admin 静态资源等）
+STATICFILES_DIRS = [BASE_DIR / 'static']
+
 # 媒体文件配置（用户上传的文件，如头像、商品图片等）
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # 媒体文件在服务器上的物理存储路径
 MEDIA_URL = '/media/'                         # 媒体文件的访问 URL 前缀
