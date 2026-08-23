@@ -294,6 +294,15 @@
       padding: 2rem; text-align: center; color: var(--text-faded); font-size: 0.9rem;
     }
 
+    /* 折叠后的展开按钮 */
+    .code-expand-btn {
+      position: fixed; top: 14px; right: 10px; z-index: 300;
+      width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 5px;
+      background: var(--bg); cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 16px; color: var(--text-light); transition: background 0.15s;
+    }
+    .code-expand-btn:hover { background: var(--bg-hover); color: var(--black); }
+
     /* 代码链接样式 */
     .markdown-section a[href*="/code/"] {
       color: #1565c0 !important; text-decoration: underline;
@@ -327,6 +336,8 @@
     <div class="code-tab-bar" id="codeTabBar"></div>
     <div class="code-content-wrap" id="codeContentWrap"></div>
   </div>
+  <!-- 折叠后的展开按钮 -->
+  <button class="code-expand-btn" id="codeExpandBtn" title="展开代码面板" style="display:none;">»</button>
 
   <script>
     // ===== 折叠按钮（避免和 Docsify 内置类名冲突） =====
@@ -767,12 +778,14 @@
         // 恢复滚动位置
         this.contentWrap.scrollTop = tab.scrollTop || 0;
 
-        // 滚动到高亮行
+        // 滚动到高亮行（延迟等面板展开动画完成）
         if (hlStart) {
-          var hlEl = pre.querySelector('.code-line.highlight');
-          if (hlEl) {
-            this.contentWrap.scrollTop = hlEl.offsetTop - this.contentWrap.clientHeight / 2 + hlEl.offsetHeight / 2;
-          }
+          setTimeout(function () {
+            var hlEl = pre.querySelector('.code-line.highlight');
+            if (hlEl && self.contentWrap) {
+              self.contentWrap.scrollTop = hlEl.offsetTop - self.contentWrap.clientHeight / 2 + hlEl.offsetHeight / 2;
+            }
+          }, 250);
         }
 
         // 保存滚动位置
@@ -784,16 +797,15 @@
       expand: function () {
         this.isExpanded = true;
         this.panel.classList.add('expanded');
+        var btn = document.getElementById('codeExpandBtn');
+        if (btn) btn.style.display = 'none';
       },
 
       collapse: function () {
         this.isExpanded = false;
         this.panel.classList.remove('expanded');
-      },
-
-      toggle: function () {
-        if (this.isExpanded) this.collapse();
-        else this.expand();
+        var btn = document.getElementById('codeExpandBtn');
+        if (btn) btn.style.display = 'flex';
       },
 
       escapeHtml: function (str) {
@@ -807,6 +819,13 @@
 
     // 初始化代码面板
     codePanel.init();
+
+    // 展开按钮
+    document.getElementById('codeExpandBtn').addEventListener('click', function () {
+      if (codePanel.tabs.length > 0) {
+        codePanel.expand();
+      }
+    });
 
     // 全局事件捕获：在 Docsify 路由之前拦截 /code/ 链接
     document.addEventListener('click', function (e) {
