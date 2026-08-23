@@ -82,7 +82,12 @@
     <!-- 编辑公式弹窗 -->
     <van-popup v-model:show="editShow" position="bottom" round :style="{ maxHeight: '90%' }">
       <div class="edit-form">
-        <div class="edit-title">编辑公式</div>
+        <div class="edit-title-bar">
+          <span class="edit-title">编辑公式</span>
+          <van-button size="small" plain type="primary" icon="description" @click="openEditCopyPicker">
+            复制公式
+          </van-button>
+        </div>
 
         <!-- 图片选择 -->
         <div class="edit-image" @click="showEditImageSheet = true">
@@ -210,6 +215,34 @@
       @confirm="onEditOcrCropConfirm"
       @cancel="onEditOcrCropCancel"
     />
+
+    <!-- 编辑-复制公式选择弹窗 -->
+    <van-popup v-model:show="showEditCopyPicker" position="bottom" round :style="{ maxHeight: '70%' }">
+      <div class="edit-copy-container">
+        <div class="edit-copy-title">选择要复制的公式</div>
+        <div v-if="editCopyLoading" class="edit-copy-loading">
+          <van-loading>加载中...</van-loading>
+        </div>
+        <div v-else class="edit-copy-grid">
+          <div
+            v-for="formula in editCopyList"
+            :key="formula.id"
+            class="edit-copy-item"
+            @click="copyToEditForm(formula)"
+          >
+            <van-image
+              v-if="formula.thumbnail"
+              width="80"
+              height="80"
+              :src="buildMediaUrl(formula.thumbnail)"
+              fit="cover"
+              radius="6"
+            />
+            <div class="edit-copy-name">{{ formula.name }}</div>
+          </div>
+        </div>
+      </div>
+    </van-popup>
   </div>
 </template>
 
@@ -233,7 +266,7 @@ import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { cropAndCompress } from '@/utils/image-compress'
 import { preprocessImage, multiPassOCR } from '@/utils/ocr-helper'
 import { buildMediaUrl } from '@/utils/media-url'
-import { getFormulaDetail, getMyCollections, addCollection, removeCollection, updateFormula, deleteFormula, getFormulaCategories } from '@/api/formula'
+import { getFormulaDetail, getFormulaList, getMyCollections, addCollection, removeCollection, updateFormula, deleteFormula, getFormulaCategories } from '@/api/formula'
 import { useUserStore } from '@/stores/user'
 import { isDownloaded as checkDownloaded, downloadFormula, removeDownload } from '@/utils/formula-download'
 
@@ -307,6 +340,11 @@ const editImageActions = [
   { name: '拍照', action: 'camera' },
   { name: '从相册选择', action: 'gallery' },
 ]
+
+// 编辑-复制公式
+const showEditCopyPicker = ref(false)
+const editCopyList = ref([])
+const editCopyLoading = ref(false)
 
 // 编辑 OCR
 const showEditOcrSheet = ref(false)
@@ -460,6 +498,33 @@ async function openEdit() {
     } catch {}
   }
   editShow.value = true
+}
+
+async function openEditCopyPicker() {
+  showEditCopyPicker.value = true
+  if (editCopyList.value.length === 0) {
+    editCopyLoading.value = true
+    try {
+      const res = await getFormulaList({ page: 1, page_size: 50 })
+      editCopyList.value = res.data?.results || res.data || []
+    } catch {} finally {
+      editCopyLoading.value = false
+    }
+  }
+}
+
+function copyToEditForm(formula) {
+  editForm.value.name = formula.name
+  editForm.value.notation = formula.notation
+  editForm.value.category_id = formula.category?.id || formula.category_id || ''
+  editForm.value.difficulty = formula.difficulty || 1
+  editForm.value.description = formula.description || ''
+  if (formula.thumbnail) {
+    editThumbnailFile.value = null
+    editThumbnailPreview.value = buildMediaUrl(formula.thumbnail)
+  }
+  showEditCopyPicker.value = false
+  showToast({ type: 'success', message: '已复制公式信息，请修改后保存' })
 }
 
 function updateDifficulty(notation) {
@@ -668,11 +733,16 @@ function cleanNotation(text) {
   overflow-y: auto;
 }
 
+.edit-title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
 .edit-title {
   font-size: 1.1rem;
   font-weight: 600;
-  text-align: center;
-  margin-bottom: 16px;
 }
 
 .edit-field-row {
@@ -716,5 +786,52 @@ function cleanNotation(text) {
   display: flex;
   justify-content: flex-end;
   padding: 4px 16px 8px;
+}
+
+.edit-copy-container {
+  padding: 20px 16px;
+}
+
+.edit-copy-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.edit-copy-loading {
+  display: flex;
+  justify-content: center;
+  padding: 40px 0;
+}
+
+.edit-copy-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.edit-copy-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+}
+
+.edit-copy-item:active {
+  opacity: 0.7;
+}
+
+.edit-copy-name {
+  font-size: 0.75rem;
+  color: var(--van-text-color-2);
+  margin-top: 4px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 80px;
 }
 </style>

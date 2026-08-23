@@ -16,7 +16,7 @@ import FreeCropper from '@/components/FreeCropper.vue'
 import { cropAndCompress } from '@/utils/image-compress'
 import { preprocessImage, multiPassOCR } from '@/utils/ocr-helper'
 import { buildMediaUrl } from '@/utils/media-url'
-import { getFormulaList, getFormulaCategories, getMyCollections, getMyCustomFormulas, addCollection, removeCollection, createFormula } from '@/api/formula'
+import { getFormulaList, getFormulaCategories, getMyCollections, getMyCustomFormulas, addCollection, removeCollection, createFormula, createCategory, METHOD_OPTIONS, PHASE_OPTIONS } from '@/api/formula'
 import { getDownloadedFormulas, getDownloadedIds, batchDownload, isDownloaded } from '@/utils/formula-download'
 import { useTabReset } from '@/composables/useTabReset'
 
@@ -402,6 +402,21 @@ const showFormulaPicker = ref(false)
 const pickerList = ref([])
 const pickerLoading = ref(false)
 
+// ─── 复制公式 ───
+const showCopyPicker = ref(false)
+const copyPickerList = ref([])
+const copyPickerLoading = ref(false)
+
+// ─── 新建分类 ───
+const showCategoryDialog = ref(false)
+const categorySubmitting = ref(false)
+const newCategory = ref({
+  name: '',
+  order: 3,
+  method: 'CFOP',
+  phase: 'F2L'
+})
+
 // OCR 图片选择
 const showOcrSheet = ref(false)
 const showOcrCropper = ref(false)
@@ -570,6 +585,62 @@ function pickFormulaImage(formula) {
   showFormulaPicker.value = false
 }
 
+// ─── 复制公式 ────────────────────────────────────────
+async function openCopyPicker() {
+  showCopyPicker.value = true
+  if (copyPickerList.value.length === 0) {
+    copyPickerLoading.value = true
+    try {
+      const res = await getFormulaList({ page: 1, page_size: 50 })
+      copyPickerList.value = res.data?.results || res.data || []
+    } catch {} finally {
+      copyPickerLoading.value = false
+    }
+  }
+}
+
+function copyFromFormula(formula) {
+  addForm.value.name = formula.name
+  addForm.value.notation = formula.notation
+  addForm.value.category_id = formula.category?.id || formula.category_id || ''
+  addForm.value.difficulty = formula.difficulty || 1
+  addForm.value.description = formula.description || ''
+  if (formula.thumbnail) {
+    thumbnailPath.value = formula.thumbnail
+    thumbnailFile.value = null
+    thumbnailPreview.value = buildMediaUrl(formula.thumbnail)
+  }
+  showCopyPicker.value = false
+  showToast({ type: 'success', message: '已复制公式信息，请修改后提交' })
+}
+
+// ─── 新建分类 ────────────────────────────────────────
+async function handleCreateCategory() {
+  if (!newCategory.value.name.trim()) {
+    showToast('请输入分类名称')
+    return
+  }
+  categorySubmitting.value = true
+  try {
+    const payload = {
+      name: newCategory.value.name.trim(),
+      order: newCategory.value.order,
+      method: newCategory.value.method,
+      phase: newCategory.value.phase
+    }
+    const res = await createCategory(payload)
+    await loadCategories()
+    addForm.value.category_id = res.data?.id || res.data?.data?.id
+    showCategoryDialog.value = false
+    showToast({ type: 'success', message: '分类创建成功' })
+    newCategory.value = { name: '', order: 3, method: 'CFOP', phase: 'F2L' }
+  } catch {
+    showToast('创建分类失败')
+  } finally {
+    categorySubmitting.value = false
+  }
+}
+
 async function submitAdd() {
   if (!addForm.value.name.trim()) {
     showToast('请输入公式名')
@@ -678,7 +749,12 @@ async function submitAdd() {
     <!-- 创建公式弹窗 -->
     <van-popup v-model:show="addShow" position="bottom" round :style="{ maxHeight: '90%' }">
       <div class="add-form">
-        <div class="add-title">添加公式</div>
+        <div class="add-title-bar">
+          <span class="add-title">添加公式</span>
+          <van-button size="small" plain type="primary" icon="description" @click="openCopyPicker">
+            复制公式
+          </van-button>
+        </div>
 
         <!-- 图片选择 -->
         <div class="add-image" @click="showImageSheet = true">
@@ -747,6 +823,9 @@ async function submitAdd() {
               {{ opt.text }}
             </option>
           </select>
+          <van-button size="small" plain type="primary" @click="showCategoryDialog = true">
+            + 新建
+          </van-button>
         </div>
 
         <!-- 难度 -->
@@ -842,6 +921,72 @@ async function submitAdd() {
         </div>
       </div>
     </van-popup>
+
+    <!-- 复制公式选择弹窗 -->
+    <van-popup v-model:show="showCopyPicker" position="bottom" round :style="{ maxHeight: '70%' }">
+      <div class="picker-container">
+        <div class="picker-title">选择要复制的公式</div>
+        <div v-if="copyPickerLoading" class="picker-loading">
+          <van-loading>加载中...</van-loading>
+        </div>
+        <div v-else class="picker-grid">
+          <div
+            v-for="formula in copyPickerList"
+            :key="formula.id"
+            class="picker-item"
+            @click="copyFromFormula(formula)"
+          >
+            <van-image
+              v-if="formula.thumbnail"
+              width="80"
+              height="80"
+              :src="buildMediaUrl(formula.thumbnail)"
+              fit="cover"
+              radius="6"
+            />
+            <div class="picker-item-name">{{ formula.name }}</div>
+          </div>
+        </div>
+      </div>
+    </van-popup>
+
+    <!-- 新建分类弹窗 -->
+    <van-popup v-model:show="showCategoryDialog" position="bottom" round :style="{ maxHeight: '70%' }">
+      <div class="category-dialog">
+        <div class="picker-title">创建自定义分类</div>
+        <van-field
+          v-model="newCategory.name"
+          label="分类名称"
+          placeholder="如：四向F2L"
+          maxlength="50"
+        />
+        <div class="add-field-row">
+          <span class="add-field-label">阶数</span>
+          <select v-model="newCategory.order" class="add-select">
+            <option :value="3">3阶</option>
+            <option :value="4">4阶</option>
+            <option :value="5">5阶</option>
+          </select>
+        </div>
+        <div class="add-field-row">
+          <span class="add-field-label">方法</span>
+          <select v-model="newCategory.method" class="add-select">
+            <option v-for="m in METHOD_OPTIONS" :key="m" :value="m">{{ m }}</option>
+          </select>
+        </div>
+        <div class="add-field-row">
+          <span class="add-field-label">阶段</span>
+          <select v-model="newCategory.phase" class="add-select">
+            <option v-for="p in PHASE_OPTIONS" :key="p" :value="p">{{ p }}</option>
+          </select>
+        </div>
+        <div class="add-actions">
+          <van-button block type="primary" :loading="categorySubmitting" @click="handleCreateCategory">
+            创建分类
+          </van-button>
+        </div>
+      </div>
+    </van-popup>
   </div>
 </template>
 
@@ -893,11 +1038,16 @@ async function submitAdd() {
   overflow-y: auto;
 }
 
+.add-title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
 .add-title {
   font-size: 1.1rem;
   font-weight: 600;
-  text-align: center;
-  margin-bottom: 16px;
 }
 
 .add-image {
@@ -960,6 +1110,10 @@ async function submitAdd() {
 
 .add-actions {
   margin-top: 20px;
+}
+
+.category-dialog {
+  padding: 20px 16px;
 }
 
 /* 公式库选图 */

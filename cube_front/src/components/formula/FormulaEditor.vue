@@ -3,7 +3,12 @@
     <div class="formula-editor" @click.stop>
       <div class="editor-header">
         <h3>{{ isEdit ? '编辑公式' : '上传公式' }}</h3>
-        <button class="close-btn" @click="handleClose">×</button>
+        <div class="header-actions">
+          <button type="button" class="copy-btn" @click="showCopyLibrary = true" v-if="!isEdit">
+            📋 复制公式
+          </button>
+          <button class="close-btn" @click="handleClose">×</button>
+        </div>
       </div>
 
       <div class="editor-body">
@@ -189,11 +194,32 @@
             <button type="button" class="close-btn" @click="showLibrary = false">×</button>
           </div>
           <div class="library-body">
-            <div 
-              v-for="formula in libraryFormulas" 
-              :key="formula.id" 
+            <div
+              v-for="formula in libraryFormulas"
+              :key="formula.id"
               class="library-item"
               @click="selectFromLibrary(formula)"
+            >
+              <img :src="formula.thumbnail" :alt="formula.name" />
+              <span>{{ formula.name }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 复制公式选择弹窗 -->
+      <div class="library-modal" v-if="showCopyLibrary" @click="showCopyLibrary = false">
+        <div class="library-content" @click.stop>
+          <div class="library-header">
+            <h3>选择要复制的公式</h3>
+            <button type="button" class="close-btn" @click="showCopyLibrary = false">×</button>
+          </div>
+          <div class="library-body">
+            <div
+              v-for="formula in libraryFormulas"
+              :key="formula.id"
+              class="library-item"
+              @click="copyFromFormula(formula)"
             >
               <img :src="formula.thumbnail" :alt="formula.name" />
               <span>{{ formula.name }}</span>
@@ -279,6 +305,8 @@ const showCropper = ref(false)
 const cropperFile = ref(null)
 /** 是否显示公式库选择弹窗 */
 const showLibrary = ref(false)
+/** 是否显示复制公式选择弹窗 */
+const showCopyLibrary = ref(false)
 /** 分类列表 */
 const categories = ref([])
 /** 系统分类（只读） */
@@ -519,6 +547,26 @@ const selectFromLibrary = async (formula) => {
 }
 
 /**
+ * 从已有公式复制信息
+ *
+ * 选中公式后，将其所有字段填充到当前表单，
+ * 方便用户在已有公式基础上修改。
+ */
+const copyFromFormula = (formula) => {
+  form.value.name = formula.name
+  form.value.notation = formula.notation
+  form.value.category = formula.category?.id || ''
+  form.value.difficulty = formula.difficulty || ''
+  form.value.description = formula.description || ''
+  if (formula.thumbnail) {
+    form.value.thumbnail = formula.thumbnail
+    selectedImageUrl.value = formula.thumbnail
+  }
+  showCopyLibrary.value = false
+  ElMessage.success('已复制公式信息，请修改后提交')
+}
+
+/**
  * 提交公式
  *
  * 根据当前模式调用创建或更新接口。
@@ -627,6 +675,27 @@ const handleClose = () => {
   margin: 0;
   font-size: 16px;
   color: #333;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.copy-btn {
+  padding: 4px 12px;
+  border: 1px solid #1890ff;
+  background: #fff;
+  color: #1890ff;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.copy-btn:hover {
+  background: #e6f7ff;
 }
 
 .close-btn {
