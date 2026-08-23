@@ -672,9 +672,8 @@
       },
 
       switchTab: function (tabId) {
-        // 保存当前 Tab 滚动位置
-        var old = this.tabs.find(function (t) { return t.id === self.activeTabId; });
         var self = this;
+        // 保存当前 Tab 滚动位置
         var oldTab = this.tabs.find(function (t) { return t.id === self.activeTabId; });
         if (oldTab && this.contentWrap) oldTab.scrollTop = this.contentWrap.scrollTop;
 
