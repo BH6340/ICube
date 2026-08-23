@@ -19,6 +19,11 @@ class Command(BaseCommand):
             type=str,
             help='公式 JSON 文件路径'
         )
+        parser.add_argument(
+            '--force',
+            action='store_true',
+            help='已存在同名称公式时，删除后重新导入'
+        )
 
     def handle(self, *args, **options):
         json_file = Path(options['json_file'])
@@ -42,6 +47,8 @@ class Command(BaseCommand):
         created_count = 0
         skipped_count = 0
         warned_count = 0
+        replaced_count = 0
+        force = options.get('force', False)
 
         for formula_data in formulas:
             name = formula_data.get('name', '').strip()
@@ -65,10 +72,16 @@ class Command(BaseCommand):
                     continue
 
             # 查重
-            if Formula.objects.filter(name=name, category=category).exists():
+            existing = Formula.objects.filter(name=name, category=category).first()
+            if existing and not force:
                 self.stdout.write(f'  跳过已存在: {name}')
                 skipped_count += 1
                 continue
+
+            if existing and force:
+                existing.delete()
+                self.stdout.write(f'  删除旧公式: {name}')
+                replaced_count += 1
 
             # 处理缩略图
             thumbnail_file = self._process_thumbnail(
@@ -103,6 +116,8 @@ class Command(BaseCommand):
         self.stdout.write('')
         self.stdout.write(self.style.SUCCESS('导入完成！'))
         self.stdout.write(f'  新增: {created_count} 个')
+        if replaced_count:
+            self.stdout.write(f'  替换: {replaced_count} 个')
         self.stdout.write(f'  跳过: {skipped_count} 个')
         self.stdout.write(f'  警告: {warned_count} 个')
 
