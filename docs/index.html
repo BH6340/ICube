@@ -295,11 +295,11 @@
     }
 
     /* 代码链接样式 */
-    .markdown-section a[data-code-href] {
+    .markdown-section a[href*="/code/"] {
       color: #1565c0 !important; text-decoration: underline;
       text-decoration-color: #90caf9; text-underline-offset: 2px;
     }
-    .markdown-section a[data-code-href]:hover {
+    .markdown-section a[href*="/code/"]:hover {
       color: #0d47a1; text-decoration-color: #0d47a1;
     }
 
@@ -370,13 +370,8 @@
       alias: { '/.*/_sidebar.md': '/_sidebar.md' },
       plugins: [
         function (hook) {
-          // 在 HTML 渲染前改写 /code/ 链接，防止 Docsify 路由拦截
-          hook.afterEach(function (html) {
-            return html.replace(/href="\/code\//g, 'data-code-href="/code/');
-          });
           hook.doneEach(function () {
             buildTOC();
-            bindCodeLinks();
           });
         }
       ]
@@ -813,24 +808,22 @@
     // 初始化代码面板
     codePanel.init();
 
-    // 绑定 /code/ 链接点击事件
-    function bindCodeLinks() {
-      var links = document.querySelectorAll('.markdown-section a[data-code-href]');
-      links.forEach(function (link) {
-        if (link.dataset.codeBound) return;
-        link.dataset.codeBound = '1';
+    // 全局事件捕获：在 Docsify 路由之前拦截 /code/ 链接
+    document.addEventListener('click', function (e) {
+      var link = e.target.closest('a');
+      if (!link) return;
+      var href = link.getAttribute('href') || '';
+      // 匹配 /code/ 或 #/code/ 开头
+      if (href.indexOf('/code/') !== 0 && href.indexOf('#/code/') !== 0) return;
 
-        // 恢复可点击样式
-        link.style.cursor = 'pointer';
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
 
-        link.addEventListener('click', function (e) {
-          e.preventDefault();
-          e.stopPropagation();
-          var href = this.getAttribute('data-code-href');
-          codePanel.openTab(href);
-        });
-      });
-    }
+      // 清理可能被 Docsify 加的 # 前缀
+      var codePath = href.replace(/^#/, '');
+      codePanel.openTab(codePath);
+    }, true); // true = 捕获阶段，在 Docsify 之前执行
   </script>
   <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/docsify.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.min.js"></script>
