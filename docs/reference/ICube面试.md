@@ -76,7 +76,7 @@
 ### 后端重点
 
 #### 1. 后台管理系统 (django-unfold)
-**文件**: [accounts/admin.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/admin.py), [shop/admin.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/shop/admin.py), [forum/admin.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/admin.py)
+**文件**: [accounts/admin.py](/code/cube_api/cube_api/apps/accounts/admin.py), [shop/admin.py](/code/cube_api/cube_api/apps/shop/admin.py), [forum/admin.py](/code/cube_api/cube_api/apps/forum/admin.py)
 
 **核心实现**:
 - **django-unfold**: 基于 Tailwind CSS 的现代化后台管理框架，替代原生 Django Admin
@@ -144,7 +144,7 @@ fieldsets = (
 ```
 
 **侧边栏配置**:
-**文件**: [dev.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L430)
+**文件**: [dev.py](/code/cube_api/cube_api/settings/dev.py#L430)
 ```python
 UNFOLD = {
     "SITE_TITLE": "ICube",
@@ -179,7 +179,7 @@ UNFOLD = {
 ---
 
 #### 2. 自定义JWT认证
-**文件**: [authentication.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/authentication.py)
+**文件**: [authentication.py](/code/cube_api/cube_api/apps/accounts/authentication.py)
 
 **核心实现**:
 - **CachedJWTAuthentication**：继承 `JWTAuthentication`，在认证流程中加入 Redis 缓存
@@ -445,7 +445,7 @@ def logout(self, request):
 
 #### 3. 统一响应格式
 
-**文件**: [common_response.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/utils/common_response.py)
+**文件**: [common_response.py](/code/cube_api/cube_api/utils/common_response.py)
 
 **设计要点**:
 - `APIResponse(code=100, msg='请求成功', **kwargs)` 统一封装
@@ -809,7 +809,7 @@ pagination_class = None
 ```
 
 #### 4. 权限系统
-**文件**: [permissions.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/permissions.py)
+**文件**: [permissions.py](/code/cube_api/cube_api/apps/accounts/permissions.py)
 
 **自定义权限类**:
 - `IsOwnerOrReadOnly`：适配多种模型（author/user/owner字段），只读请求放行，写请求验证所有者
@@ -933,7 +933,7 @@ class IsAuthenticatedAndOwner(permissions.BasePermission):
 | 写操作         | 必须是所有者       | 必须登录 + 是所有者      |
 
 #### 5. 限流机制
-**文件**: [throttles.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/throttles.py)
+**文件**: [throttles.py](/code/cube_api/cube_api/apps/accounts/throttles.py)
 
 **LoginRateThrottle**:
 - 针对登录接口的自定义限流，结合 IP 和尝试登录的 Email
@@ -1039,7 +1039,7 @@ if 'test' in sys.argv:
 ```
 
 #### 6. 事务处理与库存扣减
-**文件**: [shop/views.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/shop/views.py#L139)
+**文件**: [shop/views.py](/code/cube_api/cube_api/apps/shop/views.py#L139)
 
 **订单创建流程**:
 - 使用 `@transaction.atomic` 装饰器保证数据一致性
@@ -1055,7 +1055,7 @@ cart.product.save()
 ```
 
 #### 7. 支付宝支付集成
-**文件**: [alipay_config.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/shop/alipay_config.py)
+**文件**: [alipay_config.py](/code/cube_api/cube_api/apps/shop/alipay_config.py)
 
 **支付流程**:
 1. **扫码支付**: 调用 `api_alipay_trade_precreate` 生成二维码
@@ -1077,7 +1077,7 @@ def verify_alipay_notify(data):
 ```
 
 #### 8. 数据库设计
-**文件**: [forum/models.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/models.py)
+**文件**: [forum/models.py](/code/cube_api/cube_api/apps/forum/models.py)
 
 **设计亮点**:
 - **软删除**: `status` 字段 ('published'/'deleted'/'draft')，`is_deleted` 布尔字段
@@ -1246,7 +1246,7 @@ class Meta:
 ```
 
 #### 9. 日志系统
-**文件**: [logger_conf.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/logger_conf.py)
+**文件**: [logger_conf.py](/code/cube_api/cube_api/settings/logger_conf.py)
 
 **配置要点**:
 - 使用 Loguru 替代 Django 原生 logging
@@ -1359,7 +1359,7 @@ log/
 ```
 
 #### 10. 图片上传与URL管理
-**文件**: [image_url.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/utils/image_url.py)
+**文件**: [image_url.py](/code/cube_api/cube_api/utils/image_url.py)
 
 **核心函数**: `build_image_url(relative_path, absolute=False)`
 
@@ -1424,7 +1424,7 @@ if isinstance(relative_path, FieldFile):
 
 **Pillow 图片处理流水线**
 
-**位置**：[image_processor.py#L145-L208](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/utils/image_processor.py#L145-L208)
+**位置**：[image_processor.py#L145-L208](/code/cube_api/cube_api/utils/image_processor.py#L145-L208)
 
 ```
 上传文件
@@ -1468,7 +1468,7 @@ new_height = int(height * ratio)
 - 未处理 EXIF 图片方向：应调用 `ImageOps.exif_transpose(img)`
 
 #### 11. 浏览量统计
-**文件**: [formula/views.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/formula/views.py)
+**文件**: [formula/views.py](/code/cube_api/cube_api/apps/formula/views.py)
 
 **实现方式**:
 - 使用 Django `F()` 表达式实现原子更新
@@ -1494,7 +1494,7 @@ queryset = Formula.objects.order_by('-view_count')[:6]
 ```
 
 #### 12. 图片处理流水线
-**文件**: [image_processor.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/utils/image_processor.py)
+**文件**: [image_processor.py](/code/cube_api/cube_api/utils/image_processor.py)
 
 **核心功能**:
 - **图片压缩**: 使用 Pillow 对上传图片进行自动压缩
@@ -1562,7 +1562,7 @@ processed_file = InMemoryUploadedFile(
 > 项目把图片处理分为 URL 标准化和上传处理两层。读取时通过 `build_image_url` 将字符串或 Django `FieldFile` 统一转换为 `/media/...` 相对地址，避免域名耦合和浏览器 PNA 问题。判断 `FieldFile` 时使用 `isinstance`，因为 `hasattr(obj, 'path')` 会触发属性求值，路径异常时可能抛出 `SuspiciousFileOperation`。上传时使用 Pillow 完成中心裁剪、等比例缩放和 WebP 重编码，再通过 `InMemoryUploadedFile` 接入 Django Storage。安全上还需要同时控制文件字节数、真实格式和解压后的像素总量，不能只相信客户端 MIME。
 
 #### 13. 公式图片双字段设计
-**文件**: [formula/serializers.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/formula/serializers.py)
+**文件**: [formula/serializers.py](/code/cube_api/cube_api/apps/formula/serializers.py)
 
 **设计思路**:
 - **thumbnail_file**: 用户上传的图片文件，经过压缩裁剪处理
@@ -1591,7 +1591,7 @@ class FormulaSerializer(serializers.ModelSerializer):
 ```
 
 #### 14. 目标状态自动绑定
-**文件**: [formula/serializers.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/formula/serializers.py)
+**文件**: [formula/serializers.py](/code/cube_api/cube_api/apps/formula/serializers.py)
 
 **实现逻辑**:
 - 每个公式分类（F2L/OLL/PLL等）对应一个目标魔方状态
@@ -1611,7 +1611,7 @@ def _bind_target_state(self, formula, category_id):
 ```
 
 #### 15. 作者筛选与权限控制
-**文件**: [formula/filters.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/formula/filters.py), [formula/permissions.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/formula/permissions.py)
+**文件**: [formula/filters.py](/code/cube_api/cube_api/apps/formula/filters.py), [formula/permissions.py](/code/cube_api/cube_api/apps/formula/permissions.py)
 
 **作者筛选**:
 - 使用 `django-filter` 的 `NumberInFilter` 支持多值筛选
@@ -1711,7 +1711,7 @@ def list(self, request, *args, **kwargs):
 **热度公式**：`hot_score = 点赞数 × 3 + 评论数 × 2 + 收藏数 × 1`
 
 #### 16. 自定义公式分类
-**文件**: [formula/models.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/formula/models.py), [formula/views.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/formula/views.py)
+**文件**: [formula/models.py](/code/cube_api/cube_api/apps/formula/models.py), [formula/views.py](/code/cube_api/cube_api/apps/formula/views.py)
 
 **设计思路**:
 - `CubeCategory` 模型添加 `created_by` 外键和 `is_custom` 布尔字段，支持用户创建自定义分类
@@ -1747,7 +1747,7 @@ def perform_create(self, serializer):
 - 弹窗支持选择阶数、求解方法、阶段（从固定列表选择）
 
 #### 17. 公式编辑逆公式同步
-**文件**: [formula/serializers.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/formula/serializers.py)
+**文件**: [formula/serializers.py](/code/cube_api/cube_api/apps/formula/serializers.py)
 
 **问题**: 编辑公式时逆公式没有随公式修改而更新
 
@@ -1764,7 +1764,7 @@ def update(self, instance, validated_data):
 ```
 
 #### 18. 公式卡片样式优化
-**文件**: [FormulaLibrary.vue](file:///e:/BH/PyStudy/ICube/cube_front/src/components/formula/FormulaLibrary.vue), [CollectionView.vue](file:///e:/BH/PyStudy/ICube/cube_front/src/views/profiles/CollectionView.vue)
+**文件**: [FormulaLibrary.vue](/code/cube_front/src/components/formula/FormulaLibrary.vue), [CollectionView.vue](/code/cube_front/src/views/profiles/CollectionView.vue)
 
 **优化内容**:
 - 公式卡片布局优化：头部显示公式名称+难度标签，底部显示分类名+作者信息
@@ -1800,7 +1800,7 @@ def update(self, instance, validated_data):
 - 收藏页面的公式卡片样式与公式库页面保持一致
 
 #### 19. 自定义用户模型与缓存
-**文件**: [accounts/models.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/models.py), [accounts/services.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/services.py)
+**文件**: [accounts/models.py](/code/cube_api/cube_api/apps/accounts/models.py), [accounts/services.py](/code/cube_api/cube_api/apps/accounts/services.py)
 
 **核心实现**:
 - 继承 `AbstractUser`，重写 `USERNAME_FIELD = "email"`
@@ -1919,7 +1919,7 @@ con.set(key, value, ex=expire)
 - 雪崩：大量 key 同时过期 → 过期时间加随机 + 多级缓存
 
 #### 20. ORM查询优化
-**文件**: [forum/views.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/views.py#L53), [forum/services.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/services.py#L83)
+**文件**: [forum/views.py](/code/cube_api/cube_api/apps/forum/views.py#L53), [forum/services.py](/code/cube_api/cube_api/apps/forum/services.py#L83)
 
 **select_related —— 外键预加载（JOIN）**
 
@@ -2029,7 +2029,7 @@ self.save(update_fields=['use_count'])
 **记忆口诀**：单数用 select（JOIN），复数用 prefetch（IN）。
 
 #### 21. 序列化器设计
-**文件**: [forum/serializers.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/serializers.py)
+**文件**: [forum/serializers.py](/code/cube_api/cube_api/apps/forum/serializers.py)
 
 **核心设计**:
 - 多序列化器策略：`get_serializer_class()` 按 action 动态选择
@@ -3504,7 +3504,7 @@ HTTP 请求
 
 ###### 2. 项目中的 Service
 
-论坛 Service 集中在 [services.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/services.py)：
+论坛 Service 集中在 [services.py](/code/cube_api/cube_api/apps/forum/services.py)：
 
 | Service | 核心方法 | 职责 |
 |---------|----------|------|
@@ -3520,7 +3520,7 @@ result = PostInteractionService.toggle_like(post.id, request.user)
 return APIResponse(**result)
 ```
 
-调用位置见 [views.py#L242-L266](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/views.py#L242-L266)。
+调用位置见 [views.py#L242-L266](/code/cube_api/cube_api/apps/forum/views.py#L242-L266)。
 
 这样做的直接收益：
 
@@ -3531,7 +3531,7 @@ return APIResponse(**result)
 
 ###### 3. PostCacheService：缓存与降级
 
-浏览量服务位于 [services.py#L28-L178](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/services.py#L28-L178)，缓存键格式为：
+浏览量服务位于 [services.py#L28-L178](/code/cube_api/cube_api/apps/forum/services.py#L28-L178)，缓存键格式为：
 
 ```text
 forum:post:{post_id}:view
@@ -3561,7 +3561,7 @@ Post.objects.filter(id=post_id).update(
 - **关系表：** 记录哪个用户操作了哪个帖子，用于判断用户状态。
 - **冗余计数：** `like_count`、`collect_count` 等字段，用于列表快速展示和排序。
 
-关系表通过唯一约束防止重复记录，例如 `PostLike` 的 `(post, user)` 唯一，见 [models.py#L257-L280](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/models.py#L257-L280)。
+关系表通过唯一约束防止重复记录，例如 `PostLike` 的 `(post, user)` 唯一，见 [models.py#L257-L280](/code/cube_api/cube_api/apps/forum/models.py#L257-L280)。
 
 评论反应支持三种状态转换：
 
@@ -3584,7 +3584,7 @@ Comment.objects.filter(id=comment_id).update(
 
 ###### 5. HotPostService：数据库层计算
 
-热门帖子服务位于 [services.py#L348-L390](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/services.py#L348-L390)，只统计最近 `N` 天已发布的帖子：
+热门帖子服务位于 [services.py#L348-L390](/code/cube_api/cube_api/apps/forum/services.py#L348-L390)，只统计最近 `N` 天已发布的帖子：
 
 ```python
 hot_score = (
@@ -3647,7 +3647,7 @@ with transaction.atomic():
 
 **Redis KEYS 会阻塞**
 
-`sync_all_views()` 使用 `KEYS "*forum:post:*:view"`，见 [services.py#L125-L174](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/services.py#L125-L174)。`KEYS` 会一次遍历全部键，生产环境应使用 `SCAN` 分批处理。
+`sync_all_views()` 使用 `KEYS "*forum:post:*:view"`，见 [services.py#L125-L174](/code/cube_api/cube_api/apps/forum/services.py#L125-L174)。`KEYS` 会一次遍历全部键，生产环境应使用 `SCAN` 分批处理。
 
 **Service 不应返回 HTTP 协议结构**
 
@@ -3663,7 +3663,7 @@ with transaction.atomic():
 ### 前端重点
 
 #### 1. 图片裁剪组件
-**文件**: [ImageCropper.vue](file:///e:/BH/PyStudy/ICube/cube_front/src/components/ImageCropper.vue)
+**文件**: [ImageCropper.vue](/code/cube_front/src/components/ImageCropper.vue)
 
 **核心实现**:
 - **Canvas裁剪**: 使用HTML5 Canvas实现1:1固定比例裁剪框
@@ -3699,7 +3699,7 @@ const handleDrag = debounce((e) => {
 ```
 
 #### 2. 公式编辑器
-**文件**: [FormulaEditor.vue](file:///e:/BH/PyStudy/ICube/cube_front/src/components/formula/FormulaEditor.vue)
+**文件**: [FormulaEditor.vue](/code/cube_front/src/components/formula/FormulaEditor.vue)
 
 **核心功能**:
 - **点击式键盘输入**: 模拟魔方键盘，支持R/L/U/D/F/B/r/l/u/d/f/b/M/E/S/x/y/z等所有操作
@@ -3733,7 +3733,7 @@ const handleImageSelect = async (formulaId) => {
 ```
 
 #### 3. 公式多重筛选
-**文件**: [FormulaLibrary.vue](file:///e:/BH/PyStudy/ICube/cube_front/src/components/formula/FormulaLibrary.vue)
+**文件**: [FormulaLibrary.vue](/code/cube_front/src/components/formula/FormulaLibrary.vue)
 
 **筛选维度**:
 - **分类筛选**: 按公式分类（F2L/OLL/PLL等）
@@ -3754,7 +3754,7 @@ const filterParams = computed(() => {
 ```
 
 #### 4. 价格筛选优化
-**文件**: [ShopView.vue](file:///e:/BH/PyStudy/ICube/cube_front/src/views/ShopView.vue)
+**文件**: [ShopView.vue](/code/cube_front/src/views/ShopView.vue)
 
 **优化内容**:
 - **快捷价格区间标签**: 添加5个常用区间（0-50元、50-100元、100-200元、200-500元、500元以上），点击快速筛选
@@ -3786,7 +3786,7 @@ const selectPriceTag = (tag) => {
 ```
 
 #### 5. 3D魔方可视化
-**文件**: [CubeDemo.vue](file:///e:/BH/PyStudy/ICube/cube_front/src/components/formula/CubeDemo.vue)
+**文件**: [CubeDemo.vue](/code/cube_front/src/components/formula/CubeDemo.vue)
 
 **核心实现**:
 - **Three.js 场景搭建**: Scene + PerspectiveCamera + WebGLRenderer + OrbitControls
@@ -3814,7 +3814,7 @@ const selectPriceTag = (tag) => {
 ```
 
 #### 6. 状态管理 (Pinia)
-**文件**: [stores/](file:///e:/BH/PyStudy/ICube/cube_front/src/stores/)
+**文件**: [stores/](/code/cube_front/src/stores/)
 
 **模块划分**:
 - `user.js`: 用户登录状态、token、个人信息
@@ -3823,7 +3823,7 @@ const selectPriceTag = (tag) => {
 **持久化**: token 存储在 `localStorage`，页面刷新后自动恢复
 
 #### 7. 请求拦截器
-**文件**: [request.js](file:///e:/BH/PyStudy/ICube/cube_front/src/http/request.js)
+**文件**: [request.js](/code/cube_front/src/http/request.js)
 
 **请求拦截**:
 
@@ -3837,7 +3837,7 @@ const selectPriceTag = (tag) => {
 - HTTP错误处理: 401/404/500 等状态码统一提示
 
 #### 8. 路由结构
-**文件**: [index.js](file:///e:/BH/PyStudy/ICube/cube_front/src/router/index.js)
+**文件**: [index.js](/code/cube_front/src/router/index.js)
 
 **路由设计**:
 - **父布局路由**: HomeView 作为根布局，包含 Header/Footer
@@ -3850,7 +3850,7 @@ const selectPriceTag = (tag) => {
 - 通过 query 参数传递 `formula_id`，实现首页精选公式到公式库详情的跳转联动
 
 #### 9. 公式跳转联动
-**文件**: [Main.vue](file:///e:/BH/PyStudy/ICube/cube_front/src/components/Main.vue), [FormulaLibrary.vue](file:///e:/BH/PyStudy/ICube/cube_front/src/components/formula/FormulaLibrary.vue)
+**文件**: [Main.vue](/code/cube_front/src/components/Main.vue), [FormulaLibrary.vue](/code/cube_front/src/components/formula/FormulaLibrary.vue)
 
 **实现流程**:
 1. **首页跳转**: 点击精选公式卡片，通过路由 query 参数传递公式ID
@@ -3882,7 +3882,7 @@ onMounted(() => {
 ```
 
 #### 10. Vite 代理配置
-**文件**: [vite.config.js](file:///e:/BH/PyStudy/ICube/cube_front/vite.config.js)
+**文件**: [vite.config.js](/code/cube_front/vite.config.js)
 
 **配置要点**:
 - **开发模式 (server.proxy)**: 配置 `/api` 和 `/media` 代理到 `http://127.0.0.1:8000`
@@ -3921,7 +3921,7 @@ preview: {
 ```
 
 #### 11. 教程页面体系
-**文件**: [tutorial/](file:///e:/BH/PyStudy/ICube/cube_front/src/views/tutorial/)
+**文件**: [tutorial/](/code/cube_front/src/views/tutorial/)
 
 **6个教程页面**:
 | 页面 | 路径 | 内容 |
@@ -3942,7 +3942,7 @@ preview: {
 ### 部署重点
 
 #### 1. Docker Compose 完整部署方案
-**文件**: [docker-compose.yml](file:///e:/BH/PyStudy/ICube/docker-compose.yml)
+**文件**: [docker-compose.yml](/code/docker-compose.yml)
 
 **服务架构**:
 ```
@@ -3989,7 +3989,7 @@ bash deploy.sh front  # 仅构建前端、重启 Nginx
 ```
 
 #### 2. 后端Dockerfile详解
-**文件**: [Dockerfile](file:///e:/BH/PyStudy/ICube/cube_api/Dockerfile)
+**文件**: [Dockerfile](/code/cube_api/Dockerfile)
 
 后端采用 `python:3.13-slim` 多阶段构建：
 
@@ -3999,7 +3999,7 @@ bash deploy.sh front  # 仅构建前端、重启 Nginx
 4. **生产约束**: 不使用 `--reload`；API 不挂载宿主机源码，代码更新必须重建镜像
 
 #### 3. 前端Dockerfile详解
-**文件**: [Dockerfile](file:///e:/BH/PyStudy/ICube/cube_front/Dockerfile)
+**文件**: [Dockerfile](/code/cube_front/Dockerfile)
 
 前端采用 Node + Nginx 多阶段构建：
 
@@ -4011,7 +4011,7 @@ bash deploy.sh front  # 仅构建前端、重启 Nginx
 构建产物直接写入镜像，不需要本地生成或提交 `cube_front/dist`。
 
 #### 4. Nginx配置详解
-**文件**: [icube.conf](file:///e:/BH/PyStudy/ICube/nginx/conf.d/icube.conf)
+**文件**: [icube.conf](/code/nginx/conf.d/icube.conf)
 
 **路由规则**:
 | 路径 | 处理方式 | 关键配置 |
@@ -4036,7 +4036,7 @@ proxy_set_header X-Forwarded-Proto $scheme;
 - **`proxy_connect_timeout 60s`**: 增加连接超时时间，应对慢请求
 
 #### 5. 生产环境配置
-**文件**: [prod.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/prod.py)
+**文件**: [prod.py](/code/cube_api/cube_api/settings/prod.py)
 
 **环境变量读取**:
 - `ALLOWED_HOSTS`: 通过 `os.getenv('ALLOWED_HOSTS')` 动态获取，支持逗号分隔多个域名
@@ -4145,7 +4145,7 @@ Access-Control-Allow-Headers: authorization, content-type
 
 **3. CorsMiddleware 为什么要靠前**
 
-项目在 [dev.py#L101-L115](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L101-L115) 中把：
+项目在 [dev.py#L101-L115](/code/cube_api/cube_api/settings/dev.py#L101-L115) 中把：
 
 ```python
 'corsheaders.middleware.CorsMiddleware',
@@ -4162,7 +4162,7 @@ Django 中间件按声明顺序处理请求，按反向顺序处理响应。`Cor
 
 **4. 开发环境配置**
 
-开发配置见 [dev.py#L510-L519](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L510-L519)：
+开发配置见 [dev.py#L510-L519](/code/cube_api/cube_api/settings/dev.py#L510-L519)：
 
 ```python
 CORS_ALLOWED_ORIGINS = [
@@ -4175,7 +4175,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 当 `CORS_ALLOW_ALL_ORIGINS = True` 时，所有来源都会被允许，`CORS_ALLOWED_ORIGINS` 不再起限制作用。开发环境这样配置便于联调，但不适合生产环境。
 
-前端 Axios 使用相对路径，Vite 又把 `/api` 代理到 Django，见 [request.js#L41-L50](file:///e:/BH/PyStudy/ICube/cube_front/src/http/request.js#L41-L50) 和 [vite.config.js#L31-L56](file:///e:/BH/PyStudy/ICube/cube_front/vite.config.js#L31-L56)。浏览器实际请求的是 Vite 自己的地址，因此正常开发链路通常表现为同源；CORS 主要用于前端直接访问后端端口或其他独立客户端场景。
+前端 Axios 使用相对路径，Vite 又把 `/api` 代理到 Django，见 [request.js#L41-L50](/code/cube_front/src/http/request.js#L41-L50) 和 [vite.config.js#L31-L56](/code/cube_front/vite.config.js#L31-L56)。浏览器实际请求的是 Vite 自己的地址，因此正常开发链路通常表现为同源；CORS 主要用于前端直接访问后端端口或其他独立客户端场景。
 
 **5. 生产环境配置**
 
@@ -4191,7 +4191,7 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 ```
 
-对应位置：[prod.py#L38-L52](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/prod.py#L38-L52)。
+对应位置：[prod.py#L38-L52](/code/cube_api/cube_api/settings/prod.py#L38-L52)。
 
 这里的 `ALLOWED_ORIGIN` 预期是纯主机名，例如：
 
@@ -4786,7 +4786,7 @@ class Banner(models.Model):
 **回答要点**:
 - `sys.path` 是 Python 模块搜索路径列表，`import` 语句会按顺序在这些路径中查找模块
 - **为什么要修改**: 项目目录结构非标准，`apps/` 不在默认搜索路径下。Django 默认 `BASE_DIR` 是 `cube_api/`，但 `apps/` 在 `cube_api/cube_api/apps/` 下
-- **三行注入**: 位置 [settings/dev.py#L40-L50](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L40-L50)
+- **三行注入**: 位置 [settings/dev.py#L40-L50](/code/cube_api/cube_api/settings/dev.py#L40-L50)
   - 注入配置目录（`cube_api/cube_api/`），使 `utils`、`settings` 等模块可直接导入
   - 注入 apps 目录（`cube_api/cube_api/apps/`），使 `apps.accounts`、`apps.forum` 等应用可直接导入
   - 注入项目根目录（`cube_api/`），方便导入项目级别的包和模块

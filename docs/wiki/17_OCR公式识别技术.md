@@ -60,7 +60,7 @@ ICube 移动端（cube_app）需要从用户拍摄的魔方公式图片中识别
 
 ### 4.1 预处理层（preprocessImage）
 
-源文件：[ocr-helper.js](file:///e:/BH/PyStudy/ICube/cube_app/src/utils/ocr-helper.js)
+源文件：[ocr-helper.js](/code/cube_app/src/utils/ocr-helper.js)
 
 #### 自适应检测
 
@@ -293,10 +293,10 @@ cleaned.replace(/W/g, ' ')       // 括号 ( 误认为 W，删除
 
 | 文件 | 职责 |
 |------|------|
-| [ocr-helper.js](file:///e:/BH/PyStudy/ICube/cube_app/src/utils/ocr-helper.js) | 核心逻辑：预处理、识别、清洗 |
-| [ocr-test.html](file:///e:/BH/PyStudy/ICube/cube_app/public/ocr-test.html) | 调试工具：可视化参数调整 |
-| [FormulaView.vue](file:///e:/BH/PyStudy/ICube/cube_app/src/views/FormulaView.vue) | 调用方：新增公式时 OCR 识别 |
-| [FormulaDetailView.vue](file:///e:/BH/PyStudy/ICube/cube_app/src/views/FormulaDetailView.vue) | 调用方：编辑公式时 OCR 识别 |
+| [ocr-helper.js](/code/cube_app/src/utils/ocr-helper.js) | 核心逻辑：预处理、识别、清洗 |
+| [ocr-test.html](/code/cube_app/public/ocr-test.html) | 调试工具：可视化参数调整 |
+| [FormulaView.vue](/code/cube_app/src/views/FormulaView.vue) | 调用方：新增公式时 OCR 识别 |
+| [FormulaDetailView.vue](/code/cube_app/src/views/FormulaDetailView.vue) | 调用方：编辑公式时 OCR 识别 |
 
 ---
 

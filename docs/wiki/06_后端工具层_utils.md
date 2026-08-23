@@ -1,6 +1,6 @@
 ## 6. 后端工具层（utils）
 
-### 6.1 common\_response.py — 统一响应（[common\_response.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/utils/common_response.py)）
+### 6.1 common\_response.py — 统一响应（[common\_response.py](/code/cube_api/cube_api/utils/common_response.py)）
 
 | 类                              | 继承             | 用途                       |
 | ------------------------------ | -------------- | ------------------------ |
@@ -34,9 +34,9 @@
 
 前端拦截器将 `code !== 100` 视为错误。
 
-### 6.2 common\_exception.py — 统一异常处理（[common\_exception.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/utils/common_exception.py)）
+### 6.2 common\_exception.py — 统一异常处理（[common\_exception.py](/code/cube_api/cube_api/utils/common_exception.py)）
 
-核心函数 `common_exception_handler(exc, context)`（[L35](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/utils/common_exception.py#L35-L127)）：
+核心函数 `common_exception_handler(exc, context)`（[L35](/code/cube_api/cube_api/utils/common_exception.py#L35-L127)）：
 
 1. 提取上下文（user email/Anonymous、path、method、view 类名）
 2. 调用 DRF 原生 `drf_exception_handler` 获取初步 response
@@ -100,14 +100,14 @@ DRF ViewSet 通过 `ViewSetMixin.as_view(actions={...})` 把 HTTP 方法绑定�
 
 | 场景 | 触发请求 | 结果 | 原因 / 正确写法 |
 | --- | --- | --- | --- |
-| 1. ReadOnlyModelViewSet 上发写操作 | `POST /api/forum/tags/` | 405 | `TagViewSet`([forum/views.py#L580](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/views.py#L580)) 无 CreateModelMixin；同类还有 `ProductCategoryViewSet`/`ProductViewSet`/`BannerViewSet`/`NavigationMenuViewSet`/`ProfileDetailView` |
+| 1. ReadOnlyModelViewSet 上发写操作 | `POST /api/forum/tags/` | 405 | `TagViewSet`([forum/views.py#L580](/code/cube_api/cube_api/apps/forum/views.py#L580)) 无 CreateModelMixin；同类还有 `ProductCategoryViewSet`/`ProductViewSet`/`BannerViewSet`/`NavigationMenuViewSet`/`ProfileDetailView` |
 | 1. ReadOnlyModelViewSet 上发写操作 | `DELETE /api/home/banners/1/` | 405 | 无 DestroyModelMixin |
 | 1. ReadOnlyModelViewSet 上发写操作 | `PUT /api/shop/products/123/` | 405 | 无 UpdateModelMixin |
 | 2. 写请求漏掉 `/{id}`（发到 list 路由） | `PUT /api/timer/records/` | 405 | 应 `PUT /api/timer/records/123/`（PUT/PATCH/DELETE 只绑 detail 路由） |
 | 2. 写请求漏掉 `/{id}`（发到 list 路由） | `PATCH /api/forum/posts/` | 405 | 应 `PATCH /api/forum/posts/123/` |
 | 2. 写请求漏掉 `/{id}`（发到 list 路由） | `DELETE /api/shop/cart/` | 405 | 应 `DELETE /api/shop/cart/789/` |
 | 3. list 接口用错 method | `POST /api/shop/products/` | 405 | `ProductViewSet` 为 ReadOnly，应 `GET`；对比 `POST /api/timer/records/` ✅（`TimerRecordViewSet` 为 ModelViewSet） |
-| 4. GenericViewSet 无标准 action | `GET /api/users/` / `POST /api/users/` | 405 | `AuthViewSet`([accounts/views.py#L33](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/views.py#L33)) 只含自定义 @action，应走 `POST /api/users/login` 等 |
+| 4. GenericViewSet 无标准 action | `GET /api/users/` / `POST /api/users/` | 405 | `AuthViewSet`([accounts/views.py#L33](/code/cube_api/cube_api/apps/accounts/views.py#L33)) 只含自定义 @action，应走 `POST /api/users/login` 等 |
 | 5. 自定义 `http_method_names` | `DELETE /api/formula/formulas/1/`（假设限定 `['get','post']`） | 405 | ViewSet 上 `http_method_names` 未列出该方法 |
 | 6. `@action(methods=[...])` 限定 | `GET /api/formula/formulas/1/bookmark`（假设 `methods=['post']`） | 405 | @action 装饰器未允许 GET，应 `POST` |
 
@@ -115,12 +115,12 @@ DRF ViewSet 通过 `ViewSetMixin.as_view(actions={...})` 把 HTTP 方法绑定�
 
 1. 查 ViewSet 基类：是否用了 `ReadOnlyModelViewSet`（看 `apps/<module>/views.py` 类继承）
 2. 查 URL 是 list 还是 detail：PUT/PATCH/DELETE 必须带 `/{id}/`
-3. 查 Router 注册：`urls.py` 中 `router.register(...)` 的 prefix 与 trailing slash（accounts 用 `trailing_slash=False`，见 [accounts/urls.py#L8](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/urls.py#L8)）
+3. 查 Router 注册：`urls.py` 中 `router.register(...)` 的 prefix 与 trailing slash（accounts 用 `trailing_slash=False`，见 [accounts/urls.py#L8](/code/cube_api/cube_api/apps/accounts/urls.py#L8)）
 4. 查 `@action` 装饰器：`methods=[...]` 是否漏写
 5. 查 `http_method_names`：是否在 ViewSet 上被覆盖
 6. 查 `@permission_classes` / `@method_decorator` 是否拦截后误返回 405
 
-### 6.3 common\_pagination.py — 统一分页（[common\_pagination.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/utils/common_pagination.py)）
+### 6.3 common\_pagination.py — 统一分页（[common\_pagination.py](/code/cube_api/cube_api/utils/common_pagination.py)）
 
 | 类                           | page\_size | max\_page\_size | 用途    |
 | --------------------------- | ---------- | --------------- | ----- |
@@ -130,13 +130,13 @@ DRF ViewSet 通过 `ViewSetMixin.as_view(actions={...})` 把 HTTP 方法绑定�
 
 重写 `get_paginated_response(data)` 返回 `APIResponse(data={count, next, previous, results})`，与统一响应格式一致。同时提供 `get_paginated_response_schema(schema)` 为 drf-spectacular 生成正确 schema。
 
-### 6.4 image\_url.py — 图片 URL 标准化（[image\_url.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/utils/image_url.py)）
+### 6.4 image\_url.py — 图片 URL 标准化（[image\_url.py](/code/cube_api/cube_api/utils/image_url.py)）
 
 ```python
 def build_image_url(relative_path, absolute=False)
 ```
 
-**处理逻辑**（[L57-L102](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/utils/image_url.py#L57-L102)）：
+**处理逻辑**（[L57-L102](/code/cube_api/cube_api/utils/image_url.py#L57-L102)）：
 
 1. 空路径 → 返回 `''`
 2. `isinstance(relative_path, FieldFile)` → 取 `.name`（**避免触发 .path 属性计算**）
@@ -182,7 +182,7 @@ PNA 是 **Private Network Access** 的缩写。它的核心目的是**保护用�
 
 PNA 规则的核心就是：**一个网站只能访问与其隐私级别相同或更低级别的网络资源**。
 
-### 6.5 image\_processor.py — 图像处理（[image\_processor.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/utils/image_processor.py)）
+### 6.5 image\_processor.py — 图像处理（[image\_processor.py](/code/cube_api/cube_api/utils/image_processor.py)）
 
 依赖 Pillow。
 

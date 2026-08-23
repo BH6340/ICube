@@ -4,7 +4,7 @@
 
 论坛核心：帖子发布（Markdown + 图片延迟关联）、树形评论（点赞/点踩）、标签、收藏、举报、热度排行、统计字段冗余 + Redis 浏览量缓存。
 
-### 8.2 数据模型（[models.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/models.py)）
+### 8.2 数据模型（[models.py](/code/cube_api/cube_api/apps/forum/models.py)）
 
 | 模型              | db\_table          | 核心设计                                                                                   |
 | --------------- | ------------------ | -------------------------------------------------------------------------------------- |
@@ -18,7 +18,7 @@
 | **Report**      | —                  | 通用举报：content\_type CharField + object\_id（不用 ContentType）                              |
 | **PostImage**   | `forum_post_image` | **post 允许 null（延迟关联）**、`upload_to='forum/posts/%Y/%m/'`                                |
 
-#### Post 字段（[L81-L178](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/models.py#L81-L178)）
+#### Post 字段（[L81-L178](/code/cube_api/cube_api/apps/forum/models.py#L81-L178)）
 
 | 字段                                                          | 类型             | 说明                               |
 | ----------------------------------------------------------- | -------------- | -------------------------------- |
@@ -36,7 +36,7 @@
 - **Meta ordering**：`['-is_pinned', '-is_essence', '-created_at']`
 - **复合索引**：`[author, -created_at]`、`[-created_at]`、`[status, -created_at]`
 
-### 8.3 URL 路由表（[urls.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/urls.py)）
+### 8.3 URL 路由表（[urls.py](/code/cube_api/cube_api/apps/forum/urls.py)）
 
 `DefaultRouter` 注册：
 
@@ -57,9 +57,9 @@
 | `/tags/`                  | TagViewSet                 | GET                  | IsAuthenticatedOrReadOnly | 标签（只读）                           |
 | `/reports/`               | ReportViewSet              | GET/POST             | IsAuthenticated           | 举报（管理员看全部）                       |
 
-### 8.4 视图说明（[views.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/views.py)）
+### 8.4 视图说明（[views.py](/code/cube_api/cube_api/apps/forum/views.py)）
 
-#### PostViewSet（[L31-L441](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/views.py#L31-L441)）
+#### PostViewSet（[L31-L441](/code/cube_api/cube_api/apps/forum/views.py#L31-L441)）
 
 - 继承 `ModelViewSet`
 - queryset：`Post.objects.filter(status='published').select_related('author').prefetch_related('tags', 'images')`
@@ -76,7 +76,7 @@
 **关键方法**：
 
 - `get_serializer_class()`：list → PostListSerializer；create/update → PostCreateUpdateSerializer；其他 → PostSerializer
-- `list()`（[L82-L118](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/views.py#L82-L118)）：`hot` 参数存在时 `annotate(hot_score=Count('likes')*3 + Count('comments')*2 + Count('collects'))` + `order_by('-hot_score')`
+- `list()`（[L82-L118](/code/cube_api/cube_api/apps/forum/views.py#L82-L118)）：`hot` 参数存在时 `annotate(hot_score=Count('likes')*3 + Count('comments')*2 + Count('collects'))` + `order_by('-hot_score')`
 - `retrieve()`：调 `PostCacheService.increase_view(id)`
 - `destroy()`：`instance.soft_delete()`
 - `update()`：手动检查 `instance.author != request.user` → 403
@@ -84,19 +84,19 @@
 - `collect` action：`toggle_collect`
 - `comments` action：**只返回一级评论**（`parent=None`）
 - `hot` action：支持 days（默认7）、limit（默认20）→ `HotPostService.get_hot_posts`
-- `upload_image` action（[L378-L441](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/views.py#L378-L441)）：
+- `upload_image` action（[L378-L441](/code/cube_api/cube_api/apps/forum/views.py#L378-L441)）：
   - 校验 content\_type（jpeg/jpg/png/gif/webp）+ 大小 ≤ 5MB
   - `process_image(max_width=1200, max_height=1200, quality=85, crop_square=, convert_webp=True)`
   - 创建 `PostImage(post=None)` **延迟关联**
 
-#### CommentViewSet（[L444-L577](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/views.py#L444-L577))
+#### CommentViewSet（[L444-L577](/code/cube_api/cube_api/apps/forum/views.py#L444-L577))
 
 - 继承 `ModelViewSet`
 - `get_queryset()`：list 动作 → `filter(parent=None)` **只返回一级评论** + `order_by('-created_at')`
 - `create/destroy`：手动重算 `post.comment_count`
 - `like`/`dislike` action：`PostInteractionService.toggle_comment_reaction(comment_id, user, is_like=True/False)`
 
-### 8.5 序列化器（[serializers.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/serializers.py)）
+### 8.5 序列化器（[serializers.py](/code/cube_api/cube_api/apps/forum/serializers.py)）
 
 | 序列化器                         | 用途      | 关键设计                                                  |
 | ---------------------------- | ------- | ----------------------------------------------------- |
@@ -109,7 +109,7 @@
 | `CommentSerializer`          | 一级评论    | `get_replies` **深度优先递归扁平化**所有子孙；`reply_count`         |
 | `ReportSerializer`           | 举报      | reporter 自动设当前用户                                      |
 
-#### \_sync\_post\_images 全量同步逻辑（[L389-L436](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/serializers.py#L389-L436)）
+#### \_sync\_post\_images 全量同步逻辑（[L389-L436](/code/cube_api/cube_api/apps/forum/serializers.py#L389-L436)）
 
 1. `re.findall(r'!\[.*?\]\((.*?)\)', content)` 解析 Markdown 所有图片 URL
 2. 收集当前 `post.images.all()` 的 `image.name` → `existing_images`
@@ -117,11 +117,11 @@
 4. **删除多余**：已关联但不在 Markdown 中的 → `img.delete()`
 5. **补齐缺失**：Markdown 中存在但未关联且文件存在的 → `PostImage.objects.create`
 
-### 8.6 服务层（[services.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/services.py)）
+### 8.6 服务层（[services.py](/code/cube_api/cube_api/apps/forum/services.py)）
 
-> ⚠️ **违反项目规则**：[L16, L23-25](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/services.py#L16-L25) 使用内置 `logging` 模块，应改用 loguru。
+> ⚠️ **违反项目规则**：[L16, L23-25](/code/cube_api/cube_api/apps/forum/services.py#L16-L25) 使用内置 `logging` 模块，应改用 loguru。
 
-#### PostCacheService（[L28-L177](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/services.py#L28-L177)）
+#### PostCacheService（[L28-L177](/code/cube_api/cube_api/apps/forum/services.py#L28-L177)）
 
 **缓存键**：`forum:post:{post_id}:view`
 
@@ -131,7 +131,7 @@
 | `get_view_count(post_id)` | `cache.get` 命中返回；未命中查库 + `cache.set(key, count, 3600)`                                                                                    |
 | `sync_all_views()`        | ⚠️ **使用 KEYS 命令** `con.keys("*forum:post:*:view")`（阻塞风险，建议改 SCAN）；解析 post\_id 后 `update(view_count=F('view_count')+int(views))`；删除已同步 key |
 
-#### PostInteractionService（[L180-L345](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/services.py#L180-L345)）
+#### PostInteractionService（[L180-L345](/code/cube_api/cube_api/apps/forum/services.py#L180-L345)）
 
 | 方法                                                   | 逻辑                                                              |
 | ---------------------------------------------------- | --------------------------------------------------------------- |
@@ -139,7 +139,7 @@
 | `toggle_collect(post_id, user)`                      | 对称收藏切换                                                          |
 | `toggle_comment_reaction(comment_id, user, is_like)` | 三态：新建反应 / 取消反应 / 切换反应（赞↔踩）                                      |
 
-#### HotPostService（[L348-L389](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/services.py#L348-L389)）
+#### HotPostService（[L348-L389](/code/cube_api/cube_api/apps/forum/services.py#L348-L389)）
 
 `get_hot_posts(days=7, limit=20)`：
 
@@ -147,7 +147,7 @@
 - 权重：点赞×3（认可度）、评论×2（参与度）、浏览×1（防刷量）
 - `annotate + order_by('-hot_score')[:limit]`
 
-### 8.7 权限类（[permissions.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/permissions.py)）
+### 8.7 权限类（[permissions.py](/code/cube_api/cube_api/apps/forum/permissions.py)）
 
 | 权限类                        | 逻辑                                                                         |
 | -------------------------- | -------------------------------------------------------------------------- |
@@ -157,7 +157,7 @@
 
 > 注：PostViewSet 实际复用 accounts 的 `IsOwnerOrReadOnly`，未使用 forum 自身权限类（预留）。
 
-### 8.8 信号（[signals.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/forum/signals.py)）
+### 8.8 信号（[signals.py](/code/cube_api/cube_api/apps/forum/signals.py)）
 
 | 信号           | sender  | 接收器                                   | 逻辑                                                    |
 | ------------ | ------- | ------------------------------------- | ----------------------------------------------------- |

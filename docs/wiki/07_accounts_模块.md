@@ -4,9 +4,9 @@
 
 自定义用户认证与社交关系管理：email 密码登录 + 邮箱验证码注册/登录/找回密码、JWT 黑名单注销、用户资料管理、关注/粉丝关系（数据库 + Redis 双写双读）。
 
-### 7.2 数据模型（[models.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/models.py)）
+### 7.2 数据模型（[models.py](/code/cube_api/cube_api/apps/accounts/models.py)）
 
-#### User（[L99-L304](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/models.py#L99-L304)）
+#### User（[L99-L304](/code/cube_api/cube_api/apps/accounts/models.py#L99-L304)）
 
 继承 `AbstractUser`，email 登录模型。字段分四类：继承自父类原样保留、重写覆盖、本项目新增、显式移除。
 
@@ -53,12 +53,12 @@
 - `Meta`：`app_label='accounts'`、`verbose_name="用户"`、`ordering=["-date_joined"]`
 - `__str__` 返回 `email`；`get_full_name`/`get_short_name` 返回 `username`
 
-**关注/取关操作**（[L217-L256](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/models.py#L217-L256)）：
+**关注/取关操作**（[L217-L256](/code/cube_api/cube_api/apps/accounts/models.py#L217-L256)）：
 
 - `follow(user)`：禁止关注自己；`following.add` 后用 `get_redis_connection` 双写 `sadd` 自己 following + 对方 followers
 - `unfollow(user)`：对称 `srem`
 
-**懒加载属性**（[L260-L304](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/models.py#L260-L304)）：
+**懒加载属性**（[L260-L304](/code/cube_api/cube_api/apps/accounts/models.py#L260-L304)）：
 
 - `followers_count`（property）：Redis `exists` 判断 → `scard`；未命中查库 + `sadd` 回写
 - `following_count`（property）：同上
@@ -74,12 +74,12 @@
 | 用户关注列表为空 | 缓存中无 key，每次查询都走数据库 | 缓存中有 `{-1}`，直接返回空集合，不查库 |
 | 高并发空集合查询 | 数据库被大量无效查询打爆         | Redis 直接挡掉，数据库安全              |
 
-#### UserManager（[L25-L96](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/models.py#L25-L96)）
+#### UserManager（[L25-L96](/code/cube_api/cube_api/apps/accounts/models.py#L25-L96)）
 
 - `create_user(email, password, **other)`：标准化 email、`set_unusable_password` 兜底
 - `create_superuser`：默认 `is_staff/is_superuser/is_active=True`
 
-### 7.3 URL 路由表（[urls.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/urls.py)）
+### 7.3 URL 路由表（[urls.py](/code/cube_api/cube_api/apps/accounts/urls.py)）
 
 使用 `SimpleRouter(trailing_slash=False)`：
 
@@ -99,21 +99,21 @@
 | `/profiles/{username}/following` | ProfileDetailView\@following | GET           | IsAuthenticatedOrReadOnly    | 关注列表         |
 | `/profiles/{username}/followers` | ProfileDetailView\@followers | GET           | IsAuthenticatedOrReadOnly    | 粉丝列表         |
 
-### 7.4 视图说明（[views.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/views.py)）
+### 7.4 视图说明（[views.py](/code/cube_api/cube_api/apps/accounts/views.py)）
 
-#### AuthViewSet（[L33-L230](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/views.py#L33-L230)）
+#### AuthViewSet（[L33-L230](/code/cube_api/cube_api/apps/accounts/views.py#L33-L230)）
 
 - 继承 `GenericViewSet`，permission=`AllowAny`
 - `get_throttles()`：`action=='login'` 追加 `LoginRateThrottle`；`action=='send_code'` 追加 `SendCodeRateThrottle`
-- `register`（[L89-L122](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/views.py#L89-L122)）：用户名重名自动加 `_N` 后缀
-- `login`（[L164-L202](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/views.py#L164-L202)）：`authenticate(email, password)` 校验，失败 `code=102, 401`；成功 `RefreshToken.for_user` 生成 token
+- `register`（[L89-L122](/code/cube_api/cube_api/apps/accounts/views.py#L89-L122)）：用户名重名自动加 `_N` 后缀
+- `login`（[L164-L202](/code/cube_api/cube_api/apps/accounts/views.py#L164-L202)）：`authenticate(email, password)` 校验，失败 `code=102, 401`；成功 `RefreshToken.for_user` 生成 token
 - `send_code`：参数 `email` + `action`（register/login/reset）；register 检查邮箱未注册，login/reset 检查已注册；调用 `EmailCodeService.send_code`
 - `register_with_code`：验证码校验通过 → 创建用户 → 生成 JWT
 - `login_with_code`：验证码校验通过 → 查找用户 → 生成 JWT
 - `reset_password`：验证码校验通过 → `set_password` → 清理 JWT 缓存
-- `logout`（[L204-L230](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/views.py#L204-L230)）：`JWTCacheService.add_to_blacklist(request.auth)`
+- `logout`（[L204-L230](/code/cube_api/cube_api/apps/accounts/views.py#L204-L230)）：`JWTCacheService.add_to_blacklist(request.auth)`
 
-#### UserView（[L233-L307](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/views.py#L233-L307)）
+#### UserView（[L233-L307](/code/cube_api/cube_api/apps/accounts/views.py#L233-L307)）
 
 - 继承 `RetrieveUpdateAPIView`，permission=`IsAuthenticated`
 - `parser_classes = [MultiPartParser, FormParser, JSONParser]`
@@ -121,14 +121,14 @@
 - `get_object()`：直接返回 `request.user`
 - `update()`：强制 `partial=True`，取 `request.data`（非嵌套 user 键）
 
-#### ProfileDetailView（[L310-L474](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/views.py#L310-L474)）
+#### ProfileDetailView（[L310-L474](/code/cube_api/cube_api/apps/accounts/views.py#L310-L474)）
 
 - 继承 `ReadOnlyModelViewSet`，`lookup_field='username'`
 - `get_serializer_class()`：following/followers → `ProfileListSerializer`，其他 → `ProfileSerializer`
 - `retrieve()`：必须传 `context={'request': request}`（否则 `get_following` 永远 False）
-- `follow` action（[L377-L426](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/views.py#L377-L426)）：禁止操作自己（`code=103`）；POST 走 `following.add` + `ProfileCacheService.update_follow_relation(is_follow=True)`；DELETE 对称
+- `follow` action（[L377-L426](/code/cube_api/cube_api/apps/accounts/views.py#L377-L426)）：禁止操作自己（`code=103`）；POST 走 `following.add` + `ProfileCacheService.update_follow_relation(is_follow=True)`；DELETE 对称
 
-### 7.5 序列化器（[serializers.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/serializers.py)）
+### 7.5 序列化器（[serializers.py](/code/cube_api/cube_api/apps/accounts/serializers.py)）
 
 | 序列化器                    | 用途             | 关键设计                                                                                                                                                                                               |
 | ----------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -141,9 +141,9 @@
 | `LoginWithCodeSerializer` | 验证码登录       | `email` + `code`(6位)                                                                                                                                                                              |
 | `ResetPasswordSerializer` | 验证码重置密码     | `email` + `code`(6位) + `new_password`                                                                                                                                                              |
 
-### 7.6 服务层（[services.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/services.py)）
+### 7.6 服务层（[services.py](/code/cube_api/cube_api/apps/accounts/services.py)）
 
-#### JWTCacheService（[L23-L105](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/services.py#L23-L105)）
+#### JWTCacheService（[L23-L105](/code/cube_api/cube_api/apps/accounts/services.py#L23-L105)）
 
 JWT Token 黑名单管理（无状态 JWT + 黑名单注销机制）。
 
@@ -155,7 +155,7 @@ JWT Token 黑名单管理（无状态 JWT + 黑名单注销机制）。
 | `is_blacklisted(jti)`       | jti 为空返回 True；否则 `exists(jwt:blacklist:{jti}) == 1`                        |
 | `_get_con()`                | 兼容测试环境：Django 代理层穿透 `con.client.get_client()`                              |
 
-#### ProfileCacheService（[L108-L333](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/services.py#L108-L333)）
+#### ProfileCacheService（[L108-L333](/code/cube_api/cube_api/apps/accounts/services.py#L108-L333)）
 
 用户资料与社交关系缓存。
 
@@ -180,7 +180,7 @@ JWT Token 黑名单管理（无状态 JWT + 黑名单注销机制）。
 - Pipeline 批量减少网络往返
 - 测试环境兼容（Django 缓存代理穿透）
 
-#### EmailCodeService（[services.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/services.py)）
+#### EmailCodeService（[services.py](/code/cube_api/cube_api/apps/accounts/services.py)）
 
 邮箱验证码服务：生成、存储、发送、验证。支持注册/登录/找回密码三种场景。
 
@@ -216,11 +216,11 @@ JWT Token 黑名单管理（无状态 JWT + 黑名单注销机制）。
 
 ### 7.7 认证与权限
 
-#### CachedJWTAuthentication（[authentication.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/authentication.py)）
+#### CachedJWTAuthentication（[authentication.py](/code/cube_api/cube_api/apps/accounts/authentication.py)）
 
 继承 `JWTAuthentication`，扩展缓存与黑名单。
 
-**authenticate() 流程**（[L93-L142](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/authentication.py#L93-L142)）：
+**authenticate() 流程**（[L93-L142](/code/cube_api/cube_api/apps/accounts/authentication.py#L93-L142)）：
 
 1. 提取 Authorization 头；为空返回 None
 2. 验证签名/过期
@@ -231,7 +231,7 @@ JWT Token 黑名单管理（无状态 JWT + 黑名单注销机制）。
 
 **设计原因**：兼容 `IsAuthenticatedOrReadOnly`，让无 Token 的只读请求不被 401 拦截。
 
-**get\_user() 缓存机制**（[L45-L91](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/authentication.py#L45-L91)）：
+**get\_user() 缓存机制**（[L45-L91](/code/cube_api/cube_api/apps/accounts/authentication.py#L45-L91)）：
 
 - 缓存键 `user_instance_cache_{user_id}`，TTL 1 小时
 - **只存用户 ID 不存完整对象**（避免敏感信息泄露 + 减小缓存）
@@ -240,7 +240,7 @@ JWT Token 黑名单管理（无状态 JWT + 黑名单注销机制）。
 
 > **修改用户状态后需清理 JWT 缓存**（`UserUpdateSerializer.update` 已实现 `cache.delete`）。
 
-#### 权限类（[permissions.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/permissions.py)）
+#### 权限类（[permissions.py](/code/cube_api/cube_api/apps/accounts/permissions.py)）
 
 | 权限类                       | 适用场景        | 逻辑                                                                         |
 | ------------------------- | ----------- | -------------------------------------------------------------------------- |
@@ -250,9 +250,9 @@ JWT Token 黑名单管理（无状态 JWT + 黑名单注销机制）。
 | `IsSelfOrReadOnly`        | 用户资料管理      | 读放行；写要求 `obj == request.user`                                              |
 | `IsFollowingOrReadOnly`   | 粉丝专属内容      | 读检查 `following.filter(id=obj.author.id).exists()`                          |
 
-### 7.8 限流（[throttles.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/throttles.py)）
+### 7.8 限流（[throttles.py](/code/cube_api/cube_api/apps/accounts/throttles.py)）
 
-#### LoginRateThrottle（[L19-L74](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/throttles.py#L19-L74)）
+#### LoginRateThrottle（[L19-L74](/code/cube_api/cube_api/apps/accounts/throttles.py#L19-L74)）
 
 - 继承 `SimpleRateThrottle`
 - `scope = 'login_scope'`（settings 中 `5/minute`）
@@ -287,11 +287,11 @@ JWT Token 黑名单管理（无状态 JWT + 黑名单注销机制）。
 - **推荐**：当你需要在应用启动时，执行一些初始化的“打扫”或“准备”工作时。
 - **可选**：想给你的应用在后台改个更漂亮的名字时。
 
-### 7.10 后台管理（[admin.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/admin.py)）
+### 7.10 后台管理（[admin.py](/code/cube_api/cube_api/apps/accounts/admin.py)）
 
 基于 django-unfold 定制用户后台，所有 Admin 类继承 `unfold.admin.ModelAdmin`（非原生 `admin.ModelAdmin`），提供 Tailwind CSS 样式、Tab 布局与高级过滤器。装饰器使用 Unfold 特有的 `@display`/`@action`（替代原生 `admin.display`/`admin.action`，额外支持样式参数）。
 
-#### UserAdmin（[L33-L311](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/apps/accounts/admin.py#L33-L311)）
+#### UserAdmin（[L33-L311](/code/cube_api/cube_api/apps/accounts/admin.py#L33-L311)）
 
 `@admin.register(User)` 注册，针对 User 模型的后台管理。
 

@@ -1,10 +1,10 @@
 ## 5. 后端配置层（settings）
 
-### 5.1 dev.py — 基础配置（[dev.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py)）
+### 5.1 dev.py — 基础配置（[dev.py](/code/cube_api/cube_api/settings/dev.py)）
 
-`prod.py` 通过 `from .dev import *` 继承此文件并覆盖部分配置，dev.py 是所有运行环境的**基础配置**。文件按 11 个段落组织（顶部注释 [L7-L18](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L7-L18) 已列出），每段由独立的 `# =====` 分隔。
+`prod.py` 通过 `from .dev import *` 继承此文件并覆盖部分配置，dev.py 是所有运行环境的**基础配置**。文件按 11 个段落组织（顶部注释 [L7-L18](/code/cube_api/cube_api/settings/dev.py#L7-L18) 已列出），每段由独立的 `# =====` 分隔。
 
-#### 路径配置（[L32-L50](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L32-L50)）
+#### 路径配置（[L32-L50](/code/cube_api/cube_api/settings/dev.py#L32-L50)）
 
 | 配置项                                  | 行号     | 作用                                                              |
 | ------------------------------------ | ------ | --------------------------------------------------------------- |
@@ -13,7 +13,7 @@
 | `APPS_DIR + sys.path.insert`         | L44-L46 | 让 `apps.xxx` 也能以 apps 子目录方式被识别（双导入路径）                          |
 | `sys.path.insert(BASE_DIR)`          | L50    | 统一 manage.py 与服务进程的导入行为                                         |
 
-#### 安全配置（[L52-L67](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L52-L67)）
+#### 安全配置（[L52-L67](/code/cube_api/cube_api/settings/dev.py#L52-L67)）
 
 | 配置项             | 开发值                                              | 说明                                       |
 | --------------- | ------------------------------------------------ | ---------------------------------------- |
@@ -22,7 +22,7 @@
 | `ALLOWED_HOSTS` | `['*']`                                          | 开发接受任意 Host；prod 改为白名单                   |
 | `SITE_DOMAIN`   | `os.getenv('SITE_DOMAIN', 'http://localhost:8000')` | 生成图片、邮件等绝对 URL 时使用，prod 覆盖              |
 
-#### 应用配置（[L71-L96](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L71-L96)）
+#### 应用配置（[L71-L96](/code/cube_api/cube_api/settings/dev.py#L71-L96)）
 
 `INSTALLED_APPS` 注册顺序：
 
@@ -31,7 +31,7 @@
 3. 第三方：`corsheaders/rest_framework/rest_framework_simplejwt/drf_spectacular`
 4. 业务应用：`apps.home/accounts/forum/formula/shop/timer`（6 个业务模块）
 
-#### 中间件配置（[L100-L117](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L100-L117)）
+#### 中间件配置（[L100-L117](/code/cube_api/cube_api/settings/dev.py#L100-L117)）
 
 | 顺序 | 中间件                                  | 作用                                       |
 | -- | ------------------------------------ | ---------------------------------------- |
@@ -44,13 +44,13 @@
 | 7  | `MessageMiddleware`                   | 消息框架                                     |
 | 8  | `XFrameOptionsMiddleware`             | 点击劫持防护                                   |
 
-> `X_FRAME_OPTIONS` 在 [L424](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L424) 被覆盖为 `'SAMEORIGIN'`，允许 Unfold 同源嵌入。
+> `X_FRAME_OPTIONS` 在 [L424](/code/cube_api/cube_api/settings/dev.py#L424) 被覆盖为 `'SAMEORIGIN'`，允许 Unfold 同源嵌入。
 
-#### 模板与会话（[L123-L161](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L123-L161)）
+#### 模板与会话（[L123-L161](/code/cube_api/cube_api/settings/dev.py#L123-L161)）
 
-**模板**（[L123-L136](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L123-L136)）：`DIRS=[BASE_DIR/'templates']`、`APP_DIRS=True`、context_processors 为 `request/auth/messages` 三件套。
+**模板**（[L123-L136](/code/cube_api/cube_api/settings/dev.py#L123-L136)）：`DIRS=[BASE_DIR/'templates']`、`APP_DIRS=True`、context_processors 为 `request/auth/messages` 三件套。
 
-**Session**（[L153-L158](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L153-L158)）：
+**Session**（[L153-L158](/code/cube_api/cube_api/settings/dev.py#L153-L158)）：
 
 | 配置项                          | 值                  | 作用                              |
 | ---------------------------- | ------------------ | ------------------------------- |
@@ -59,9 +59,9 @@
 | `SESSION_COOKIE_AGE`         | `3600 * 24`（1 天）   | Session 有效期                     |
 | `SESSION_SAVE_EVERY_REQUEST` | `True`             | 每次请求刷新过期时间（滑动过期）                |
 
-#### 数据库配置（[L163-L190](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L163-L190)）
+#### 数据库配置（[L163-L190](/code/cube_api/cube_api/settings/dev.py#L163-L190)）
 
-环境变量优先（[L166-L170](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L166-L170)），未设置时使用本地默认值：
+环境变量优先（[L166-L170](/code/cube_api/cube_api/settings/dev.py#L166-L170)），未设置时使用本地默认值：
 
 | 变量           | 默认值          |
 | ------------ | ------------ |
@@ -71,7 +71,7 @@
 | `DB_HOST`    | `localhost`  |
 | `DB_PORT`    | `3306`       |
 
-**测试模式自动切换 SQLite 内存库**（[L186-L190](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L186-L190)）：
+**测试模式自动切换 SQLite 内存库**（[L186-L190](/code/cube_api/cube_api/settings/dev.py#L186-L190)）：
 
 ```python
 if 'test' in sys.argv:
@@ -83,9 +83,9 @@ if 'test' in sys.argv:
 
 数据库随测试进程销毁，不写入本地 MySQL。
 
-#### Redis 配置（[L192-L233](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L192-L233)）
+#### Redis 配置（[L192-L233](/code/cube_api/cube_api/settings/dev.py#L192-L233)）
 
-**公共连接选项 `REDIS_BASE_OPTIONS`**（[L195-L205](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L195-L205)）：
+**公共连接选项 `REDIS_BASE_OPTIONS`**（[L195-L205](/code/cube_api/cube_api/settings/dev.py#L195-L205)）：
 
 | 选项                       | 值                                              | 作用                          |
 | ------------------------- | ---------------------------------------------- | --------------------------- |
@@ -95,9 +95,9 @@ if 'test' in sys.argv:
 | `timeout`                 | 20                                             | 获取空闲连接最多等待 20 秒（非网络超时）      |
 | `SERIALIZER`              | `django_redis.serializers.json.JSONSerializer` | 缓存值必须 JSON 可序列化             |
 
-> 上方 `CACHES`（[L142-L150](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L142-L150)）是兼容保留的初始声明，会被下方分支完全覆盖。
+> 上方 `CACHES`（[L142-L150](/code/cube_api/cube_api/settings/dev.py#L142-L150)）是兼容保留的初始声明，会被下方分支完全覆盖。
 
-**测试分支**（[L208-L222](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L208-L222)）—— `'test' in sys.argv or 'pytest' in sys.modules`：
+**测试分支**（[L208-L222](/code/cube_api/cube_api/settings/dev.py#L208-L222)）—— `'test' in sys.argv or 'pytest' in sys.modules`：
 
 | 配置项                | 值                              |
 | ------------------ | ------------------------------ |
@@ -106,7 +106,7 @@ if 'test' in sys.argv:
 | `TIMEOUT`          | 300（5 分钟）                      |
 | `PASSWORD_HASHERS` | `[MD5PasswordHasher]`（仅测试用）   |
 
-**非测试分支**（[L225-L233](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L225-L233)）：
+**非测试分支**（[L225-L233](/code/cube_api/cube_api/settings/dev.py#L225-L233)）：
 
 | 配置项          | 值                              |
 | ------------ | ------------------------------ |
@@ -116,11 +116,11 @@ if 'test' in sys.argv:
 
 > 测试环境**仍依赖本地 Redis**，仅通过数据库编号 + 键前缀隔离；`MD5PasswordHasher` 不可用于真实用户密码。
 
-#### 密码验证（[L237-L256](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L237-L256)）
+#### 密码验证（[L237-L256](/code/cube_api/cube_api/settings/dev.py#L237-L256)）
 
 `AUTH_PASSWORD_VALIDATORS` 启用 4 个内置验证器：`UserAttributeSimilarityValidator`、`MinimumLengthValidator`、`CommonPasswordValidator`、`NumericPasswordValidator`。
 
-#### 国际化与静态/媒体（[L258-L279](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L258-L279)）
+#### 国际化与静态/媒体（[L258-L279](/code/cube_api/cube_api/settings/dev.py#L258-L279)）
 
 **国际化**：
 
@@ -142,19 +142,19 @@ if 'test' in sys.argv:
 | `MEDIA_ROOT`   | `BASE_DIR/media`  | 媒体文件物理存储路径      |
 | `MEDIA_URL`    | `'/media/'`        | 媒体文件访问 URL 前缀   |
 
-**启动时自动创建 media 目录**（[L275-L276](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L275-L276)）：`if not os.path.exists(MEDIA_ROOT): os.makedirs(MEDIA_ROOT)`。
+**启动时自动创建 media 目录**（[L275-L276](/code/cube_api/cube_api/settings/dev.py#L275-L276)）：`if not os.path.exists(MEDIA_ROOT): os.makedirs(MEDIA_ROOT)`。
 
-`DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'`（[L279](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L279)）—— 自增大整数主键。
+`DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'`（[L279](/code/cube_api/cube_api/settings/dev.py#L279)）—— 自增大整数主键。
 
-**自定义用户模型**：`AUTH_USER_MODEL = 'accounts.User'`（[L283](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L283)）。
+**自定义用户模型**：`AUTH_USER_MODEL = 'accounts.User'`（[L283](/code/cube_api/cube_api/settings/dev.py#L283)）。
 
-#### DRF 配置（[L285-L354](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L285-L354)）
+#### DRF 配置（[L285-L354](/code/cube_api/cube_api/settings/dev.py#L285-L354)）
 
 文件中存在**三段** `REST_FRAMEWORK`：
 
-1. **初始声明**（[L288-L314](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L288-L314)）—— 仅作注释说明，下方分支会**完全覆盖**该字典
-2. **测试分支**（[L317-L331](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L317-L331)）：清空限流、改用 DRF 默认 `PageNumberPagination`
-3. **非测试分支**（[L334-L354](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L334-L354)）：生产环境直接继承
+1. **初始声明**（[L288-L314](/code/cube_api/cube_api/settings/dev.py#L288-L314)）—— 仅作注释说明，下方分支会**完全覆盖**该字典
+2. **测试分支**（[L317-L331](/code/cube_api/cube_api/settings/dev.py#L317-L331)）：清空限流、改用 DRF 默认 `PageNumberPagination`
+3. **非测试分支**（[L334-L354](/code/cube_api/cube_api/settings/dev.py#L334-L354)）：生产环境直接继承
 
 **非测试分支完整配置**：
 
@@ -172,7 +172,7 @@ if 'test' in sys.argv:
 
 > ⚠️ 初始声明的 `login_scope=3/min` 与非测试分支的 `5/minute` 不一致；实际生效的是后者（覆盖语义）。
 
-#### 测试模式 Mock Redis（[L356-L364](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L356-L364)）
+#### 测试模式 Mock Redis（[L356-L364](/code/cube_api/cube_api/settings/dev.py#L356-L364)）
 
 ```python
 if 'test' in sys.argv:
@@ -185,7 +185,7 @@ if 'test' in sys.argv:
 
 **关键约定**：mock 返回的是 **Django RedisCache 包装对象**，并非内存缓存；调用方需通过 `.client.get_client()` 取得 `redis-py` 客户端。Service 层（如 `JWTCacheService._get_con`）已实现这一穿透逻辑。
 
-#### 业务配置 FORUM\_CONFIG（[L366-L378](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L366-L378)）
+#### 业务配置 FORUM\_CONFIG（[L366-L378](/code/cube_api/cube_api/settings/dev.py#L366-L378)）
 
 | 字段                            | 值             | 含义                |
 | ----------------------------- | ------------- | ----------------- |
@@ -198,7 +198,7 @@ if 'test' in sys.argv:
 | `MAX_FILE_SIZE`                | 5×1024×1024    | 上传文件大小上限（5 MB）    |
 | `ALLOWED_FILE_EXTENSIONS`      | `['.md']`     | 允许的文件扩展名          |
 
-#### JWT 配置 SIMPLE\_JWT（[L380-L388](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L380-L388)）
+#### JWT 配置 SIMPLE\_JWT（[L380-L388](/code/cube_api/cube_api/settings/dev.py#L380-L388)）
 
 | 配置项                       | 值                    | 说明                                       |
 | ------------------------- | -------------------- | ---------------------------------------- |
@@ -210,7 +210,7 @@ if 'test' in sys.argv:
 
 > Access 与 Refresh 均为 7 天，Token 一旦泄漏需依赖黑名单机制（见 [JWTCacheService](#76-服务层servicespy)）主动注销才能失效。
 
-#### OpenAPI 文档 SPECTACULAR\_SETTINGS（[L390-L407](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L390-L407)）
+#### OpenAPI 文档 SPECTACULAR\_SETTINGS（[L390-L407](/code/cube_api/cube_api/settings/dev.py#L390-L407)）
 
 | 配置项                       | 值                                |
 | ------------------------- | -------------------------------- |
@@ -222,7 +222,7 @@ if 'test' in sys.argv:
 | `AUTHENTICATION_WHITELIST`| `[]`（兼容保留项，drf-spectacular 不读）   |
 | `TAGS`                    | 7 个分类标签：users/profiles/forum/comments/tags/reports |
 
-#### 日志配置（[L409-L419](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L409-L419)）
+#### 日志配置（[L409-L419](/code/cube_api/cube_api/settings/dev.py#L409-L419)）
 
 ```python
 LOGGING_CONFIG = None   # 禁用 Django 默认日志配置
@@ -233,12 +233,12 @@ setup_logging()
 
 详细 Loguru 配置见 [5.3 logger\_conf.py](#53-logger_confpy--loguru-配置logger_confpy)。
 
-#### django-unfold 后台主题（[L421-L504](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L421-L504)）
+#### django-unfold 后台主题（[L421-L504](/code/cube_api/cube_api/settings/dev.py#L421-L504)）
 
-- `X_FRAME_OPTIONS = 'SAMEORIGIN'`（[L424](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L424)）—— 允许同源页面嵌入管理后台
+- `X_FRAME_OPTIONS = 'SAMEORIGIN'`（[L424](/code/cube_api/cube_api/settings/dev.py#L424)）—— 允许同源页面嵌入管理后台
 - `UNFOLD` 字典配置：站点标题、Logo、侧边栏导航
 
-**侧边栏导航分组**（[L432-L502](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L432-L502)）：
+**侧边栏导航分组**（[L432-L502](/code/cube_api/cube_api/settings/dev.py#L432-L502)）：
 
 | 分组       | 图标              | 子菜单                          |
 | -------- | --------------- | ---------------------------- |
@@ -252,7 +252,7 @@ setup_logging()
 
 每个分组可折叠（`collapsible: True`），`show_search=True` 启用全局搜索。
 
-#### CORS 配置（[L506-L516](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/dev.py#L506-L516)）
+#### CORS 配置（[L506-L516](/code/cube_api/cube_api/settings/dev.py#L506-L516)）
 
 ```python
 CORS_ALLOWED_ORIGINS = [
@@ -264,7 +264,7 @@ CORS_ALLOW_ALL_ORIGINS = True   # 仅开发联调
 
 > ⚠️ `CORS_ALLOW_ALL_ORIGINS=True` 会让 `CORS_ALLOWED_ORIGINS` 白名单失效；`prod.py` 必须显式覆盖为 `False`，否则生产 CORS 白名单不生效。
 
-### 5.2 prod.py — 生产配置（[prod.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/prod.py)）
+### 5.2 prod.py — 生产配置（[prod.py](/code/cube_api/cube_api/settings/prod.py)）
 
 `from .dev import *` 后覆盖：
 
@@ -279,7 +279,7 @@ CORS_ALLOW_ALL_ORIGINS = True   # 仅开发联调
 | CACHES LOCATION          | `redis://redis:6379/1`，KEY\_PREFIX=`icube_prod`            |
 | STATIC\_ROOT             | `BASE_DIR/collected_static`                                |
 
-### 5.3 logger\_conf.py — Loguru 配置（[logger\_conf.py](file:///e:/BH/PyStudy/ICube/cube_api/cube_api/settings/logger_conf.py)）
+### 5.3 logger\_conf.py — Loguru 配置（[logger\_conf.py](/code/cube_api/cube_api/settings/logger_conf.py)）
 
 **核心机制**：
 

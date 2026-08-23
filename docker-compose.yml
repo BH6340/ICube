@@ -123,6 +123,8 @@ services:
       - ./downloads:/usr/share/nginx/html/apk
       # Docsify 文档站点
       - ./docs:/usr/share/nginx/html/docs:ro
+      # 后端源码只读挂载，供 Docsify 代码面板查看
+      - ./cube_api:/usr/share/nginx/html/code:ro
     depends_on:
       # 仅控制启动顺序；运行状态由各服务的 restart 策略保障
       - api

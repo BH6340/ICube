@@ -207,10 +207,107 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
 
+    /* ===== 右侧代码面板 ===== */
+    .code-panel {
+      position: fixed; top: 0; right: 0; bottom: 0; width: 45%;
+      max-width: 700px; min-width: 350px;
+      background: #fff; border-left: 1px solid var(--border);
+      display: flex; flex-direction: column; z-index: 300;
+      transform: translateX(100%); transition: transform 0.2s ease;
+    }
+    .code-panel.expanded { transform: translateX(0); }
+
+    .code-panel-resizer {
+      position: absolute; top: 0; left: 0; bottom: 0; width: 4px;
+      cursor: col-resize; background: transparent; z-index: 301;
+    }
+    .code-panel-resizer:hover { background: var(--border); }
+
+    .code-tab-bar {
+      display: flex; align-items: center; height: 38px;
+      background: var(--bg-sidebar); border-bottom: 1px solid var(--border);
+      overflow-x: auto; overflow-y: hidden; flex-shrink: 0;
+    }
+    .code-tab-bar::-webkit-scrollbar { height: 2px; }
+
+    .code-tab {
+      display: flex; align-items: center; gap: 6px;
+      padding: 0 0.75rem; height: 100%; flex-shrink: 0;
+      font-size: 0.78rem; color: var(--text-light); cursor: pointer;
+      border-right: 1px solid var(--border); white-space: nowrap;
+      transition: background 0.1s, color 0.1s;
+    }
+    .code-tab:hover { background: var(--bg-hover); color: var(--black); }
+    .code-tab.active { background: #fff; color: var(--black); font-weight: 600; }
+    .code-tab .tab-close {
+      display: flex; align-items: center; justify-content: center;
+      width: 16px; height: 16px; border-radius: 3px;
+      font-size: 12px; color: var(--text-faded); cursor: pointer;
+    }
+    .code-tab .tab-close:hover { background: #ddd; color: var(--black); }
+
+    .code-panel-toolbar {
+      display: flex; align-items: center; justify-content: flex-end;
+      padding: 0 0.5rem; height: 100%; flex-shrink: 0;
+      border-left: 1px solid var(--border);
+    }
+    .code-panel-toolbar button {
+      width: 28px; height: 28px; border: none; background: transparent;
+      cursor: pointer; font-size: 16px; color: var(--text-light);
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 4px;
+    }
+    .code-panel-toolbar button:hover { background: var(--bg-hover); color: var(--black); }
+
+    .code-content-wrap {
+      flex: 1; overflow-y: auto; overflow-x: auto; position: relative;
+    }
+    .code-content {
+      font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
+      font-size: 0.82rem; line-height: 1.6; white-space: pre;
+      padding: 0.5rem 0;
+    }
+    .code-line {
+      display: flex; padding: 0; min-width: max-content;
+    }
+    .code-line .line-num {
+      flex-shrink: 0; width: 3rem; text-align: right;
+      padding-right: 0.75rem; color: var(--text-faded);
+      user-select: none; border-right: 1px solid var(--border);
+    }
+    .code-line .line-content {
+      padding-left: 0.75rem; white-space: pre;
+    }
+    .code-line.highlight {
+      background: #fff8e1;
+    }
+    .code-line.highlight .line-num {
+      color: #f57f17; font-weight: 600;
+    }
+    .code-line.highlight .line-content::before {
+      content: '▶ '; color: #f57f17; font-size: 0.7rem;
+    }
+    .code-error {
+      padding: 2rem; text-align: center; color: #c62828; font-size: 0.9rem;
+    }
+    .code-loading {
+      padding: 2rem; text-align: center; color: var(--text-faded); font-size: 0.9rem;
+    }
+
+    /* 代码链接样式 */
+    .markdown-section a[href^="/code/"] {
+      color: #1565c0 !important; text-decoration: underline;
+      text-decoration-color: #90caf9; text-underline-offset: 2px;
+    }
+    .markdown-section a[href^="/code/"]:hover {
+      color: #0d47a1; text-decoration-color: #0d47a1;
+    }
+
     @media (max-width: 900px) {
       :root { --toc-w: 0px; }
       .toc-sidebar, .toc-toggle-btn { display: none; }
       .content { margin-right: 0; }
+      .code-panel { width: 100%; max-width: none; min-width: 0; }
     }
     @media (max-width: 600px) {
       :root { --sidebar-w: 260px; }
@@ -223,6 +320,13 @@
   <div class="sidebar-resizer" id="sidebarResizer"></div>
   <button class="toc-toggle-btn" id="tocToggleBtn">☰</button>
   <div id="app"></div>
+
+  <!-- 右侧代码面板 -->
+  <div class="code-panel" id="codePanel">
+    <div class="code-panel-resizer" id="codePanelResizer"></div>
+    <div class="code-tab-bar" id="codeTabBar"></div>
+    <div class="code-content-wrap" id="codeContentWrap"></div>
+  </div>
 
   <script>
     // ===== 折叠按钮（避免和 Docsify 内置类名冲突） =====
@@ -459,6 +563,274 @@
       }
       highlightTOC();
     }
+
+    // ===== 右侧代码面板 =====
+    var codePanel = {
+      tabs: [],
+      activeTabId: null,
+      panel: null,
+      tabbar: null,
+      contentWrap: null,
+      isExpanded: false,
+      maxTabs: 8,
+
+      init: function () {
+        this.panel = document.getElementById('codePanel');
+        this.tabbar = document.getElementById('codeTabBar');
+        this.contentWrap = document.getElementById('codeContentWrap');
+
+        // 拖拽调整宽度
+        var resizer = document.getElementById('codePanelResizer');
+        var isResizing = false;
+        resizer.addEventListener('mousedown', function (e) {
+          isResizing = true;
+          document.body.style.cursor = 'col-resize';
+          document.body.style.userSelect = 'none';
+          e.preventDefault();
+        });
+        document.addEventListener('mousemove', function (e) {
+          if (!isResizing) return;
+          var w = window.innerWidth - e.clientX;
+          if (w < 350) w = 350;
+          if (w > window.innerWidth * 0.75) w = window.innerWidth * 0.75;
+          codePanel.panel.style.width = w + 'px';
+        });
+        document.addEventListener('mouseup', function () {
+          if (isResizing) { isResizing = false; document.body.style.cursor = ''; document.body.style.userSelect = ''; }
+        });
+      },
+
+      parseLink: function (href) {
+        // /code/apps/accounts/views.py#L45-L80
+        var match = href.match(/^\/code\/(.+?)(?:#L(\d+)(?:-L?(\d+))?)?$/);
+        if (!match) return null;
+        return {
+          path: match[1],
+          start: match[2] ? parseInt(match[2]) : null,
+          end: match[3] ? parseInt(match[3]) : null
+        };
+      },
+
+      openTab: function (href) {
+        var info = this.parseLink(href);
+        if (!info) return;
+
+        var self = this;
+
+        // 展开面板
+        if (!this.isExpanded) this.expand();
+
+        // 已有该文件 Tab？
+        var existing = this.tabs.find(function (t) { return t.id === info.path; });
+        if (existing) {
+          existing.highlight = { start: info.start, end: info.end };
+          self.switchTab(existing.id);
+          return;
+        }
+
+        // 超过最大 Tab 数，关闭最早的
+        while (this.tabs.length >= this.maxTabs) {
+          this.closeTab(this.tabs[0].id);
+        }
+
+        // 创建新 Tab
+        var tab = {
+          id: info.path,
+          label: info.path.split('/').pop(),
+          path: info.path,
+          content: null,
+          scrollTop: 0,
+          highlight: { start: info.start, end: info.end },
+          loading: true,
+          error: false
+        };
+        this.tabs.push(tab);
+        this.renderTabBar();
+        this.switchTab(tab.id);
+
+        // fetch 文件内容
+        fetch('/code/' + info.path)
+          .then(function (res) {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.text();
+          })
+          .then(function (text) {
+            tab.content = text;
+            tab.loading = false;
+            if (self.activeTabId === tab.id) self.renderContent(tab);
+          })
+          .catch(function (err) {
+            tab.error = true;
+            tab.loading = false;
+            if (self.activeTabId === tab.id) self.renderContent(tab);
+          });
+      },
+
+      switchTab: function (tabId) {
+        // 保存当前 Tab 滚动位置
+        var old = this.tabs.find(function (t) { return t.id === self.activeTabId; });
+        var self = this;
+        var oldTab = this.tabs.find(function (t) { return t.id === self.activeTabId; });
+        if (oldTab && this.contentWrap) oldTab.scrollTop = this.contentWrap.scrollTop;
+
+        this.activeTabId = tabId;
+        this.renderTabBar();
+
+        var tab = this.tabs.find(function (t) { return t.id === tabId; });
+        if (tab) this.renderContent(tab);
+      },
+
+      closeTab: function (tabId) {
+        var idx = this.tabs.findIndex(function (t) { return t.id === tabId; });
+        if (idx === -1) return;
+        this.tabs.splice(idx, 1);
+
+        // 关闭的是当前 Tab
+        if (this.activeTabId === tabId) {
+          if (this.tabs.length === 0) {
+            this.activeTabId = null;
+            this.collapse();
+          } else {
+            var next = this.tabs[Math.min(idx, this.tabs.length - 1)];
+            this.switchTab(next.id);
+          }
+        }
+        this.renderTabBar();
+      },
+
+      renderTabBar: function () {
+        var self = this;
+        this.tabbar.innerHTML = '';
+
+        this.tabs.forEach(function (tab) {
+          var el = document.createElement('div');
+          el.className = 'code-tab' + (tab.id === self.activeTabId ? ' active' : '');
+          el.innerHTML = '<span>' + tab.label + '</span><span class="tab-close" data-id="' + tab.id + '">×</span>';
+
+          // 点击 Tab 切换
+          el.addEventListener('click', function (e) {
+            if (e.target.classList.contains('tab-close')) {
+              e.stopPropagation();
+              self.closeTab(tab.id);
+            } else {
+              self.switchTab(tab.id);
+            }
+          });
+
+          self.tabbar.appendChild(el);
+        });
+
+        // 折叠按钮
+        var toolbar = document.createElement('div');
+        toolbar.className = 'code-panel-toolbar';
+        toolbar.innerHTML = '<button id="codePanelCollapse" title="折叠">«</button>';
+        toolbar.querySelector('button').addEventListener('click', function () {
+          self.collapse();
+        });
+        this.tabbar.appendChild(toolbar);
+      },
+
+      renderContent: function (tab) {
+        var self = this;
+        this.contentWrap.innerHTML = '';
+
+        if (tab.loading) {
+          this.contentWrap.innerHTML = '<div class="code-loading">加载中…</div>';
+          return;
+        }
+
+        if (tab.error) {
+          this.contentWrap.innerHTML = '<div class="code-error">文件未找到：' + tab.path + '</div>';
+          return;
+        }
+
+        var pre = document.createElement('div');
+        pre.className = 'code-content';
+
+        var lines = tab.content.split('\n');
+        var hlStart = tab.highlight.start;
+        var hlEnd = tab.highlight.end || hlStart;
+
+        lines.forEach(function (line, i) {
+          var lineNum = i + 1;
+          var isHl = hlStart && lineNum >= hlStart && lineNum <= hlEnd;
+
+          var row = document.createElement('div');
+          row.className = 'code-line' + (isHl ? ' highlight' : '');
+          row.innerHTML =
+            '<span class="line-num">' + lineNum + '</span>' +
+            '<span class="line-content">' + self.escapeHtml(line) + '</span>';
+          pre.appendChild(row);
+        });
+
+        this.contentWrap.appendChild(pre);
+
+        // 恢复滚动位置
+        this.contentWrap.scrollTop = tab.scrollTop || 0;
+
+        // 滚动到高亮行
+        if (hlStart) {
+          var hlEl = pre.querySelector('.code-line.highlight');
+          if (hlEl) {
+            this.contentWrap.scrollTop = hlEl.offsetTop - this.contentWrap.clientHeight / 2 + hlEl.offsetHeight / 2;
+          }
+        }
+
+        // 保存滚动位置
+        this.contentWrap.onscroll = function () {
+          tab.scrollTop = self.contentWrap.scrollTop;
+        };
+      },
+
+      expand: function () {
+        this.isExpanded = true;
+        this.panel.classList.add('expanded');
+      },
+
+      collapse: function () {
+        this.isExpanded = false;
+        this.panel.classList.remove('expanded');
+      },
+
+      toggle: function () {
+        if (this.isExpanded) this.collapse();
+        else this.expand();
+      },
+
+      escapeHtml: function (str) {
+        return str
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+    };
+
+    // 初始化代码面板
+    codePanel.init();
+
+    // Docsify 插件：拦截 /code/ 链接
+    function codeLinkPlugin(hook) {
+      hook.doneEach(function () {
+        var links = document.querySelectorAll('.markdown-section a[href^="/code/"]');
+        links.forEach(function (link) {
+          // 避免重复绑定
+          if (link.dataset.codeBound) return;
+          link.dataset.codeBound = '1';
+
+          link.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            codePanel.openTab(this.getAttribute('href'));
+          });
+        });
+      });
+    }
+
+    // 注册插件
+    var originalPlugins = window.$docsify.plugins || [];
+    originalPlugins.push(codeLinkPlugin);
+    window.$docsify.plugins = originalPlugins;
   </script>
   <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/docsify.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.min.js"></script>
