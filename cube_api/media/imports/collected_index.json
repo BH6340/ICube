@@ -1,0 +1,25 @@
+{
+  "collected": [
+    {
+      "title": "三阶魔方零基础入门教程：七步还原法",
+      "url": "http://www.mf100.org/beginner.htm",
+      "source_site": "魔方乐园 mf100.org",
+      "collected_at": "2026-08-23",
+      "data_dir": "cube_articles_20260823"
+    },
+    {
+      "title": "CFOP 速拧入门：4 步还原 + 7 条核心公式",
+      "url": "https://www.toolbox365.cn/tutorials/rubik-cfop-beginner-walkthrough/",
+      "source_site": "365工具箱 toolbox365.cn",
+      "collected_at": "2026-08-23",
+      "data_dir": "cube_articles_20260823"
+    },
+    {
+      "title": "魔方顶层还原技巧：十字与角块详解",
+      "url": "http://www.rubik.com.cn/beginnerblue2.htm",
+      "source_site": "魔方小站 rubik.com.cn",
+      "collected_at": "2026-08-23",
+      "data_dir": "cube_articles_20260823"
+    }
+  ]
+}
