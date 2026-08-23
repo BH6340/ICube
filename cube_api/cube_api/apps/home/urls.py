@@ -12,7 +12,7 @@
 
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from apps.home.views import NavigationMenuViewSet, BannerViewSet
+from apps.home.views import NavigationMenuViewSet, BannerViewSet, AppVersionView
 
 router = DefaultRouter()
 router.register(r'navigation/menus', NavigationMenuViewSet, basename='nav-menus')
@@ -20,4 +20,5 @@ router.register(r'banners', BannerViewSet, basename='banners')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('app/version/', AppVersionView.as_view(), name='app-version'),
 ]

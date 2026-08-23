@@ -12,7 +12,9 @@ import { showToast, showLoadingToast, closeToast } from 'vant'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
 import { useUserStore } from '@/stores/user'
 import { getProfileApi, updateProfileApi, logoutApi } from '@/api/user'
+import { getLatestVersion } from '@/api/home'
 import { buildMediaUrl } from '@/utils/media-url'
+import { version as appVersion } from '../../package.json'
 import ImageCropper from '@/components/ImageCropper.vue'
 import { cropAndCompress } from '@/utils/image-compress'
 import { getDownloadCount } from '@/utils/formula-download'
@@ -227,6 +229,45 @@ async function doLogout() {
   router.push({ name: 'login' })
 }
 
+// ─── 检查更新 ────────────────────────────────────────
+const updateInfo = ref(null)
+const updateShow = ref(false)
+const checking = ref(false)
+
+function compareVersion(v1, v2) {
+  const a = v1.split('.').map(Number)
+  const b = v2.split('.').map(Number)
+  for (let i = 0; i < 3; i++) {
+    if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) - (b[i] || 0)
+  }
+  return 0
+}
+
+async function checkUpdate() {
+  if (checking.value) return
+  checking.value = true
+  try {
+    const res = await getLatestVersion()
+    const data = res.data || res
+    if (compareVersion(data.version, appVersion) > 0) {
+      updateInfo.value = data
+      updateShow.value = true
+    } else {
+      showToast({ type: 'success', message: `已是最新版本 v${appVersion}` })
+    }
+  } catch {
+    showToast('检查更新失败')
+  } finally {
+    checking.value = false
+  }
+}
+
+function downloadApk() {
+  if (updateInfo.value?.download_url) {
+    window.open(updateInfo.value.download_url, '_system')
+  }
+}
+
 // ─── 生命周期 ────────────────────────────────────────
 onMounted(() => {
   loadStats()
@@ -305,6 +346,7 @@ async function onRefresh() {
           <van-cell title="公式下载" icon="down" is-link @click="goToDownloads" />
           <van-cell title="个人数据" icon="chart-trending-o" is-link @click="goToTimerRecords" />
           <van-cell title="编辑资料" icon="edit" is-link @click="openEdit" />
+          <van-cell title="检查更新" icon="upgrade" is-link @click="checkUpdate" :value="`v${appVersion}`" />
           <van-cell title="退出登录" icon="cross" is-link @click="confirmLogout" class="logout-cell" />
         </van-cell-group>
       </template>
@@ -392,6 +434,22 @@ async function onRefresh() {
       @confirm="onCropConfirm"
       @cancel="onCropCancel"
     />
+
+    <!-- 更新弹窗 -->
+    <van-dialog
+      v-model:show="updateShow"
+      title="发现新版本"
+      show-cancel-button
+      confirm-button-text="下载"
+      cancel-button-text="稍后"
+      @confirm="downloadApk"
+    >
+      <div class="update-content">
+        <van-icon name="upgrade" size="40" color="var(--van-primary-color)" />
+        <p class="update-version">v{{ updateInfo?.version }}</p>
+        <p class="update-info">{{ updateInfo?.update_info }}</p>
+      </div>
+    </van-dialog>
   </div>
 </template>
 
@@ -577,5 +635,28 @@ async function onRefresh() {
   font-size: 0.78rem;
   color: var(--van-text-color-3);
   margin-top: 6px !important;
+}
+
+/* 更新弹窗 */
+.update-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 24px 16px;
+  text-align: center;
+}
+
+.update-version {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--van-text-color);
+  margin: 12px 0 6px;
+}
+
+.update-info {
+  font-size: 0.85rem;
+  color: var(--van-text-color-2);
+  white-space: pre-wrap;
+  line-height: 1.6;
 }
 </style>
