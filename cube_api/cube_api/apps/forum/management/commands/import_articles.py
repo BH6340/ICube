@@ -28,10 +28,16 @@ class Command(BaseCommand):
             type=int,
             help=f'指定作者 ID（默认使用 {DEFAULT_AUTHOR_EMAIL}）'
         )
+        parser.add_argument(
+            '--force',
+            action='store_true',
+            help='已存在同标题文章时，删除后重新导入'
+        )
 
     def handle(self, *args, **options):
         data_dir = Path(options['data_dir'])
         json_path = data_dir / 'articles.json'
+        force = options.get('force', False)
 
         if not json_path.exists():
             self.stdout.write(self.style.ERROR(f'找不到 articles.json: {json_path}'))
@@ -53,6 +59,7 @@ class Command(BaseCommand):
 
         created_count = 0
         skipped_count = 0
+        replaced_count = 0
 
         for article_data in articles:
             title = article_data.get('title', '').strip()
@@ -61,14 +68,21 @@ class Command(BaseCommand):
                 skipped_count += 1
                 continue
 
-            if Post.objects.filter(title=title).exists():
+            existing = Post.objects.filter(title=title).first()
+            if existing and not force:
                 self.stdout.write(f'  跳过已存在: {title[:40]}')
                 skipped_count += 1
                 continue
 
+            if existing and force:
+                existing.delete()
+                self.stdout.write(f'  删除旧文章: {title[:40]}')
+                replaced_count += 1
+
             content_md = article_data.get('content_md', '')
             content = article_data.get('content', '') or content_md
 
+            # 先创建 Post（content 稍后更新，图片路径需替换）
             post = Post.objects.create(
                 title=title,
                 content=content,
@@ -86,17 +100,40 @@ class Command(BaseCommand):
                 )
                 post.tags.add(tag)
 
-            # 处理图片
+            # 处理图片，同时记录原始路径 → 实际路径映射
             images = article_data.get('images', [])
+            path_map = {}
             for img_data in images:
-                self._process_image(post, img_data, data_dir)
+                actual_path = self._process_image(post, img_data, data_dir)
+                if actual_path:
+                    original_path = img_data.get('file', '')
+                    path_map[original_path] = actual_path
+
+            # 用实际图片路径替换 content_md 和 content 中的引用
+            if path_map:
+                new_content_md = content_md
+                for original, actual in path_map.items():
+                    # Markdown 图片引用替换：images/xxx.jpg → /media/forum/posts/.../xxx.webp
+                    media_path = f'/media/{actual}'
+                    new_content_md = new_content_md.replace(
+                        f']({original})',
+                        f']({media_path})'
+                    )
+
+                post.content_md = new_content_md
+                # content 字段如果和 content_md 一样也同步更新
+                if post.content == content_md:
+                    post.content = new_content_md
+                post.save(update_fields=['content', 'content_md'])
 
             created_count += 1
-            self.stdout.write(f'  创建文章: {title[:40]}')
+            self.stdout.write(f'  创建文章: {title[:40]} ({len(path_map)} 张图片)')
 
         self.stdout.write('')
         self.stdout.write(self.style.SUCCESS('导入完成！'))
         self.stdout.write(f'  新增: {created_count} 篇')
+        if replaced_count:
+            self.stdout.write(f'  替换: {replaced_count} 篇')
         self.stdout.write(f'  跳过: {skipped_count} 篇')
 
     def _resolve_author(self, author_id):
@@ -114,14 +151,15 @@ class Command(BaseCommand):
         return author
 
     def _process_image(self, post, img_data, data_dir):
+        """处理单张图片：压缩 + 保存，返回实际存储的相对路径（如 forum/posts/2026/08/xxx.webp）"""
         img_file = img_data.get('file', '')
         if not img_file:
-            return
+            return None
 
         img_path = data_dir / img_file
         if not img_path.exists():
             self.stdout.write(self.style.WARNING(f'  图片不存在: {img_path}'))
-            return
+            return None
 
         with open(img_path, 'rb') as f:
             processed = process_image(
@@ -144,9 +182,12 @@ class Command(BaseCommand):
             charset=None,
         )
 
-        PostImage.objects.create(
+        post_image = PostImage.objects.create(
             post=post,
             image=processed_image,
             alt=img_data.get('alt', ''),
             order=img_data.get('order', 0),
         )
+
+        # 返回实际存储路径（相对于 MEDIA_ROOT）
+        return post_image.image.name
