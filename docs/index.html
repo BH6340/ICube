@@ -295,11 +295,11 @@
     }
 
     /* 代码链接样式 */
-    .markdown-section a[href^="/code/"] {
+    .markdown-section a[data-code-href] {
       color: #1565c0 !important; text-decoration: underline;
       text-decoration-color: #90caf9; text-underline-offset: 2px;
     }
-    .markdown-section a[href^="/code/"]:hover {
+    .markdown-section a[data-code-href]:hover {
       color: #0d47a1; text-decoration-color: #0d47a1;
     }
 
@@ -370,8 +370,13 @@
       alias: { '/.*/_sidebar.md': '/_sidebar.md' },
       plugins: [
         function (hook) {
+          // 在 HTML 渲染前改写 /code/ 链接，防止 Docsify 路由拦截
+          hook.afterEach(function (html) {
+            return html.replace(/href="\/code\//g, 'data-code-href="/code/');
+          });
           hook.doneEach(function () {
             buildTOC();
+            bindCodeLinks();
           });
         }
       ]
@@ -809,28 +814,24 @@
     // 初始化代码面板
     codePanel.init();
 
-    // Docsify 插件：拦截 /code/ 链接
-    function codeLinkPlugin(hook) {
-      hook.doneEach(function () {
-        var links = document.querySelectorAll('.markdown-section a[href^="/code/"]');
-        links.forEach(function (link) {
-          // 避免重复绑定
-          if (link.dataset.codeBound) return;
-          link.dataset.codeBound = '1';
+    // 绑定 /code/ 链接点击事件
+    function bindCodeLinks() {
+      var links = document.querySelectorAll('.markdown-section a[data-code-href]');
+      links.forEach(function (link) {
+        if (link.dataset.codeBound) return;
+        link.dataset.codeBound = '1';
 
-          link.addEventListener('click', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            codePanel.openTab(this.getAttribute('href'));
-          });
+        // 恢复可点击样式
+        link.style.cursor = 'pointer';
+
+        link.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          var href = this.getAttribute('data-code-href');
+          codePanel.openTab(href);
         });
       });
     }
-
-    // 注册插件
-    var originalPlugins = window.$docsify.plugins || [];
-    originalPlugins.push(codeLinkPlugin);
-    window.$docsify.plugins = originalPlugins;
   </script>
   <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/docsify.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.min.js"></script>
