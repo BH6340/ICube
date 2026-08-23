@@ -381,6 +381,16 @@
       alias: { '/.*/_sidebar.md': '/_sidebar.md' },
       plugins: [
         function (hook) {
+          // 在 Docsify 渲染 HTML 后、插入 DOM 前，保存原始 /code/ 链接到 data 属性
+          hook.afterEach(function (html) {
+            return html.replace(/<a[^>]*href="(\/code\/[^"]*?)"[^>]*>/g, function(match, url) {
+              // 把原始 URL（含 #L99-L304）存到 data-code-href
+              if (match.indexOf('data-code-href') === -1) {
+                return match.replace('href="' + url + '"', 'href="' + url + '" data-code-href="' + url + '"');
+              }
+              return match;
+            });
+          });
           hook.doneEach(function () {
             buildTOC();
           });
@@ -831,16 +841,20 @@
     document.addEventListener('click', function (e) {
       var link = e.target.closest('a');
       if (!link) return;
-      var href = link.getAttribute('href') || '';
-      // 匹配 /code/ 或 #/code/ 开头
-      if (href.indexOf('/code/') !== 0 && href.indexOf('#/code/') !== 0) return;
+
+      // 优先用 data-code-href（保留原始 #L 行号），否则用 href
+      var codePath = link.getAttribute('data-code-href') || '';
+      if (!codePath) {
+        var href = link.getAttribute('href') || '';
+        if (href.indexOf('/code/') === 0) codePath = href;
+        else if (href.indexOf('#/code/') === 0) codePath = href.replace(/^#/, '');
+        else return;
+      }
 
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
 
-      // 清理可能被 Docsify 加的 # 前缀
-      var codePath = href.replace(/^#/, '');
       codePanel.openTab(codePath);
     }, true); // true = 捕获阶段，在 Docsify 之前执行
   </script>
