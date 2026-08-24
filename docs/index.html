@@ -265,7 +265,7 @@
     .code-content {
       font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
       font-size: 0.82rem; line-height: 1.6; white-space: pre;
-      padding: 0.5rem 0;
+      padding: 0.5rem 0; position: relative;
     }
     .code-line {
       display: flex; padding: 0; min-width: max-content;
@@ -304,11 +304,12 @@
     .code-expand-btn:hover { background: var(--bg-hover); color: var(--black); }
 
     /* 代码链接样式 */
-    .markdown-section a[href*="/code/"] {
+    .markdown-section a.code-link {
       color: #1565c0 !important; text-decoration: underline;
       text-decoration-color: #90caf9; text-underline-offset: 2px;
+      cursor: pointer;
     }
-    .markdown-section a[href*="/code/"]:hover {
+    .markdown-section a.code-link:hover {
       color: #0d47a1; text-decoration-color: #0d47a1;
     }
 
@@ -381,14 +382,11 @@
       alias: { '/.*/_sidebar.md': '/_sidebar.md' },
       plugins: [
         function (hook) {
-          // 在 Docsify 渲染 HTML 后、插入 DOM 前，保存原始 /code/ 链接到 data 属性
-          hook.afterEach(function (html) {
-            return html.replace(/<a[^>]*href="(\/code\/[^"]*?)"[^>]*>/g, function(match, url) {
-              // 把原始 URL（含 #L99-L304）存到 data-code-href
-              if (match.indexOf('data-code-href') === -1) {
-                return match.replace('href="' + url + '"', 'href="' + url + '" data-code-href="' + url + '"');
-              }
-              return match;
+          // 在 marked 渲染之前，把 /code/ 链接转成 HTML <a> 标签
+          // 这样 marked 直接透传，Docsify 路由不会篡改 data-code-href
+          hook.beforeEach(function (content) {
+            return content.replace(/\[([^\]]*)\]\((\/code\/[^)]+)\)/g, function (match, text, url) {
+              return '<a class="code-link" data-code-href="' + url + '">' + text + '</a>';
             });
           });
           hook.doneEach(function () {
@@ -788,14 +786,22 @@
         // 恢复滚动位置
         this.contentWrap.scrollTop = tab.scrollTop || 0;
 
-        // 滚动到高亮行（延迟等面板展开动画完成）
+        // 滚动到高亮行（双重 rAF 确保浏览器完成布局后再读 offsetTop）
         if (hlStart) {
-          setTimeout(function () {
-            var hlEl = pre.querySelector('.code-line.highlight');
-            if (hlEl && self.contentWrap) {
-              self.contentWrap.scrollTop = hlEl.offsetTop - self.contentWrap.clientHeight / 2 + hlEl.offsetHeight / 2;
-            }
-          }, 250);
+          var lineHeight = 0;
+          var firstLine = pre.querySelector('.code-line');
+          if (firstLine) lineHeight = firstLine.offsetHeight;
+
+          requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+              var hlEl = pre.querySelector('.code-line.highlight');
+              if (hlEl && self.contentWrap) {
+                // 高亮行顶部留 5 行空间
+                var targetTop = hlEl.offsetTop - lineHeight * 5;
+                self.contentWrap.scrollTop = Math.max(0, targetTop);
+              }
+            });
+          });
         }
 
         // 保存滚动位置
