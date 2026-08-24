@@ -211,7 +211,7 @@
     .code-panel {
       position: fixed; top: 0; right: 0; bottom: 0; width: 45%;
       max-width: 700px; min-width: 350px;
-      background: #fff; border-left: 1px solid var(--border);
+      background: #272822; border-left: 1px solid #3e3d32;
       display: flex; flex-direction: column; z-index: 300;
       transform: translateX(100%); transition: transform 0.2s ease;
     }
@@ -221,11 +221,11 @@
       position: absolute; top: 0; left: 0; bottom: 0; width: 4px;
       cursor: col-resize; background: transparent; z-index: 301;
     }
-    .code-panel-resizer:hover { background: var(--border); }
+    .code-panel-resizer:hover { background: #3e3d32; }
 
     .code-tab-bar {
       display: flex; align-items: center; height: 38px;
-      background: var(--bg-sidebar); border-bottom: 1px solid var(--border);
+      background: #1e1f1c; border-bottom: 1px solid #3e3d32;
       overflow-x: auto; overflow-y: hidden; flex-shrink: 0;
     }
     .code-tab-bar::-webkit-scrollbar { height: 2px; }
@@ -233,31 +233,31 @@
     .code-tab {
       display: flex; align-items: center; gap: 6px;
       padding: 0 0.75rem; height: 100%; flex-shrink: 0;
-      font-size: 0.78rem; color: var(--text-light); cursor: pointer;
-      border-right: 1px solid var(--border); white-space: nowrap;
+      font-size: 0.78rem; color: #75715e; cursor: pointer;
+      border-right: 1px solid #3e3d32; white-space: nowrap;
       transition: background 0.1s, color 0.1s;
     }
-    .code-tab:hover { background: var(--bg-hover); color: var(--black); }
-    .code-tab.active { background: #fff; color: var(--black); font-weight: 600; }
+    .code-tab:hover { background: #3e3d32; color: #f8f8f2; }
+    .code-tab.active { background: #272822; color: #f8f8f2; font-weight: 600; }
     .code-tab .tab-close {
       display: flex; align-items: center; justify-content: center;
       width: 16px; height: 16px; border-radius: 3px;
-      font-size: 12px; color: var(--text-faded); cursor: pointer;
+      font-size: 12px; color: #75715e; cursor: pointer;
     }
-    .code-tab .tab-close:hover { background: #ddd; color: var(--black); }
+    .code-tab .tab-close:hover { background: #3e3d32; color: #f8f8f2; }
 
     .code-panel-toolbar {
       display: flex; align-items: center; justify-content: flex-end;
       padding: 0 0.5rem; height: 100%; flex-shrink: 0;
-      border-left: 1px solid var(--border);
+      border-left: 1px solid #3e3d32;
     }
     .code-panel-toolbar button {
       width: 28px; height: 28px; border: none; background: transparent;
-      cursor: pointer; font-size: 16px; color: var(--text-light);
+      cursor: pointer; font-size: 16px; color: #75715e;
       display: flex; align-items: center; justify-content: center;
       border-radius: 4px;
     }
-    .code-panel-toolbar button:hover { background: var(--bg-hover); color: var(--black); }
+    .code-panel-toolbar button:hover { background: #3e3d32; color: #f8f8f2; }
 
     .code-content-wrap {
       flex: 1; overflow-y: auto; overflow-x: auto; position: relative;
@@ -265,43 +265,74 @@
     .code-content {
       font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
       font-size: 0.82rem; line-height: 1.6; white-space: pre;
-      padding: 0.5rem 0; position: relative;
+      padding: 0.5rem 0; position: relative; color: #f8f8f2;
     }
     .code-line {
       display: flex; padding: 0; min-width: max-content;
     }
     .code-line .line-num {
       flex-shrink: 0; width: 3rem; text-align: right;
-      padding-right: 0.75rem; color: var(--text-faded);
-      user-select: none; border-right: 1px solid var(--border);
+      padding-right: 0.75rem; color: #75715e;
+      user-select: none; border-right: 1px solid #3e3d32;
     }
     .code-line .line-content {
       padding-left: 0.75rem; white-space: pre;
     }
     .code-line.highlight {
-      background: #fff8e1;
+      background: #3e3d32;
     }
     .code-line.highlight .line-num {
-      color: #f57f17; font-weight: 600;
+      color: #fd971f; font-weight: 600;
     }
     .code-line.highlight .line-content::before {
-      content: '▶ '; color: #f57f17; font-size: 0.7rem;
+      content: '▶ '; color: #fd971f; font-size: 0.7rem;
     }
     .code-error {
-      padding: 2rem; text-align: center; color: #c62828; font-size: 0.9rem;
+      padding: 2rem; text-align: center; color: #f92672; font-size: 0.9rem;
     }
     .code-loading {
-      padding: 2rem; text-align: center; color: var(--text-faded); font-size: 0.9rem;
+      padding: 2rem; text-align: center; color: #75715e; font-size: 0.9rem;
     }
+
+    /* Prism token 颜色（okaidia 风格） */
+    .code-content .token.comment,
+    .code-content .token.prolog,
+    .code-content .token.doctype,
+    .code-content .token.cdata { color: #75715e; }
+    .code-content .token.punctuation { color: #f8f8f2; }
+    .code-content .token.property,
+    .code-content .token.tag,
+    .code-content .token.constant,
+    .code-content .token.symbol,
+    .code-content .token.deleted { color: #f92672; }
+    .code-content .token.boolean,
+    .code-content .token.number { color: #ae81ff; }
+    .code-content .token.selector,
+    .code-content .token.attr-name,
+    .code-content .token.string,
+    .code-content .token.char,
+    .code-content .token.builtin,
+    .code-content .token.inserted { color: #a6e22e; }
+    .code-content .token.operator,
+    .code-content .token.entity,
+    .code-content .token.url,
+    .code-content .token.variable { color: #f8f8f2; }
+    .code-content .token.atrule,
+    .code-content .token.attr-value,
+    .code-content .token.function,
+    .code-content .token.class-name { color: #e6db74; }
+    .code-content .token.keyword { color: #66d9ef; }
+    .code-content .token.regex,
+    .code-content .token.important { color: #fd971f; }
 
     /* 折叠后的展开按钮 */
     .code-expand-btn {
       position: fixed; top: 14px; right: 10px; z-index: 300;
-      width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 5px;
-      background: var(--bg); cursor: pointer; display: flex; align-items: center; justify-content: center;
-      font-size: 16px; color: var(--text-light); transition: background 0.15s;
+      width: 28px; height: 28px; border: 1px solid #3e3d32; border-radius: 5px;
+      background: #272822; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 16px; color: #75715e; transition: background 0.15s;
     }
-    .code-expand-btn:hover { background: var(--bg-hover); color: var(--black); }
+    .code-expand-btn:hover { background: #3e3d32; color: #f8f8f2; }
 
     /* 代码链接样式 */
     .markdown-section a.code-link {
@@ -765,11 +796,14 @@
         var pre = document.createElement('div');
         pre.className = 'code-content';
 
-        var lines = tab.content.split('\n');
+        // Prism 高亮后按行拆分，正确处理跨行语法（docstring 等）
+        var lang = self.detectLanguage(tab.path);
+        var highlightedLines = self.highlightLines(tab.content, lang);
+
         var hlStart = tab.highlight.start;
         var hlEnd = tab.highlight.end || hlStart;
 
-        lines.forEach(function (line, i) {
+        highlightedLines.forEach(function (lineHtml, i) {
           var lineNum = i + 1;
           var isHl = hlStart && lineNum >= hlStart && lineNum <= hlEnd;
 
@@ -777,7 +811,7 @@
           row.className = 'code-line' + (isHl ? ' highlight' : '');
           row.innerHTML =
             '<span class="line-num">' + lineNum + '</span>' +
-            '<span class="line-content">' + self.escapeHtml(line) + '</span>';
+            '<span class="line-content">' + lineHtml + '</span>';
           pre.appendChild(row);
         });
 
@@ -830,6 +864,86 @@
           .replace(/</g, '&lt;')
           .replace(/>/g, '&gt;')
           .replace(/"/g, '&quot;');
+      },
+
+      detectLanguage: function (path) {
+        var lower = path.toLowerCase();
+        if (lower.indexOf('dockerfile') !== -1) return 'bash';
+        var ext = lower.split('.').pop();
+        var map = {
+          py: 'python', js: 'javascript', ts: 'typescript',
+          vue: 'markup', html: 'markup', xml: 'markup',
+          css: 'css', scss: 'css',
+          yml: 'yaml', yaml: 'yaml',
+          json: 'json', conf: 'nginx',
+          md: 'markdown', sh: 'bash', sql: 'sql'
+        };
+        return map[ext] || null;
+      },
+
+      highlightLines: function (text, lang) {
+        var rawLines = text.split('\n');
+
+        // Prism 未加载或语言不支持：退回纯文本转义
+        if (!lang || typeof Prism === 'undefined' || !Prism.languages[lang]) {
+          return rawLines.map(this.escapeHtml);
+        }
+
+        // 整体高亮后按行拆分，正确处理跨行语法（docstring、多行注释等）
+        var highlighted = Prism.highlight(text, Prism.languages[lang], lang);
+        var temp = document.createElement('div');
+        temp.innerHTML = highlighted;
+
+        var result = [''];
+        var tagStack = [];
+
+        function escapeText(s) {
+          return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function walk(node) {
+          if (node.nodeType === 3) {
+            var parts = node.textContent.split('\n');
+            for (var i = 0; i < parts.length; i++) {
+              if (i > 0) {
+                // 行末：关闭所有打开的标签
+                for (var j = tagStack.length - 1; j >= 0; j--) {
+                  result[result.length - 1] += '</' + tagStack[j].tag + '>';
+                }
+                result.push('');
+                // 新行：重新打开标签
+                for (var j = 0; j < tagStack.length; j++) {
+                  result[result.length - 1] += '<' + tagStack[j].tag + tagStack[j].attrs + '>';
+                }
+              }
+              result[result.length - 1] += escapeText(parts[i]);
+            }
+          } else if (node.nodeType === 1) {
+            var tag = node.tagName.toLowerCase();
+            var attrs = '';
+            for (var i = 0; i < node.attributes.length; i++) {
+              var attr = node.attributes[i];
+              attrs += ' ' + attr.name + '="' + attr.value + '"';
+            }
+            tagStack.push({ tag: tag, attrs: attrs });
+            result[result.length - 1] += '<' + tag + attrs + '>';
+            for (var i = 0; i < node.childNodes.length; i++) {
+              walk(node.childNodes[i]);
+            }
+            result[result.length - 1] += '</' + tag + '>';
+            tagStack.pop();
+          }
+        }
+
+        for (var i = 0; i < temp.childNodes.length; i++) {
+          walk(temp.childNodes[i]);
+        }
+
+        // 确保行数与原始一致
+        while (result.length < rawLines.length) result.push('');
+        if (result.length > rawLines.length) result = result.slice(0, rawLines.length);
+
+        return result;
       }
     };
 
@@ -867,5 +981,19 @@
   <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/docsify.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/plugins/copy-code.min.js"></script>
+  <!-- Prism 语法高亮 -->
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-clike.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markup.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-css.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-yaml.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-nginx.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-bash.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markdown.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-typescript.min.js"></script>
 </body>
 </html>
