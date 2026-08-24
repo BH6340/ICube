@@ -210,8 +210,8 @@
     /* ===== 右侧代码面板 ===== */
     .code-panel {
       position: fixed; top: 0; right: 0; bottom: 0; width: 45%;
-      max-width: 700px; min-width: 350px;
-      background: #272822; border-left: 1px solid #3e3d32;
+      max-width: 80%; min-width: 350px;
+      background: #1e1e1e; border-left: 1px solid #2d2d2d;
       display: flex; flex-direction: column; z-index: 300;
       transform: translateX(100%); transition: transform 0.2s ease;
     }
@@ -221,11 +221,11 @@
       position: absolute; top: 0; left: 0; bottom: 0; width: 4px;
       cursor: col-resize; background: transparent; z-index: 301;
     }
-    .code-panel-resizer:hover { background: #3e3d32; }
+    .code-panel-resizer:hover { background: #2d2d2d; }
 
     .code-tab-bar {
       display: flex; align-items: center; height: 38px;
-      background: #1e1f1c; border-bottom: 1px solid #3e3d32;
+      background: #181818; border-bottom: 1px solid #2d2d2d;
       overflow-x: auto; overflow-y: hidden; flex-shrink: 0;
     }
     .code-tab-bar::-webkit-scrollbar { height: 2px; }
@@ -233,31 +233,31 @@
     .code-tab {
       display: flex; align-items: center; gap: 6px;
       padding: 0 0.75rem; height: 100%; flex-shrink: 0;
-      font-size: 0.78rem; color: #75715e; cursor: pointer;
-      border-right: 1px solid #3e3d32; white-space: nowrap;
+      font-size: 0.78rem; color: #808080; cursor: pointer;
+      border-right: 1px solid #2d2d2d; white-space: nowrap;
       transition: background 0.1s, color 0.1s;
     }
-    .code-tab:hover { background: #3e3d32; color: #f8f8f2; }
-    .code-tab.active { background: #272822; color: #f8f8f2; font-weight: 600; }
+    .code-tab:hover { background: #2d2d2d; color: #d4d4d4; }
+    .code-tab.active { background: #1e1e1e; color: #d4d4d4; font-weight: 600; }
     .code-tab .tab-close {
       display: flex; align-items: center; justify-content: center;
       width: 16px; height: 16px; border-radius: 3px;
-      font-size: 12px; color: #75715e; cursor: pointer;
+      font-size: 12px; color: #808080; cursor: pointer;
     }
-    .code-tab .tab-close:hover { background: #3e3d32; color: #f8f8f2; }
+    .code-tab .tab-close:hover { background: #2d2d2d; color: #d4d4d4; }
 
     .code-panel-toolbar {
       display: flex; align-items: center; justify-content: flex-end;
       padding: 0 0.5rem; height: 100%; flex-shrink: 0;
-      border-left: 1px solid #3e3d32;
+      border-left: 1px solid #2d2d2d;
     }
     .code-panel-toolbar button {
       width: 28px; height: 28px; border: none; background: transparent;
-      cursor: pointer; font-size: 16px; color: #75715e;
+      cursor: pointer; font-size: 16px; color: #808080;
       display: flex; align-items: center; justify-content: center;
       border-radius: 4px;
     }
-    .code-panel-toolbar button:hover { background: #3e3d32; color: #f8f8f2; }
+    .code-panel-toolbar button:hover { background: #2d2d2d; color: #d4d4d4; }
 
     .code-content-wrap {
       flex: 1; overflow-y: auto; overflow-x: auto; position: relative;
@@ -265,74 +265,77 @@
     .code-content {
       font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
       font-size: 0.82rem; line-height: 1.6; white-space: pre;
-      padding: 0.5rem 0; position: relative; color: #f8f8f2;
+      padding: 0.5rem 0; position: relative; color: #d4d4d4;
     }
     .code-line {
       display: flex; padding: 0; min-width: max-content;
     }
     .code-line .line-num {
       flex-shrink: 0; width: 3rem; text-align: right;
-      padding-right: 0.75rem; color: #75715e;
-      user-select: none; border-right: 1px solid #3e3d32;
+      padding-right: 0.75rem; color: #858585;
+      user-select: none; border-right: 1px solid #2d2d2d;
     }
     .code-line .line-content {
       padding-left: 0.75rem; white-space: pre;
     }
     .code-line.highlight {
-      background: #3e3d32;
+      background: #264f78;
     }
     .code-line.highlight .line-num {
-      color: #fd971f; font-weight: 600;
+      color: #569cd6; font-weight: 600;
     }
     .code-line.highlight .line-content::before {
-      content: '▶ '; color: #fd971f; font-size: 0.7rem;
+      content: '▶ '; color: #569cd6; font-size: 0.7rem;
     }
     .code-error {
-      padding: 2rem; text-align: center; color: #f92672; font-size: 0.9rem;
+      padding: 2rem; text-align: center; color: #f48771; font-size: 0.9rem;
     }
     .code-loading {
-      padding: 2rem; text-align: center; color: #75715e; font-size: 0.9rem;
+      padding: 2rem; text-align: center; color: #808080; font-size: 0.9rem;
     }
 
-    /* Prism token 颜色（okaidia 风格） */
+    /* Prism token 颜色（VS Code Dark+ 风格） */
     .code-content .token.comment,
     .code-content .token.prolog,
     .code-content .token.doctype,
-    .code-content .token.cdata { color: #75715e; }
-    .code-content .token.punctuation { color: #f8f8f2; }
+    .code-content .token.cdata { color: #6a9955; }
+    .code-content .token.punctuation { color: #d4d4d4; }
     .code-content .token.property,
     .code-content .token.tag,
     .code-content .token.constant,
     .code-content .token.symbol,
     .code-content .token.deleted { color: #f92672; }
     .code-content .token.boolean,
-    .code-content .token.number { color: #ae81ff; }
+    .code-content .token.number { color: #b5cea8; }
     .code-content .token.selector,
     .code-content .token.attr-name,
     .code-content .token.string,
     .code-content .token.char,
     .code-content .token.builtin,
-    .code-content .token.inserted { color: #a6e22e; }
+    .code-content .token.inserted { color: #ce9178; }
     .code-content .token.operator,
     .code-content .token.entity,
     .code-content .token.url,
-    .code-content .token.variable { color: #f8f8f2; }
+    .code-content .token.variable { color: #d4d4d4; }
     .code-content .token.atrule,
     .code-content .token.attr-value,
     .code-content .token.function,
-    .code-content .token.class-name { color: #e6db74; }
-    .code-content .token.keyword { color: #66d9ef; }
+    .code-content .token.class-name { color: #dcdcaa; }
+    .code-content .token.keyword { color: #569cd6; }
     .code-content .token.regex,
-    .code-content .token.important { color: #fd971f; }
+    .code-content .token.important { color: #d16969; }
 
     /* 折叠后的展开按钮 */
     .code-expand-btn {
       position: fixed; top: 14px; right: 10px; z-index: 300;
-      width: 28px; height: 28px; border: 1px solid #3e3d32; border-radius: 5px;
-      background: #272822; cursor: pointer; display: flex; align-items: center; justify-content: center;
-      font-size: 16px; color: #75715e; transition: background 0.15s;
+      width: 28px; height: 28px; border: 1px solid #2d2d2d; border-radius: 5px;
+      background: #1e1e1e; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 16px; color: #808080; transition: background 0.15s;
     }
-    .code-expand-btn:hover { background: #3e3d32; color: #f8f8f2; }
+    .code-expand-btn:hover { background: #2d2d2d; color: #d4d4d4; }
+
+    /* 代码面板折叠时，TOC 按钮下移避免重叠 */
+    body.code-panel-collapsed .toc-toggle-btn { top: 52px; }
 
     /* 代码链接样式 */
     .markdown-section a.code-link {
@@ -344,14 +347,28 @@
       color: #0d47a1; text-decoration-color: #0d47a1;
     }
 
+    /* TOC 拖拽条 */
+    .toc-resizer {
+      position: fixed; top: 0; right: var(--toc-w); bottom: 0; width: 5px;
+      cursor: col-resize; background: transparent; z-index: 101; transition: right 0.2s ease;
+    }
+    .toc-resizer:hover { background: var(--border); }
+    body.toc-collapsed .toc-resizer { display: none; }
+
     @media (max-width: 900px) {
-      :root { --toc-w: 0px; }
-      .toc-sidebar, .toc-toggle-btn { display: none; }
-      .content { margin-right: 0; }
+      /* 平板：TOC 默认折叠，可点击展开（浮层模式，不挤压内容） */
+      :root { --toc-w: 220px; }
+      body.toc-collapsed .toc-sidebar { margin-right: calc(-1 * var(--toc-w)); }
+      body.toc-collapsed .content { margin-right: 0; }
+      body:not(.toc-collapsed) .toc-sidebar {
+        box-shadow: -2px 0 12px rgba(0,0,0,0.1);
+      }
       .code-panel { width: 100%; max-width: none; min-width: 0; }
+      /* 代码面板折叠时，TOC按钮位置在平板上也调整 */
+      body.code-panel-collapsed.toc-collapsed .toc-toggle-btn { top: 52px; }
     }
     @media (max-width: 600px) {
-      :root { --sidebar-w: 260px; }
+      :root { --sidebar-w: 260px; --toc-w: 200px; }
       .markdown-section { padding: 1.5rem 1rem 3rem; }
     }
   </style>
@@ -360,6 +377,7 @@
   <button class="nav-toggle-btn" id="navToggleBtn">☰</button>
   <div class="sidebar-resizer" id="sidebarResizer"></div>
   <button class="toc-toggle-btn" id="tocToggleBtn">☰</button>
+  <div class="toc-resizer" id="tocResizer"></div>
   <div id="app"></div>
 
   <!-- 右侧代码面板 -->
@@ -380,7 +398,7 @@
       document.body.classList.toggle('toc-collapsed');
     });
 
-    // ===== 拖拽调整侧边栏宽度 =====
+    // ===== 拖拽调整左侧边栏宽度 =====
     (function() {
       var resizer = document.getElementById('sidebarResizer');
       var isResizing = false;
@@ -396,6 +414,28 @@
         if (newWidth < 200) newWidth = 200;
         if (newWidth > 500) newWidth = 500;
         document.documentElement.style.setProperty('--sidebar-w', newWidth + 'px');
+      });
+      document.addEventListener('mouseup', function() {
+        if (isResizing) { isResizing = false; document.body.style.cursor = ''; document.body.style.userSelect = ''; }
+      });
+    })();
+
+    // ===== 拖拽调整右侧 TOC 宽度 =====
+    (function() {
+      var resizer = document.getElementById('tocResizer');
+      var isResizing = false;
+      resizer.addEventListener('mousedown', function(e) {
+        isResizing = true;
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        e.preventDefault();
+      });
+      document.addEventListener('mousemove', function(e) {
+        if (!isResizing) return;
+        var newWidth = window.innerWidth - e.clientX;
+        if (newWidth < 180) newWidth = 180;
+        if (newWidth > 400) newWidth = 400;
+        document.documentElement.style.setProperty('--toc-w', newWidth + 'px');
       });
       document.addEventListener('mouseup', function() {
         if (isResizing) { isResizing = false; document.body.style.cursor = ''; document.body.style.userSelect = ''; }
@@ -847,6 +887,7 @@
       expand: function () {
         this.isExpanded = true;
         this.panel.classList.add('expanded');
+        document.body.classList.remove('code-panel-collapsed');
         var btn = document.getElementById('codeExpandBtn');
         if (btn) btn.style.display = 'none';
       },
@@ -854,6 +895,7 @@
       collapse: function () {
         this.isExpanded = false;
         this.panel.classList.remove('expanded');
+        document.body.classList.add('code-panel-collapsed');
         var btn = document.getElementById('codeExpandBtn');
         if (btn) btn.style.display = 'flex';
       },
