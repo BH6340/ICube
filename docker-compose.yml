@@ -125,6 +125,10 @@ services:
       - ./docs:/usr/share/nginx/html/docs:ro
       # 后端源码只读挂载，供 Docsify 代码面板查看（/code/cube_api/... → ./cube_api/...）
       - ./cube_api:/usr/share/nginx/html/code/cube_api:ro
+      # 项目根目录文件挂载，供 Docsify 代码面板查看
+      - ./.env.example:/usr/share/nginx/html/code/.env.example:ro
+      - ./docker-compose.yml:/usr/share/nginx/html/code/docker-compose.yml:ro
+      - ./README.md:/usr/share/nginx/html/code/README.md:ro
     depends_on:
       # 仅控制启动顺序；运行状态由各服务的 restart 策略保障
       - api
