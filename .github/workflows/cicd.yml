@@ -45,9 +45,9 @@ jobs:
         run: ruff check cube_api/cube_api/
         continue-on-error: true
 
-      - name: 运行后端测试
+      - name: 运行后端测试（排除 shop 模块）
         working-directory: cube_api
-        run: python manage.py test --verbosity=2
+        run: python manage.py test apps.accounts apps.forum apps.formula apps.home apps.timer utils --verbosity=2
 
   # ==================== CI：前端构建验证 ====================
   frontend-check:

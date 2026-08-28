@@ -64,7 +64,7 @@ class CompressImageTest(TestCase):
         result_low = compress_image(file, quality=10)
 
         # 高质量文件应该更大
-        self.assertGreater(result_high.tell(), result_low.tell())
+        self.assertGreater(len(result_high.getvalue()), len(result_low.getvalue()))
 
     def test_compress_image_rgba_to_jpeg(self):
         """测试 RGBA 图片转 JPEG（透明通道处理）"""
@@ -96,7 +96,7 @@ class ConvertToWebPTest(TestCase):
         result_low = convert_to_webp(file, quality=10)
 
         # 高质量文件应该更大
-        self.assertGreater(result_high.tell(), result_low.tell())
+        self.assertGreater(len(result_high.getvalue()), len(result_low.getvalue()))
 
 
 class CropToSquareTest(TestCase):

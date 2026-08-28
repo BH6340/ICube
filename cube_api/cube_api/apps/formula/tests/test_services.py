@@ -28,7 +28,7 @@ class FormulaServiceTest(TestCase):
     def test_generate_inverse_complex(self):
         """测试复杂公式的逆运算"""
         result = FormulaService.generate_inverse_notation("R U R' U'")
-        self.assertEqual(result, "U' R' U R")
+        self.assertEqual(result, "U R U' R'")
 
     def test_generate_inverse_single_step(self):
         """测试单步操作的逆运算"""
@@ -58,7 +58,7 @@ class FormulaServiceTest(TestCase):
     def test_generate_inverse_mixed_moves(self):
         """测试混合操作的逆运算"""
         result = FormulaService.generate_inverse_notation("R U R' U' F R U")
-        self.assertEqual(result, "U' R' F' U' R' U' R")
+        self.assertEqual(result, "U' R' F' U R U' R'")
 
     def test_generate_inverse_empty_string(self):
         """测试空字符串（边界情况）"""
@@ -82,14 +82,29 @@ class CubeStateServiceTest(TestCase):
     """魔方状态验证服务测试"""
 
     def setUp(self):
-        """准备有效的状态定义"""
+        """准备有效的状态定义（3阶魔方需27个块）"""
+        # 中心块标准配色
+        center_colors = {
+            (0, 1, 0): ('U', 'Y'),
+            (0, -1, 0): ('D', 'W'),
+            (0, 0, 1): ('F', 'B'),
+            (0, 0, -1): ('B', 'G'),
+            (-1, 0, 0): ('L', 'O'),
+            (1, 0, 0): ('R', 'R'),
+        }
+        blocks = []
+        for i in [-1, 0, 1]:
+            for j in [-1, 0, 1]:
+                for k in [-1, 0, 1]:
+                    faces = {'U': '-', 'R': '-', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}
+                    if (i, j, k) in center_colors:
+                        face, color = center_colors[(i, j, k)]
+                        faces[face] = color
+                    blocks.append({'pos': [i, j, k], 'faces': faces})
+
         self.valid_state = {
             'order': 3,
-            'blocks': [
-                {'pos': [0, 1, 0], 'faces': {'U': 'Y', 'R': '-', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}},
-                {'pos': [1, 1, 0], 'faces': {'U': 'Y', 'R': 'R', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}},
-                {'pos': [-1, 1, 0], 'faces': {'U': 'Y', 'R': '-', 'F': '-', 'D': '-', 'L': 'O', 'B': '-'}},
-            ]
+            'blocks': blocks
         }
 
     def test_validate_valid_state(self):
