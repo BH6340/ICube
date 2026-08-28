@@ -13,7 +13,7 @@ router.register('users', AuthViewSet, basename='auth')
 urlpatterns = [
     # 当前登录用户信息 (操作当前 Session/Token 对应的资源)
     # 建议加上斜杠，或者根据你的 API 规范统一去掉
-    path('users/info', UserView.as_view(), name='user-account'),
+    path('users/info/', UserView.as_view(), name='user-account'),
 
     # 引入路由器的 URL
     path('', include(router.urls)),
