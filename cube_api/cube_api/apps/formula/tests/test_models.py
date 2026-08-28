@@ -182,15 +182,15 @@ class FormulaModelTest(TestCase):
             category=self.category
         )
 
-        # 逆公式应为 "U' R' U R"（反转并取逆）
-        self.assertEqual(formula.inverse_notation, "U' R' U R")
+        # 逆公式应为 "U R U' R'"（反转并取逆）
+        self.assertEqual(formula.inverse_notation, "U R U' R'")
 
     def test_inverse_notation_handles_various_notations(self):
         """测试不同公式记号的逆运算"""
         test_cases = [
             ("R U", "U' R'"),
             ("R2", "R2"),
-            ("R U R' U'", "U' R' U R"),
+            ("R U R' U'", "U R U' R'"),  # 固定：逆公式应为 U R U' R'，不是 U' R' U R
             ("F R U", "U' R' F'"),
         ]
 
