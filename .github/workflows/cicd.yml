@@ -1,0 +1,136 @@
+name: CI/CD
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: '3.13'
+  NODE_VERSION: '20'
+
+jobs:
+  # ==================== CI：后端检查 ====================
+  backend-check:
+    name: 后端 Lint + Test
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 3
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装系统依赖（mysqlclient 编译需要）
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-libmysqlclient-dev pkg-config
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: cube_api/requirements.txt
+
+      - name: 安装 Python 依赖
+        working-directory: cube_api
+        run: |
+          pip install -r requirements.txt
+          pip install ruff
+
+      - name: Ruff 代码检查
+        run: ruff check cube_api/cube_api/
+        continue-on-error: true
+
+      - name: 运行后端测试
+        working-directory: cube_api
+        run: python manage.py test --verbosity=2
+
+  # ==================== CI：前端构建验证 ====================
+  frontend-check:
+    name: 前端 Build 验证
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: cube_front/package-lock.json
+
+      - name: 安装前端依赖
+        working-directory: cube_front
+        run: npm ci
+
+      - name: 构建验证
+        working-directory: cube_front
+        run: npm run build
+
+  # ==================== CI：Docker 构建验证 ====================
+  docker-build:
+    name: Docker 镜像构建验证
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 构建后端镜像
+        run: docker build -t icube-api-ci ./cube_api
+
+      - name: 构建前端镜像
+        run: docker build -t icube-front-ci ./cube_front
+
+      - name: 验证 compose 配置
+        run: docker compose config -q
+
+  # ==================== CD：自动部署 ====================
+  deploy:
+    name: 部署到生产服务器
+    needs: [backend-check, frontend-check, docker-build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: SSH 部署
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ secrets.DEPLOY_PATH }}
+
+            echo "=== [1/4] 数据库备份 ==="
+            ./scripts/backup.sh || echo "警告: 备份失败，继续部署"
+
+            echo "=== [2/4] 拉取代码并部署 ==="
+            ./scripts/deploy/deploy_update.sh --non-interactive
+
+            echo "=== [3/4] 健康检查 ==="
+            sleep 5
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/)
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ 前端健康检查通过 (HTTP $HTTP_CODE)"
+            else
+              echo "❌ 前端健康检查失败 (HTTP $HTTP_CODE)"
+              docker compose ps
+              docker compose logs --tail=30 api
+              exit 1
+            fi
+
+            API_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/home/banners/)
+            if [ "$API_CODE" = "200" ]; then
+              echo "✅ API 健康检查通过 (HTTP $API_CODE)"
+            else
+              echo "❌ API 健康检查失败 (HTTP $API_CODE)"
+              docker compose logs --tail=30 api
+              exit 1
+            fi
+
+            echo "=== [4/4] 部署完成 ==="
+            echo "Commit: $(git rev-parse --short HEAD)"
+            echo "Time: $(date '+%Y-%m-%d %H:%M:%S')"

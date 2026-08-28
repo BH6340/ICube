@@ -4,6 +4,12 @@
 
 set -e
 
+# ---------- 非交互模式 ----------
+NON_INTERACTIVE=false
+if [[ "${1:-}" == "--non-interactive" ]]; then
+    NON_INTERACTIVE=true
+fi
+
 # ---------- 颜色 ----------
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -16,6 +22,15 @@ fail()  { echo -e "${RED}❌ $1${NC}"; exit 1; }
 info()  { echo -e "${CYAN}ℹ️  $1${NC}"; }
 ask()   { # $1=提示  $2=默认 y/n
     local default=${2:-n}
+    if [ "$NON_INTERACTIVE" = true ]; then
+        if [ "$default" = "y" ]; then
+            info "[非交互] 自动确认: $1"
+            return 0
+        else
+            info "[非交互] 自动跳过: $1"
+            return 1
+        fi
+    fi
     local prompt
     if [ "$default" = "y" ]; then
         prompt=" [Y/n] "
@@ -57,14 +72,22 @@ info "[1/5] 拉取最新代码..."
 if [ -n "$(git status --porcelain)" ]; then
     warn "检测到本地未提交改动："
     git status --short
-    if ask "是否丢弃本地改动并强制 pull 到最新？" n; then
+    if [ "$NON_INTERACTIVE" = true ]; then
+        info "[非交互] 自动丢弃本地改动并强制 pull"
+        git reset --hard HEAD
+        git pull --ff-only
+    elif ask "是否丢弃本地改动并强制 pull 到最新？" n; then
         git reset --hard HEAD
         git pull
     else
         fail "有本地未提交改动，请先处理后再更新（或选择强制覆盖）"
     fi
 else
-    git pull
+    if [ "$NON_INTERACTIVE" = true ]; then
+        git pull --ff-only
+    else
+        git pull
+    fi
 fi
 pass "代码已更新到最新 commit: $(git rev-parse --short HEAD)"
 
@@ -174,7 +197,11 @@ echo -e "${GREEN}========================================${NC}"
 echo ""
 
 # 查看最新日志末尾
-if ask "是否查看 api 容器最近 30 行日志？" n; then
-    docker compose logs --tail=30 api
+if [ "$NON_INTERACTIVE" = true ]; then
+    info "[非交互] 跳过日志查看"
+else
+    if ask "是否查看 api 容器最近 30 行日志？" n; then
+        docker compose logs --tail=30 api
+    fi
 fi
 echo ""
