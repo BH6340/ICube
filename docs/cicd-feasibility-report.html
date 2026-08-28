@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ICube CI/CD 可行性报告</title>
+<style>
+:root {
+  --brand: #6c5ce7;
+  --brand-light: #a29bfe;
+  --accent: #00b894;
+  --warning: #fdcb6e;
+  --danger: #e74c3c;
+  --bg: #f8f9fa;
+  --surface: #ffffff;
+  --border: #e0e0e6;
+  --text: #1a1a2e;
+  --text-muted: #6e6e80;
+  --code-bg: #f1f3f5;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+.container { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+h1 .subtitle { font-size: 14px; font-weight: 400; color: var(--text-muted); display: block; margin-top: 4px; }
+h2 {
+  font-size: 20px; font-weight: 600; margin: 40px 0 16px;
+  padding-bottom: 8px; border-bottom: 2px solid var(--brand);
+  color: var(--text);
+}
+h3 { font-size: 16px; font-weight: 600; margin: 24px 0 12px; color: var(--brand); }
+p { margin-bottom: 12px; font-size: 14.5px; }
+ul, ol { margin: 8px 0 16px 20px; }
+li { margin-bottom: 6px; font-size: 14.5px; }
+strong { font-weight: 600; }
+code {
+  font-family: "SF Mono", "Fira Code", Consolas, monospace;
+  font-size: 13px;
+  background: var(--code-bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+pre {
+  background: var(--code-bg);
+  border-radius: 8px;
+  padding: 16px;
+  overflow-x: auto;
+  margin: 12px 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+pre code { background: none; padding: 0; }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 16px 0;
+}
+.card-brand { border-left: 4px solid var(--brand); }
+.card-accent { border-left: 4px solid var(--accent); }
+.card-warning { border-left: 4px solid var(--warning); }
+.card-danger { border-left: 4px solid var(--danger); }
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.badge-ok { background: #d4edda; color: #155724; }
+.badge-warn { background: #fff3cd; color: #856404; }
+.badge-miss { background: #f8d7da; color: #721c24; }
+.badge-brand { background: #ede7f6; color: var(--brand); }
+table {
+  width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;
+}
+th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+th { background: var(--code-bg); font-weight: 600; }
+tr:hover { background: var(--bg); }
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+.summary-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+}
+.summary-item .label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+.summary-item .value { font-size: 20px; font-weight: 700; color: var(--brand); }
+.phase {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin: 16px 0;
+}
+.phase-num {
+  flex-shrink: 0;
+  width: 32px; height: 32px;
+  background: var(--brand);
+  color: #fff;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 14px;
+}
+.phase-content { flex: 1; }
+.phase-content h3 { margin-top: 4px; }
+.flow-diagram {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 20px 0;
+  text-align: center;
+}
+.flow-step {
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  margin: 4px;
+}
+.flow-step.ci { background: #ede7f6; color: var(--brand); border: 1px solid var(--brand); }
+.flow-step.cd { background: #d4edda; color: #155724; border: 1px solid var(--accent); }
+.flow-step.trigger { background: #fff3cd; color: #856404; border: 1px solid var(--warning); }
+.flow-arrow { font-size: 18px; color: var(--text-muted); margin: 0 2px; }
+.section-toc {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 20px 0;
+}
+.section-toc h3 { margin-top: 0; }
+.section-toc ol { margin: 0; }
+.section-toc a { color: var(--brand); text-decoration: none; }
+.section-toc a:hover { text-decoration: underline; }
+.footnote { font-size: 12px; color: var(--text-muted); margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>ICube CI/CD 可行性报告
+<span class="subtitle">生成日期：2026-08-28 | 仓库：github.com/BH6340/ICube</span>
+</h1>
+
+<div class="section-toc">
+<h3>目录</h3>
+<ol>
+<li><a href="#current">项目现状分析</a></li>
+<li><a href="#gap">CI/CD 缺口识别</a></li>
+<li><a href="#plan">推荐方案：GitHub Actions</a></li>
+<li><a href="#ci">CI 持续集成设计</a></li>
+<li><a href="#cd">CD 持续部署设计</a></li>
+<li><a href="#secrets">密钥与配置管理</a></li>
+<li><a href="#risks">风险与注意事项</a></li>
+<li><a href="#roadmap">实施路线图</a></li>
+<li><a href="#conclusion">结论</a></li>
+</ol>
+</div>
+
+<!-- ========== 1. 项目现状 ========== -->
+<h2 id="current">1. 项目现状分析</h2>
+
+<div class="summary-grid">
+<div class="summary-item">
+<div class="label">Git 平台</div>
+<div class="value" style="font-size:16px;">GitHub</div>
+</div>
+<div class="summary-item">
+<div class="label">后端测试</div>
+<div class="value">6 Apps</div>
+</div>
+<div class="summary-item">
+<div class="label">前端测试</div>
+<div class="value" style="color:var(--danger);">无</div>
+</div>
+<div class="summary-item">
+<div class="label">部署方式</div>
+<div class="value" style="font-size:16px;">手动 SSH</div>
+</div>
+<div class="summary-item">
+<div class="label">CI/CD</div>
+<div class="value" style="color:var(--danger);">未建立</div>
+</div>
+<div class="summary-item">
+<div class="label">Docker</div>
+<div class="value" style="color:var(--accent);">就绪</div>
+</div>
+</div>
+
+<h3>技术栈</h3>
+<table>
+<tr><th>层</th><th>技术</th><th>CI/CD 就绪度</th></tr>
+<tr><td>后端</td><td>Django 6.0 + DRF + MySQL 8.0 + Redis 7</td><td><span class="badge badge-ok">高</span> 有测试、有 Dockerfile</td></tr>
+<tr><td>前端 Web</td><td>Vue 3.5 + Vite 8.0 + Element Plus + Three.js</td><td><span class="badge badge-warn">中</span> 有 Dockerfile，无测试/lint</td></tr>
+<tr><td>前端 App</td><td>Vue 3 + Capacitor</td><td><span class="badge badge-miss">低</span> 无自动化构建</td></tr>
+<tr><td>部署</td><td>Docker Compose + Nginx</td><td><span class="badge badge-ok">高</span> 完整编排 + 部署脚本</td></tr>
+</table>
+
+<h3>已有部署基础设施</h3>
+<div class="card card-accent">
+<p><strong>已有 5 套部署脚本，质量良好：</strong></p>
+<ul>
+<li><code>deploy.sh</code> — 一键部署入口，支持 full/api/front 三种模式</li>
+<li><code>deploy_01_init.sh</code> — 服务器初始化（安装 Docker、创建用户）</li>
+<li><code>deploy_02_app.sh</code> — 应用首次部署（git clone + .env 生成 + compose up）</li>
+<li><code>deploy_03_https.sh</code> — HTTPS 证书申请与 Nginx 配置</li>
+<li><code>deploy_update.sh</code> — 日常更新（git pull + 智能选择 rebuild/migrate/restart）</li>
+</ul>
+<p>另外有 <code>test_deploy_script.py</code> 对部署脚本做契约测试，<code>backup.sh</code> / <code>server_backup.sh</code> 做数据备份。</p>
+</div>
+
+<h3>Docker Compose 服务拓扑</h3>
+<pre><code>nginx (80/443) ──┬── /api/   → api:8000 (Django + Gunicorn)
+                  ├── /media/  → media_volume (30d 缓存)
+                  ├── /static/ → collected_static (30d 缓存)
+                  ├── /docs/   → Docsify 文档站
+                  └── /        → front:80 (Vue SPA)
+
+api ──→ db (MySQL 8.0, healthcheck)
+  └──→ redis (Redis 7-alpine)
+
+front (多阶段: node:20 → nginx:1.28)
+</code></pre>
+
+<!-- ========== 2. 缺口识别 ========== -->
+<h2 id="gap">2. CI/CD 缺口识别</h2>
+
+<table>
+<tr><th>能力</th><th>当前状态</th><th>CI/CD 需求</th><th>差距</th></tr>
+<tr>
+<td>代码推送触发</td>
+<td>手动 SSH + git pull</td>
+<td>push/merge 自动触发</td>
+<td><span class="badge badge-miss">缺失</span></td>
+</tr>
+<tr>
+<td>后端自动化测试</td>
+<td>有测试，手动执行</td>
+<td>PR 自动运行</td>
+<td><span class="badge badge-miss">缺失</span></td>
+</tr>
+<tr>
+<td>前端构建验证</td>
+<td>无验证，本地 build</td>
+<td>PR 自动 build 检查</td>
+<td><span class="badge badge-miss">缺失</span></td>
+</tr>
+<tr>
+<td>代码质量检查</td>
+<td>后端有 mypy（未自动）</td>
+<td>lint + type check 自动化</td>
+<td><span class="badge badge-miss">缺失</span></td>
+</tr>
+<tr>
+<td>自动化部署</td>
+<td>手动 SSH 执行脚本</td>
+<td>merge 后自动部署</td>
+<td><span class="badge badge-miss">缺失</span></td>
+</tr>
+<tr>
+<td>部署前数据备份</td>
+<td>有备份脚本，手动执行</td>
+<td>migrate 前自动备份</td>
+<td><span class="badge badge-miss">缺失</span></td>
+</tr>
+<tr>
+<td>部署健康检查</td>
+<td>脚本内有 HTTP 验证</td>
+<td>CI 内集成验证</td>
+<td><span class="badge badge-warn">部分</span></td>
+</tr>
+<tr>
+<td>回滚机制</td>
+<td>无（git revert + 手动）</td>
+<td>快速回滚到上一版本</td>
+<td><span class="badge badge-miss">缺失</span></td>
+</tr>
+<tr>
+<td>前端测试</td>
+<td>无测试框架</td>
+<td>—</td>
+<td><span class="badge badge-warn">可选</span></td>
+</tr>
+</table>
+
+<!-- ========== 3. 推荐方案 ========== -->
+<h2 id="plan">3. 推荐方案：GitHub Actions</h2>
+
+<div class="card card-brand">
+<p><strong>为什么选 GitHub Actions？</strong></p>
+<ul>
+<li><strong>仓库已在 GitHub</strong>（<code>git@github.com:BH6340/ICube.git</code>），零迁移成本</li>
+<li><strong>免费额度充足</strong>：公开仓库无限分钟，私有仓库 2000 分钟/月</li>
+<li><strong>Secrets 管理内置</strong>：SSH key、服务器地址等可直接配置为 GitHub Secrets</li>
+<li><strong>与已有部署脚本无缝衔接</strong>：CI 跑测试，CD 通过 SSH 调用 <code>deploy_update.sh</code></li>
+<li><strong>无需额外基础设施</strong>：不需要自建 Jenkins/GitLab Runner</li>
+</ul>
+</div>
+
+<h3>流水线总览</h3>
+<div class="flow-diagram">
+<div class="flow-step trigger">Push / PR</div>
+<span class="flow-arrow">→</span>
+<div class="flow-step ci">后端 Lint + Test</div>
+<span class="flow-arrow">+</span>
+<div class="flow-step ci">前端 Build</div>
+<span class="flow-arrow">+</span>
+<div class="flow-step ci">Docker 构建验证</div>
+<br><br>
+<span class="flow-arrow">↓</span> <span style="font-size:13px;color:var(--text-muted);">CI 全部通过 + merge to main</span><br><br>
+<div class="flow-step cd">SSH → deploy_update.sh</div>
+<span class="flow-arrow">→</span>
+<div class="flow-step cd">DB Backup</div>
+<span class="flow-arrow">→</span>
+<div class="flow-step cd">Migrate + Build + Restart</div>
+<span class="flow-arrow">→</span>
+<div class="flow-step cd">健康检查</div>
+</div>
+
+<!-- ========== 4. CI 设计 ========== -->
+<h2 id="ci">4. CI 持续集成设计</h2>
+
+<h3>触发条件</h3>
+<ul>
+<li><strong>Pull Request</strong> 到 <code>main</code> 分支：运行全部检查</li>
+<li><strong>Push</strong> 到 <code>main</code> 分支：运行检查 + 触发 CD</li>
+</ul>
+
+<h3>Job 1：后端检查</h3>
+<div class="card">
+<pre><code># .github/workflows/ci.yml（后端 Job 示意）
+backend-check:
+  runs-on: ubuntu-latest
+  services:
+    # 测试模式已内置 SQLite 内存库 + Mock Redis，无需外部服务
+  steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+    - name: 安装依赖
+      working-directory: cube_api
+      run: |
+        pip install -r requirements.txt
+    - name: Lint（ruff）
+      run: pip install ruff && ruff check cube_api/
+    - name: 类型检查（mypy）
+      run: |
+        cd cube_api
+        mypy cube_api/apps/ --ignore-missing-imports
+    - name: 运行测试
+      working-directory: cube_api
+      run: python manage.py test --settings=cube_api.settings.dev</code></pre>
+<p style="margin-top:12px;color:var(--text-muted);font-size:13px;">
+<strong>关键优势：</strong>项目已有 <code>if 'test' in sys.argv</code> 自动切换 SQLite 内存库 + Mock Redis + 禁用限流 + MD5 哈希，CI 环境无需 MySQL/Redis 服务。
+</p>
+</div>
+
+<h3>Job 2：前端构建验证</h3>
+<div class="card">
+<pre><code>frontend-check:
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: cube_front/package-lock.json
+    - name: 安装依赖
+      working-directory: cube_front
+      run: npm ci
+    - name: 构建验证
+      working-directory: cube_front
+      run: npm run build</code></pre>
+<p style="margin-top:12px;color:var(--text-muted);font-size:13px;">
+<strong>说明：</strong>前端目前无测试框架（package.json 只有 dev/build/preview），构建验证是最低成本的 CI 检查。后续可选添加 ESLint 和 Vitest。
+</p>
+</div>
+
+<h3>Job 3：Docker 构建验证</h3>
+<div class="card">
+<pre><code>docker-build:
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
+    - name: 构建后端镜像
+      run: docker build -t icube-api-test ./cube_api
+    - name: 构建前端镜像
+      run: docker build -t icube-front-test ./cube_front
+    - name: 验证 compose 配置
+      run: docker compose config -q</code></pre>
+<p style="margin-top:12px;color:var(--text-muted);font-size:13px;">
+<strong>价值：</strong>确保 Dockerfile 和 compose 配置始终可用，避免部署时才发现构建失败。
+</p>
+</div>
+
+<!-- ========== 5. CD 设计 ========== -->
+<h2 id="cd">5. CD 持续部署设计</h2>
+
+<h3>部署流程</h3>
+<div class="card card-accent">
+<ol>
+<li><strong>触发：</strong>push 到 <code>main</code> 且 CI 全部通过</li>
+<li><strong>SSH 连接服务器</strong>（使用 GitHub Secrets 中的 SSH 私钥）</li>
+<li><strong>数据备份</strong>：执行 <code>backup.sh</code>（migrate 前的安全网）</li>
+<li><strong>执行部署</strong>：<code>./scripts/deploy_update.sh</code>（已有智能更新逻辑）</li>
+<li><strong>健康检查</strong>：HTTP 请求验证服务可用性</li>
+<li><strong>失败通知</strong>：GitHub Actions 发送邮件通知</li>
+</ol>
+</div>
+
+<h3>CD Workflow 示意</h3>
+<div class="card">
+<pre><code># .github/workflows/deploy.yml
+deploy:
+  needs: [backend-check, frontend-check, docker-build]
+  if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  runs-on: ubuntu-latest
+  steps:
+    - name: SSH 部署到服务器
+      uses: appleboy/ssh-action@v1
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd /home/bh/ICube
+          # 数据库备份
+          ./scripts/backup.sh
+          # 执行智能更新
+          ./scripts/deploy_update.sh --mode full
+          # 健康检查
+          curl -sf https://icube.com/api/home/banners/ || exit 1</code></pre>
+</div>
+
+<h3>回滚策略</h3>
+<div class="card card-warning">
+<p><strong>方案 A（推荐，零成本）：</strong>Git 回滚 + 重新部署</p>
+<pre><code># 服务器上执行
+cd /home/bh/ICube
+git log --oneline -5                    # 找到上一个稳定版本
+git revert HEAD                         # 或 git reset --hard <commit>
+./scripts/deploy_update.sh --mode full  # 重新部署</code></pre>
+<p style="margin-top:12px;"><strong>方案 B（进阶，可选）：</strong>Docker 镜像标签版本化</p>
+<ul>
+<li>每次部署构建镜像时打两个标签：<code>latest</code> 和 <code>git-sha</code></li>
+<li>回滚时修改 <code>docker-compose.yml</code> 的 image tag 到上一个 sha</li>
+<li>需要额外搭建镜像仓库（Docker Hub 免费版或自建 Harbor）</li>
+</ul>
+</div>
+
+<!-- ========== 6. 密钥管理 ========== -->
+<h2 id="secrets">6. 密钥与配置管理</h2>
+
+<h3>需要在 GitHub Secrets 中配置的变量</h3>
+<table>
+<tr><th>Secret 名称</th><th>用途</th><th>示例</th></tr>
+<tr><td><code>SERVER_HOST</code></td><td>服务器 IP/域名</td><td><code>103.100.211.146</code></td></tr>
+<tr><td><code>SERVER_USER</code></td><td>SSH 用户名</td><td><code>bh</code></td></tr>
+<tr><td><code>SSH_PRIVATE_KEY</code></td><td>SSH 私钥（用于免密登录）</td><td><code>-----BEGIN OPENSSH PRIVATE KEY-----...</code></td></tr>
+<tr><td><code>DEPLOY_PATH</code></td><td>服务器项目路径</td><td><code>/home/bh/ICube</code></td></tr>
+</table>
+
+<div class="card card-warning">
+<p><strong>安全注意事项：</strong></p>
+<ul>
+<li>SSH 私钥仅用于部署，不要赋予 sudo 权限</li>
+<li>服务器上的 <code>.env</code> 文件（含 DB 密码、SECRET_KEY、支付宝密钥）不经过 CI，始终在服务器本地管理</li>
+<li>支付宝密钥 <code>apps/shop/keys/</code> 已在 <code>.gitignore</code> 中排除，不会进入 CI</li>
+<li>SSL 证书 <code>nginx/ssl/*.pem</code> 同样已排除</li>
+</ul>
+</div>
+
+<!-- ========== 7. 风险 ========== -->
+<h2 id="risks">7. 风险与注意事项</h2>
+
+<table>
+<tr><th style="width:20%;">风险项</th><th style="width:15%;">严重度</th><th>应对方案</th></tr>
+<tr>
+<td>数据库 migrate 失败</td>
+<td><span class="badge badge-miss">高</span></td>
+<td>
+<ul>
+<li>部署前自动执行 <code>backup.sh</code> 数据库备份</li>
+<li>migrate 失败时 SSH action 自动失败，GitHub 发邮件告警</li>
+<li>服务器上可手动 <code>git reset</code> + 恢复备份</li>
+</ul>
+</td>
+</tr>
+<tr>
+<td>部署期间服务短暂不可用</td>
+<td><span class="badge badge-warn">中</span></td>
+<td>
+<ul>
+<li><code>docker compose up -d --build</code> 会先构建再替换，停机约 10-30 秒</li>
+<li>可接受（个人项目），如需零停机需引入蓝绿部署（复杂度高，暂不推荐）</li>
+<li>建议在低峰期触发部署</li>
+</ul>
+</td>
+</tr>
+<tr>
+<td>SSH 密钥泄露</td>
+<td><span class="badge badge-miss">高</span></td>
+<td>
+<ul>
+<li>GitHub Secrets 加密存储，不会在日志中明文输出</li>
+<li>建议使用独立部署密钥，不与开发密钥混用</li>
+<li>定期轮换密钥</li>
+</ul>
+</td>
+</tr>
+<tr>
+<td>前端无测试覆盖</td>
+<td><span class="badge badge-warn">中</span></td>
+<td>
+<ul>
+<li>CI 只做 <code>npm run build</code> 验证，无法拦截运行时错误</li>
+<li>建议后续添加 ESLint（静态检查）和 Vitest（单元测试）</li>
+<li>作为渐进式改进，不阻塞 CI/CD 上线</li>
+</ul>
+</td>
+</tr>
+<tr>
+<td>构建时间过长</td>
+<td><span class="badge badge-warn">中</span></td>
+<td>
+<ul>
+<li>Docker 多阶段构建 + npm/pip 缓存</li>
+<li>GitHub Actions 缓存 <code>node_modules</code> 和 <code>~/.cache/pip</code></li>
+<li>三个 Job 并行执行，总时间约 3-5 分钟</li>
+</ul>
+</td>
+</tr>
+<tr>
+<td>服务器资源不足</td>
+<td><span class="badge badge-warn">中</span></td>
+<td>
+<ul>
+<li>构建在 GitHub Actions Runner 上执行，不占用服务器资源</li>
+<li>服务器只需 <code>git pull + docker compose up</code>，资源消耗低</li>
+</ul>
+</td>
+</tr>
+<tr>
+<td>移动端 APK 构建</td>
+<td><span class="badge badge-ok">低</span></td>
+<td>
+<ul>
+<li><code>cube_app</code> 的 APK 构建依赖 Android SDK，CI 环境配置复杂</li>
+<li>建议首期不纳入 CI/CD，保持手动 <code>build-apk.ps1</code> 构建</li>
+<li>后续可单独建一个 APK 构建流水线</li>
+</ul>
+</td>
+</tr>
+</table>
+
+<!-- ========== 8. 路线图 ========== -->
+<h2 id="roadmap">8. 实施路线图</h2>
+
+<div class="phase">
+<div class="phase-num">1</div>
+<div class="phase-content">
+<h3>Phase 1：CI 基础（预计 2-3 小时）</h3>
+<ul>
+<li>创建 <code>.github/workflows/ci.yml</code></li>
+<li>后端：安装依赖 → <code>ruff</code> lint → <code>mypy</code> 类型检查 → <code>manage.py test</code></li>
+<li>前端：<code>npm ci</code> → <code>npm run build</code></li>
+<li>Docker：构建验证 + compose config 校验</li>
+<li><strong>验收标准：</strong>PR 自动触发检查，红色/绿色状态可见</li>
+</ul>
+</div>
+</div>
+
+<div class="phase">
+<div class="phase-num">2</div>
+<div class="phase-content">
+<h3>Phase 2：CD 自动部署（预计 1-2 小时）</h3>
+<ul>
+<li>配置 GitHub Secrets（<code>SERVER_HOST</code>、<code>SSH_PRIVATE_KEY</code> 等）</li>
+<li>创建 <code>.github/workflows/deploy.yml</code></li>
+<li>SSH action 调用已有 <code>deploy_update.sh</code></li>
+<li>添加部署前 <code>backup.sh</code> 和部署后健康检查</li>
+<li><strong>验收标准：</strong>push to main → 自动部署到服务器 → HTTP 验证通过</li>
+</ul>
+</div>
+</div>
+
+<div class="phase">
+<div class="phase-num">3</div>
+<div class="phase-content">
+<h3>Phase 3：通知与回滚（预计 1 小时）</h3>
+<ul>
+<li>部署失败邮件通知（GitHub 内置）</li>
+<li>部署成功/失败飞书/钉钉通知（可选 webhook）</li>
+<li>编写回滚脚本 <code>scripts/rollback.sh</code></li>
+<li><strong>验收标准：</strong>失败有通知，回滚有脚本</li>
+</ul>
+</div>
+</div>
+
+<div class="phase">
+<div class="phase-num">4</div>
+<div class="phase-content">
+<h3>Phase 4：渐进增强（可选，按需推进）</h3>
+<ul>
+<li>前端添加 ESLint + Prettier 配置</li>
+<li>前端添加 Vitest 单元测试</li>
+<li>Docker 镜像版本化标签（为回滚提供更细粒度）</li>
+<li>移动端 APK CI 构建（需要 Android SDK 的 GitHub Actions 镜像）</li>
+<li>分支策略引入 <code>develop</code> 分支 + 预发布环境</li>
+</ul>
+</div>
+</div>
+
+<!-- ========== 9. 结论 ========== -->
+<h2 id="conclusion">9. 结论</h2>
+
+<div class="card card-brand">
+<p style="font-size:15px;"><strong>可行性评估：高度可行，推荐立即实施 Phase 1-2。</strong></p>
+<p>理由：</p>
+<ul>
+<li><strong>基础设施就绪度高</strong>：Docker Compose 编排完整、Dockerfile 多阶段构建、部署脚本已有智能更新逻辑，CI/CD 只需"串联"现有能力</li>
+<li><strong>后端测试已覆盖</strong>：6 个 App + utils 都有测试目录，且测试模式自动隔离（SQLite + Mock Redis），CI 环境零额外配置</li>
+<li><strong>GitHub Actions 零成本</strong>：仓库已在 GitHub，私有仓库 2000 分钟/月足够（每次 CI 约 5-8 分钟）</li>
+<li><strong>CD 复用已有脚本</strong>：<code>deploy_update.sh</code> 已有智能变更检测（前端/后端/migration/compose），无需重写部署逻辑</li>
+</ul>
+<p style="margin-top:16px;"><strong>主要前提条件：</strong></p>
+<ul>
+<li>服务器需配置 SSH 密钥认证（<code>deploy_02_app.sh</code> 已处理）</li>
+<li>GitHub Secrets 配置 3-4 个变量</li>
+<li>确认 <code>deploy_update.sh</code> 在服务器上的路径和权限</li>
+</ul>
+<p style="margin-top:16px;"><strong>预计总工时：4-6 小时（Phase 1-3），Phase 4 按需投入。</strong></p>
+</div>
+
+<div class="footnote">
+本报告基于 2026-08-28 的项目代码状态生成。实施前请确认服务器 SSH 访问正常、<code>deploy_update.sh</code> 路径正确。
+</div>
+
+</div>
+</body>
+</html>
