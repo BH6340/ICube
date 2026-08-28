@@ -70,12 +70,19 @@ def build_image_url(relative_path, absolute=False):
                 relative_path = relative_path.name
             else:
                 return ''
-    except (ImportError, Exception):
-        # 如果导入失败或出现其他异常，尝试转换为字符串
+    except ImportError:
+        # 如果导入失败，尝试转换为字符串
         try:
             relative_path = str(relative_path)
-        except Exception:
+        except (ValueError, TypeError, AttributeError):
             return ''
+    else:
+        # 如果没有抛出 ImportError，还需要检查是否能成功转换为字符串
+        if not isinstance(relative_path, str):
+            try:
+                relative_path = str(relative_path)
+            except (ValueError, TypeError, AttributeError):
+                return ''
     
     # 如果已经是完整的绝对URL，直接返回，无需处理
     if relative_path.startswith('http://') or relative_path.startswith('https://'):
