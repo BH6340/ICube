@@ -358,13 +358,12 @@ else:
     }
 
 # 兼容测试代码对原生 Redis 连接的访问
-# 此处返回配置中的 Django RedisCache 包装对象，并非内存缓存；
-# 调用方需要通过 .client.get_client() 取得 redis-py 客户端
+# 返回 redis-py 原生客户端，使 models 中的 con.exists()/con.sadd() 等方法可用
 if 'test' in sys.argv:
     import django_redis
     def mock_get_redis_connection(alias):
         from django.core.cache import cache
-        return cache
+        return cache.client.get_client()
     django_redis.get_redis_connection = mock_get_redis_connection
 
 # ==================== 邮件 SMTP 配置 ====================

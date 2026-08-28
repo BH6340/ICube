@@ -177,6 +177,11 @@ class Post(models.Model):
         self.status = 'deleted'
         self.save(update_fields=['status'])
 
+    @property
+    def hot_score(self):
+        """热度评分：点赞*3 + 评论*2 + 浏览*1"""
+        return self.like_count * 3 + self.comment_count * 2 + self.view_count
+
 
 class Comment(models.Model):
     """
