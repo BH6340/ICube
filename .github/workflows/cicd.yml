@@ -11,7 +11,7 @@ on:
       - 'scripts/**'
       - '.github/workflows/cicd.yml'
   push:
-    branches: [main]
+    branches: [main, dev]
     paths:
       - 'cube_api/**'
       - 'cube_front/**'
@@ -141,7 +141,7 @@ jobs:
         if: steps.changed-docker.outputs.docker == 'true'
         run: docker compose config -q
 
-  # ==================== CD：自动部署 ====================
+  # ==================== CD：自动部署（仅 main 分支） ====================
   deploy:
     name: 部署到生产服务器
     needs: [backend-check, frontend-check, docker-build]
