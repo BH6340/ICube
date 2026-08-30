@@ -206,12 +206,12 @@ REDIS_BASE_OPTIONS = {
 
 # 测试与开发环境使用不同 Redis 数据库和键前缀
 if 'test' in sys.argv or 'pytest' in sys.modules:
-    # 测试环境使用 fakeredis（纯 Python 内存实现），无需真实 Redis 服务
+    # 测试环境：cache 用 LocMemCache（内存实现），Redis 直连用 fakeredis 模拟
+    # 两者配合覆盖所有缓存场景，无需真实 Redis 服务
     CACHES = {
         'default': {
-            'BACKEND': 'django_redis.cache.RedisCache',
-            'LOCATION': 'redis://127.0.0.1:6379/3',
-            'OPTIONS': REDIS_BASE_OPTIONS,
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'icube_test_cache',
             'KEY_PREFIX': 'icube_test',
             'TIMEOUT': 300,
         }
