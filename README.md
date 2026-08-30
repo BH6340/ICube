@@ -19,6 +19,7 @@
 - [快速开始](#快速开始)
 - [环境要求](#环境要求)
 - [技术架构](#技术架构)
+- [CI/CD](#cicd)
 - [项目结构](#项目结构)
 - [核心功能](#核心功能)
 - [技术亮点](#技术亮点)
@@ -175,6 +176,57 @@ EMAIL_DISPLAY_NAME=ICube魔方平台
 | **路由** | Vue Router 5.0（Hash 模式） |
 | **HTTP 请求** | Axios 1.16 |
 | **Markdown** | marked 18 |
+
+---
+
+## CI/CD
+
+项目通过 GitHub Actions 实现持续集成与持续部署，配置文件位于 `.github/workflows/cicd.yml`。
+
+### 工作流触发
+
+- **push 到 main**：触发 CI 检查 + 自动部署
+- **PR 到 main**：触发 CI 检查（不部署）
+- **纯文档变更**（`docs/**`、`*.md`）：不触发任何 Job
+
+### Path Filter 智能跳过
+
+| 文件变更 | 后端检查 | 前端构建 | Docker 构建 | 部署 |
+|---------|:-------:|:-------:|:----------:|:----:|
+| `cube_api/**` | ✅ | - | - | ✅ |
+| `cube_front/**` | - | ✅ | - | ✅ |
+| `Dockerfile` / `docker-compose.yml` | - | - | ✅ | ✅ |
+| `scripts/**` | - | - | - | ✅ |
+| `docs/**` / `*.md` | - | - | - | - |
+
+### CI Job 说明
+
+| Job | 内容 | 预计耗时 |
+|-----|------|---------|
+| 后端 Lint + Test | ruff 检查 + 310 个测试用例（SQLite + fakeredis） | ~2min |
+| 前端 Build 验证 | npm ci + vite build | ~2min |
+| Docker 构建验证 | 前后端镜像构建 + compose config 校验 | ~3min |
+
+### CD 自动部署
+
+```
+push to main → CI 全绿 → SSH 到服务器 → backup.sh → deploy_update.sh --non-interactive → 健康检查
+```
+
+- 部署前自动数据库备份
+- 部署后 HTTP 健康检查（前端 + API）
+- 失败时输出容器日志
+
+### 所需 GitHub Secrets
+
+| Secret | 说明 |
+|--------|------|
+| `SERVER_HOST` | 服务器公网 IP |
+| `SERVER_USER` | SSH 用户名 |
+| `SSH_PRIVATE_KEY` | 部署专用 SSH 私钥 |
+| `DEPLOY_PATH` | 服务器项目路径 |
+
+> 详细的测试环境配置、测试方法、CI/CD 说明见 [测试文档](docs/guides/测试文档.md)。
 
 ---
 

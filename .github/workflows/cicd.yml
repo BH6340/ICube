@@ -3,8 +3,22 @@ name: CI/CD
 on:
   pull_request:
     branches: [main]
+    paths:
+      - 'cube_api/**'
+      - 'cube_front/**'
+      - 'docker-compose.yml'
+      - '**/Dockerfile'
+      - 'scripts/**'
+      - '.github/workflows/cicd.yml'
   push:
     branches: [main]
+    paths:
+      - 'cube_api/**'
+      - 'cube_front/**'
+      - 'docker-compose.yml'
+      - '**/Dockerfile'
+      - 'scripts/**'
+      - '.github/workflows/cicd.yml'
 
 env:
   PYTHON_VERSION: '3.13'
@@ -15,31 +29,47 @@ jobs:
   backend-check:
     name: 后端 Lint + Test
     runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' ||
+      !contains(github.event.pull_request.changed_files, 'cube_front/')
     steps:
       - uses: actions/checkout@v5
 
+      - name: 检查是否有后端代码变更
+        id: changed-backend
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'cube_api/**'
+
       - name: 安装系统依赖（mysqlclient 编译需要）
+        if: steps.changed-backend.outputs.backend == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y default-libmysqlclient-dev pkg-config
 
       - uses: actions/setup-python@v5
+        if: steps.changed-backend.outputs.backend == 'true'
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
           cache-dependency-path: cube_api/requirements.txt
 
       - name: 安装 Python 依赖
+        if: steps.changed-backend.outputs.backend == 'true'
         working-directory: cube_api
         run: |
           pip install -r requirements.txt
           pip install ruff
 
       - name: Ruff 代码检查
+        if: steps.changed-backend.outputs.backend == 'true'
         run: ruff check cube_api/cube_api/
         continue-on-error: true
 
       - name: 运行后端全量测试
+        if: steps.changed-backend.outputs.backend == 'true'
         working-directory: cube_api
         run: python manage.py test --verbosity=2
 
@@ -47,20 +77,34 @@ jobs:
   frontend-check:
     name: 前端 Build 验证
     runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' ||
+      !contains(github.event.pull_request.changed_files, 'cube_api/')
     steps:
       - uses: actions/checkout@v5
 
+      - name: 检查是否有前端代码变更
+        id: changed-frontend
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'cube_front/**'
+
       - uses: actions/setup-node@v5
+        if: steps.changed-frontend.outputs.frontend == 'true'
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: cube_front/package-lock.json
 
       - name: 安装前端依赖
+        if: steps.changed-frontend.outputs.frontend == 'true'
         working-directory: cube_front
         run: npm ci
 
       - name: 构建验证
+        if: steps.changed-frontend.outputs.frontend == 'true'
         working-directory: cube_front
         run: npm run build
 
@@ -68,23 +112,45 @@ jobs:
   docker-build:
     name: Docker 镜像构建验证
     runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' ||
+      !contains(github.event.pull_request.changed_files, 'cube_api/')
     steps:
       - uses: actions/checkout@v5
 
+      - name: 检查是否有 Docker 相关变更
+        id: changed-docker
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            docker:
+              - 'docker-compose.yml'
+              - '**/Dockerfile'
+              - 'cube_api/Dockerfile'
+              - 'cube_front/Dockerfile'
+
       - name: 构建后端镜像
+        if: steps.changed-docker.outputs.docker == 'true'
         run: docker build -t icube-api-ci ./cube_api
 
       - name: 构建前端镜像
+        if: steps.changed-docker.outputs.docker == 'true'
         run: docker build -t icube-front-ci ./cube_front
 
       - name: 验证 compose 配置
+        if: steps.changed-docker.outputs.docker == 'true'
         run: docker compose config -q
 
   # ==================== CD：自动部署 ====================
   deploy:
     name: 部署到生产服务器
     needs: [backend-check, frontend-check, docker-build]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: |
+      github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+      !cancelled() &&
+      (needs.backend-check.result == 'success' || needs.backend-check.result == 'skipped') &&
+      (needs.frontend-check.result == 'success' || needs.frontend-check.result == 'skipped') &&
+      (needs.docker-build.result == 'success' || needs.docker-build.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
