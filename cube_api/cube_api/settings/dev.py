@@ -206,14 +206,14 @@ REDIS_BASE_OPTIONS = {
 
 # 测试与开发环境使用不同 Redis 数据库和键前缀
 if 'test' in sys.argv or 'pytest' in sys.modules:
-    # 测试仍依赖本地 Redis，仅通过数据库编号和键前缀隔离数据
+    # 测试环境使用 fakeredis（纯 Python 内存实现），无需真实 Redis 服务
     CACHES = {
         'default': {
             'BACKEND': 'django_redis.cache.RedisCache',
-            'LOCATION': 'redis://127.0.0.1:6379/3',  # 使用数据库 3，与开发环境隔离
+            'LOCATION': 'redis://127.0.0.1:6379/3',
             'OPTIONS': REDIS_BASE_OPTIONS,
-            'KEY_PREFIX': 'icube_test',  # 添加测试前缀，防止污染开发数据
-            'TIMEOUT': 300,  # 测试缓存默认保留 5 分钟
+            'KEY_PREFIX': 'icube_test',
+            'TIMEOUT': 300,
         }
     }
     # 仅为缩短测试耗时；MD5PasswordHasher 不可用于真实用户密码
@@ -318,7 +318,7 @@ REST_FRAMEWORK = {
 
 # 根据运行环境生成最终 DRF 配置
 if 'test' in sys.argv:
-    # 测试环境关闭限流，并使用 DRF 默认页码分页器
+    # 测试环境保留限流类但设超大限流，确保限流代码路径被测试但不会真正拦截
     REST_FRAMEWORK = {
         'DEFAULT_AUTHENTICATION_CLASSES': [
             'apps.accounts.authentication.CachedJWTAuthentication',
@@ -326,8 +326,16 @@ if 'test' in sys.argv:
         'DEFAULT_PERMISSION_CLASSES': [
             'rest_framework.permissions.IsAuthenticatedOrReadOnly',
         ],
-        'DEFAULT_THROTTLE_CLASSES': [],  # 清空限流类
-        'DEFAULT_THROTTLE_RATES': {},    # 清空限流速率
+        'DEFAULT_THROTTLE_CLASSES': [
+            'rest_framework.throttling.AnonRateThrottle',
+            'rest_framework.throttling.UserRateThrottle',
+        ],
+        'DEFAULT_THROTTLE_RATES': {
+            'anon': '10000/minute',
+            'user': '10000/minute',
+            'login_scope': '10000/minute',
+            'send_code_scope': '10000/minute',
+        },
         'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
         'PAGE_SIZE': 20,
         'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
@@ -358,12 +366,16 @@ else:
     }
 
 # 兼容测试代码对原生 Redis 连接的访问
-# 返回 redis-py 原生客户端，使 models 中的 con.exists()/con.sadd() 等方法可用
+# 返回 fakeredis.FakeRedis 实例，使 .exists()/.sadd()/.scard() 等方法可用
 if 'test' in sys.argv:
     import django_redis
+    import fakeredis
+
+    _fake_redis = fakeredis.FakeRedis()
+
     def mock_get_redis_connection(alias):
-        from django.core.cache import cache
-        return cache.client.get_client()
+        return _fake_redis
+
     django_redis.get_redis_connection = mock_get_redis_connection
 
 # ==================== 邮件 SMTP 配置 ====================

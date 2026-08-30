@@ -15,12 +15,6 @@ jobs:
   backend-check:
     name: 后端 Lint + Test
     runs-on: ubuntu-latest
-    services:
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 3
     steps:
       - uses: actions/checkout@v4
 
@@ -45,9 +39,9 @@ jobs:
         run: ruff check cube_api/cube_api/
         continue-on-error: true
 
-      - name: 运行后端测试（排除 shop 模块）
+      - name: 运行后端全量测试
         working-directory: cube_api
-        run: python manage.py test apps.accounts apps.forum apps.formula apps.home apps.timer utils --verbosity=2
+        run: python manage.py test --verbosity=2
 
   # ==================== CI：前端构建验证 ====================
   frontend-check:

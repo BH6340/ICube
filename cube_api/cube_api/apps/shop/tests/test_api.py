@@ -216,8 +216,7 @@ class OrderAPITest(ShopAPITestCase):
             }
         }
         response = self.client.post('/api/shop/orders/', data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data.get('code'), 400)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_order_stock_insufficient(self):
         """测试库存不足时创建订单失败"""

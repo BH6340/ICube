@@ -98,7 +98,7 @@ class AuthAPITest(AccountsBaseTestCase):
             }
         }
 
-        response = self.client.post('/api/users/register', data, format='json')
+        response = self.client.post('/api/users/register/', data, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -210,7 +210,7 @@ class ProfileDetailAPITest(AccountsBaseTestCase):
 
     def test_get_profile_detail_success(self):
         """测试获取用户资料详情"""
-        response = self.client.get(f'/api/profiles/{self.user2.username}')
+        response = self.client.get(f'/api/profiles/{self.user2.username}/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('profiles', response.data)
@@ -218,7 +218,7 @@ class ProfileDetailAPITest(AccountsBaseTestCase):
 
     def test_get_profile_list_success(self):
         """测试获取用户列表"""
-        response = self.client.get('/api/profiles')
+        response = self.client.get('/api/profiles/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('profiles', response.data)
@@ -226,7 +226,7 @@ class ProfileDetailAPITest(AccountsBaseTestCase):
 
     def test_search_profiles_matches_partial_username_anonymously(self):
         """匿名用户可按部分用户名搜索，且不泄露邮箱"""
-        response = APIClient().get('/api/profiles?search=user')
+        response = APIClient().get('/api/profiles/?search=user')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['code'], 100)
@@ -246,7 +246,7 @@ class ProfileDetailAPITest(AccountsBaseTestCase):
         )
 
         response = self.client.get(
-            f'/api/profiles?search={self.user.username.upper()}'
+            f'/api/profiles/?search={self.user.username.upper()}'
         )
 
         self.assertEqual(
@@ -256,7 +256,7 @@ class ProfileDetailAPITest(AccountsBaseTestCase):
 
     def test_search_profiles_with_blank_keyword_returns_empty_page(self):
         """空关键词不枚举用户"""
-        response = self.client.get('/api/profiles?search=%20')
+        response = self.client.get('/api/profiles/?search=%20')
 
         self.assertEqual(response.data['data']['count'], 0)
         self.assertEqual(response.data['data']['results'], [])
@@ -267,7 +267,7 @@ class ProfileDetailAPITest(AccountsBaseTestCase):
         self.user2.save(update_fields=['is_active'])
 
         response = self.client.get(
-            f'/api/profiles?search={self.user2.username}'
+            f'/api/profiles/?search={self.user2.username}'
         )
 
         self.assertEqual(response.data['data']['results'], [])
@@ -277,7 +277,7 @@ class ProfileDetailAPITest(AccountsBaseTestCase):
         self.user.following.add(self.user2)
 
         response = self.client.get(
-            f'/api/profiles?search={self.user2.username}'
+            f'/api/profiles/?search={self.user2.username}'
         )
 
         self.assertTrue(response.data['data']['results'][0]['following'])
@@ -291,7 +291,7 @@ class ProfileDetailAPITest(AccountsBaseTestCase):
                 username=username,
             )
 
-            response = self.client.get(f'/api/profiles/{username}')
+            response = self.client.get(f'/api/profiles/{username}/')
 
             self.assertEqual(response.status_code, status.HTTP_200_OK)
             self.assertEqual(response.data['profiles']['username'], username)
@@ -323,7 +323,7 @@ class ProfileDetailAPITest(AccountsBaseTestCase):
             is_custom=False,
         )
 
-        response = self.client.get(f'/api/profiles/{self.user.username}')
+        response = self.client.get(f'/api/profiles/{self.user.username}/')
         profile = response.data['profiles']
 
         self.assertEqual(profile['post_count'], 1)
@@ -334,7 +334,7 @@ class ProfileDetailAPITest(AccountsBaseTestCase):
         self.user2.is_active = False
         self.user2.save(update_fields=['is_active'])
 
-        response = self.client.get(f'/api/profiles/{self.user2.username}')
+        response = self.client.get(f'/api/profiles/{self.user2.username}/')
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
@@ -349,7 +349,7 @@ class ProfileDetailAPITest(AccountsBaseTestCase):
         self.user.following.add(inactive_user)
         inactive_user.following.add(self.user)
 
-        response = self.client.get(f'/api/profiles/{self.user.username}')
+        response = self.client.get(f'/api/profiles/{self.user.username}/')
         profile = response.data['profiles']
 
         self.assertEqual(profile['following_count'], 0)
@@ -357,14 +357,14 @@ class ProfileDetailAPITest(AccountsBaseTestCase):
 
     def test_follow_user_success(self):
         """测试关注用户成功"""
-        response = self.client.post(f'/api/profiles/{self.user2.username}/follow')
+        response = self.client.post(f'/api/profiles/{self.user2.username}/follow/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(self.user.following.filter(pk=self.user2.pk).exists())
 
     def test_follow_self_fails(self):
         """测试关注自己失败"""
-        response = self.client.post(f'/api/profiles/{self.user.username}/follow')
+        response = self.client.post(f'/api/profiles/{self.user.username}/follow/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['code'], 103)
@@ -374,14 +374,14 @@ class ProfileDetailAPITest(AccountsBaseTestCase):
         # 先关注
         self.user.follow(self.user2)
 
-        response = self.client.delete(f'/api/profiles/{self.user2.username}/follow')
+        response = self.client.delete(f'/api/profiles/{self.user2.username}/follow/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_get_following_list_success(self):
         """测试获取关注列表"""
         self.user.follow(self.user2)
 
-        response = self.client.get(f'/api/profiles/{self.user.username}/following')
+        response = self.client.get(f'/api/profiles/{self.user.username}/following/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('profiles', response.data)
@@ -390,7 +390,7 @@ class ProfileDetailAPITest(AccountsBaseTestCase):
         """测试获取粉丝列表"""
         self.user2.follow(self.user)
 
-        response = self.client.get(f'/api/profiles/{self.user.username}/followers')
+        response = self.client.get(f'/api/profiles/{self.user.username}/followers/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('profiles', response.data)
@@ -400,7 +400,7 @@ class ProfileDetailAPITest(AccountsBaseTestCase):
         self.user.following.add(self.user2)
 
         response = self.client.get(
-            f'/api/profiles/{self.user.username}/following?page=1&page_size=20'
+            f'/api/profiles/{self.user.username}/following/?page=1&page_size=20'
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -415,7 +415,7 @@ class ProfileDetailAPITest(AccountsBaseTestCase):
         self.user2.following.add(self.user)
 
         response = self.client.get(
-            f'/api/profiles/{self.user.username}/followers?page=1&page_size=20'
+            f'/api/profiles/{self.user.username}/followers/?page=1&page_size=20'
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -428,5 +428,5 @@ class ProfileDetailAPITest(AccountsBaseTestCase):
     def test_follow_without_authentication_fails(self):
         """测试未认证用户关注失败"""
         client = APIClient()
-        response = client.post(f'/api/profiles/{self.user2.username}/follow')
+        response = client.post(f'/api/profiles/{self.user2.username}/follow/')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

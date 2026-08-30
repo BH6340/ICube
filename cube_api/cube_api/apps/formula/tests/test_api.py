@@ -109,12 +109,7 @@ class CubeStateAPITest(FormulaBaseTestCase):
         self.authenticate_admin()
         data = {
             'name': '新状态',
-            'state_definition': {
-                'order': 3,
-                'blocks': [
-                    {'pos': [0, 1, 0], 'faces': {'U': 'Y', 'R': '-', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}},
-                ]
-            },
+            'state_definition': self._get_valid_state_definition(),
             'category': self.category.id
         }
         response = self.client.post('/api/formula/states/', data, format='json')
@@ -269,12 +264,7 @@ class FormulaMatchAPITest(FormulaBaseTestCase):
     def test_match_formulas_authenticated(self):
         """测试认证用户进行公式匹配"""
         self.authenticate()
-        state = {
-            'order': 3,
-            'blocks': [
-                {'pos': [0, 1, 0], 'faces': {'U': 'Y', 'R': '-', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}},
-            ]
-        }
+        state = self._get_valid_state_definition()
         response = self.client.post('/api/formula/formulas/match/', {'state_definition': state}, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 

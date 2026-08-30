@@ -122,23 +122,27 @@ class FormulaBaseTestCase(TestCase):
         )
 
     def _get_valid_state_definition(self):
-        """获取有效的状态定义"""
+        """获取有效的状态定义（3阶27块，中心块标准配色）"""
+        center_colors = {
+            (0, 1, 0): ('U', 'Y'),
+            (0, -1, 0): ('D', 'W'),
+            (0, 0, 1): ('F', 'B'),
+            (0, 0, -1): ('B', 'G'),
+            (-1, 0, 0): ('L', 'O'),
+            (1, 0, 0): ('R', 'R'),
+        }
+        blocks = []
+        for i in [-1, 0, 1]:
+            for j in [-1, 0, 1]:
+                for k in [-1, 0, 1]:
+                    faces = {'U': '-', 'R': '-', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}
+                    if (i, j, k) in center_colors:
+                        face, color = center_colors[(i, j, k)]
+                        faces[face] = color
+                    blocks.append({'pos': [i, j, k], 'faces': faces})
         return {
             'order': 3,
-            'blocks': [
-                {
-                    'pos': [0, 1, 0],
-                    'faces': {'U': 'Y', 'R': '-', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}
-                },
-                {
-                    'pos': [1, 1, 0],
-                    'faces': {'U': 'Y', 'R': 'R', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}
-                },
-                {
-                    'pos': [-1, 1, 0],
-                    'faces': {'U': 'Y', 'R': '-', 'F': '-', 'D': '-', 'L': 'O', 'B': '-'}
-                }
-            ]
+            'blocks': blocks,
         }
 
     def authenticate(self, user=None):

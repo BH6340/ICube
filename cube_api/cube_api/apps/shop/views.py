@@ -484,8 +484,9 @@ class AddressViewSet(viewsets.ModelViewSet):
 
         如果设置了 is_default=True，自动将用户的其他默认地址取消。
         """
+        partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data)
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
 
         is_default = serializer.validated_data.get('is_default', False)
@@ -494,6 +495,11 @@ class AddressViewSet(viewsets.ModelViewSet):
 
         serializer.save()
         return APIResponse(data=serializer.data, msg='地址更新成功')
+
+    def partial_update(self, request, *args, **kwargs):
+        """部分更新地址（PATCH）"""
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
         """

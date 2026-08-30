@@ -158,19 +158,21 @@ class CubeStateService:
             if not isinstance(state_def['blocks'], list):
                 errors.append("blocks 必须是列表格式")
             else:
-                # 验证块数量：order^3 个
-                expected_blocks = state_def.get('order', 3) ** 3
-                if len(state_def['blocks']) != expected_blocks:
-                    errors.append(f"blocks 数量不正确，期望 {expected_blocks} 个，实际 {len(state_def['blocks'])} 个")
+                # 验证块数量：order^3 个（order 非法时跳过数量校验，错误已在上面记录）
+                order_val = state_def.get('order')
+                if isinstance(order_val, int) and order_val >= 2:
+                    expected_blocks = order_val ** 3
+                    if len(state_def['blocks']) != expected_blocks:
+                        errors.append(f"blocks 数量不正确，期望 {expected_blocks} 个，实际 {len(state_def['blocks'])} 个")
 
                 # 4. 验证每个块的定义
                 for block in state_def['blocks']:
                     errors.extend(cls._validate_block(block))
 
-                # 5. 验证中心块颜色
+                # 5. 验证中心块颜色（仅当 blocks 是列表时）
                 errors.extend(cls._validate_center_blocks(state_def['blocks']))
 
-                # 6. 验证相邻块接触面颜色一致性
+                # 6. 验证相邻块接触面颜色一致性（仅当 blocks 是列表时）
                 errors.extend(cls._validate_adjacent_blocks(state_def['blocks']))
 
         return errors
@@ -270,7 +272,7 @@ class CubeStateService:
         for pos, expected_color in cls.CENTER_COLORS.items():
             # 查找中心块
             block = cls._find_block_by_pos(blocks, pos)
-            if block:
+            if block and isinstance(block, dict) and 'faces' in block:
                 # 获取该中心块需要验证的面
                 face_key = cls._get_center_face_key(pos)
                 actual_color = block['faces'].get(face_key, '')
@@ -302,12 +304,19 @@ class CubeStateService:
         errors = []
 
         for block in blocks:
-            pos = tuple(block['pos']) if isinstance(block['pos'], list) else block['pos']
+            # 跳过结构不合法的 block（前面的 _validate_block 已报告错误）
+            if not isinstance(block, dict):
+                continue
+            if 'pos' not in block or not isinstance(block['pos'], (list, tuple)) or len(block['pos']) != 3:
+                continue
+            if 'faces' not in block or not isinstance(block['faces'], dict):
+                continue
+            pos = tuple(block['pos'])
 
             # 获取所有相邻位置
             for direction, neighbor_pos in cls._get_neighbors(pos):
                 neighbor = cls._find_block_by_pos(blocks, neighbor_pos)
-                if neighbor:
+                if neighbor and isinstance(neighbor, dict) and 'faces' in neighbor:
                     # 获取当前块的接触面和相邻块的对应面
                     my_face = cls._direction_to_face(direction)
                     neighbor_face = cls._opposite_face(my_face)
@@ -338,7 +347,12 @@ class CubeStateService:
         """
         pos_tuple = tuple(pos) if isinstance(pos, list) else pos
         for block in blocks:
-            block_pos = tuple(block['pos']) if isinstance(block['pos'], list) else block['pos']
+            if not isinstance(block, dict) or 'pos' not in block:
+                continue
+            block_pos = block['pos']
+            if not isinstance(block_pos, (list, tuple)):
+                continue
+            block_pos = tuple(block_pos) if isinstance(block_pos, list) else block_pos
             if block_pos == pos_tuple:
                 return block
         return None

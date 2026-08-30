@@ -29,6 +29,24 @@ def create_test_image(width=200, height=100, color='red'):
     return buffer
 
 
+def create_noisy_test_image(width=200, height=150):
+    """创建带随机噪声的测试图（用于质量对比测试，确保质量差异体现在文件大小上）"""
+    import random
+    img = Image.new('RGB', (width, height))
+    pixels = img.load()
+    for x in range(width):
+        for y in range(height):
+            pixels[x, y] = (
+                random.randint(0, 255),
+                random.randint(0, 255),
+                random.randint(0, 255),
+            )
+    buffer = BytesIO()
+    img.save(buffer, format='JPEG', quality=100)
+    buffer.seek(0)
+    return buffer
+
+
 class CompressImageTest(TestCase):
     """图片压缩测试"""
 
@@ -59,7 +77,7 @@ class CompressImageTest(TestCase):
 
     def test_compress_image_quality(self):
         """测试压缩质量参数"""
-        file = create_test_image()
+        file = create_noisy_test_image()
         result_high = compress_image(file, quality=100)
         result_low = compress_image(file, quality=10)
 
@@ -91,7 +109,7 @@ class ConvertToWebPTest(TestCase):
 
     def test_convert_to_webp_quality(self):
         """测试 WebP 质量参数"""
-        file = create_test_image()
+        file = create_noisy_test_image()
         result_high = convert_to_webp(file, quality=100)
         result_low = convert_to_webp(file, quality=10)
 

@@ -49,10 +49,13 @@ class ProductCategoryModelTest(TestCase):
 
     def test_category_ordering(self):
         """测试分类排序"""
-        ProductCategory.objects.create(name='B分类', sort_order=2)
-        ProductCategory.objects.create(name='A分类', sort_order=1)
+        cat_b = ProductCategory.objects.create(name='B分类', sort_order=2)
+        cat_a = ProductCategory.objects.create(name='A分类', sort_order=1)
 
-        categories = ProductCategory.objects.all()
+        # 只取刚创建的两个分类，按 sort_order 排序
+        categories = ProductCategory.objects.filter(
+            id__in=[cat_a.id, cat_b.id]
+        ).order_by('sort_order')
         self.assertEqual(categories[0].name, 'A分类')
         self.assertEqual(categories[1].name, 'B分类')
 

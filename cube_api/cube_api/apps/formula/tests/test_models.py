@@ -354,7 +354,9 @@ class FormulaTagRelationModelTest(TestCase):
         FormulaTagRelation.objects.create(formula=self.formula, tag=tag2)
 
         self.assertEqual(self.formula.tag_relations.count(), 2)
-        self.assertIn(self.tag, self.formula.tag_relations.values_list('tag', flat=True))
+        tag_ids = list(self.formula.tag_relations.values_list('tag_id', flat=True))
+        self.assertIn(self.tag.id, tag_ids)
+        self.assertIn(tag2.id, tag_ids)
 
 
 class FormulaCollectionModelTest(TestCase):

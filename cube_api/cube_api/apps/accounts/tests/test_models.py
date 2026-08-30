@@ -70,13 +70,14 @@ class UserModelTest(TestCase):
             )
 
     def test_email_normalization(self):
-        """测试邮箱标准化（转小写）"""
+        """测试邮箱标准化（域名部分转小写，本地部分保留原大小写）"""
         user = User.objects.create_user(
             email='Test@Example.COM',
             password='testpass',
             username='test'
         )
-        self.assertEqual(user.email, 'test@example.com')
+        # Django normalize_email 只标准化域名部分
+        self.assertEqual(user.email, 'Test@example.com')
 
     def test_email_uniqueness(self):
         """测试邮箱唯一性约束"""
@@ -204,6 +205,14 @@ class UserFollowTest(TestCase):
             password='testpass3',
             username='user3'
         )
+
+        # 清空 Redis 中的关注/粉丝缓存，避免测试间数据污染
+        from django_redis import get_redis_connection
+        con = get_redis_connection("default")
+        for key in con.scan_iter("user:*:following"):
+            con.delete(key)
+        for key in con.scan_iter("user:*:followers"):
+            con.delete(key)
 
     def test_follow_user_success(self):
         """测试成功关注用户"""
