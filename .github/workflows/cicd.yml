@@ -191,7 +191,6 @@ jobs:
               echo "⚠️  检测到本地改动，备份到 $PATCH_FILE"
               echo "$LOCAL_CHANGES"
               git diff > "$PATCH_FILE"
-              # 未跟踪文件也记录下来
               echo "" >> "$PATCH_FILE"
               echo "# Untracked files:" >> "$PATCH_FILE"
               git ls-files --others --exclude-standard >> "$PATCH_FILE"
@@ -233,7 +232,6 @@ jobs:
                 rollback_db
                 rollback_code
 
-                # 回滚后健康检查
                 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/ || echo "000")
                 API_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/home/banners/ || echo "000")
                 if [ "$HTTP_CODE" = "200" ] && [ "$API_CODE" = "200" ]; then
