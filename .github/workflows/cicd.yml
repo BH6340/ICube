@@ -156,6 +156,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: SSH 部署
+        id: deploy
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -286,3 +287,17 @@ jobs:
             echo "=== [5/5] 部署成功 ==="
             echo "当前 commit: $(git rev-parse --short HEAD)"
             echo "时间: $(date '+%Y-%m-%d %H:%M:%S')"
+
+      - name: 微信通知 - 部署成功
+        if: success()
+        run: |
+          curl -s -X POST "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
+            -d "title=ICube 部署成功" \
+            -d "des=Commit: ${{ github.event.head_commit.message }}%0A时间: $(date -u -d '+8 hours' '+%Y-%m-%d %H:%M:%S')%0A状态: ✅ 部署成功%0A[查看详情](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+
+      - name: 微信通知 - 部署失败
+        if: failure()
+        run: |
+          curl -s -X POST "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
+            -d "title=ICube 部署失败" \
+            -d "des=Commit: ${{ github.event.head_commit.message }}%0A时间: $(date -u -d '+8 hours' '+%Y-%m-%d %H:%M:%S')%0A状态: ❌ 部署失败（可能已自动回滚）%0A[查看详情](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
