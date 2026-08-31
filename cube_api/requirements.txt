@@ -42,3 +42,6 @@ typing_extensions==4.15.0
 tzdata==2026.2
 uritemplate==4.2.0
 win32_setctime==1.2.0
+pytest==8.4.2
+pytest-django==4.11.0
+pytest-cov==6.2.0
