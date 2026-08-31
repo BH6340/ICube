@@ -71,7 +71,15 @@ jobs:
       - name: 运行后端全量测试
         if: steps.changed-backend.outputs.backend == 'true'
         working-directory: cube_api
-        run: python manage.py test --verbosity=2
+        run: pytest --cov=cube_api/apps --cov=cube_api/utils --cov-report=xml --cov-report=term-missing
+
+      - name: 上传覆盖率报告
+        if: steps.changed-backend.outputs.backend == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: cube_api/coverage.xml
+          retention-days: 30
 
   # ==================== CI：前端构建验证 ====================
   frontend-check:
@@ -302,6 +310,23 @@ jobs:
             -d "title=ICube 部署失败" \
             -d "des=Commit: ${{ github.event.head_commit.message }}%0A时间: $(date -u -d '+8 hours' '+%Y-%m-%d %H:%M:%S')%0A状态: ❌ 部署失败（可能已自动回滚）%0A[查看详情](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
 
+      - name: 保存部署日志
+        if: always()
+        env:
+          DEPLOY_STDOUT: ${{ steps.deploy.outputs.stdout }}
+        run: |
+          printf '%s\n' "$DEPLOY_STDOUT" > deploy.log
+        continue-on-error: true
+
+      - name: 上传部署日志
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-log-${{ github.run_id }}
+          path: deploy.log
+          retention-days: 90
+        continue-on-error: true
+
   sync-dev:
     name: 同步 dev 到 main
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -322,3 +347,46 @@ jobs:
           git checkout dev
           git reset --hard origin/main
           git push origin dev --force
+
+  changelog:
+    name: 生成 CHANGELOG
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: sync-dev
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 生成 CHANGELOG.md
+        run: |
+          {
+            echo "# Changelog"
+            echo ""
+            echo "> 自动生成，请勿手动编辑"
+            echo ""
+
+            for entry in "feat:新功能" "fix:修复" "docs:文档" "refactor:重构" "perf:性能" "test:测试" "ci:CI/CD" "build:构建" "style:样式" "chore:杂务"; do
+              type="${entry%%:*}"
+              label="${entry##*:}"
+              COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges --grep="^${type}" --reverse 2>/dev/null)
+              if [ -n "$COMMITS" ]; then
+                echo "## $type - $label"
+                echo ""
+                echo "$COMMITS"
+                echo ""
+                echo ""
+              fi
+            done
+          } > CHANGELOG.md
+
+      - name: 提交 CHANGELOG
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          git diff --staged --quiet || git commit -m "docs: 自动更新 CHANGELOG"
+          git push origin main

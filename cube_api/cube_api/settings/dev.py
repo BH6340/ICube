@@ -29,6 +29,9 @@ import sys, os
 from pathlib import Path
 from datetime import timedelta
 
+# 测试环境检测：manage.py test 或 pytest 运行时均为 True
+_IS_TEST = 'test' in sys.argv or 'pytest' in sys.modules
+
 # ==================== 路径配置 ====================
 
 # 项目根目录（包含 manage.py 的 cube_api/ 目录）
@@ -181,9 +184,9 @@ DATABASES = {
     }
 }
 
-# manage.py test 使用 SQLite 内存数据库
+# manage.py test / pytest 使用 SQLite 内存数据库
 # 数据库随测试进程销毁，不会写入本地 MySQL
-if 'test' in sys.argv:
+if _IS_TEST:
     DATABASES['default'] = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': ':memory:',  # 内存数据库，速度最快
@@ -205,7 +208,7 @@ REDIS_BASE_OPTIONS = {
 }
 
 # 测试与开发环境使用不同 Redis 数据库和键前缀
-if 'test' in sys.argv or 'pytest' in sys.modules:
+if _IS_TEST:
     # 测试环境：cache 用 LocMemCache（内存实现），Redis 直连用 fakeredis 模拟
     # 两者配合覆盖所有缓存场景，无需真实 Redis 服务
     CACHES = {
@@ -317,7 +320,7 @@ REST_FRAMEWORK = {
 }
 
 # 根据运行环境生成最终 DRF 配置
-if 'test' in sys.argv:
+if _IS_TEST:
     # 测试环境保留限流类但设超大限流，确保限流代码路径被测试但不会真正拦截
     REST_FRAMEWORK = {
         'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -367,7 +370,7 @@ else:
 
 # 兼容测试代码对原生 Redis 连接的访问
 # 返回 fakeredis.FakeRedis 实例，使 .exists()/.sadd()/.scard() 等方法可用
-if 'test' in sys.argv:
+if _IS_TEST:
     import django_redis
     import fakeredis
 
@@ -391,7 +394,7 @@ EMAIL_DISPLAY_NAME = os.getenv('EMAIL_DISPLAY_NAME', 'ICube魔方平台')
 DEFAULT_FROM_EMAIL = f'"{EMAIL_DISPLAY_NAME}" <{EMAIL_HOST_USER}>' if EMAIL_HOST_USER else EMAIL_HOST_USER
 
 # 测试环境使用内存后端，不实际发送邮件
-if 'test' in sys.argv:
+if _IS_TEST:
     EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
 
 # 开发环境假邮箱后缀列表：匹配这些后缀的邮箱直接返回固定验证码 999999，不实际发送
