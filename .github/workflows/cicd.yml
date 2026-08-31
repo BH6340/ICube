@@ -183,6 +183,21 @@ jobs:
             git fetch origin main
             PREV_COMMIT=$(git rev-parse HEAD)
             echo "部署前 commit: $(echo $PREV_COMMIT | cut -c1-7)"
+
+            # 检测本地改动，如有则备份为 patch 后再重置
+            LOCAL_CHANGES=$(git status --porcelain)
+            if [ -n "$LOCAL_CHANGES" ]; then
+              PATCH_FILE="/tmp/local_changes_$(date +%Y%m%d_%H%M%S).patch"
+              echo "⚠️  检测到本地改动，备份到 $PATCH_FILE"
+              echo "$LOCAL_CHANGES"
+              git diff > "$PATCH_FILE"
+              # 未跟踪文件也记录下来
+              echo "" >> "$PATCH_FILE"
+              echo "# Untracked files:" >> "$PATCH_FILE"
+              git ls-files --others --exclude-standard >> "$PATCH_FILE"
+              echo "✅ 本地改动已备份"
+            fi
+
             git reset --hard origin/main
             echo "同步后 commit: $(git rev-parse --short HEAD)"
 
