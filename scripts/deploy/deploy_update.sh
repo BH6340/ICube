@@ -7,6 +7,7 @@ set -e
 # ---------- 参数解析 ----------
 NON_INTERACTIVE=false
 SKIP_HEALTHCHECK=false
+SKIP_MIGRATE=false
 ROLLBACK_MODE=false
 ROLLBACK_TARGET=""
 
@@ -14,6 +15,7 @@ for arg in "$@"; do
     case "$arg" in
         --non-interactive) NON_INTERACTIVE=true ;;
         --skip-healthcheck) SKIP_HEALTHCHECK=true ;;
+        --skip-migrate) SKIP_MIGRATE=true ;;
         --rollback-to=*) ROLLBACK_MODE=true; ROLLBACK_TARGET="${arg#*=}" ;;
     esac
 done
@@ -241,10 +243,12 @@ fi
 echo ""
 info "[4/5] 执行数据库迁移 + 收集静态文件 + 后端热重载"
 
-if [ "$CHANGE_MIGR" -gt 0 ]; then
+if [ "$CHANGE_MIGR" -gt 0 ] && [ "$SKIP_MIGRATE" = false ]; then
     info "检测到 migration 文件，执行 migrate..."
     docker compose exec -T api python manage.py migrate --noinput | tail -5
     pass "数据库迁移完成"
+elif [ "$CHANGE_MIGR" -gt 0 ] && [ "$SKIP_MIGRATE" = true ]; then
+    info "检测到 migration 文件，但已指定 --skip-migrate，跳过 migrate（由调用方处理）"
 fi
 
 # collectstatic 每次都跑（幂等，没变更也很快）
