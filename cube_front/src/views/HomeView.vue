@@ -10,7 +10,9 @@
 
         <template v-else>
           <div class="route-content" :class="{ 'route-content-loading': overlayVisible }">
-            <router-view />
+            <ErrorBoundary>
+              <router-view />
+            </ErrorBoundary>
           </div>
 
           <RouteLoadingMask :visible="overlayVisible" />
@@ -40,6 +42,7 @@
 import TopHeader from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 import RouteErrorState from '@/components/common/RouteErrorState.vue'
+import ErrorBoundary from '@/components/common/ErrorBoundary.vue'
 import RouteLoadingMask from '@/components/common/RouteLoadingMask.vue'
 import { onBeforeUnmount, onMounted } from 'vue'
 import { useRouteLoading } from '@/stores/routeLoading'

@@ -5,13 +5,16 @@
 
   <RouteErrorState v-if="status === 'error' && !layoutMounted" full-page />
   <template v-else>
-    <router-view />
+    <ErrorBoundary full-page>
+      <router-view />
+    </ErrorBoundary>
     <RouteLoadingMask :visible="overlayVisible && !layoutMounted" full-page />
   </template>
 </template>
 
 <script setup>
 import RouteErrorState from '@/components/common/RouteErrorState.vue'
+import ErrorBoundary from '@/components/common/ErrorBoundary.vue'
 import RouteLoadingMask from '@/components/common/RouteLoadingMask.vue'
 import { useRouteLoading } from '@/stores/routeLoading'
 
