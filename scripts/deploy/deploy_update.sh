@@ -4,11 +4,19 @@
 
 set -e
 
-# ---------- 非交互模式 ----------
+# ---------- 参数解析 ----------
 NON_INTERACTIVE=false
-if [[ "${1:-}" == "--non-interactive" ]]; then
-    NON_INTERACTIVE=true
-fi
+SKIP_HEALTHCHECK=false
+ROLLBACK_MODE=false
+ROLLBACK_TARGET=""
+
+for arg in "$@"; do
+    case "$arg" in
+        --non-interactive) NON_INTERACTIVE=true ;;
+        --skip-healthcheck) SKIP_HEALTHCHECK=true ;;
+        --rollback-to=*) ROLLBACK_MODE=true; ROLLBACK_TARGET="${arg#*=}" ;;
+    esac
+done
 
 # ---------- 颜色 ----------
 RED='\033[0;31m'
@@ -43,6 +51,71 @@ ask()   { # $1=提示  $2=默认 y/n
     [ "$ans" = "y" ] || [ "$ans" = "yes" ]
 }
 
+# ---------- 健康检查函数 ----------
+healthcheck() {
+    local max_retries=${1:-5}
+    local wait_time=${2:-3}
+    local attempt=1
+
+    while [ $attempt -le $max_retries ]; do
+        info "健康检查 第 $attempt/$max_retries 次..."
+
+        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/ || echo "000")
+        API_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/home/banners/ || echo "000")
+
+        if [ "$HTTP_CODE" = "200" ] && [ "$API_CODE" = "200" ]; then
+            pass "健康检查通过 (前端: $HTTP_CODE, API: $API_CODE)"
+            return 0
+        fi
+
+        warn "前端: $HTTP_CODE, API: $API_CODE，${wait_time}s 后重试..."
+        sleep $wait_time
+        attempt=$((attempt + 1))
+    done
+
+    fail "健康检查失败 (前端: $HTTP_CODE, API: $API_CODE)"
+}
+
+# ---------- 回滚函数 ----------
+rollback_to() {
+    local target_commit="$1"
+    echo ""
+    warn "========================================"
+    warn "  开始自动回滚到: $(echo "$target_commit" | cut -c1-7)"
+    warn "========================================"
+
+    # 回退代码
+    git reset --hard "$target_commit"
+    info "代码已回退到 commit: $(git rev-parse --short HEAD)"
+
+    # 重新执行部署（用回滚标记避免无限递归）
+    # 因为 git reset 后 ORIG_HEAD 指向回滚前的 commit
+    # 我们手动设一个标记让部署逻辑按变更检测执行
+    ROLLBACK_MODE=true
+
+    # 重新分析变更并部署（回退模式，直接走重建流程）
+    info "重新构建服务..."
+
+    # 判断当前 commit 和目标 commit 之间的差异
+    # 简化处理：直接重启所有核心服务
+    docker compose up -d --build front 2>&1 | tail -3
+    docker compose up -d 2>&1 | tail -3
+    docker compose exec -T api python manage.py collectstatic --noinput 2>&1 | tail -1
+    docker compose restart api 2>&1 | tail -2
+
+    # 再次健康检查
+    info "回滚后健康检查..."
+    if healthcheck 3 3; then
+        pass "========================================"
+        pass "  ✅ 回滚成功，服务已恢复"
+        pass "  当前 commit: $(git rev-parse --short HEAD)"
+        pass "========================================"
+        return 0
+    else
+        fail "回滚后健康检查仍然失败，请手动排查"
+    fi
+}
+
 # ---------- 权限检查 ----------
 if [ "$USER" = "root" ]; then
     fail "此脚本请切换到 bh 用户执行： su - bh"
@@ -66,7 +139,18 @@ echo -e "${CYAN}========================================${NC}"
 
 # ---------- 1. Git pull ----------
 echo ""
-info "[1/5] 拉取最新代码..."
+info "[1/6] 拉取最新代码..."
+
+# 记录部署前的 commit（用于回滚）
+PREV_COMMIT=$(git rev-parse HEAD)
+info "部署前 commit: $(git rev-parse --short HEAD)"
+
+# 如果是回滚模式，直接跳到部署逻辑
+if [ "$ROLLBACK_MODE" = true ] && [ -n "$ROLLBACK_TARGET" ]; then
+    info "回滚模式：直接重置到目标 commit"
+    git reset --hard "$ROLLBACK_TARGET"
+    PREV_COMMIT=""  # 回滚模式不做智能变更检测，全量重建
+fi
 
 # 先检查有没有本地未提交改动
 if [ -n "$(git status --porcelain)" ]; then
@@ -178,7 +262,7 @@ fi
 
 # ---------- 7. 验证状态 ----------
 echo ""
-info "[5/5] 服务状态速览:"
+info "[5/6] 服务状态速览:"
 docker compose ps
 echo ""
 
@@ -195,6 +279,48 @@ else
 fi
 echo -e "${GREEN}========================================${NC}"
 echo ""
+
+# ---------- 8. 健康检查 + 自动回滚 ----------
+echo ""
+if [ "$SKIP_HEALTHCHECK" = true ]; then
+    info "[6/6] 已跳过健康检查"
+elif [ "$ROLLBACK_MODE" = true ]; then
+    info "[6/6] 回滚模式下跳过健康检查（由调用方处理）"
+else
+    info "[6/6] 健康检查 + 自动回滚..."
+
+    set +e  # 临时关闭 set -e，捕获健康检查失败
+    healthcheck 5 3
+    HC_RESULT=$?
+    set -e
+
+    if [ $HC_RESULT -ne 0 ]; then
+        warn "健康检查失败，准备自动回滚..."
+        echo ""
+
+        if [ -z "$PREV_COMMIT" ] || [ "$PREV_COMMIT" = "$(git rev-parse HEAD)" ]; then
+            fail "无法回滚：部署前后 commit 相同或未记录部署前 commit"
+        fi
+
+        # 执行回滚（回滚函数内部会再次健康检查）
+        set +e
+        rollback_to "$PREV_COMMIT"
+        RB_RESULT=$?
+        set -e
+
+        if [ $RB_RESULT -eq 0 ]; then
+            echo ""
+            warn "========================================"
+            warn "  ⚠️  部署失败，已自动回滚到上一版本"
+            warn "  服务已恢复，请排查本次部署的问题"
+            warn "========================================"
+            echo ""
+            exit 1  # 回滚成功也要返回非零，让 CI 标红
+        else
+            fail "回滚失败，请紧急手动处理！"
+        fi
+    fi
+fi
 
 # 查看最新日志末尾
 if [ "$NON_INTERACTIVE" = true ]; then
