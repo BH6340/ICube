@@ -28,6 +28,7 @@
   - [新服务器部署流程](guides/新服务器部署流程.md)
   - [新服务器部署流程_半自动化](guides/新服务器部署流程_半自动化（未测试版本）.md)
   - [指令速查](guides/指令速查.md)
+  - [日志查看指南](guides/日志查看指南.md)
 
 - Reference — 参考资料
   - [ICube 项目总结](reference/ICube%20魔方学习网站项目总结.md)
