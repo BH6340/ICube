@@ -1,17 +1,32 @@
+# ============================================================================
+# ICube CI/CD 工作流
+# ============================================================================
+# 触发条件：
+#   - PR 到 main：CI 检查（不部署）
+#   - push 到 dev：CI 检查（不部署）
+#   - push 到 main（合并后）：CI 检查 + 自动部署 + sync-dev + changelog
+#   - 纯文档变更不触发任何 Job
+#
+# 完整流程文档：docs/guides/Git分支策略与CICD流程.md
+# ============================================================================
+
 name: CI/CD
 
+# ============================== 触发条件 ==============================
+# 顶层 paths 过滤：仅以下路径有变更时才触发 CI
+# 纯文档（docs/**、*.md）不触发
 on:
   pull_request:
     branches: [main]
     paths:
-      - 'cube_api/**'
-      - 'cube_front/**'
-      - 'docker-compose.yml'
-      - '**/Dockerfile'
-      - 'scripts/**'
-      - '.github/workflows/cicd.yml'
+      - 'cube_api/**'              # 后端代码
+      - 'cube_front/**'            # 前端代码
+      - 'docker-compose.yml'       # Docker 编排配置
+      - '**/Dockerfile'            # Dockerfile 变更
+      - 'scripts/**'               # 部署脚本
+      - '.github/workflows/cicd.yml' # CI/CD 配置自身
   push:
-    branches: [main, dev]
+    branches: [main, dev]          # main=部署，dev=仅检查
     paths:
       - 'cube_api/**'
       - 'cube_front/**'
@@ -20,21 +35,30 @@ on:
       - 'scripts/**'
       - '.github/workflows/cicd.yml'
 
+# ============================== 全局环境变量 ==============================
 env:
   PYTHON_VERSION: '3.13'
   NODE_VERSION: '22'
 
 jobs:
-  # ==================== CI：后端检查 ====================
+  # ===========================================================================
+  # CI Job 1/3：后端 Lint + Test
+  # ===========================================================================
+  # 职责：Ruff 代码检查 + pytest 全量测试 + 覆盖率报告
+  # 触发：push 到 dev/main 或 PR 中含后端代码变更
+  # 耗时：~2min
+  # ===========================================================================
   backend-check:
     name: 后端 Lint + Test
     runs-on: ubuntu-latest
+    # PR 场景：如果 PR 只改了前端，跳过整个 Job
     if: |
       github.event_name == 'push' ||
       !contains(github.event.pull_request.changed_files, 'cube_front/')
     steps:
       - uses: actions/checkout@v5
 
+      # ---- 路径检测：只有 cube_api/** 变更时才执行后续步骤 ----
       - name: 检查是否有后端代码变更
         id: changed-backend
         uses: dorny/paths-filter@v3
@@ -43,19 +67,23 @@ jobs:
             backend:
               - 'cube_api/**'
 
+      # ---- 系统依赖：mysqlclient 编译需要 MySQL 开发库 ----
       - name: 安装系统依赖（mysqlclient 编译需要）
         if: steps.changed-backend.outputs.backend == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y default-libmysqlclient-dev pkg-config
 
+      # ---- Python 环境 ----
       - uses: actions/setup-python@v5
         if: steps.changed-backend.outputs.backend == 'true'
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
+          cache: 'pip'                                   # 缓存 pip 下载
           cache-dependency-path: cube_api/requirements.txt
 
+      # ---- Python 依赖安装 ----
+      # requirements.txt 含 pytest/pytest-django/pytest-cov/fakeredis
       - name: 安装 Python 依赖
         if: steps.changed-backend.outputs.backend == 'true'
         working-directory: cube_api
@@ -63,16 +91,23 @@ jobs:
           pip install -r requirements.txt
           pip install ruff
 
+      # ---- Ruff 代码检查（不阻塞，仅提示）----
       - name: Ruff 代码检查
         if: steps.changed-backend.outputs.backend == 'true'
         run: ruff check cube_api/cube_api/
-        continue-on-error: true
+        continue-on-error: true    # Lint 失败不阻塞测试和部署
 
+      # ---- pytest 全量测试 ----
+      # 测试环境自动切换：SQLite 内存库 + LocMemCache + fakeredis
+      # --cov 指定覆盖率统计范围：apps + utils
+      # --cov-report=xml 供上传 artifact
+      # --cov-report=term-missing 终端显示未覆盖行
       - name: 运行后端全量测试
         if: steps.changed-backend.outputs.backend == 'true'
         working-directory: cube_api
         run: pytest --cov=cube_api/apps --cov=cube_api/utils --cov-report=xml --cov-report=term-missing
 
+      # ---- 覆盖率报告上传（保留 30 天）----
       - name: 上传覆盖率报告
         if: steps.changed-backend.outputs.backend == 'true'
         uses: actions/upload-artifact@v4
@@ -81,16 +116,24 @@ jobs:
           path: cube_api/coverage.xml
           retention-days: 30
 
-  # ==================== CI：前端构建验证 ====================
+  # ===========================================================================
+  # CI Job 2/3：前端构建验证
+  # ===========================================================================
+  # 职责：npm ci + vite build，验证前端代码可正常构建
+  # 触发：push 到 dev/main 或 PR 中含前端代码变更
+  # 耗时：~2min
+  # ===========================================================================
   frontend-check:
     name: 前端 Build 验证
     runs-on: ubuntu-latest
+    # PR 场景：如果 PR 只改了后端，跳过整个 Job
     if: |
       github.event_name == 'push' ||
       !contains(github.event.pull_request.changed_files, 'cube_api/')
     steps:
       - uses: actions/checkout@v5
 
+      # ---- 路径检测：只有 cube_front/** 变更时才执行后续步骤 ----
       - name: 检查是否有前端代码变更
         id: changed-frontend
         uses: dorny/paths-filter@v3
@@ -99,6 +142,7 @@ jobs:
             frontend:
               - 'cube_front/**'
 
+      # ---- Node.js 环境 ----
       - uses: actions/setup-node@v5
         if: steps.changed-frontend.outputs.frontend == 'true'
         with:
@@ -106,17 +150,25 @@ jobs:
           cache: 'npm'
           cache-dependency-path: cube_front/package-lock.json
 
+      # ---- 前端依赖安装（基于 lock 文件，确保一致性）----
       - name: 安装前端依赖
         if: steps.changed-frontend.outputs.frontend == 'true'
         working-directory: cube_front
         run: npm ci
 
+      # ---- Vite 生产构建验证 ----
       - name: 构建验证
         if: steps.changed-frontend.outputs.frontend == 'true'
         working-directory: cube_front
         run: npm run build
 
-  # ==================== CI：Docker 构建验证 ====================
+  # ===========================================================================
+  # CI Job 3/3：Docker 镜像构建验证
+  # ===========================================================================
+  # 职责：验证前后端 Dockerfile 可正常构建 + compose 配置语法正确
+  # 触发：Dockerfile 或 docker-compose.yml 变更时
+  # 耗时：~3min
+  # ===========================================================================
   docker-build:
     name: Docker 镜像构建验证
     runs-on: ubuntu-latest
@@ -126,6 +178,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # ---- 路径检测：Dockerfile 或 compose 变更时才执行 ----
       - name: 检查是否有 Docker 相关变更
         id: changed-docker
         uses: dorny/paths-filter@v3
@@ -137,22 +190,32 @@ jobs:
               - 'cube_api/Dockerfile'
               - 'cube_front/Dockerfile'
 
+      # ---- 后端镜像构建 ----
       - name: 构建后端镜像
         if: steps.changed-docker.outputs.docker == 'true'
         run: docker build -t icube-api-ci ./cube_api
 
+      # ---- 前端镜像构建 ----
       - name: 构建前端镜像
         if: steps.changed-docker.outputs.docker == 'true'
         run: docker build -t icube-front-ci ./cube_front
 
+      # ---- compose 配置语法校验 ----
       - name: 验证 compose 配置
         if: steps.changed-docker.outputs.docker == 'true'
         run: docker compose config -q
 
-  # ==================== CD：自动部署（仅 main 分支） ====================
+  # ===========================================================================
+  # CD Job：自动部署（仅 push 到 main 时触发）
+  # ===========================================================================
+  # 职责：SSH 到服务器执行部署，含强制同步、迁移检查、健康检查、自动回滚
+  # 依赖：backend-check + frontend-check + docker-build 全部通过或跳过
+  # 后续：deploy → sync-dev → changelog
+  # ===========================================================================
   deploy:
     name: 部署到生产服务器
     needs: [backend-check, frontend-check, docker-build]
+    # 仅 push 到 main 时部署；CI Job 可以是 success 或 skipped（路径过滤跳过）
     if: |
       github.event_name == 'push' && github.ref == 'refs/heads/main' &&
       !cancelled() &&
@@ -163,6 +226,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # ======================================================================
+      # SSH 部署（核心步骤）
+      # ======================================================================
+      # 在服务器上执行完整部署流程，输出保存到 steps.deploy.outputs.stdout
       - name: SSH 部署
         id: deploy
         uses: appleboy/ssh-action@v1.2.0
@@ -173,7 +240,9 @@ jobs:
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
 
-            # ---------- 回滚函数 ----------
+            # ==================== 回滚函数定义 ====================
+
+            # 代码回滚：重置到部署前 commit + 重新构建
             rollback_code() {
               echo ""
               echo "⚠️  代码回滚到: $(echo $PREV_COMMIT | cut -c1-7)"
@@ -182,18 +251,21 @@ jobs:
               sleep 3
             }
 
+            # 数据库回滚：从 mysqldump 备份恢复
             rollback_db() {
               echo "⚠️  从备份恢复数据库..."
               docker compose exec -T db mysql -u root -p"$DB_PASSWORD" "$DB_NAME" < "$DB_BACKUP_FILE"
               echo "✅ 数据库已恢复"
             }
 
+            # ==================== [0/5] 强制同步远程代码 ====================
+            # 先记录当前 commit（用于回滚），再检测本地改动备份为 patch
             echo "=== [0/5] 强制同步远程代码 ==="
             git fetch origin main
             PREV_COMMIT=$(git rev-parse HEAD)
             echo "部署前 commit: $(echo $PREV_COMMIT | cut -c1-7)"
 
-            # 检测本地改动，如有则备份为 patch 后再重置
+            # 检测服务器上的本地改动（如手动修改的配置），备份后再 reset
             LOCAL_CHANGES=$(git status --porcelain)
             if [ -n "$LOCAL_CHANGES" ]; then
               PATCH_FILE="/tmp/local_changes_$(date +%Y%m%d_%H%M%S).patch"
@@ -214,9 +286,15 @@ jobs:
             DB_NAME=$(grep -E '^MYSQL_DATABASE=' .env | cut -d'=' -f2)
             DB_BACKUP_FILE="/tmp/icube_db_backup_$(date +%Y%m%d_%H%M%S).sql"
 
+            # ==================== [1/5] 执行部署脚本 ====================
+            # 构建镜像 + 重启容器（跳过迁移和健康检查，后续步骤单独处理）
             echo "=== [1/5] 执行部署脚本（构建 + 重启） ==="
             ./scripts/deploy/deploy_update.sh --non-interactive --skip-migrate --skip-healthcheck
 
+            # ==================== [2/5] 数据库迁移前置检查 ====================
+            # migrate --check 检测是否有待应用迁移
+            # 有迁移：mysqldump 备份 → migrate → 失败则恢复数据库 + 回滚代码
+            # 无迁移：跳过
             echo "=== [2/5] 数据库迁移前置检查 ==="
             set +e
             docker compose exec -T api python manage.py migrate --check 2>&1 | tail -3
@@ -226,16 +304,19 @@ jobs:
             if [ $MIGR_CHECK -ne 0 ]; then
               echo "📋 检测到未应用的迁移，开始数据库备份 + 迁移流程"
 
+              # 迁移前备份数据库
               echo "  备份数据库到 $DB_BACKUP_FILE ..."
               docker compose exec -T db mysqldump -u root -p"$DB_PASSWORD" "$DB_NAME" > "$DB_BACKUP_FILE"
               echo "  ✅ 备份完成 ($(wc -c < "$DB_BACKUP_FILE" | tr -d ' ') bytes)"
 
+              # 执行迁移
               echo "  执行 migrate..."
               set +e
               docker compose exec -T api python manage.py migrate --noinput 2>&1
               MIGR_RESULT=$?
               set -e
 
+              # 迁移失败：恢复数据库 + 回滚代码 + 健康检查
               if [ $MIGR_RESULT -ne 0 ]; then
                 echo "❌ 数据库迁移失败，执行数据库回滚 + 代码回滚..."
                 rollback_db
@@ -259,6 +340,11 @@ jobs:
               echo "✅ 无待应用的迁移，跳过"
             fi
 
+            # ==================== [3/5] 健康检查 ====================
+            # 轮询 5 次，每次间隔 3s
+            # 前端：http://localhost/ → 200
+            # API：http://localhost/api/home/banners/ → 200
+            # 全部失败：代码回滚 + 回滚后健康检查
             echo "=== [3/5] 健康检查 ==="
             HC_PASS=false
             for i in 1 2 3 4 5; do
@@ -276,6 +362,7 @@ jobs:
               echo "❌ 健康检查失败，执行代码回滚..."
               rollback_code
 
+              # 回滚后再次健康检查确认服务恢复
               sleep 3
               HTTP_CODE2=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/ || echo "000")
               API_CODE2=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/home/banners/ || echo "000")
@@ -288,14 +375,19 @@ jobs:
               exit 1
             fi
 
+            # ==================== [4/5] 每日全量备份（异步）====================
+            # 部署成功后异步执行全量备份，不阻塞流程
             echo "=== [4/5] 每日全量备份（异步） ==="
             nohup ./scripts/backup.sh > /tmp/backup_deploy.log 2>&1 &
             echo "✅ 备份已在后台启动"
 
+            # ==================== [5/5] 部署成功 ====================
             echo "=== [5/5] 部署成功 ==="
             echo "当前 commit: $(git rev-parse --short HEAD)"
             echo "时间: $(date '+%Y-%m-%d %H:%M:%S')"
 
+      # ==================== 部署通知（Server酱 → 微信）====================
+      # 部署成功通知
       - name: 微信通知 - 部署成功
         if: success()
         run: |
@@ -303,6 +395,7 @@ jobs:
             -d "title=ICube 部署成功" \
             -d "des=Commit: ${{ github.event.head_commit.message }}%0A时间: $(date -u -d '+8 hours' '+%Y-%m-%d %H:%M:%S')%0A状态: ✅ 部署成功%0A[查看详情](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
 
+      # 部署失败通知（可能已自动回滚）
       - name: 微信通知 - 部署失败
         if: failure()
         run: |
@@ -310,6 +403,10 @@ jobs:
             -d "title=ICube 部署失败" \
             -d "des=Commit: ${{ github.event.head_commit.message }}%0A时间: $(date -u -d '+8 hours' '+%Y-%m-%d %H:%M:%S')%0A状态: ❌ 部署失败（可能已自动回滚）%0A[查看详情](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
 
+      # ==================== 部署日志持久化 ====================
+      # 将 SSH 部署的 stdout 保存为 artifact，便于排查部署失败
+      # always() 确保即使部署失败也会保存日志
+      # continue-on-error 确保日志保存失败不影响整体流程
       - name: 保存部署日志
         if: always()
         env:
@@ -327,19 +424,27 @@ jobs:
           retention-days: 90
         continue-on-error: true
 
+  # ===========================================================================
+  # 后置 Job 1/2：同步 dev 到 main
+  # ===========================================================================
+  # 职责：部署成功后将 dev 分支强制同步到 main 最新 commit
+  # 原因：Squash merge 后 dev 与 main 分叉，强制同步确保下次 PR 只含新提交
+  # 依赖：deploy 成功
+  # ===========================================================================
   sync-dev:
     name: 同步 dev 到 main
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     needs: deploy
     permissions:
-      contents: write
+      contents: write              # 需要写权限才能 force push 到 dev
     steps:
       - uses: actions/checkout@v5
         with:
-          fetch-depth: 0
+          fetch-depth: 0           # 完整历史，确保 dev 分支存在
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      # 将 dev 重置到 main 最新 commit 并 force push
       - name: 同步 dev 分支
         run: |
           git config user.name "github-actions[bot]"
@@ -348,6 +453,13 @@ jobs:
           git reset --hard origin/main
           git push origin dev --force
 
+  # ===========================================================================
+  # 后置 Job 2/2：自动生成 CHANGELOG
+  # ===========================================================================
+  # 职责：从 git log 按 conventional commit 类型分组生成 CHANGELOG.md
+  # 提交目标：推送到 dev 分支（main 受保护无法直接 push），随下次 PR 进入 main
+  # 依赖：sync-dev 成功
+  # ===========================================================================
   changelog:
     name: 生成 CHANGELOG
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -358,9 +470,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          fetch-depth: 0
+          fetch-depth: 0           # 需要完整 git log
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      # 按 conventional commit 类型分组生成 CHANGELOG.md
+      # 遍历 feat/fix/docs/refactor/perf/test/ci/build/style/chore
+      # 有提交才输出对应分组
       - name: 生成 CHANGELOG.md
         run: |
           {
@@ -383,6 +498,8 @@ jobs:
             done
           } > CHANGELOG.md
 
+      # 提交 CHANGELOG 到 dev 分支
+      # git diff --staged --quiet 检测是否有变更，无变更则跳过 commit
       - name: 提交 CHANGELOG
         run: |
           git config user.name "github-actions[bot]"
