@@ -146,6 +146,7 @@
 - docs: update all project documentation (ce17dfa)
 - docs: 修复文档站点挂载路径与注释说明 (0f0aa12)
 - docs: add OCR test screenshots, resume and CI/CD feasibility report (f7ef77c)
+- docs文档更新目录 (#10) (748ac49)
 
 
 ## refactor - 重构
