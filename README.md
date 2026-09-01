@@ -141,7 +141,7 @@ EMAIL_DISPLAY_NAME=ICube魔方平台
 |--------|----------|
 | **框架** | Django 6.0 + Django REST Framework |
 | **数据库** | MySQL 8.0（开发/生产）+ SQLite（测试） |
-| **缓存** | Redis 7 |
+| **缓存** | Redis 7（开发/生产）+ fakeredis/LocMemCache（测试） |
 | **认证** | JWT (djangorestframework-simplejwt) |
 | **API 文档** | drf-spectacular (Swagger/Redoc) |
 | **限流** | DRF Throttling |
