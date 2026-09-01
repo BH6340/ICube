@@ -65,22 +65,20 @@ jobs:
       # ---- 路径检测：只有 cube_api/** 变更时才执行后续步骤 ----
       - name: 检查是否有后端代码变更
         id: changed-backend
-        uses: dorny/paths-filter@v3
+        uses: tj-actions/changed-files@v45
         with:
-          filters: |
-            backend:
-              - 'cube_api/**'
+          files: cube_api/**
 
       # ---- 系统依赖：mysqlclient 编译需要 MySQL 开发库 ----
       - name: 安装系统依赖（mysqlclient 编译需要）
-        if: steps.changed-backend.outputs.backend == 'true'
+        if: steps.changed-backend.outputs.any_changed == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y default-libmysqlclient-dev pkg-config
 
       # ---- Python 环境 ----
       - uses: actions/setup-python@v5
-        if: steps.changed-backend.outputs.backend == 'true'
+        if: steps.changed-backend.outputs.any_changed == 'true'
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'                                   # 缓存 pip 下载
@@ -89,7 +87,7 @@ jobs:
       # ---- Python 依赖安装 ----
       # requirements.txt 含 pytest/pytest-django/pytest-cov/fakeredis
       - name: 安装 Python 依赖
-        if: steps.changed-backend.outputs.backend == 'true'
+        if: steps.changed-backend.outputs.any_changed == 'true'
         working-directory: cube_api
         run: |
           pip install -r requirements.txt
@@ -97,7 +95,7 @@ jobs:
 
       # ---- Ruff 代码检查（不阻塞，仅提示）----
       - name: Ruff 代码检查
-        if: steps.changed-backend.outputs.backend == 'true'
+        if: steps.changed-backend.outputs.any_changed == 'true'
         run: ruff check cube_api/cube_api/
         continue-on-error: true    # Lint 失败不阻塞测试和部署
 
@@ -107,13 +105,13 @@ jobs:
       # --cov-report=xml 供上传 artifact
       # --cov-report=term-missing 终端显示未覆盖行
       - name: 运行后端全量测试
-        if: steps.changed-backend.outputs.backend == 'true'
+        if: steps.changed-backend.outputs.any_changed == 'true'
         working-directory: cube_api
         run: pytest --cov=cube_api/apps --cov=cube_api/utils --cov-report=xml --cov-report=term-missing
 
       # ---- 覆盖率报告上传（保留 30 天）----
       - name: 上传覆盖率报告
-        if: steps.changed-backend.outputs.backend == 'true'
+        if: steps.changed-backend.outputs.any_changed == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
@@ -140,15 +138,13 @@ jobs:
       # ---- 路径检测：只有 cube_front/** 变更时才执行后续步骤 ----
       - name: 检查是否有前端代码变更
         id: changed-frontend
-        uses: dorny/paths-filter@v3
+        uses: tj-actions/changed-files@v45
         with:
-          filters: |
-            frontend:
-              - 'cube_front/**'
+          files: cube_front/**
 
       # ---- Node.js 环境 ----
       - uses: actions/setup-node@v5
-        if: steps.changed-frontend.outputs.frontend == 'true'
+        if: steps.changed-frontend.outputs.any_changed == 'true'
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -156,13 +152,13 @@ jobs:
 
       # ---- 前端依赖安装（基于 lock 文件，确保一致性）----
       - name: 安装前端依赖
-        if: steps.changed-frontend.outputs.frontend == 'true'
+        if: steps.changed-frontend.outputs.any_changed == 'true'
         working-directory: cube_front
         run: npm ci
 
       # ---- Vite 生产构建验证 ----
       - name: 构建验证
-        if: steps.changed-frontend.outputs.frontend == 'true'
+        if: steps.changed-frontend.outputs.any_changed == 'true'
         working-directory: cube_front
         run: npm run build
 
@@ -185,28 +181,27 @@ jobs:
       # ---- 路径检测：Dockerfile 或 compose 变更时才执行 ----
       - name: 检查是否有 Docker 相关变更
         id: changed-docker
-        uses: dorny/paths-filter@v3
+        uses: tj-actions/changed-files@v45
         with:
-          filters: |
-            docker:
-              - 'docker-compose.yml'
-              - '**/Dockerfile'
-              - 'cube_api/Dockerfile'
-              - 'cube_front/Dockerfile'
+          files: |
+            docker-compose.yml
+            **/Dockerfile
+            cube_api/Dockerfile
+            cube_front/Dockerfile
 
       # ---- 后端镜像构建 ----
       - name: 构建后端镜像
-        if: steps.changed-docker.outputs.docker == 'true'
+        if: steps.changed-docker.outputs.any_changed == 'true'
         run: docker build -t icube-api-ci ./cube_api
 
       # ---- 前端镜像构建 ----
       - name: 构建前端镜像
-        if: steps.changed-docker.outputs.docker == 'true'
+        if: steps.changed-docker.outputs.any_changed == 'true'
         run: docker build -t icube-front-ci ./cube_front
 
       # ---- compose 配置语法校验 ----
       - name: 验证 compose 配置
-        if: steps.changed-docker.outputs.docker == 'true'
+        if: steps.changed-docker.outputs.any_changed == 'true'
         run: docker compose config -q
 
   # ===========================================================================
