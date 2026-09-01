@@ -183,10 +183,20 @@ EMAIL_DISPLAY_NAME=ICube魔方平台
 
 项目通过 GitHub Actions 实现持续集成与持续部署，配置文件位于 `.github/workflows/cicd.yml`。
 
+> 完整 CI/CD 流程说明见 [Git 分支策略与 CI/CD 流程](docs/guides/Git分支策略与CICD流程.md)。
+
+### 分支模型
+
+| 分支 | 用途 | 保护 | CI | 部署 |
+|------|------|------|-----|------|
+| `main` | 生产环境 | 禁止直接 push，只接受 PR | ✅ | ✅ |
+| `dev` | 日常开发 | 不保护 | ✅ | - |
+
 ### 工作流触发
 
-- **push 到 main**：触发 CI 检查 + 自动部署
-- **PR 到 main**：触发 CI 检查（不部署）
+- **push 到 dev**：触发 CI 检查（不部署）
+- **PR: dev → main**：触发 CI 检查（不部署）
+- **push 到 main**（合并后）：触发 CI 检查 + 自动部署 + sync-dev + changelog
 - **纯文档变更**（`docs/**`、`*.md`）：不触发任何 Job
 
 ### Path Filter 智能跳过
@@ -203,19 +213,23 @@ EMAIL_DISPLAY_NAME=ICube魔方平台
 
 | Job | 内容 | 预计耗时 |
 |-----|------|---------|
-| 后端 Lint + Test | ruff 检查 + 310 个测试用例（SQLite + fakeredis） | ~2min |
+| 后端 Lint + Test | ruff 检查 + pytest 全量测试 + 覆盖率报告 | ~2min |
 | 前端 Build 验证 | npm ci + vite build | ~2min |
 | Docker 构建验证 | 前后端镜像构建 + compose config 校验 | ~3min |
 
 ### CD 自动部署
 
 ```
-push to main → CI 全绿 → SSH 到服务器 → backup.sh → deploy_update.sh --non-interactive → 健康检查
+push to main → CI 全绿 → SSH 到服务器
+  → 强制同步代码（git reset --hard origin/main）
+  → 数据库迁移检查（有迁移则 mysqldump 备份 + migrate）
+  → 健康检查（前端 + API，5 次重试）
+  → 失败自动回滚（代码 + 数据库）
+  → 部署日志 artifact（保留 90 天）
+  → 微信通知（成功/失败）
+  → sync-dev（dev 同步到 main）
+  → changelog（自动生成 CHANGELOG.md → 推到 dev）
 ```
-
-- 部署前自动数据库备份
-- 部署后 HTTP 健康检查（前端 + API）
-- 失败时输出容器日志
 
 ### 所需 GitHub Secrets
 
@@ -225,8 +239,9 @@ push to main → CI 全绿 → SSH 到服务器 → backup.sh → deploy_update.
 | `SERVER_USER` | SSH 用户名 |
 | `SSH_PRIVATE_KEY` | 部署专用 SSH 私钥 |
 | `DEPLOY_PATH` | 服务器项目路径 |
+| `SERVERCHAN_KEY` | Server酱微信通知密钥 |
 
-> 详细的测试环境配置、测试方法、CI/CD 说明见 [测试文档](docs/guides/测试文档.md)。
+> 详细的测试环境配置、测试方法见 [测试文档](docs/guides/测试文档.md)。
 
 ---
 
@@ -844,7 +859,7 @@ docker compose logs -f api           # 后端日志
 docker compose logs -f nginx         # 网关日志
 docker compose exec api python manage.py migrate          # 手动迁移
 docker compose exec api python manage.py createsuperuser  # 创建超级用户
-docker compose exec api python manage.py test             # 运行测试
+docker compose exec api pytest                            # 运行测试（pytest）
 ```
 
 #### Docker Compose 服务编排
