@@ -23,6 +23,8 @@
 
 - Guides — 操作指南
   - [测试文档](guides/测试文档.md)
+  - [Git 分支策略与 CI/CD 流程](guides/Git分支策略与CICD流程.md)
+  - [项目 Skill 使用指南](guides/项目Skill使用指南.md)
   - [新服务器部署流程](guides/新服务器部署流程.md)
   - [新服务器部署流程_半自动化](guides/新服务器部署流程_半自动化（未测试版本）.md)
   - [指令速查](guides/指令速查.md)
