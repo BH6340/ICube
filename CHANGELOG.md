@@ -463,5 +463,6 @@
 - chore(docsify): add root project files to volume mounts (c8bc0e4)
 - chore: 升级 GitHub Actions 到 Node.js 22 + checkout/setup-node v5 (c089364)
 - chore: 删除所有过期的公式缩略图文件 (70a01f0)
+- chore(ci): 清理cicd.yml中的合并冲突残留  (#13) (f570384)
 
 
