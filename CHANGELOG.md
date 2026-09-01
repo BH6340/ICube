@@ -169,6 +169,11 @@
 - refactor(scripts): 统一将脚本迁移至scripts/目录并修复路径引用 (9e0ed0b)
 
 
+## ci - CI/CD
+
+- ci(cicd): 替换路径检测工具并优化条件判断 (#16) (0d57f9d)
+
+
 ## build - 构建
 
 - build(cube_front)：更新构建后的 dist 文件并增加媒体代理配置 (a324ce8)
