@@ -1,11 +1,13 @@
 ﻿<#
 .SYNOPSIS
-自动拉取远程仓库最新代码，处理本地冲突并记录日志。
+自动拉取远程仓库 main 和 dev 分支最新代码，处理本地冲突并记录日志。
 
 .DESCRIPTION
-每天由 Windows 计划任务调用，执行 git pull --rebase。
-若本地有未提交的自动备份提交会自动 rebase 到远程之上；
-若存在冲突则记录日志并退出，不破坏工作区。
+每天由 Windows 计划任务调用。
+- main 分支：git pull --rebase，保持本地 main 与远程同步（参考、对比用）
+- dev 分支：git fetch + reset --hard，确保开发分支与远程完全一致
+  （sync-dev 会 force push dev，必须用 reset 而非 rebase，否则会冲突）
+若工作区有未提交改动则跳过拉取并记录日志，不破坏工作区。
 
 .EXAMPLE
 .\scripts\auto-pull.ps1
@@ -38,18 +40,48 @@ try {
         exit 0
     }
 
-    # 拉取远程更新（rebase 模式，保持线性历史）
+    # 记录当前分支，拉取后切回
+    $currentBranch = (git rev-parse --abbrev-ref HEAD 2>&1) -join ""
+
+    # ---- 拉取 main 分支 ----
+    $output = git fetch origin main 2>&1
+    Write-Log "git fetch origin main"
+    Write-Log ($output -join "`n")
+
     $output = git pull --rebase origin main 2>&1
     Write-Log "git pull --rebase origin main"
     Write-Log ($output -join "`n")
 
-    # 检查是否有实际更新
     if ($output -match 'Already up to date|Already up.*date') {
-        Write-Log "已是最新，无需更新"
+        Write-Log "main: 已是最新"
     } else {
-        Write-Log "拉取成功"
+        Write-Log "main: 拉取成功"
     }
+
+    # ---- 同步 dev 分支 ----
+    # sync-dev 会 force push dev，必须用 reset --hard 而非 rebase
+    $output = git fetch origin dev 2>&1
+    Write-Log "git fetch origin dev"
+    Write-Log ($output -join "`n")
+
+    # 先存当前分支状态，切到 dev 同步
+    $output = git checkout dev 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Log "WARN: 切换到 dev 失败: $($output -join '`n')"
+    } else {
+        $output = git reset --hard origin/dev 2>&1
+        Write-Log "git reset --hard origin/dev"
+        Write-Log ($output -join "`n")
+        Write-Log "dev: 已同步到远程"
+    }
+
+    # ---- 切回原分支 ----
+    $output = git checkout $currentBranch 2>&1
+    Write-Log "切回分支: $currentBranch"
+
 } catch {
     Write-Log "ERROR: $_"
+    # 确保切回原分支
+    try { git checkout $currentBranch 2>&1 | Out-Null } catch {}
     exit 1
 }
