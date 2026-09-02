@@ -112,6 +112,7 @@
 - fix: 测试环境改用 LocMemCache + fakeredis，消除对真实 Redis 的依赖 (6771423)
 - fix: sync-dev Job 添加 contents:write 权限 (#7) (8e122dd)
 - fix(ci): CHANGELOG改为推送到dev分支避免main保护分支拒绝 (#9) (5de68dc)
+- fix(nginx): 为md文件添加无缓存配置 (#17) (888060c)
 
 
 ## docs - 文档
@@ -239,5 +240,6 @@
 - chore: 升级 GitHub Actions 到 Node.js 22 + checkout/setup-node v5 (c089364)
 - chore: 删除所有过期的公式缩略图文件 (70a01f0)
 - chore(ci): 清理cicd.yml中的合并冲突残留  (#13) (f570384)
+- chore(scripts): 更新自动拉取脚本，适配双分支同步逻辑  (#19) (1fc14f5)
 
 
