@@ -302,7 +302,7 @@ def verify_alipay_notify(data, raw_body=None):
         return False
 
     data_dict = {k: v[0] if isinstance(v, list) else v for k, v in data.items()}
-    sign_b64 = data_dict.get('sign', '')
+    sign_b64 = data_dict.pop('sign', '')
     if not sign_b64:
         return False
 

@@ -114,6 +114,7 @@
 - fix: sync-dev Job 添加 contents:write 权限 (#7) (8e122dd)
 - fix(ci): CHANGELOG改为推送到dev分支避免main保护分支拒绝 (#9) (5de68dc)
 - fix(nginx): 为md文件添加无缓存配置 (#17) (888060c)
+- fix(shop): 修复支付宝回调 scheme 环境变量读取逻辑 (#23) (6a9c345)
 
 
 ## docs - 文档
