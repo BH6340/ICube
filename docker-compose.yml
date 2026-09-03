@@ -59,6 +59,8 @@ services:
     container_name: icube_api
     restart: always
     environment:
+      # 容器时区，确保日志时间与宿主机一致
+      - TZ=Asia/Shanghai
       # 显式使用生产配置
       - DJANGO_SETTINGS_MODULE=cube_api.settings.prod
       # MySQL 连接参数，db 为 Compose 网络内的服务名
@@ -88,6 +90,8 @@ services:
       - ./cube_api/media:/app/media
       # collectstatic 产物通过命名卷交给 Nginx
       - collected_static:/app/collected_static
+      # 支付宝密钥文件（.gitignore 排除，需手动上传到宿主机）
+      - ./cube_api/cube_api/apps/shop/keys:/app/cube_api/apps/shop/keys:ro
     depends_on:
       # 等待 MySQL 健康检查通过后再启动
       db:
