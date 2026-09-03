@@ -170,6 +170,10 @@ SECRET_KEY=$SECRET_KEY
 
 # 数据库密码（与 docker-compose.yml 保持一致）
 DB_PASSWORD=icube123
+
+# 支付宝配置（上线支付前需修改）
+ALIPAY_APP_ID=9021000162660623
+ALIPAY_DEBUG=True
 EOF
 
 pass ".env 已写入到 $PROJECT_DIR/.env"
