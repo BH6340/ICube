@@ -22,19 +22,23 @@ from loguru import logger
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+_DEBUG = os.getenv('ALIPAY_DEBUG', 'True').lower() == 'true'
+_SCHEME = os.getenv('ALIPAY_SCHEME', 'http' if _DEBUG else 'https')
+_SERVER_HOST = os.getenv('SERVER_HOST', 'localhost')
+
 ALIPAY_CONFIG = {
     # 应用 ID：支付宝开放平台创建的应用唯一标识
-    'app_id': '9021000162660623',
+    'app_id': os.getenv('ALIPAY_APP_ID', '9021000162660623'),
     # 应用私钥路径：用于对请求进行签名，必须妥善保管，不可泄露
     'app_private_key_path': os.path.join(BASE_DIR, 'keys', 'app_private_key.pem'),
     # 支付宝公钥路径：用于验证支付宝返回数据的签名，由支付宝生成
     'alipay_public_key_path': os.path.join(BASE_DIR, 'keys', 'alipay_public_key.pem'),
     # 异步回调地址：支付宝支付成功后主动通知的接口，必须是公网可访问的 POST 接口
-    'notify_url': f"http://{os.getenv('SERVER_HOST', 'localhost')}/api/shop/orders/notify/",
+    'notify_url': f"{_SCHEME}://{_SERVER_HOST}/api/shop/orders/notify/",
     # 同步回调地址前缀：用户支付完成后跳转的页面地址
-    'return_url_prefix': f"http://{os.getenv('SERVER_HOST', 'localhost')}/shop/pay",
-    # 调试模式：True 表示使用沙箱环境，上线前必须改为 False
-    'debug': True,
+    'return_url_prefix': f"{_SCHEME}://{_SERVER_HOST}/shop/pay",
+    # 调试模式：True 表示使用沙箱环境，生产环境通过 ALIPAY_DEBUG=False 切换
+    'debug': _DEBUG,
 }
 
 """
@@ -312,6 +316,7 @@ def verify_alipay_notify(data, raw_body=None):
     # 方法二：用原始 POST body 精确验签
     try:
         import base64
+        from urllib.parse import unquote, urlencode
         from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.asymmetric import padding
         from cryptography.hazmat.primitives.serialization import load_pem_public_key
@@ -327,24 +332,15 @@ def verify_alipay_notify(data, raw_body=None):
         if raw_body:
             body_str = raw_body.decode('utf-8') if isinstance(raw_body, bytes) else raw_body
             pairs = body_str.split('&')
-            msg_pairs = [(p.split('=', 1)[0], p.split('=', 1)[1]) for p in pairs if '=' in p and not p.startswith(('sign=', 'sign_type='))]
+            msg_pairs = [
+                (p.split('=', 1)[0], unquote(p.split('=', 1)[1]))
+                for p in pairs if '=' in p and not p.startswith(('sign=', 'sign_type='))
+            ]
             msg_pairs.sort(key=lambda x: x[0])
             message = '&'.join(f'{k}={v}' for k, v in msg_pairs)
         else:
-            from urllib.parse import urlencode
             verify_data = {k: v for k, v in data_dict.items() if k not in ('sign', 'sign_type')}
             message = urlencode(sorted(verify_data.items()), doseq=False)
-
-        # 完整输出到日志 + 文件，方便 openssl 命令行独立验证
-        logger.info(f"验签 message 全文:\n{message}")
-        logger.info(f"sign(base64): {sign_b64[:80]}...")
-        msg_path = '/tmp/alipay_verify_msg.txt'
-        sig_path = '/tmp/alipay_verify_sig.bin'
-        with open(msg_path, 'w', encoding='utf-8') as f:
-            f.write(message)
-        with open(sig_path, 'wb') as f:
-            f.write(base64.b64decode(sign_b64))
-        logger.info(f"openssl dgst -sha256 -verify {key_path} -signature {sig_path} {msg_path}")
 
         signature_bytes = base64.b64decode(sign_b64)
         pub_key.verify(signature_bytes, message.encode('utf-8'), padding.PKCS1v15(), hashes.SHA256())

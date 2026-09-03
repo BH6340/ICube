@@ -241,5 +241,6 @@
 - chore: 删除所有过期的公式缩略图文件 (70a01f0)
 - chore(ci): 清理cicd.yml中的合并冲突残留  (#13) (f570384)
 - chore(scripts): 更新自动拉取脚本，适配双分支同步逻辑  (#19) (1fc14f5)
+- chore(auto-pull): 为auto-pull脚本新增本地dev分支超前保护 (#20) (30a3224)
 
 

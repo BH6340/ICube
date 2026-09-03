@@ -29,7 +29,8 @@ from .serializers import (
     CartSerializer, CartCreateSerializer, OrderSerializer, OrderCreateSerializer,
     AddressSerializer
 )
-from .alipay_config import generate_alipay_qr_code, generate_alipay_url, verify_alipay_notify
+from .alipay_config import ALIPAY_CONFIG, generate_alipay_qr_code, generate_alipay_url, verify_alipay_notify
+from decimal import Decimal
 from utils.common_response import APIResponse
 from loguru import logger
 
@@ -412,14 +413,27 @@ class OrderViewSet(viewsets.ModelViewSet):
         trade_status = raw_data.get('trade_status')
         logger.info(f"支付宝回调验证通过 - 订单 {order_no}, 状态 {trade_status}")
 
+        # 安全校验：app_id 必须一致
+        callback_app_id = raw_data.get('app_id', '')
+        if callback_app_id and callback_app_id != ALIPAY_CONFIG['app_id']:
+            logger.warning(f"支付宝回调 app_id 不匹配: 回调={callback_app_id}, 配置={ALIPAY_CONFIG['app_id']}")
+            return Response('fail')
+
         try:
             order = Order.objects.select_for_update().get(order_no=order_no)
+            # 安全校验：金额必须一致
+            callback_amount = Decimal(raw_data.get('total_amount', '0'))
+            if callback_amount != order.total_amount:
+                logger.warning(f"支付宝回调金额不匹配: 回调={callback_amount}, 订单={order.total_amount}, 订单号={order_no}")
+                return Response('fail')
             if trade_status in ('TRADE_SUCCESS', 'TRADE_FINISHED'):
                 if order.status == 'pending':
                     order.status = 'paid'
                     order.paid_at = timezone.now()
                     order.save()
                     logger.info(f"订单 {order_no} 已标记为已支付")
+                else:
+                    logger.info(f"订单 {order_no} 已处理(status={order.status}), 跳过重复回调")
             return Response('success')
         except Order.DoesNotExist:
             logger.error(f"支付宝回调 - 订单 {order_no} 不存在")

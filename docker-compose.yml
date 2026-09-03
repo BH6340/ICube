@@ -79,6 +79,10 @@ services:
       - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD:-}
       - EMAIL_DISPLAY_NAME=${EMAIL_DISPLAY_NAME:-ICube魔方平台}
       - EMAIL_SMTP_ENABLED=${EMAIL_SMTP_ENABLED:-True}
+      # 支付宝配置（从宿主机 .env 传入）
+      - ALIPAY_APP_ID=${ALIPAY_APP_ID:-9021000162660623}
+      - ALIPAY_DEBUG=${ALIPAY_DEBUG:-True}
+      - ALIPAY_SCHEME=${ALIPAY_SCHEME:-}
     volumes:
       # 用户上传文件保存在宿主机，容器重建后仍保留且便于备份
       - ./cube_api/media:/app/media
