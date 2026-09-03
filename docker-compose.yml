@@ -88,6 +88,8 @@ services:
       - ./cube_api/media:/app/media
       # collectstatic 产物通过命名卷交给 Nginx
       - collected_static:/app/collected_static
+      # 支付宝密钥文件（.gitignore 排除，需手动上传到宿主机）
+      - ./cube_api/cube_api/apps/shop/keys:/app/cube_api/apps/shop/keys:ro
     depends_on:
       # 等待 MySQL 健康检查通过后再启动
       db:
