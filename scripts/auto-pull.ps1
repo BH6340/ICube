@@ -69,10 +69,16 @@ try {
     if ($LASTEXITCODE -ne 0) {
         Write-Log "WARN: 切换到 dev 失败: $($output -join '`n')"
     } else {
-        $output = git reset --hard origin/dev 2>&1
-        Write-Log "git reset --hard origin/dev"
-        Write-Log ($output -join "`n")
-        Write-Log "dev: 已同步到远程"
+        # 第二层保护：本地 dev 领先远程则跳过，避免 reset 丢未 push 的提交
+        $aheadCount = (git rev-list origin/dev..dev --count 2>&1) -join ""
+        if ($aheadCount -match '^\d+$' -and [int]$aheadCount -gt 0) {
+            Write-Log "WARN: 本地 dev 领先远程 $aheadCount 个提交，跳过 dev 同步（避免丢失未 push 的改动）"
+        } else {
+            $output = git reset --hard origin/dev 2>&1
+            Write-Log "git reset --hard origin/dev"
+            Write-Log ($output -join "`n")
+            Write-Log "dev: 已同步到远程"
+        }
     }
 
     # ---- 切回原分支 ----
