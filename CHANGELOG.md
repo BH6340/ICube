@@ -243,5 +243,6 @@
 - chore(ci): 清理cicd.yml中的合并冲突残留  (#13) (f570384)
 - chore(scripts): 更新自动拉取脚本，适配双分支同步逻辑  (#19) (1fc14f5)
 - chore(auto-pull): 为auto-pull脚本新增本地dev分支超前保护 (#20) (30a3224)
+- chore(docker&deploy)&docs: 为api容器添加上海时区配置 & 添加支付宝密钥文件挂载配置 & 自动更新 CHANGELOG (#22) (3808c0e)
 
 

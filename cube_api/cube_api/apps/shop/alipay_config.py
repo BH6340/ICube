@@ -23,7 +23,7 @@ from loguru import logger
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 _DEBUG = os.getenv('ALIPAY_DEBUG', 'True').lower() == 'true'
-_SCHEME = os.getenv('ALIPAY_SCHEME', 'http' if _DEBUG else 'https')
+_SCHEME = os.getenv('ALIPAY_SCHEME') or ('http' if _DEBUG else 'https')
 _SERVER_HOST = os.getenv('SERVER_HOST', 'localhost')
 
 ALIPAY_CONFIG = {
