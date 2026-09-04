@@ -154,6 +154,7 @@
 - docs: 自动更新 CHANGELOG (#12) (9c368ec)
 - docs(guides): 添加手动拉取代码的四类场景说明 (#14) (65601dd)
 - docs: 添加日志查看指南并完善CI/CD配置 (#15) (9748e65)
+- docs: 更新ICube面试文档  (#33) (da42a6e)
 
 
 ## refactor - 重构
