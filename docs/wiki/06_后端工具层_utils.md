@@ -139,7 +139,7 @@ def build_image_url(relative_path, absolute=False)
 **处理逻辑**（[L57-L102](/code/cube_api/cube_api/utils/image_url.py#L57-L102)）：
 
 1. 空路径 → 返回 `''`
-2. `isinstance(relative_path, FieldFile)` → 取 `.name`（**避免触发 .path 属性计算**）
+2. `isinstance(relative_path, FieldFile)` → 取 `.name`（**避免触发 .path 属性计算**）；`ImportError` 与其他异常分离捕获，`ImportError` 走字符串转换兜底，非 `ImportError` 在确认类型后再转换
 3. 完整 URL（http/https 开头）→ 原样返回
 4. 补 `/` 前缀
 5. 补 `/media/` 前缀（已存在则跳过）

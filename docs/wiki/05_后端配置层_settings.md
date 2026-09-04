@@ -114,7 +114,7 @@ if 'test' in sys.argv:
 | `KEY_PREFIX` | `icube`                        |
 | `TIMEOUT`    | 86400（24 小时）                   |
 
-> 测试环境**仍依赖本地 Redis**，仅通过数据库编号 + 键前缀隔离；`MD5PasswordHasher` 不可用于真实用户密码。
+> 测试环境（`_IS_TEST = 'test' in sys.argv or 'pytest' in sys.modules`）使用 `LocMemCache`（Django 内置内存缓存）替代 RedisCache，无需真实 Redis 服务；`get_redis_connection` 返回 `fakeredis.FakeRedis()` 实例模拟 Redis 直连命令；`MD5PasswordHasher` 不可用于真实用户密码。
 
 #### 密码验证（[L237-L256](/code/cube_api/cube_api/settings/dev.py#L237-L256)）
 
@@ -153,7 +153,7 @@ if 'test' in sys.argv:
 文件中存在**三段** `REST_FRAMEWORK`：
 
 1. **初始声明**（[L288-L314](/code/cube_api/cube_api/settings/dev.py#L288-L314)）—— 仅作注释说明，下方分支会**完全覆盖**该字典
-2. **测试分支**（[L317-L331](/code/cube_api/cube_api/settings/dev.py#L317-L331)）：清空限流、改用 DRF 默认 `PageNumberPagination`
+2. **测试分支**（[L317-L331](/code/cube_api/cube_api/settings/dev.py#L317-L331)）：限流保留但设超大速率（`10000/minute`）确保代码路径被测试但不拦截；改用 DRF 默认 `PageNumberPagination`
 3. **非测试分支**（[L334-L354](/code/cube_api/cube_api/settings/dev.py#L334-L354)）：生产环境直接继承
 
 **非测试分支完整配置**：
@@ -168,22 +168,22 @@ if 'test' in sys.argv:
 | `PAGE_SIZE`                       | 20                                             |
 | `DEFAULT_SCHEMA_CLASS`            | `drf_spectacular.openapi.AutoSchema`           |
 
-**测试分支差异**：`DEFAULT_THROTTLE_*` 清空为 `[]`/`{}`；`DEFAULT_PAGINATION_CLASS` 改为 DRF 默认 `PageNumberPagination`；其余与非测试一致。
+**测试分支差异**：`DEFAULT_THROTTLE_RATES` 设为 `10000/minute`（保留限流类，确保代码路径被测试但不会真正拦截）；`DEFAULT_PAGINATION_CLASS` 改为 DRF 默认 `PageNumberPagination`；其余与非测试一致。
 
 > ⚠️ 初始声明的 `login_scope=3/min` 与非测试分支的 `5/minute` 不一致；实际生效的是后者（覆盖语义）。
 
 #### 测试模式 Mock Redis（[L356-L364](/code/cube_api/cube_api/settings/dev.py#L356-L364)）
 
 ```python
-if 'test' in sys.argv:
-    import django_redis
+if _IS_TEST:
+    import django_redis, fakeredis
+    _fake_redis = fakeredis.FakeRedis()
     def mock_get_redis_connection(alias):
-        from django.core.cache import cache
-        return cache
+        return _fake_redis
     django_redis.get_redis_connection = mock_get_redis_connection
 ```
 
-**关键约定**：mock 返回的是 **Django RedisCache 包装对象**，并非内存缓存；调用方需通过 `.client.get_client()` 取得 `redis-py` 客户端。Service 层（如 `JWTCacheService._get_con`）已实现这一穿透逻辑。
+**关键约定**：mock 返回 `fakeredis.FakeRedis` 实例，使 `.exists()/.sadd()/.scard()` 等 Redis 直连命令在测试中可用，无需真实 Redis 服务。测试缓存改用 `LocMemCache`（Django 内置），两者配合覆盖所有缓存场景。
 
 #### 业务配置 FORUM\_CONFIG（[L366-L378](/code/cube_api/cube_api/settings/dev.py#L366-L378)）
 

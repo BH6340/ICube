@@ -42,7 +42,7 @@ pending（待付款）→ paid（已付款）→ shipped（已发货）→ compl
 | `/orders/{id}/cancel/`         | OrderViewSet\@cancel         | PUT                 | IsAuthenticated | 取消（库存回滚）                          |
 | `/orders/{id}/complete/`       | OrderViewSet\@complete       | PUT                 | IsAuthenticated | 确认收货                              |
 | `/orders/notify/`              | OrderViewSet\@alipay\_notify | POST                | **AllowAny**    | 支付宝异步回调                           |
-| `/addresses/`                  | AddressViewSet               | GET/POST/PUT/DELETE | IsAuthenticated | 地址 CRUD                           |
+| `/addresses/`                  | AddressViewSet               | GET/POST/PUT/PATCH/DELETE | IsAuthenticated | 地址 CRUD                           |
 | `/addresses/{id}/set_default/` | AddressViewSet\@set\_default | POST                | IsAuthenticated | 设默认                               |
 
 ### 10.4 视图说明（[views.py](/code/cube_api/cube_api/apps/shop/views.py)）
@@ -57,7 +57,8 @@ pending（待付款）→ paid（已付款）→ shipped（已发货）→ compl
   - `permission_classes=[AllowAny]`
   - 先读 `request.body` 再读 `request.data`
   - `verify_alipay_notify` **双重验签**
-  - `select_for_update` 锁定订单（幂等）
+  - **安全校验**：`app_id` 一致性校验（防伪造）、`total_amount` 金额一致性校验（防低额冒充高价订单）
+  - `select_for_update` 锁定订单（幂等）；已处理订单跳过重复回调并记录日志
   - 仅 pending→paid
   - 返回纯文本 `'success'`/`'fail'`
 
@@ -70,6 +71,7 @@ pending（待付款）→ paid（已付款）→ shipped（已发货）→ compl
 #### AddressViewSet（[L429-L530](/code/cube_api/cube_api/apps/shop/views.py#L429-L530)）
 
 - create/update 保证同用户仅一个默认地址
+- update 支持 `partial` 参数；`partial_update` 方法处理 PATCH 部分更新
 - destroy 删默认地址时自动将首地址设为默认
 
 ### 10.5 支付宝集成（[alipay\_config.py](/code/cube_api/cube_api/apps/shop/alipay_config.py)）
@@ -78,10 +80,10 @@ pending（待付款）→ paid（已付款）→ shipped（已发货）→ compl
 
 | 函数/配置                                                  | 位置                                                                                              | 关键点                                                                                                                           |
 | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `ALIPAY_CONFIG`                                        | [L25-L38](/code/cube_api/cube_api/apps/shop/alipay_config.py#L25-L38)     | app\_id、私钥/公钥路径 `os.path.join(BASE_DIR,'keys',...)`、notify\_url=`http://{SERVER_HOST}/api/shop/orders/notify/`、debug=True（沙箱） |
+| `ALIPAY_CONFIG`                                        | [L25-L38](/code/cube_api/cube_api/apps/shop/alipay_config.py#L25-L38)     | app\_id=`ALIPAY_APP_ID` 环境变量、私钥/公钥路径 `os.path.join(BASE_DIR,'keys',...)`、notify\_url/return\_url 协议由 `ALIPAY_DEBUG`/`ALIPAY_SCHEME` 环境变量决定、debug=`ALIPAY_DEBUG` 环境变量（默认 True 沙箱） |
 | `get_alipay_client()`                                  | [L153-L206](/code/cube_api/cube_api/apps/shop/alipay_config.py#L153-L206) | 文件存在性检查；sign\_type=`RSA2`；启动打印公钥 modulus 指纹                                                                                   |
 | `generate_alipay_url(order_no, total_amount, subject)` | [L209-L250](/code/cube_api/cube_api/apps/shop/alipay_config.py#L209-L250) | `total_amount=str(total_amount)` 强制两位小数字符串；沙箱/生产网关切换                                                                          |
-| `verify_alipay_notify(data, raw_body)`                 | [L295-L355](/code/cube_api/cube_api/apps/shop/alipay_config.py#L295-L355) | **双重验签**：SDK verify + 失败时手动 RSA2 验签；验签 message/sign 落盘便于核对                                                                    |
+| `verify_alipay_notify(data, raw_body)`                 | [L295-L355](/code/cube_api/cube_api/apps/shop/alipay_config.py#L295-L355) | **双重验签**：SDK verify + 失败时手动 RSA2 验签；raw body 用 `unquote` 解码后再拼接验签；`sign` 字段 `pop` 移除而非 `get`                                                                    |
 
 **密钥路径**：`apps/shop/keys/app_private_key.pem` + `alipay_public_key.pem`，已 `.gitignore`，**禁止提交版本控制**。
 
