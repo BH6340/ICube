@@ -125,3 +125,4 @@ init_data.sql.backup
 scripts/build-apk.sh
 slow-query-optimization/
 
+.trae-html-share-packages/
