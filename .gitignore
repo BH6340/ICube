@@ -102,6 +102,15 @@ front_dist/
 # APK 构建产物（通过 build-apk.ps1 直接 SCP 上传服务器，不走 git）
 downloads/*.apk
 
+# CLAUDE.md（AI 辅助编码配置文件，不需要版本控制）
+CLAUDE.md
+cube_api/CLAUDE.md
+cube_front/CLAUDE.md
+.claude/
+.claudeignore
+cube_api/.claudeignore
+cube_front/.claudeignore
+
 # 你指定的文件夹
 files/
 cube_api/update_requirements.py
@@ -114,12 +123,5 @@ debug-formula-categories-500.md
 init_data.sql.backup
 .trae-html-designs/
 scripts/build-apk.sh
+slow-query-optimization/
 
-# CLAUDE.md（AI 辅助编码配置文件，不需要版本控制）
-CLAUDE.md
-cube_api/CLAUDE.md
-cube_front/CLAUDE.md
-.claude/
-.claudeignore
-cube_api/.claudeignore
-cube_front/.claudeignore
