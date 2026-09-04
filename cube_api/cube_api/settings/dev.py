@@ -9,20 +9,29 @@
     2. 安全配置（SECRET_KEY、DEBUG、ALLOWED_HOSTS）
     3. 应用配置（INSTALLED_APPS）
     4. 中间件配置（MIDDLEWARE）
-    5. 数据库配置（DATABASES）
-    6. 缓存配置（CACHES、Redis）
-    7. DRF 配置（REST_FRAMEWORK）
-    8. JWT 配置（SIMPLE_JWT）
-    9. 其他业务配置（FORUM_CONFIG、SPECTACULAR_SETTINGS）
-    10. 日志配置（LOGGING）
-    11. CORS 配置
+    5. 缓存配置（CACHES、Redis）
+    6. 数据库配置（DATABASES）
+    7. 密码验证配置
+    8. 国际化配置
+    9. 静态文件与媒体文件配置
+    10. DRF 配置（REST_FRAMEWORK）
+    11. 邮件 SMTP 配置
+    12. 业务配置（论坛模块）
+    13. JWT 配置（SIMPLE_JWT）
+    14. OpenAPI 文档配置（SPECTACULAR_SETTINGS）
+    15. 日志配置（LOGGING）
+    16. django-unfold 后台主题配置
+    17. CORS 配置
 
 设计特点：
-    - 通过环境变量动态获取敏感配置（数据库密码、Redis 地址等）
-    - 测试环境自动切换为 SQLite 内存数据库和专用 Redis 数据库
-    - 禁用 Django 默认日志，使用 Loguru 作为日志框架
-    - 自定义用户模型（AUTH_USER_MODEL）
-    - 统一响应格式、统一异常处理、统一分页器
+    - 通过环境变量动态获取敏感配置（数据库密码、Redis 地址、邮件服务等）
+    - 测试环境自动切换为 SQLite 内存数据库、LocMemCache 及 fakeredis 模拟环境
+    - 禁用 Django 默认日志，使用 Loguru 作为统一日志框架
+    - 采用自定义用户模型（AUTH_USER_MODEL）
+    - 集成自定义 `CachedJWTAuthentication` 认证类，配合 Redis 缓存实现高性能与安全的令牌校验
+    - 结合 `django-unfold` 重构现代化、美观的 Django Admin 管理后台
+    - 实现统一异常处理、统一分页器（`UnifiedPagination`）
+    - 配置完善的全局与分场景接口限流（Throttling）策略（如防暴力破解的登录限流）
 """
 import sys, os
 
@@ -480,7 +489,7 @@ UNFOLD = {
                 ],
             },
             {
-                "title": "Home",
+                "title": "首页",
                 "icon": "home",
                 "collapsible": True,
                 "items": [
@@ -488,7 +497,7 @@ UNFOLD = {
                 ],
             },
             {
-                "title": "Accounts",
+                "title": "用户",
                 "icon": "people",
                 "collapsible": True,
                 "items": [
@@ -520,7 +529,7 @@ UNFOLD = {
                 ],
             },
             {
-                "title": "Timer",
+                "title": "计时器",
                 "icon": "timer",
                 "collapsible": True,
                 "items": [

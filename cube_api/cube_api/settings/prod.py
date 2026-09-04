@@ -9,10 +9,12 @@
     1. DEBUG = False（禁用调试模式）
     2. SECRET_KEY（通过环境变量配置）
     3. ALLOWED_HOSTS（通过环境变量配置）
-    4. CORS_ALLOWED_ORIGINS（根据环境变量生成来源列表）
-    5. DATABASES（生产环境数据库配置）
-    6. CACHES（生产环境 Redis 配置）
-    7. STATIC_ROOT（静态文件收集目录）
+    4. CORS_ALLOWED_ORIGINS（根据环境变量生成来源列表并开启凭证支持）
+    5. DATABASES（生产环境 MySQL 数据库配置及字符集设定）
+    6. CACHES（生产环境 Redis 配置及独立前缀）
+    7. django-unfold 配置（X_FRAME_OPTIONS 设定）
+    8. STATIC_ROOT（静态文件收集目录）
+    9. 邮件 SMTP 配置（生产环境邮件服务器与认证设定）
 """
 import os
 
