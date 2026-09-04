@@ -81,23 +81,23 @@
 
 ### 7.3 URL 路由表（[urls.py](/code/cube_api/cube_api/apps/accounts/urls.py)）
 
-使用 `SimpleRouter(trailing_slash=False)`：
+使用 `SimpleRouter(trailing_slash=True)`（REST 风格，所有路由带尾部斜杠）：
 
 | 路由                               | 视图                           | 方法            | 权限                           | 功能           |
 | -------------------------------- | ---------------------------- | ------------- | ---------------------------- | ------------ |
-| `/users/info`                    | UserView                     | GET/PUT/PATCH | IsAuthenticated              | 当前用户资料       |
-| `/users/register`                | AuthViewSet\@register        | POST          | AllowAny                     | 注册           |
-| `/users/login`                   | AuthViewSet\@login           | POST          | AllowAny + LoginRateThrottle | 登录获取 JWT     |
-| `/users/send_code`               | AuthViewSet\@send_code        | POST          | AllowAny + SendCodeRateThrottle | 发送邮箱验证码    |
-| `/users/register_with_code`      | AuthViewSet\@register_with_code | POST       | AllowAny                     | 验证码注册       |
-| `/users/login_with_code`         | AuthViewSet\@login_with_code | POST          | AllowAny                     | 验证码登录       |
-| `/users/reset_password`          | AuthViewSet\@reset_password   | POST          | AllowAny                     | 验证码重置密码     |
-| `/users/logout`                  | AuthViewSet\@logout          | POST          | IsAuthenticated              | 注销（jti 入黑名单） |
+| `/users/info/`                   | UserView                     | GET/PUT/PATCH | IsAuthenticated              | 当前用户资料       |
+| `/users/register/`               | AuthViewSet\@register        | POST          | AllowAny                     | 注册           |
+| `/users/login/`                  | AuthViewSet\@login           | POST          | AllowAny + LoginRateThrottle | 登录获取 JWT     |
+| `/users/send_code/`              | AuthViewSet\@send_code        | POST          | AllowAny + SendCodeRateThrottle | 发送邮箱验证码    |
+| `/users/register_with_code/`     | AuthViewSet\@register_with_code | POST       | AllowAny                     | 验证码注册       |
+| `/users/login_with_code/`        | AuthViewSet\@login_with_code | POST          | AllowAny                     | 验证码登录       |
+| `/users/reset_password/`         | AuthViewSet\@reset_password   | POST          | AllowAny                     | 验证码重置密码     |
+| `/users/logout/`                 | AuthViewSet\@logout          | POST          | IsAuthenticated              | 注销（jti 入黑名单） |
 | `/profiles/`                     | ProfileDetailView            | GET           | IsAuthenticatedOrReadOnly    | 用户列表         |
-| `/profiles/{username}`           | ProfileDetailView            | GET           | IsAuthenticatedOrReadOnly    | 用户详情         |
-| `/profiles/{username}/follow`    | ProfileDetailView\@follow    | POST/DELETE   | IsAuthenticated              | 关注/取关        |
-| `/profiles/{username}/following` | ProfileDetailView\@following | GET           | IsAuthenticatedOrReadOnly    | 关注列表         |
-| `/profiles/{username}/followers` | ProfileDetailView\@followers | GET           | IsAuthenticatedOrReadOnly    | 粉丝列表         |
+| `/profiles/{username}/`           | ProfileDetailView            | GET           | IsAuthenticatedOrReadOnly    | 用户详情         |
+| `/profiles/{username}/follow/`    | ProfileDetailView\@follow    | POST/DELETE   | IsAuthenticated              | 关注/取关        |
+| `/profiles/{username}/following/` | ProfileDetailView\@following | GET           | IsAuthenticatedOrReadOnly    | 关注列表         |
+| `/profiles/{username}/followers/` | ProfileDetailView\@followers | GET           | IsAuthenticatedOrReadOnly    | 粉丝列表         |
 
 ### 7.4 视图说明（[views.py](/code/cube_api/cube_api/apps/accounts/views.py)）
 

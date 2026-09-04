@@ -102,7 +102,7 @@
 
 #### CubeStateService（[L90-L436](/code/cube_api/cube_api/apps/formula/services.py#L90-L436)）
 
-- `validate_state_definition(state_def)`：多层验证（结构→order→blocks→单块→中心块→相邻块颜色）
+- `validate_state_definition(state_def)`：多层验证（结构→order→blocks→单块→中心块→相邻块颜色）；order 非法时跳过数量校验，block 非法时跳过中心块/相邻块校验（防御性编程，避免 `KeyError`/`TypeError`）
 - 中心块标准配色 `CENTER_COLORS`：Y/W/B/G/O/R
 - 颜色支持 `Y/W/B/G/O/R/-/?`（`-` 不关心，`?` 未知）
 

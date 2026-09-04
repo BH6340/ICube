@@ -411,7 +411,9 @@ cube_app/
 ICube/
 ├── scripts/
 │   ├── dev-local.ps1             # 本地开发一键启停脚本（PowerShell）
-│   ├── deploy.sh                 # 服务器一键部署脚本（Bash）
+│   ├── deploy.sh                 # 服务器一键部署脚本（Bash，首次部署）
+│   ├── deploy/                   # 分步部署脚本目录
+│   │   └── deploy_update.sh      # 日常代码智能更新（健康检查+自动回滚）
 │   ├── build-apk.ps1             # APK 构建+上传脚本（从 package.json 读版本号，生成带版本号文件名）
 │   ├── server_db_dump.py         # 服务端数据库导出（mysqldump + git push，自动重试）
 │   ├── update_db_dump.py         # 本地数据库导出（pymysql）
@@ -508,7 +510,7 @@ ICube/
 
 ### 后台管理 (django-unfold)
 
-使用 `django-unfold` 替代原生 Django Admin，提供现代化 Tailwind CSS 风格管理界面。
+使用 `django-unfold` 替代原生 Django Admin，提供现代化 Tailwind CSS 风格管理界面。部署后访问 `http://<服务器IP>/admin/`，首次需通过 `createsuperuser` 创建管理员账号。
 
 - **统一继承**：所有 Admin 类继承自 `unfold.admin.ModelAdmin`
 - **@display 装饰器**：自定义列表页列，支持 Badge 标签、图片预览
@@ -835,6 +837,18 @@ bash deploy.sh api
 bash deploy.sh front
 ```
 
+**日常代码更新**（已部署过的服务器，智能检测改动范围）：
+
+```bash
+# 交互模式
+bash scripts/deploy/deploy_update.sh
+
+# CI/CD 非交互模式（CI 层接管健康检查和迁移）
+bash scripts/deploy/deploy_update.sh --non-interactive --skip-healthcheck --skip-migrate
+```
+
+> `deploy_update.sh` 通过 git diff 自动判断前端/后端/迁移/静态资源变更，选择性 rebuild 和 restart；内置健康检查（5 次重试）和自动回滚。详见 [指令速查](docs/guides/指令速查.md#31-日常代码更新-deploy_updatesh)。
+
 **部署流程（`full` 模式）**：
 
 | 步骤 | 说明 |
@@ -875,9 +889,11 @@ docker compose exec api pytest                            # 运行测试（pytes
 **请求流转**：
 ```
 /api/*    → Nginx → api:8000
+/admin/*  → Nginx → api:8000（Django Admin 后台）
 /media/*  → Nginx → ./cube_api/media
 /static/* → Nginx → collected_static
 /docs/*   → Nginx → ./docs（Docsify 文档站点）
+/code/*   → Nginx → ./cube_api（后端源码只读，供 Docsify 代码面板 fetch）
 /apk/*    → Nginx → ./downloads（APK 下载目录）
 /*        → Nginx → front:80 → Vue SPA
 ```
