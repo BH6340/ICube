@@ -87,6 +87,7 @@
 **关键技术点**:
 
 **(1) @display 装饰器实现状态 Badge**
+
 ```python
 from unfold.admin import ModelAdmin
 from unfold.decorators import display, action
@@ -6554,6 +6555,10 @@ docker compose exec api python manage.py createsuperuser
 
 
 
+
+
+
+
 ## gitleaks
 
 Gitleaks 是一款用于扫描 Git 仓库和文件系统中硬编码密钥、密码等敏感信息的工具。它通过正则表达式和熵值分析来识别潜在的秘密。
@@ -6671,3 +6676,799 @@ Gitleaks 的强大之处在于其高度可定制的配置（`.gitleaks.toml`）�
   配置文件的更完整说明可以参考官方默认配置。
 
 无论是日常开发还是将仓库公开前的审计，将 Gitleaks 集成到工作流中（特别是`pre-commit`钩子）都是一个很好的习惯，能从源头避免敏感信息泄露。
+
+
+
+
+
+
+
+# Linux
+
+## Shell脚本
+
+### deploy_01_init.sh
+
+#### Shell 脚本是什么
+
+**Shell 脚本是一个包含多条 Shell 命令的文本文件**，按顺序执行。你可以把常用的终端命令写进一个文件里，一次运行自动完成所有操作，避免重复手动输入。
+
+这个脚本 `deploy_01_init.sh` 就是一个典型的服务器初始化脚本——把系统更新、创建用户、安装 Docker 等操作全部自动化，你只需要运行一次，就能完成原本需要手动敲几十条命令的工作。
+
+---
+
+#### 脚本头部
+
+```bash
+#!/bin/bash
+# ICube 半自动化部署脚本 - 第 1 步：服务器初始化（root 执行）
+# 功能：系统更新、时区、创建部署用户、安装 Docker & Docker Compose、镜像加速
+
+set -e
+```
+
+**`#!/bin/bash`** 称为 shebang，告诉系统用 `/bin/bash` 这个程序来执行这个脚本。没有这行，系统可能用默认 shell（如 `sh`）执行，语法行为不同可能导致错误。
+
+**`#` 开头的行是注释**，用于解释脚本的作用，运行时会被忽略。
+
+**`set -e`** 表示“遇到任何命令执行失败（返回非零退出码），脚本立即退出”。这是安全机制——如果安装 Docker 失败了，后续步骤没有任何意义，立即停止可以避免更严重的问题。
+
+---
+
+#### 颜色定义
+
+```bash
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+```
+
+这些是 ANSI 转义码，用于在终端输出彩色文字：
+
+| 变量     | 颜色 | 用途                           |
+| :------- | :--- | :----------------------------- |
+| `RED`    | 红色 | 错误信息                       |
+| `GREEN`  | 绿色 | 成功信息                       |
+| `YELLOW` | 黄色 | 警告/提示                      |
+| `NC`     | 无色 | 重置颜色，防止后续文字也被染色 |
+
+**`pass() { echo -e "${GREEN}✅ $1${NC}"; }`** 是一个函数定义：
+
+`$1` 表示函数的第一个参数。`echo -e` 中的 `-e` 表示启用转义序列解析，使得 `\033` 这类颜色代码能够被正确识别并显示颜色。调用方式：`pass "系统更新完成"`。
+
+---
+
+#### 权限检查
+
+```bash
+if [ "$USER" != "root" ]; then
+    fail "此脚本必须以 root 身份运行，请先 su - root"
+fi
+```
+
+**`[ "$USER" != "root" ]`** 是条件判断：
+- `$USER` 是环境变量，存储当前用户名
+- `!=` 是比较运算符，表示“不等于”
+- `[ ]` 是 `test` 命令的简写，用于条件测试，注意方括号与内容之间必须有空格
+
+如果当前用户不是 root，调用 `fail` 函数输出错误信息并退出。`fail` 函数中包含 `exit 1`，表示以非零状态退出脚本，表示脚本执行失败。
+
+---
+
+#### 系统更新与时区设置
+
+```bash
+apt update -y && apt upgrade -y -qq
+timedatectl set-timezone Asia/Shanghai
+```
+
+**`&&`** 表示“逻辑与”：前面的命令成功（返回 0）才执行后面的命令，用于确保更新成功后再进行升级。
+
+**`-y`** 是对 `apt` 命令的参数，表示自动确认所有提示（无需手动输入 Y）。**`-qq`** 让 `apt` 输出更简洁，减少日志量，适合脚本环境。
+
+`timedatectl` 是 systemd 的时间管理工具，`set-timezone` 子命令用于设置系统时区。
+
+---
+
+#### 创建用户
+
+```bash
+if id "bh" &>/dev/null; then
+    warn "用户 bh 已存在，跳过创建"
+else
+    useradd -m -s /bin/bash bh
+    echo "bh:123456" | chpasswd
+    usermod -aG sudo bh
+    pass "用户 bh 已创建"
+fi
+```
+
+**`id "bh"`** 查看用户是否存在。`&>/dev/null` 表示将标准输出和标准错误都重定向到 `/dev/null`（系统黑洞），让命令不输出任何信息。
+
+**`if id "bh" &>/dev/null; then`** 这种写法在脚本中很常见，用于测试某个状态而不关注具体输出，只关心命令的退出码（成功返回 0，失败返回非 0）。
+
+**`useradd -m -s /bin/bash bh`**：
+- `-m`：同时创建用户的家目录 `/home/bh`
+- `-s /bin/bash`：指定用户的默认 shell 为 bash
+
+**`echo "bh:123456" | chpasswd`**：用管道 `|` 将 `echo` 的输出传给 `chpasswd`，修改用户密码。脚本中硬编码密码（`123456`）是常见做法，但安全起见，后续建议配置临时密码或通过其他方式管理。
+
+**`usermod -aG sudo bh`**：
+- `-aG`：将用户追加（append）到 `sudo` 组，使其拥有 sudo 权限，注意 `-a` 不能省略，否则会覆盖用户原有的附加组。
+
+---
+
+#### 安装基础依赖
+
+```bash
+apt install -y -qq git curl wget vim htop net-tools unzip ca-certificates gnupg lsb-release
+```
+
+一次性安装多个常用工具：
+- `git`：版本控制
+- `curl/wget`：网络下载
+- `vim`：文本编辑
+- `htop`：进程监控
+- `net-tools`：网络工具（`ifconfig`、`netstat`）
+- `unzip`：解压 ZIP 文件
+- `ca-certificates`：SSL 证书，用于 HTTPS 访问
+- `gnupg`：GPG 加密工具，用于验证软件包签名
+- `lsb-release`：获取 Linux 发行版信息
+
+---
+
+#### Docker 软件源配置
+
+```bash
+mkdir -p /etc/apt/keyrings
+curl -fsSL https://mirrors.aliyun.com/docker-ce/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://mirrors.aliyun.com/docker-ce/linux/ubuntu \
+  $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+apt update -y -qq
+```
+
+**`mkdir -p`** 创建目录，`-p` 表示如果父目录不存在则一并创建，且目录已存在时不报错。
+
+**`curl -fsSL`**：
+- `-f`：服务器错误时不输出 HTML 错误页面
+- `-s`：静默模式，不显示下载进度
+- `-S`：配合 `-s` 使用，只在出错时显示错误信息
+- `-L`：跟随重定向
+
+**`|` 管道**：将 `curl` 下载的内容传给 `gpg --dearmor -o` 处理，将 GPG 密钥从文本格式转为二进制格式，存到指定位置。
+
+**`$(...)` 命令替换**：执行括号内的命令，用其输出替换当前位置：
+- `$(dpkg --print-architecture)`：输出系统架构，如 `amd64` 或 `arm64`
+- `$(lsb_release -cs)`：输出 Ubuntu 版本代号，如 `jammy`（22.04）、`focal`（20.04）
+
+**`tee` 命令**：将输入同时输出到文件和屏幕，常用于写入需要 `sudo` 权限的文件。`> /dev/null` 将 `tee` 的屏幕输出丢弃，只保留写入文件的效果。
+
+---
+
+#### 安装 Docker
+
+```bash
+apt install -y -qq docker-ce docker-ce-cli containerd.io docker-compose-plugin
+```
+
+`docker-compose-plugin` 是 Docker Compose V2，使用命令为 `docker compose`（中间有空格），而旧版 `docker-compose`（带横杠）是独立的二进制文件。新版本更推荐使用 `docker compose`。
+
+---
+
+#### 配置 Docker 镜像加速
+
+```bash
+cat > /etc/docker/daemon.json << 'EOF'
+{
+  "registry-mirrors": [
+    "https://docker.1ms.run",
+    "https://docker.xuanyuan.me",
+    "https://hub-mirror.c.163.com"
+  ],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m",
+    "max-file": "3"
+  }
+}
+EOF
+```
+
+**`cat > /etc/docker/daemon.json << 'EOF'`** 是“Here Document”写法，将 `<< 'EOF'` 和 `EOF` 之间的所有内容写入指定文件。`'EOF'` 加引号表示不解析变量，内容原样写入。
+
+**配置内容**：
+- `registry-mirrors`：Docker 镜像拉取加速，使用国内镜像站
+- `log-driver` 和 `log-opts`：限制容器日志大小，避免日志占满磁盘
+
+---
+
+#### 用户组管理
+
+```bash
+systemctl enable docker
+systemctl restart docker
+usermod -aG docker bh
+```
+
+**`systemctl`** 是 systemd 的服务管理命令：
+- `enable`：设置服务开机自启
+- `restart`：立即重启服务（使配置生效）
+
+**`usermod -aG docker bh`** 将 `bh` 用户加入 `docker` 组，使其可以不使用 `sudo` 直接执行 `docker` 命令。
+
+注意：用户组变更需要**重新登录**才能生效（脚本末尾已提示）。
+
+---
+
+#### 脚本总结
+
+这个脚本遵循了良好的 Shell 编程实践：
+
+**函数化与复用**：
+通过 `pass`、`warn`、`fail`、`step` 四个颜色函数统一输出格式，避免每个 `echo` 都写一遍颜色代码，同时便于后续调整输出风格。
+
+**幂等性设计**：
+使用 `id "bh" &>/dev/null` 检查用户是否已存在，如果已存在则跳过创建。这避免了脚本因重复运行而失败，也便于执行到一半时恢复。
+
+**错误处理**：
+`set -e` 确保任何命令失败时脚本立即退出，防止错误状态被忽略而导致后续操作基于错误前提继续执行。
+
+**镜像加速配置**：
+考虑到国内网络环境，Docker 安装后立即配置镜像加速，避免了拉取镜像慢或超时的问题。
+
+**交互提示**：
+脚本末尾清晰提示用户下一步要执行什么，使整个部署流程对使用者友好。😊
+
+
+
+### deploy_01_init.sh补充
+
+#### 1. echo 和 echo -e
+
+`echo` 是 Shell 中最常用的输出命令，用于向终端打印文本。`-e` 参数的作用是**启用转义字符解析**，让某些特殊字符被识别为控制指令，而不是字面内容。
+
+```bash
+# 普通 echo：直接输出原始内容
+echo "hello\nworld"
+# 输出：hello\nworld（\n 被当作普通文本）
+
+# echo -e：解析转义字符
+echo -e "hello\nworld"
+# 输出：
+# hello
+# world
+```
+
+常用的转义字符：
+| 转义序列     | 含义                     |
+| :----------- | :----------------------- |
+| `\n`         | 换行                     |
+| `\t`         | 制表符（Tab）            |
+| `\033[0;31m` | 设置终端文字颜色（红色） |
+| `\033[0m`    | 重置终端颜色（恢复默认） |
+
+在脚本中，`echo -e` 用于输出带颜色的文字：
+```bash
+echo -e "${GREEN}✅ 成功${NC}"  # 显示绿色的“✅ 成功”
+```
+
+---
+
+#### 2. if then fi
+
+`if` 是 Shell 中的条件判断语句，格式为 `if ...; then ...; fi`。`fi` 是 `if` 的倒写，表示条件块的结束，与 Python 中通过缩进表示代码块不同，Shell 需要显式的结束标记。
+
+```bash
+if 条件; then
+    命令1
+    命令2
+fi
+```
+
+条件通常用 `[ ]` 包围（注意前后必须有空格）：
+```bash
+if [ "$USER" != "root" ]; then
+    echo "不是 root 用户"
+fi
+```
+
+还可以加 `elif` 和 `else` 分支：
+```bash
+if [ "$USER" = "root" ]; then
+    echo "当前是 root"
+elif [ "$USER" = "bh" ]; then
+    echo "当前是 bh"
+else
+    echo "其他用户"
+fi
+```
+
+---
+
+#### 3. ((STEPS++)) || true;
+
+这是 Shell 算术运算和错误处理结合的写法。`((...))` 是 Shell 的算术扩展语法，用于执行整数运算，可以理解为一个专门的算术计算环境。
+
+**拆解**：
+- `((STEPS++))`：将变量 `STEPS` 加 1
+- `||`：逻辑或运算符——如果左边的命令失败（返回非 0），则执行右边的命令
+- `true`：一个总是返回 0（成功）的命令
+
+**为什么需要 `|| true`？**
+
+Shell 中，`((STEPS++))` 的返回码取决于运算结果：
+- 如果 `STEPS` 原本是 0，`0++` 的结果是 0，返回码为 **1**（失败）
+- 如果 `STEPS` 原本大于 0，返回码为 **0**（成功）
+
+因为脚本开头设置了 `set -e`（遇到任何失败立即退出），当 `STEPS` 为 0 时，`((STEPS++))` 会被视为失败，导致脚本退出。加上 `|| true` 后，即使 `((STEPS++))` 失败，`true` 也会让整行命令返回成功，保证脚本继续执行。
+
+---
+
+#### 4. -qq
+
+`-qq` 是 `apt` 命令的参数，表示“非常安静（very quiet）”模式。
+
+`-q` 是 `--quiet` 的简写，`-qq` 比 `-q` 更安静。在脚本中使用 `-qq` 可以减少不必要的输出，保持部署日志清晰易读。
+
+对比：
+| 参数  | 效果                             |
+| :---- | :------------------------------- |
+| 无    | 显示所有进度信息、提示、下载状态 |
+| `-q`  | 只显示关键信息，隐藏进度条       |
+| `-qq` | 几乎不输出任何信息，只显示错误   |
+
+```bash
+apt update -y -qq   # 极简模式，只输出错误
+apt upgrade -y      # 有输出，适合交互式操作
+```
+
+---
+
+#### 5. apt
+
+`apt`（Advanced Package Tool）是 Debian/Ubuntu 系统的包管理工具，用于安装、更新、删除软件包。你在这个脚本中看到的用法包括：
+
+| 命令                    | 作用                                   |
+| :---------------------- | :------------------------------------- |
+| `apt update`            | 从软件源更新软件包列表（不安装任何包） |
+| `apt upgrade`           | 将所有已安装的软件包升级到最新版本     |
+| `apt install <package>` | 安装指定的软件包                       |
+| `apt remove <package>`  | 卸载指定的软件包                       |
+| `apt autoremove`        | 自动删除不再需要的依赖包               |
+
+常用参数：
+- `-y`：自动确认所有提示（相当于一直按 Y）
+- `-qq`：静默模式，几乎无输出
+- `--no-install-recommends`：不安装推荐的包，减少不必要的依赖
+
+---
+
+#### 6. gpg --dearmor -o
+
+`gpg`（GNU Privacy Guard）是加密和签名工具，`--dearmor` 是其中一个子命令，用于将 ASCII 格式的密钥转换为二进制格式。
+
+在脚本中：
+```bash
+curl -fsSL https://mirrors.aliyun.com/docker-ce/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+```
+
+- `curl` 下载 Docker 的 GPG 公钥（文本格式）
+- 通过管道 `|` 传给 `gpg --dearmor`
+- `-o /etc/apt/keyrings/docker.gpg`：指定输出文件路径
+
+**为什么要转换格式？**
+
+软件源配置中 `signed-by=` 参数要求的是**二进制格式**的 GPG 密钥文件，而不是文本格式。`--dearmor` 做的就是格式转换：
+- 原始格式：ASCII 文本（以 `-----BEGIN PGP PUBLIC KEY BLOCK-----` 开头）
+- 转换后：二进制格式（`.gpg` 文件）
+
+---
+
+#### 7. GPG
+
+**GPG（GNU Privacy Guard）** 是用于加密和数字签名的工具，在 Linux 软件源验证中扮演“身份确认”的角色。
+
+在 `apt` 软件源场景中，GPG 的作用是：
+
+1. **软件包签名验证**：Debian/Ubuntu 官方仓库用 GPG 私钥对软件包签名，本地用 GPG 公钥验证签名，确保下载的软件包没有被篡改，且确实来自官方或可信源。
+
+2. **软件源身份认证**：脚本中下载 Docker 的 GPG 公钥并配置到 `signed-by`，告诉 `apt`：”以后的 Docker 软件包要用这个公钥验证签名。”
+
+**工作原理**：
+1. 软件包发布者用**私钥**对包签名
+2. 用户系统用**公钥**验证签名
+3. 验证通过说明包未被篡改且来源可信
+
+在脚本中，`curl` 下载了 Docker 的公钥，`gpg --dearmor` 转换格式，`apt` 使用它来验证后续安装的 Docker 包。
+
+---
+
+#### 8. docker-ce docker-ce-cli containerd.io
+
+这三个包分别是 Docker 的核心组件：
+
+| 包名              | 作用                                                         |
+| :---------------- | :----------------------------------------------------------- |
+| **docker-ce**     | Docker 引擎（Community Edition 社区版），运行容器的核心守护进程 |
+| **docker-ce-cli** | Docker 命令行工具（`docker` 命令），用户与 Docker 交互的入口 |
+| **containerd.io** | 容器运行时，Docker 底层的容器管理组件，负责实际启动和运行容器 |
+
+**区分关系**：
+```
+docker 命令 (CLI)  →  Docker 引擎 (dockerd)  →  containerd  →  操作系统
+    用户输入              API 网关             实际运行容器
+```
+
+**为什么是三个而不是一个？**
+Docker 采用模块化架构：
+- CLI 和 引擎分离，可以独立升级
+- containerd 是 CNCF 的独立项目，其他容器工具（如 Kubernetes）也可以使用
+
+**如果使用 Docker Compose V2**，还需要安装 `docker-compose-plugin`，这样就能使用 `docker compose` 命令（带空格），而不是旧版的 `docker-compose`（带横杠）。旧版需要额外安装独立的二进制文件，而新版 `docker compose` 作为插件集成，更便于版本管理。
+
+---
+
+#### 总结对照表
+
+| 命令/概念                     | 核心作用             | 在你脚本中的用途                         |
+| :---------------------------- | :------------------- | :--------------------------------------- |
+| `echo -e`                     | 输出带转义字符的文本 | 彩色输出，显示成功/错误信息              |
+| `if then fi`                  | 条件判断             | 检查用户是否为 root，判断用户是否存在    |
+| `((STEPS++)) \|\| true`       | 算术运算并忽略失败   | 递增步骤计数器，避免脚本因 `set -e` 退出 |
+| `-qq`                         | apt 极简输出模式     | 保持部署日志干净，减少干扰信息           |
+| `apt`                         | Debian 包管理        | 系统更新、安装 Docker 和依赖工具         |
+| `gpg --dearmor`               | GPG 密钥格式转换     | 将 Docker 公钥转为二进制，供 apt 使用    |
+| `GPG`                         | 加密签名验证         | 验证 Docker 软件包来源和完整性           |
+| `docker-ce/ce-cli/containerd` | Docker 核心组件      | 安装完整 Docker 引擎环境                 |
+
+#### 为啥 0 是成功，非零是失败？
+
+这是 Unix/Linux 系统设计中的一个核心约定，可以追溯到上世纪 70 年代的 C 语言和 Unix 操作系统。**0 表示成功，非零表示失败**，这个规则被所有 Unix/Linux 命令、Shell 脚本和系统调用所遵循。
+
+---
+
+##### 为什么要这样设计？
+
+**1. 一个程序只能返回一个整数，但失败原因有无数种**
+
+- **成功**：只有一种——一切正常，用 `0` 表示
+- **失败**：可能有很多原因——文件不存在、权限不足、网络超时、内存不足、参数错误……每种失败可以对应一个不同的非零数字
+
+例如 `ping` 命令的退出码：
+| 退出码 | 含义                               |
+| :----- | :--------------------------------- |
+| `0`    | 成功（所有包都收到响应）           |
+| `1`    | 部分失败（收到一些包，但不是全部） |
+| `2`    | 完全失败（一个包都没收到）         |
+
+如果所有失败都返回 `0`，就无法区分“目标不存在”和“网络不通”了。用不同的非零值可以携带更多错误信息。
+
+**2. 与 C 语言的 `main()` 函数返回值保持一致**
+
+```c
+int main() {
+    // 程序运行正常
+    return 0;  // 返回 0 表示成功
+}
+
+int main() {
+    // 遇到错误
+    return 1;  // 返回非零表示失败
+}
+```
+
+C 语言的 `main` 函数返回值就是进程的退出码，Unix 命令行和 Shell 直接沿用这个设计。
+
+**3. 与 `if` 语句的逻辑保持一致**
+
+在 C 语言和 Shell 中，`if` 判断的是“条件是否为真”，而 `0` 在数值上代表“假”。命令执行成功意味着“没有错误发生”，因此用 `0` 表示“没有错误”是符合直觉的——即条件为真（没有错误）时返回 `0`。
+
+```bash
+# Shell 中的 if 判断
+if command; then
+    echo "命令成功"  # 如果 command 返回 0，则执行
+else
+    echo "命令失败"  # 如果 command 返回非零，则执行
+fi
+```
+
+这用人类的自然语言可以理解为：**"返回 0 表示没问题"**，而不是"返回 0 表示失败"。
+
+---
+
+##### 在脚本中如何利用退出码
+
+脚本中常见的错误处理模式，都是围绕“0 成功、非零失败”设计的：
+
+```bash
+# 1. 检查上一条命令是否成功
+if [ $? -eq 0 ]; then
+    echo "上一条命令执行成功"
+fi
+```
+
+`$?` 是特殊变量，存储上一条命令的退出码。在脚本中配合 `if` 使用，可以检测命令是否执行成功。
+
+```bash
+# 2. 串联执行命令
+make && make install  # make 成功才执行 make install
+```
+
+`&&` 利用退出码特性：只有前一条命令返回 `0` 时，才执行后一条命令；如果前一条失败（返回非零），后面的命令会被跳过。
+
+```bash
+# 3. 条件执行
+command || echo "command 执行失败"  # command 失败时执行 echo
+```
+
+`||` 与此相反：前一条命令失败时执行后者，成功时则跳过。
+
+---
+
+##### 常见误区
+
+**误区**：0 在数学中代表“假”，所以很多人直觉上认为失败应该返回 0。
+
+**纠正**：在 Unix/Linux 中，退出码表达的是“是否有错误”，而不是“布尔真/假”。`0` 表示“没有错误”，所以命令执行成功返回 `0` 在逻辑上是合理的——成功意味着“没有错误”，用 `0` 表示“无错误状态”。
+
+```bash
+# ✅ 正确理解
+0   → 一切正常，没有错误
+1   → 有错误（具体错误码由程序定义）
+2   → 有错误（另一种错误类型）
+127 → command not found（Shell 约定）
+```
+
+---
+
+##### 其他系统的对比
+
+| 系统/语言           | 成功表示                                   | 失败表示        |
+| :------------------ | :----------------------------------------- | :-------------- |
+| Unix/Linux 命令     | `0`                                        | 非零（1-255）   |
+| C 语言 `main()`     | `return 0`                                 | `return 非零`   |
+| Shell 脚本 `exit`   | `exit 0`                                   | `exit 1`        |
+| Python `sys.exit()` | `sys.exit(0)`                              | `sys.exit(1)`   |
+| HTTP 状态码         | `200`                                      | `404`、`500`    |
+| JavaScript 回调     | 无（Node.js 风格：`callback(null, data)`） | `callback(err)` |
+
+注意：虽然 HTTP 状态码也遵循类似的“2xx 成功、4xx/5xx 失败”模式，但表示方式和 Shell 退出码不同。Shell 退出码用一个数字表示成功或失败类型，而 HTTP 状态码携带更丰富的语义信息。😊
+</previous_article>
+
+
+
+
+
+### deploy_02_app.sh
+
+#### 脚本概览
+
+这是 ICube 部署流程的第二步，由普通用户 `bh` 执行，完成从拉取代码到启动服务的全过程。相比上一步的服务器初始化，这个脚本更侧重于应用层的部署，涉及 Git、Docker Compose、环境变量配置等操作。
+
+---
+
+#### 用户检查
+
+```bash
+if [ "$USER" = "root" ]; then
+    fail "此脚本不能以 root 运行，请先 su bh"
+fi
+```
+
+与 `deploy_01_init.sh` 相反，这个脚本**禁止 root 执行**。原因在于：
+- 后续的 `docker` 命令需要用户属于 `docker` 组
+- 生成的文件（如 SSH key、`.env`）放在 `bh` 用户的家目录下
+- 避免以 root 身份运行的容器产生权限问题
+
+---
+
+#### 项目目录自动定位
+
+```bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR_DEFAULT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+if [ -f "$PROJECT_DIR_DEFAULT/docker-compose.yml" ]; then
+    PROJECT_DIR="$PROJECT_DIR_DEFAULT"
+else
+    PROJECT_DIR="$HOME/ICube"
+fi
+```
+
+`${BASH_SOURCE[0]}` 是当前脚本的路径（区别于 `$0`，它在被 `source` 时可能不准确）。`dirname` 取脚本所在目录，`cd && pwd` 获得绝对路径。
+
+脚本尝试两种情况定位项目目录：
+1. **脚本在标准位置**：`ICube/scripts/deploy/deploy_02_app.sh`，向上两级即为项目根目录
+2. **脚本被复制到别处运行**：使用 `~/ICube` 作为项目目录
+
+---
+
+#### SSH Key 生成与 GitHub 认证
+
+```bash
+SSH_KEY="$HOME/.ssh/id_ed25519"
+if [ ! -f "$SSH_KEY.pub" ]; then
+    ssh-keygen -t ed25519 -N "" -f "$SSH_KEY" -C "deploy@icube-server" -q
+fi
+```
+
+**`ssh-keygen`** 是 SSH 密钥生成工具：
+- `-t ed25519`：指定使用 Ed25519 算法（比 RSA 更安全、更快）
+- `-N ""`：空密码（无人值守部署，不需要交互式输入）
+- `-f "$SSH_KEY"`：指定输出文件路径
+- `-C "deploy@icube-server"`：添加注释，便于识别
+- `-q`：静默模式，减少输出
+
+**GitHub 认证验证**：
+
+```bash
+AUTH_MSG=$(ssh -o StrictHostKeyChecking=accept-new -T git@github.com 2>&1 || true)
+```
+
+`-o StrictHostKeyChecking=accept-new` 用于自动接受新的主机密钥，避免首次连接时弹出交互式确认。`-T` 表示不分配伪终端。`2>&1` 将标准错误合并到标准输出，用于捕获完整的认证返回信息。
+
+`|| true` 的作用是防止 `ssh` 失败时触发 `set -e` 导致脚本退出——`ssh -T git@github.com` 失败时会返回非零退出码，但此时我们需要的是捕获输出内容，而非中断脚本。
+
+**公钥输出与等待**：
+
+```bash
+cat "$SSH_KEY.pub"
+read -rp "添加完成后，按回车继续...（输入 s 跳过验证） " ANS
+```
+
+`read -rp` 显示提示并读取用户输入，`-p` 指定提示文字。用户可以选择跳过验证（输入 `s`），这在公钥已添加但网络不通时很有用。
+
+---
+
+#### Git 克隆或更新
+
+```bash
+if [ -d "$PROJECT_DIR/.git" ]; then
+    git pull
+else
+    git clone git@github.com:BH6340/ICube.git "$PROJECT_DIR"
+fi
+```
+
+检测 `.git` 目录判断项目是否已存在，避免重复克隆。
+
+---
+
+#### 环境变量生成
+
+**`read -rp` 交互式输入**：
+
+```bash
+read -rp "请输入服务器公网 IP（例如 103.100.211.146）: " SERVER_IP
+```
+
+`-r` 防止反斜杠被解释为转义字符，`-p` 显示提示文字。
+
+**`SECRET_KEY` 的三种生成方式**（降级策略）：
+
+```bash
+# 方式1：Python secrets（最推荐，加密级随机）
+SECRET_KEY=$(python3 -c 'import secrets; print(secrets.token_urlsafe(64))')
+
+# 方式2：openssl（备用）
+SECRET_KEY=$(openssl rand -base64 64 | tr -d '\n')
+
+# 方式3：/dev/urandom（兜底）
+SECRET_KEY=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9!@#$%^&*(-_=+)' | head -c 80)
+```
+
+`$(...)` 命令替换捕获命令输出。`tr -d '\n'` 删除换行，`tr -dc` 删除不匹配的字符，`head -c` 截取指定长度。
+
+---
+
+#### 写入 `.env` 文件
+
+```bash
+cat > "$PROJECT_DIR/.env" << EOF
+# ========== 自动生成的部署配置 ==========
+ALLOWED_HOSTS=$ALLOWED_HOSTS
+SECRET_KEY=$SECRET_KEY
+EOF
+```
+
+使用 Here Document 将多行内容写入 `.env`，其中 `$变量` 会被替换为实际值。
+
+---
+
+#### Docker Compose 操作
+
+```bash
+docker compose up -d --build
+```
+
+`up -d --build` 是常用组合：
+- `-d`：后台运行（detach 模式）
+- `--build`：启动前重新构建镜像
+
+**容器状态统计**：
+
+```bash
+UP_COUNT=$(docker compose ps --format '{{.Status}}' | grep -c 'Up' || true)
+TOTAL_SVCS=$(docker compose config --services | wc -l)
+```
+
+`docker compose ps --format` 使用 Go 模板格式输出，`grep -c` 统计匹配行数，`docker compose config --services` 列出所有服务名，`wc -l` 统计行数。
+
+---
+
+#### 等待 MySQL 就绪
+
+```bash
+for i in $(seq 1 30); do
+    STATUS=$(docker inspect -f '{{.State.Health.Status}}' icube_db 2>/dev/null || echo "starting")
+    if [ "$STATUS" = "healthy" ]; then
+        break
+    fi
+    sleep 2
+    echo -n "."
+done
+```
+
+`docker inspect -f` 使用 Go 模板提取容器的健康状态。循环最多等待 60 秒（30 次 × 2 秒），每秒打印一个点表示进度。
+
+`seq 1 30` 生成 1 到 30 的数字序列。`echo -n` 不换行输出，用于制作进度动画。
+
+---
+
+#### Django 管理命令
+
+```bash
+docker compose exec -T api python manage.py migrate --noinput
+docker compose exec -T api python manage.py collectstatic --noinput
+```
+
+`docker compose exec -T` 中的 `-T` 表示不分配伪终端（在脚本中必须使用，否则可能报错）。`--noinput` 自动确认所有提示，适合无人值守执行。
+
+---
+
+#### HTTP 验证
+
+```bash
+FRONT_CODE=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1/ || echo 000)
+```
+
+`curl -s -o /dev/null` 静默模式，丢弃响应体；`-w '%{http_code}'` 只输出 HTTP 状态码，便于脚本判断服务是否正常。
+
+状态码 `405`（Method Not Allowed）在登录接口上表示正常——因为该接口只接受 POST，GET 请求会被拒绝。`403` 对静态目录也是正常的——Nginx 禁止列目录，但文件仍可正常访问。
+
+---
+
+#### 下一步提示
+
+脚本末尾输出访问地址和管理命令，引导用户完成后续操作：
+
+```bash
+echo "浏览器访问地址："
+echo "  前台首页：  ${CYAN}http://$SERVER_IP/${NC}"
+echo "  后台管理：  ${CYAN}http://$SERVER_IP/admin/${NC}"
+```
+
+`${CYAN}...${NC}` 在输出中为 URL 添加颜色，提升可读性。
+
+---
+
+#### 脚本中用到的新命令总结
+
+| 命令/语法                                | 作用                               | 示例                                                       |
+| :--------------------------------------- | :--------------------------------- | :--------------------------------------------------------- |
+| `ssh-keygen`                             | 生成 SSH 密钥对                    | `ssh-keygen -t ed25519 -N "" -f ~/.ssh/id_ed25519`         |
+| `read -rp`                               | 交互式读取用户输入                 | `read -rp "请输入 IP: " IP`                                |
+| `ssh -T git@github.com`                  | 测试 GitHub SSH 认证               | `ssh -T git@github.com`                                    |
+| `grep -c`                                | 统计匹配行数                       | `grep -c 'Up'`                                             |
+| `grep -q`                                | 静默模式，不输出只返回退出码       | `grep -q "success"`                                        |
+| `wc -l`                                  | 统计行数                           | `wc -l`                                                    |
+| `seq`                                    | 生成数字序列                       | `seq 1 30`                                                 |
+| `tr -d`                                  | 删除字符                           | `tr -d '\n'`                                               |
+| `head -c`                                | 截取前 N 个字节                    | `head -c 80`                                               |
+| `cat /dev/urandom`                       | 从随机设备读取数据                 | `cat /dev/urandom`                                         |
+| `docker compose exec -T`                 | 在运行中的容器内执行命令（无 TTY） | `docker compose exec -T api python manage.py migrate`      |
+| `docker inspect -f`                      | 查看容器元信息（Go 模板格式）      | `docker inspect -f '{{.State.Health.Status}}'`             |
+| `curl -s -o /dev/null -w '%{http_code}'` | 只获取 HTTP 状态码                 | `curl -s -o /dev/null -w '%{http_code}' http://localhost/` |
+| `cat > file << EOF`                      | Here Document 写入多行文件         | `cat > .env << EOF ... EOF`                                |
+
