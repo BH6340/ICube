@@ -52,7 +52,7 @@ if (Test-Path $ApkPath) {
     $scpHost = $env:SCP_HOST
     if (-not $scpUser) { $scpUser = Read-Host "服务器用户名 (默认 bh, 直接回车跳过上传)" }
     if ($scpUser -and $scpUser -ne "") {
-        if (-not $scpHost) { $scpHost = if ($scpUser -eq "bh") { "103.100.211.146" } else { Read-Host "服务器IP" } }
+        if (-not $scpHost) { $scpHost = if ($scpUser -eq "bh") { "8.136.100.251" } else { Read-Host "服务器IP" } }
         $remotePath = "$scpUser@$scpHost`:/home/bh/ICube/downloads/$versionedApkName"
         scp $versionedApkPath $remotePath
         Write-Host ""

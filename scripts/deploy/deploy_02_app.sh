@@ -21,7 +21,7 @@ STEPS=0
 
 # ---------- 权限检查 ----------
 if [ "$USER" = "root" ]; then
-    fail "此脚本不能以 root 运行，请先 su - bh"
+    fail "此脚本不能以 root 运行，请先 su bh"
 fi
 
 # ---------- 进入项目目录（兼容脚本在 scripts/deploy/ 下直接跑或从别处跑）----------
@@ -124,8 +124,8 @@ if [ -z "$DOMAIN_NAME" ]; then
     DOMAIN_NAME="$SERVER_IP"
 fi
 
-# 3.3 SERVER_HOST（支付宝回调地址）
-SERVER_HOST="http://$DOMAIN_NAME"
+# 3.3 SERVER_HOST（支付宝回调地址，只填域名/IP，alipay_config.py 会自动拼协议）
+SERVER_HOST="$DOMAIN_NAME"
 
 ALLOWED_HOSTS="$SERVER_IP,$DOMAIN_NAME,localhost,127.0.0.1"
 ALLOWED_ORIGIN="$DOMAIN_NAME"

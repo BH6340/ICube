@@ -6,6 +6,6 @@
         </trust-anchors>
     </base-config>
     <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">103.100.211.146</domain>
+        <domain includeSubdomains="true">8.136.100.251</domain>
     </domain-config>
 </network-security-config>

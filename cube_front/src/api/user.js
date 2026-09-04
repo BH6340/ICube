@@ -22,7 +22,7 @@ import request from '@/http/request'
  */
 export function loginApi(data) {
   return request({
-    url: '/api/users/login',
+    url: '/api/users/login/',
     method: 'post',
     data
   })
@@ -39,7 +39,7 @@ export function loginApi(data) {
  */
 export function registerApi(data) {
   return request({
-    url: '/api/users/register',
+    url: '/api/users/register/',
     method: 'post',
     data
   })
@@ -53,7 +53,7 @@ export function registerApi(data) {
  */
 export function sendCodeApi(data) {
   return request({
-    url: '/api/users/send_code',
+    url: '/api/users/send_code/',
     method: 'post',
     data
   })
@@ -67,7 +67,7 @@ export function sendCodeApi(data) {
  */
 export function registerWithCodeApi(data) {
   return request({
-    url: '/api/users/register_with_code',
+    url: '/api/users/register_with_code/',
     method: 'post',
     data
   })
@@ -81,7 +81,7 @@ export function registerWithCodeApi(data) {
  */
 export function loginWithCodeApi(data) {
   return request({
-    url: '/api/users/login_with_code',
+    url: '/api/users/login_with_code/',
     method: 'post',
     data
   })
@@ -110,7 +110,7 @@ export function resetPasswordApi(data) {
  */
 export function logoutApi() {
   return request({
-    url: '/api/users/logout',
+    url: '/api/users/logout/',
     method: 'post'
   })
 }
@@ -123,7 +123,7 @@ export function logoutApi() {
  */
 export function getProfileApi(username) {
   return request({
-    url: `/api/profiles/${encodeURIComponent(username)}`,
+    url: `/api/profiles/${encodeURIComponent(username)}/`,
     method: 'get'
   })
 }
@@ -133,7 +133,7 @@ export function getProfileApi(username) {
  */
 export function searchUsersApi(params = {}) {
   return request({
-    url: '/api/profiles',
+    url: '/api/profiles/',
     method: 'get',
     params
   })
@@ -148,7 +148,7 @@ export function searchUsersApi(params = {}) {
  */
 export function getFollowingListApi(username, params) {
   return request({
-    url: `/api/profiles/${encodeURIComponent(username)}/following`,
+    url: `/api/profiles/${encodeURIComponent(username)}/following/`,
     method: 'get',
     params
   })
@@ -163,7 +163,7 @@ export function getFollowingListApi(username, params) {
  */
 export function getFollowersListApi(username, params) {
   return request({
-    url: `/api/profiles/${encodeURIComponent(username)}/followers`,
+    url: `/api/profiles/${encodeURIComponent(username)}/followers/`,
     method: 'get',
     params
   })
@@ -177,7 +177,7 @@ export function getFollowersListApi(username, params) {
  */
 export function followUserApi(username) {
   return request({
-    url: `/api/profiles/${encodeURIComponent(username)}/follow`,
+    url: `/api/profiles/${encodeURIComponent(username)}/follow/`,
     method: 'post'
   })
 }
@@ -190,7 +190,7 @@ export function followUserApi(username) {
  */
 export function unfollowUserApi(username) {
   return request({
-    url: `/api/profiles/${encodeURIComponent(username)}/follow`,
+    url: `/api/profiles/${encodeURIComponent(username)}/follow/`,
     method: 'delete'
   })
 }
@@ -208,7 +208,7 @@ export function unfollowUserApi(username) {
  */
 export function updateProfileApi(data) {
   return request({
-    url: `/api/users/info`,
+    url: `/api/users/info/`,
     method: 'patch',
     data: data,
   })
