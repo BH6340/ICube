@@ -171,6 +171,7 @@
 - refactor(router): add auth guard and set auth meta for profile routes (4467259)
 - refactor: 重构全局样式并优化UI细节 (c7a4261)
 - refactor(scripts): 统一将脚本迁移至scripts/目录并修复路径引用 (9e0ed0b)
+- refactor(settings): 完善生产和开发环境配置注释  &  docs: 整理文档侧边栏与临时文件  (#29) (02fc636)
 
 
 ## ci - CI/CD
