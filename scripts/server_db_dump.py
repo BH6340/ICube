@@ -50,6 +50,7 @@ DB_ROOT_PASSWORD = os.environ.get("DB_ROOT_PASSWORD", "icube_root123")
 OUTPUT_FILE      = os.environ.get("OUTPUT_FILE", "init_data.sql")
 REPO_PATH        = os.path.abspath(os.environ.get("REPO_PATH", _PROJECT_ROOT))
 MEDIA_DIR        = os.environ.get("MEDIA_DIR", "cube_api/media")
+BACKUP_BRANCH    = os.environ.get("BACKUP_BRANCH", "dev")
 
 DRY_RUN  = "--dry-run" in sys.argv
 NO_PUSH  = "--no-push" in sys.argv
@@ -166,17 +167,30 @@ def git_push():
         logger.info("无变更，跳过提交")
         return True
 
+    # 记录当前分支，提交后切回
+    orig_branch = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"]).stdout.strip()
+
+    # 切换到备份分支（dev），main 受保护不能直接 push
+    if orig_branch != BACKUP_BRANCH:
+        logger.info(f"切换到备份分支: {BACKUP_BRANCH}")
+        _run(["git", "checkout", BACKUP_BRANCH])
+        # 同步远程备份分支
+        _run(["git", "fetch", "origin", BACKUP_BRANCH])
+        _run(["git", "reset", "--hard", f"origin/{BACKUP_BRANCH}"])
+
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     commit_msg = f"server backup: {timestamp}"
     logger.info(f"提交: {commit_msg}")
 
     if DRY_RUN:
         logger.info("[DRY-RUN] 跳过 commit / push")
+        _run(["git", "checkout", orig_branch])
         return True
 
     cr = _run(["git", "commit", "-m", commit_msg])
     if cr.returncode != 0:
         logger.error(f"git commit 失败: {cr.stderr.strip() or cr.stdout.strip()}")
+        _run(["git", "checkout", orig_branch])
         return False
 
     commit_hash = _run(["git", "rev-parse", "--short", "HEAD"]).stdout.strip()
@@ -184,6 +198,7 @@ def git_push():
 
     if NO_PUSH:
         logger.info("--no-push，跳过推送")
+        _run(["git", "checkout", orig_branch])
         return True
 
     # push 前先 pull --rebase，避免远端有新提交时冲突
@@ -195,15 +210,15 @@ def git_push():
         pr = _run(["git", "push"])
         if pr.returncode == 0:
             logger.info("成功推送到远程仓库")
-            return True
+            break
 
         # 首次失败时，如果是 no upstream branch，设置上游并重试
         if attempt == 1 and "no upstream branch" in pr.stderr:
             logger.info("设置 upstream 分支...")
-            pr2 = _run(["git", "push", "--set-upstream", "origin", "main"])
+            pr2 = _run(["git", "push", "--set-upstream", "origin", BACKUP_BRANCH])
             if pr2.returncode == 0:
                 logger.info("成功推送到远程仓库")
-                return True
+                break
             logger.warning(f"首次 push 失败: {pr2.stderr.strip()}")
         else:
             logger.warning(f"第 {attempt} 次 push 失败: {pr.stderr.strip()}")
@@ -211,11 +226,16 @@ def git_push():
         if attempt < PUSH_MAX_RETRIES:
             logger.info(f"{PUSH_RETRY_DELAY} 秒后重试（{attempt}/{PUSH_MAX_RETRIES}）...")
             time.sleep(PUSH_RETRY_DELAY)
-            # 重试前再 pull 一次，同步最新远端
             _git_pull_rebase()
+    else:
+        logger.error(f"git push 失败，已重试 {PUSH_MAX_RETRIES} 次")
 
-    logger.error(f"git push 失败，已重试 {PUSH_MAX_RETRIES} 次")
-    return False
+    # 切回原分支
+    if orig_branch != BACKUP_BRANCH:
+        logger.info(f"切回原分支: {orig_branch}")
+        _run(["git", "checkout", orig_branch])
+
+    return pr.returncode == 0
 
 
 def _git_pull_rebase():
