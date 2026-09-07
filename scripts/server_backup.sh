@@ -15,7 +15,7 @@
 # python server_db_dump.py --no-push
 
 # 用法：每天 22:00 执行
-#   0 22 * * * /opt/icube/scripts/server_backup.sh >> /opt/icube/logs/server-backup-cron.log 2>&1
+#   0 22 * * * /home/bh/ICube/scripts/server_backup.sh >> /home/bh/ICube/logs/server-backup-cron.log 2>&1
 # --------------------------------------------------------------
 set -u
 
