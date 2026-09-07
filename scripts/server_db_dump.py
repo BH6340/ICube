@@ -155,6 +155,26 @@ def git_push():
     if not NO_MEDIA:
         targets.append(MEDIA_DIR)
 
+    # 记录当前分支，提交后切回
+    orig_branch = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"]).stdout.strip()
+
+    # 切换到备份分支（dev），main 受保护不能直接 push
+    if orig_branch != BACKUP_BRANCH:
+        logger.info(f"切换到备份分支: {BACKUP_BRANCH}")
+        # 保存导出的文件内容（reset --hard 会覆盖已跟踪文件）
+        out_path = os.path.join(REPO_PATH, OUTPUT_FILE)
+        saved_content = None
+        if os.path.isfile(out_path):
+            with open(out_path, "r", encoding="utf-8") as f:
+                saved_content = f.read()
+        _run(["git", "checkout", BACKUP_BRANCH])
+        _run(["git", "fetch", "origin", BACKUP_BRANCH])
+        _run(["git", "reset", "--hard", f"origin/{BACKUP_BRANCH}"])
+        # 恢复导出的内容（untracked 的媒体文件不受 reset 影响）
+        if saved_content is not None:
+            with open(out_path, "w", encoding="utf-8") as f:
+                f.write(saved_content)
+
     if not DRY_RUN:
         for t in targets:
             r = _run(["git", "add", t])
@@ -165,18 +185,9 @@ def git_push():
     r = _run(["git", "status", "--porcelain"] + targets)
     if not r.stdout.strip():
         logger.info("无变更，跳过提交")
+        if orig_branch != BACKUP_BRANCH:
+            _run(["git", "checkout", orig_branch])
         return True
-
-    # 记录当前分支，提交后切回
-    orig_branch = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"]).stdout.strip()
-
-    # 切换到备份分支（dev），main 受保护不能直接 push
-    if orig_branch != BACKUP_BRANCH:
-        logger.info(f"切换到备份分支: {BACKUP_BRANCH}")
-        _run(["git", "checkout", BACKUP_BRANCH])
-        # 同步远程备份分支
-        _run(["git", "fetch", "origin", BACKUP_BRANCH])
-        _run(["git", "reset", "--hard", f"origin/{BACKUP_BRANCH}"])
 
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     commit_msg = f"server backup: {timestamp}"
@@ -206,6 +217,7 @@ def git_push():
         logger.warning("git pull --rebase 失败，仍尝试推送")
 
     # push，失败自动重试
+    pr = None
     for attempt in range(1, PUSH_MAX_RETRIES + 1):
         pr = _run(["git", "push"])
         if pr.returncode == 0:
@@ -235,7 +247,7 @@ def git_push():
         logger.info(f"切回原分支: {orig_branch}")
         _run(["git", "checkout", orig_branch])
 
-    return pr.returncode == 0
+    return pr is not None and pr.returncode == 0
 
 
 def _git_pull_rebase():
