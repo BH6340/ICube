@@ -6249,6 +6249,69 @@ def create(self, validated_data):
 
 
 
+
+
+### 十一、面向简历问答
+
+#### Q1. 为什么强调TTL 1h
+
+在简历中特意标出 **TTL 1h（生存时间 1 小时）**，能够向面试官传递出你对缓存设计权衡（Trade-off）的深思熟虑。具体原因体现在以下几个工程维度的考量：
+
+- **平衡性能与数据一致性**：如果缓存时间设置得过长（比如 24 小时或永不过期），当用户修改了个人资料（如昵称、头像、邮箱）时，如果忘记同步清理 Redis 缓存，用户就会陷入“我明明改了，怎么页面没生效”的 Bug 中。1 小时是一个折中点，既能大面积挡掉高并发下的数据库查询，又能保证数据在较短时间内自动更正。
+- **作为缓存更新的“安全兜底”**：虽然在正常的代码逻辑中，当用户更新个人信息时会主动去刷新或删除 Redis 缓存，但如果出现极端异常（如代码漏洞、运维手动调整数据），TTL 机制能确保脏数据最多只存在 1 小时就会自动失效并从数据库回源，避免永久性数据错乱。
+- **优化 Redis 内存空间**：系统里可能积累了大量的注册用户，如果把所有人的实例都永久驻留在 Redis 内存中，内存很快会被撑爆。设置过期时间可以让长期不活跃用户的缓存自动释放，防止内存泄漏。
+- **体现工程成熟度**：在简历里只写“实现了 Redis 缓存”会显得很泛、很小白；而写出 `TTL 1h` 则用一个具体的量化指标，证明你不仅会用缓存，还考虑过缓存过期策略（Expiration Strategy）这一核心后端设计细节。
+
+
+
+#### Q2. AccessToken和RefreshToken双token机制
+
+**正是如此。** `Access Token`（访问令牌）与 `Refresh Token`（刷新令牌）的双 Token 机制，正是为了完美解决**安全性**与**用户体验**之间不可调和的矛盾而设计的经典架构方案。
+
+如果只用**单个长效 Token**，一旦在传输或前端存储中被恶意窃取，攻击者就能长时间冒充该用户胡作非为，安全风险极大。但如果把 Token 的过期时间设得极短（比如 5 分钟），用户每隔几分钟就得重新输入账号密码登录一次，体验会变得极其痛苦。
+
+双 Token 机制通过分工协作巧妙地破解了这个难题：
+
+- **Access Token（短效通行证）**
+  - **特点**：生存时间极短（如 5 到 15 分钟）。
+  - **作用**：用来请求日常的业务接口。即使它不小心在网络传输中被截获，黑客也只有几分钟的利用窗口，风险被严格控制在极小范围内。
+- **Refresh Token（长效凭证）**
+  - **特点**：生存时间较长（如几天到几周）。
+  - **作用**：它**不能**用来访问普通业务接口，它的唯一使命是当 Access Token 过期失效时，悄悄去后端换取一轮新的 Access Token。
+  - **安全性保障**：由于它极少在普通业务网络中频繁传输（通常只在换票时用一次），且可以配合 Redis 黑名单或存在更安全的存储区，泄露的概率大大降低。
+
+**无感刷新的闭环体验**
+
+当用户打开网页或 App 连续使用时，前端的拦截器（如 Axios Interceptor）会监控接口返回状态。一旦检测到 Access Token 过期（返回 `401`），前端会自动携带 Refresh Token 去请求刷新接口。后端校验合法后，会神不知鬼不觉地吐出新 Token，整个过程用户毫无感知，既不用重新登录，又保证了极高的账户安全性。
+
+
+
+#### Q3. 如果登录又退出再登录的过程会发生什么
+
+##### **第一次登录阶段**
+
+- **凭证生成**：客户端向 `/api/users/login/` 发送邮箱和密码，`AuthViewSet.login` 通过 Django 的 `authenticate()` 校验成功后，调用 `RefreshToken.for_user(user)` 生成一个包含全新 `jti`（JWT 唯一标识）和过期时间的 Token 对，并将 Access Token 返回给客户端。  
+- **状态记录**：此时系统处于正常登录态，后续请求经过 `CachedJWTAuthentication` 时，会将用户 ID 缓存至 Redis 的 `user_instance_cache_{user_id}` 中，减少数据库查询。  
+
+**退出登录阶段**
+
+- **触发黑名单写入**：客户端携带当前 Token 发送 POST 请求到 `/api/users/logout/`。`AuthViewSet.logout` 提取 `request.auth` 中的 Token 载荷（Payload），调用 `JWTCacheService.add_to_blacklist(token_payload)`。  
+- **计算剩余寿命与拉黑**：在 `JWTCacheService.add_to_blacklist` 中，服务会通过 `exp` 和当前时间计算出该 Token 的剩余有效秒数 (`remaining_seconds`)，并在 Redis 中写入一条键名为 `jwt:blacklist:{jti}`、值为 `1` 且 TTL 等于该剩余秒数的记录。  
+- **旧凭证失效**：如果此时再次用这个旧 Token 访问接口，`CachedJWTAuthentication.authenticate` 会通过 `JWTCacheService.is_blacklisted(jti)` 检测到该 `jti` 存在于 Redis 中，从而直接拦截并返回 `None` 导致鉴权失效。  
+
+**再次登录（第二次登录）阶段**
+
+- **全新 Token 签发**：客户端重新提交账号密码请求 `/api/users/login/`。`AuthViewSet.login` 再次通过 `authenticate` 校验并调用 `RefreshToken.for_user(user)`。  
+- **独立的 `jti` 生成**：由于是一次全新的登录动作，SimpleJWT 会生成一个**完全不同于上一次的全新 `jti`** 以及新的过期时间，并返回给客户端。  
+- **黑名单互不影响**：旧 Token 的 `jti` 依然独立躺在 Redis 黑名单中（等待其原本的 TTL 倒计时自然耗尽并自动释放），而**新 Token 的 `jti` 并不在黑名单内**。
+- **鉴权流程放行**：当客户端携带新 Token 访问受保护接口时，`CachedJWTAuthentication.authenticate` 依次执行：
+  1. 验证新 Token 合法性。  
+  2. 调用 `JWTCacheService.is_blacklisted(jti)` 检查新 Token 的 `jti`——由于不在黑名单中，返回 `False` 通过。  
+  3. 调用 `get_user(validated_token)` 获取用户实例（此时会优先命中 Redis 中的 `user_instance_cache_{user_id}` 缓存，实现免查库）。  
+  4. 最终返回 `(user, validated_token)` 元组，鉴权成功。  
+
+
+
 # Git相关
 
 ## 企业开发提交信息
