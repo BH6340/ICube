@@ -429,7 +429,7 @@ FORUM_CONFIG = {
 # ==================== JWT 配置 ====================
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),     # Access Token 有效期：7 天
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),     # Access Token 有效期：7 天
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),    # Refresh Token 有效期：7 天
     'ROTATE_REFRESH_TOKENS': True,                 # 刷新 Access Token 时签发新的 Refresh Token
     'UPDATE_LAST_LOGIN': True,                     # 更新最后登录时间
