@@ -17,7 +17,7 @@
 # 用法：每天 22:00 执行
 #   0 22 * * * /home/bh/ICube/scripts/server_backup.sh >> /home/bh/ICube/logs/server-backup-cron.log 2>&1
 # --------------------------------------------------------------
-set -u
+set -eu
 
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$PROJECT_DIR" || exit 1
@@ -37,7 +37,13 @@ else
     exit 1
 fi
 
-# 优先从 .env.backup 加载
+# 先加载主 .env，再用 .env.backup 覆盖（如存在）
+if [ -f "$PROJECT_DIR/.env" ]; then
+    set -a
+    . "$PROJECT_DIR/.env"
+    set +a
+fi
+
 if [ -f "$PROJECT_DIR/.env.backup" ]; then
     set -a
     . "$PROJECT_DIR/.env.backup"
@@ -53,8 +59,8 @@ echo "  PROJECT_DIR = $PROJECT_DIR"
 echo "  PYTHON_BIN  = $PYTHON_BIN"
 echo "============================================================"
 
-"$PYTHON_BIN" "$PROJECT_DIR/scripts/server_db_dump.py"
-RC=$?
+RC=0
+"$PYTHON_BIN" "$PROJECT_DIR/scripts/server_db_dump.py" || RC=$?
 
 if [ "$RC" -eq 0 ]; then
     echo "[$(date '+%F %T')] 转储成功 (exit=0)"
