@@ -37,7 +37,13 @@ else
     exit 1
 fi
 
-# 优先从 .env.backup 加载
+# 先加载主 .env，再用 .env.backup 覆盖（如存在）
+if [ -f "$PROJECT_DIR/.env" ]; then
+    set -a
+    . "$PROJECT_DIR/.env"
+    set +a
+fi
+
 if [ -f "$PROJECT_DIR/.env.backup" ]; then
     set -a
     . "$PROJECT_DIR/.env.backup"

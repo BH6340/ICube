@@ -12,14 +12,21 @@ ICube 服务端数据库转储脚本
   python scripts/server_db_dump.py --no-push    # 只导出不推送
   python scripts/server_db_dump.py --no-media   # 不提交媒体文件
 
-环境变量（可通过 .env.backup 加载）：
-  DB_NAME           数据库名（默认 icube_db）
-  DB_ROOT_PASSWORD  MySQL root 密码（必填，无默认值）
-  OUTPUT_FILE       输出文件名（默认 init_data.sql）
-  REPO_PATH         项目根目录（默认自动检测为脚本上级目录）
-  MEDIA_DIR         媒体目录（默认 cube_api/media）
-  BACKUP_BRANCH     备份提交的目标分支（默认 dev）
-  BACKUP_KEEP_COUNT 本地 SQL 备份保留份数（默认 7）
+环境变量（可通过 .env 或 .env.backup 加载，.env.backup 优先级更高）：
+  DB_NAME             数据库名（默认 icube_db）
+  DB_USER             数据库用户名（默认 root）
+  DB_ROOT_PASSWORD    数据库密码（默认 icube_root123）
+  DB_CONTAINER        Docker MySQL 容器名（默认 db）
+  OUTPUT_FILE         输出文件名（默认 init_data.sql）
+  REPO_PATH           项目根目录（默认自动检测为脚本上级目录）
+  MEDIA_DIR           媒体目录（默认 cube_api/media）
+  BACKUP_BRANCH       备份提交的目标分支（默认 dev）
+  BACKUP_KEEP_COUNT   本地 SQL 备份保留份数（默认 7）
+  GIT_REMOTE          Git 远端名称（默认 origin）
+  GIT_AUTHOR_NAME     Git 提交作者名（默认 ICube Server）
+  GIT_AUTHOR_EMAIL    Git 提交作者邮箱（默认 icube@localhost）
+  PUSH_MAX_RETRIES    push 失败最大重试次数（默认 3）
+  PUSH_RETRY_DELAY    push 重试间隔秒数（默认 30）
 """
 
 import os
@@ -48,18 +55,23 @@ _PROJECT_ROOT = os.path.dirname(_SCRIPT_DIR)
 
 # ==================== 配置 ====================
 DB_NAME          = os.environ.get("DB_NAME", "icube_db")
-DB_ROOT_PASSWORD = os.environ.get("DB_ROOT_PASSWORD", "")
+DB_USER          = os.environ.get("DB_USER", "root")
+DB_ROOT_PASSWORD = os.environ.get("DB_ROOT_PASSWORD", "icube_root123")
+DB_CONTAINER     = os.environ.get("DB_CONTAINER", "db")
 OUTPUT_FILE      = os.environ.get("OUTPUT_FILE", "init_data.sql")
 REPO_PATH        = os.path.abspath(os.environ.get("REPO_PATH", _PROJECT_ROOT))
 MEDIA_DIR        = os.environ.get("MEDIA_DIR", "cube_api/media")
 BACKUP_BRANCH    = os.environ.get("BACKUP_BRANCH", "dev")
+GIT_REMOTE       = os.environ.get("GIT_REMOTE", "origin")
+GIT_AUTHOR_NAME  = os.environ.get("GIT_AUTHOR_NAME", "ICube Server")
+GIT_AUTHOR_EMAIL = os.environ.get("GIT_AUTHOR_EMAIL", "icube@localhost")
 
 DRY_RUN  = "--dry-run" in sys.argv
 NO_PUSH  = "--no-push" in sys.argv
 NO_MEDIA = "--no-media" in sys.argv
 
-PUSH_MAX_RETRIES = 3
-PUSH_RETRY_DELAY = 30  # 秒
+PUSH_MAX_RETRIES = int(os.environ.get("PUSH_MAX_RETRIES", "3"))
+PUSH_RETRY_DELAY = int(os.environ.get("PUSH_RETRY_DELAY", "30"))
 
 BACKUP_KEEP_COUNT = int(os.environ.get("BACKUP_KEEP_COUNT", "7"))  # 保留最近几份 SQL 备份
 
@@ -140,10 +152,10 @@ def _release_lock(lock_fd):
 def _git_env():
     env = os.environ.copy()
     env.setdefault("GIT_TERMINAL_PROMPT", "0")
-    env.setdefault("GIT_AUTHOR_NAME", "ICube Server")
-    env.setdefault("GIT_AUTHOR_EMAIL", "icube@localhost")
-    env.setdefault("GIT_COMMITTER_NAME", "ICube Server")
-    env.setdefault("GIT_COMMITTER_EMAIL", "icube@localhost")
+    env.setdefault("GIT_AUTHOR_NAME", GIT_AUTHOR_NAME)
+    env.setdefault("GIT_AUTHOR_EMAIL", GIT_AUTHOR_EMAIL)
+    env.setdefault("GIT_COMMITTER_NAME", GIT_AUTHOR_NAME)
+    env.setdefault("GIT_COMMITTER_EMAIL", GIT_AUTHOR_EMAIL)
     return env
 
 
@@ -182,9 +194,9 @@ def export_database():
     cmd = [
         "docker", "compose", "exec", "-T",
         "-e", f"MYSQL_PWD={DB_ROOT_PASSWORD}",
-        "db",
+        DB_CONTAINER,
         "mysqldump",
-        "-uroot",
+        f"-u{DB_USER}",
         "--opt",
         "--hex-blob",
         "--routines",
@@ -274,9 +286,9 @@ def _ensure_backup_branch():
 
     # 本地分支不存在，尝试从远端创建
     logger.info(f"本地分支 {BACKUP_BRANCH} 不存在，尝试从远端创建...")
-    r = _run(["git", "fetch", "origin", BACKUP_BRANCH])
+    r = _run(["git", "fetch", GIT_REMOTE, BACKUP_BRANCH])
     if r.returncode == 0:
-        r2 = _run(["git", "checkout", "-b", BACKUP_BRANCH, f"origin/{BACKUP_BRANCH}"])
+        r2 = _run(["git", "checkout", "-b", BACKUP_BRANCH, f"{GIT_REMOTE}/{BACKUP_BRANCH}"])
         if r2.returncode == 0:
             logger.info(f"已从远端创建分支: {BACKUP_BRANCH}")
             return True
@@ -370,7 +382,7 @@ def git_push():
     # push，显式指定远端和分支，失败自动重试
     pr = None
     for attempt in range(1, PUSH_MAX_RETRIES + 1):
-        pr = _run(["git", "push", "origin", BACKUP_BRANCH])
+        pr = _run(["git", "push", GIT_REMOTE, BACKUP_BRANCH])
         if pr.returncode == 0:
             logger.info("成功推送到远程仓库")
             break
@@ -398,7 +410,7 @@ def _git_pull_rebase(silent_on_no_remote=False):
     silent_on_no_remote: 远端分支不存在时只打 info 不打 warning。
     """
     logger.info(f"执行 git pull --rebase 同步远端 {BACKUP_BRANCH}...")
-    r = _run(["git", "pull", "--rebase", "origin", BACKUP_BRANCH])
+    r = _run(["git", "pull", "--rebase", GIT_REMOTE, BACKUP_BRANCH])
     if r.returncode == 0:
         logger.info("pull 成功")
         return True
@@ -430,11 +442,6 @@ def main():
     logger.info(f"DRY_RUN={DRY_RUN} | NO_PUSH={NO_PUSH} | NO_MEDIA={NO_MEDIA}")
     logger.info("=" * 60)
 
-    # 校验必要配置
-    if not DB_ROOT_PASSWORD:
-        logger.error("DB_ROOT_PASSWORD 未设置，请通过环境变量或 .env.backup 配置")
-        return 1
-
     # 获取并发锁
     lock_fd = _acquire_lock()
     if lock_fd is None:
@@ -443,9 +450,9 @@ def main():
 
     try:
         # 检查 Docker 环境
-        r = _run(["docker", "compose", "ps", "-q", "db"])
+        r = _run(["docker", "compose", "ps", "-q", DB_CONTAINER])
         if r.returncode != 0 or not r.stdout.strip():
-            logger.error("未找到 db 容器，请在项目目录（含 docker-compose.yml）下运行")
+            logger.error(f"未找到 {DB_CONTAINER} 容器，请在项目目录（含 docker-compose.yml）下运行")
             return 1
 
         # 1. 备份原文件
