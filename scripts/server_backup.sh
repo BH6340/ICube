@@ -17,7 +17,7 @@
 # 用法：每天 22:00 执行
 #   0 22 * * * /home/bh/ICube/scripts/server_backup.sh >> /home/bh/ICube/logs/server-backup-cron.log 2>&1
 # --------------------------------------------------------------
-set -u
+set -eu
 
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$PROJECT_DIR" || exit 1
@@ -53,8 +53,8 @@ echo "  PROJECT_DIR = $PROJECT_DIR"
 echo "  PYTHON_BIN  = $PYTHON_BIN"
 echo "============================================================"
 
-"$PYTHON_BIN" "$PROJECT_DIR/scripts/server_db_dump.py"
-RC=$?
+RC=0
+"$PYTHON_BIN" "$PROJECT_DIR/scripts/server_db_dump.py" || RC=$?
 
 if [ "$RC" -eq 0 ]; then
     echo "[$(date '+%F %T')] 转储成功 (exit=0)"
