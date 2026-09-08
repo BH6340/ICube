@@ -175,6 +175,7 @@
 - refactor: 重构全局样式并优化UI细节 (c7a4261)
 - refactor(scripts): 统一将脚本迁移至scripts/目录并修复路径引用 (9e0ed0b)
 - refactor(settings): 完善生产和开发环境配置注释  &  docs: 整理文档侧边栏与临时文件  (#29) (02fc636)
+- refactor(scripts): 重构数据库备份脚本，新增多项特性与稳定性改进 (#38) (5ce8b81)
 
 
 ## ci - CI/CD
@@ -251,5 +252,7 @@
 - chore(auto-pull): 为auto-pull脚本新增本地dev分支超前保护 (#20) (30a3224)
 - chore(docker&deploy)&docs: 为api容器添加上海时区配置 & 添加支付宝密钥文件挂载配置 & 自动更新 CHANGELOG (#22) (3808c0e)
 - chore(deploy): 优化部署脚本与文档细节  (#28) (edf8183)
+- chore(gitignore): 新增git忽略配置 (#36) (b8b9e70)
+- chore(gitignore): 新增git忽略配置 (#37) (71f7dbe)
 
 
