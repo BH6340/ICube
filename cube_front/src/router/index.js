@@ -15,6 +15,7 @@
  *     - /tutorial/complete-pll: 完整 PLL
  *     - /formulas: 公式库
  *     - /timer: 计时器
+ *     - /smart-cube: 智能魔方
  *     - /forum: 论坛首页
  *     - /forum/post/:id: 帖子详情
  *     - /forum/create: 创建帖子（需登录）
@@ -99,6 +100,10 @@ const router = createRouter({
                     path: 'timer',
                     name: 'timer',
                     component: () => import('@/views/TimerView.vue')
+                },
+                {
+                    path: 'smart-cube',
+                    redirect: '/timer?mode=smart'
                 },
                 {
                     path: 'forum',

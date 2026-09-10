@@ -19,6 +19,12 @@
               <el-option label="ZBLL" value="zbll" />
             </el-select>
           </el-form-item>
+          <el-form-item label="计时方式">
+            <el-select v-model="filterForm.timing_mode" placeholder="全部" clearable>
+              <el-option label="手动计时" value="manual" />
+              <el-option label="智能魔方" value="smart" />
+            </el-select>
+          </el-form-item>
           <el-form-item label="日期范围">
             <el-date-picker
               v-model="dateRange"
@@ -60,8 +66,8 @@
         </el-col>
         <el-col :xs="24" :sm="6">
           <el-card shadow="never" class="stat-card">
-            <div class="stat-num">{{ groupStats.length }}</div>
-            <div class="stat-label">分组数量</div>
+            <div class="stat-num">{{ stats.dnf_count || 0 }}</div>
+            <div class="stat-label">DNF 次数</div>
           </el-card>
         </el-col>
       </el-row>
@@ -84,6 +90,12 @@
         <el-table :data="groupStats" border>
           <el-table-column prop="cube_type_label" label="魔方类型" />
           <el-table-column prop="method_label" label="还原方法" />
+          <el-table-column prop="timing_mode_label" label="计时方式">
+            <template #default="scope">
+              <el-tag v-if="scope.row.timing_mode === 'smart'" type="warning" size="small">智能</el-tag>
+              <el-tag v-else size="small">手动</el-tag>
+            </template>
+          </el-table-column>
           <el-table-column prop="total_count" label="次数" />
           <el-table-column prop="best_time" label="最快(秒)">
             <template #default="scope">
@@ -123,10 +135,32 @@
           </el-table-column>
           <el-table-column prop="time_ms" label="成绩(秒)">
             <template #default="scope">
-              {{ formatTime(scope.row.time_ms) }}
+              <span v-if="scope.row.is_dnf" style="color: #f56c6c; font-weight: bold;">DNF</span>
+              <span v-else>{{ formatTime(scope.row.time_ms) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="timing_mode" label="计时方式" width="100">
+            <template #default="scope">
+              <el-tag v-if="scope.row.timing_mode === 'smart'" type="warning" size="small">智能</el-tag>
+              <el-tag v-else size="small">手动</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="move_count" label="步数" width="70">
+            <template #default="scope">
+              {{ scope.row.move_count || '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column label="TPS" width="80">
+            <template #default="scope">
+              {{ calcTPS(scope.row) }}
             </template>
           </el-table-column>
           <el-table-column prop="scramble" label="打乱公式" show-overflow-tooltip />
+          <el-table-column prop="solve_sequence" label="复原步骤" show-overflow-tooltip>
+            <template #default="scope">
+              {{ scope.row.solve_sequence || '-' }}
+            </template>
+          </el-table-column>
           <el-table-column label="操作">
             <template #default="scope">
               <el-button type="danger" size="small" link @click="deleteRecord(scope.row.id)">删除</el-button>
@@ -176,7 +210,8 @@ let chartInstance = null
 
 const filterForm = reactive({
   cube_type: '',
-  method: ''
+  method: '',
+  timing_mode: ''
 })
 
 const dateRange = ref([])
@@ -184,7 +219,8 @@ const dateRange = ref([])
 const stats = reactive({
   total_count: 0,
   best_time: 0,
-  avg_time: 0
+  avg_time: 0,
+  dnf_count: 0
 })
 
 const groupStats = ref([])
@@ -228,6 +264,11 @@ const formatDate = (dateStr) => {
   return date.toLocaleString('zh-CN')
 }
 
+const calcTPS = (row) => {
+  if (!row.move_count || !row.time_ms || row.is_dnf || row.time_ms === 0) return '-'
+  return (row.move_count / (row.time_ms / 1000)).toFixed(2)
+}
+
 const getCubeTypeLabel = (type) => CUBE_TYPE_MAP[type] || type
 const getMethodLabel = (method) => METHOD_MAP[method] || method
 
@@ -248,6 +289,7 @@ const loadStats = async () => {
     stats.total_count = res.data.overall_stats.total_count
     stats.best_time = res.data.overall_stats.best_time
     stats.avg_time = res.data.overall_stats.avg_time
+    stats.dnf_count = res.data.overall_stats.dnf_count || 0
     groupStats.value = res.data.group_stats
   } catch (error) {
     console.error('加载统计数据失败', error)
@@ -406,6 +448,7 @@ const deleteRecord = (id) => {
 const resetFilter = () => {
   filterForm.cube_type = ''
   filterForm.method = ''
+  filterForm.timing_mode = ''
   dateRange.value = []
   pagination.page = 1
   loadData()
@@ -429,7 +472,7 @@ onBeforeUnmount(() => {
   }
 })
 
-watch([() => filterForm.cube_type, () => filterForm.method, dateRange], () => {
+watch([() => filterForm.cube_type, () => filterForm.method, () => filterForm.timing_mode, dateRange], () => {
   pagination.page = 1
 })
 </script>

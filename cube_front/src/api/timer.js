@@ -98,3 +98,43 @@ export function getTimerTrend(params) {
     params
   })
 }
+
+// ===== 智能魔方设备 =====
+
+/**
+ * 获取智能魔方设备列表
+ * @returns {Promise<Object>} 响应数据
+ */
+export function getSmartCubeDevices() {
+  return request({
+    url: '/api/timer/devices/',
+    method: 'get'
+  })
+}
+
+/**
+ * 注册/更新智能魔方设备
+ * @param {Object} data - 设备数据
+ * @param {string} data.mac_address - MAC 地址
+ * @param {string} [data.name] - 设备名称
+ * @returns {Promise<Object>} 响应数据
+ */
+export function registerSmartCubeDevice(data) {
+  return request({
+    url: '/api/timer/devices/',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 删除智能魔方设备
+ * @param {number} id - 设备 ID
+ * @returns {Promise<Object>} 响应数据
+ */
+export function deleteSmartCubeDevice(id) {
+  return request({
+    url: `/api/timer/devices/${id}/`,
+    method: 'delete'
+  })
+}
