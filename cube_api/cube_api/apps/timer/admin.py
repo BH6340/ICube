@@ -18,7 +18,7 @@ from django.utils.safestring import mark_safe
 from unfold.admin import ModelAdmin
 from unfold.decorators import display
 
-from .models import TimerRecord
+from .models import TimerRecord, SmartCubeDevice
 
 
 @admin.register(TimerRecord)
@@ -181,3 +181,36 @@ class TimerRecordAdmin(ModelAdmin):
         seconds, milliseconds = divmod(remainder, 1000)
         # 格式化为 MM:SS.mmm（分钟和秒补零到 2 位，毫秒补零到 3 位）
         return f"{minutes:02d}:{seconds:02d}.{milliseconds:03d}"
+
+
+@admin.register(SmartCubeDevice)
+class SmartCubeDeviceAdmin(ModelAdmin):
+    """
+    智能魔方设备管理 Admin
+    """
+    list_display = (
+        "user",
+        "name",
+        "mac_address",
+        "is_active_badge",
+        "last_connected_at",
+        "created_at",
+    )
+    search_fields = ("user__username", "mac_address", "name")
+    list_filter = ("is_active", "created_at")
+    date_hierarchy = "created_at"
+    list_select_related = ("user",)
+    ordering = ("-last_connected_at",)
+
+    @display(description="状态", ordering="is_active")
+    def is_active_badge(self, obj):
+        color_class = (
+            "bg-green-100 text-green-800"
+            if obj.is_active
+            else "bg-gray-100 text-gray-800"
+        )
+        label = "启用" if obj.is_active else "禁用"
+        return mark_safe(
+            f'<span class="px-2 py-1 text-xs font-medium rounded-full {color_class}">'
+            f"{label}</span>"
+        )

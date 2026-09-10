@@ -43,7 +43,7 @@ class TimerRecordModelTest(TestCase):
 
     def test_record_str_method(self):
         """测试 __str__ 方法"""
-        self.assertEqual(str(self.record), 'timeruser - 3x3 - 15432ms')
+        self.assertEqual(str(self.record), 'timeruser - 3x3 - 手动计时 - 15432ms')
 
     def test_record_default_values(self):
         """测试默认值"""
@@ -123,3 +123,85 @@ class TimerRecordModelTest(TestCase):
             user=self.user, time_ms=10000
         )
         self.assertEqual(record.scramble, '')
+
+    def test_record_timing_mode_default(self):
+        """测试计时方式默认值为 manual"""
+        record = TimerRecord.objects.create(
+            user=self.user, time_ms=10000
+        )
+        self.assertEqual(record.timing_mode, 'manual')
+        self.assertFalse(record.is_dnf)
+        self.assertIsNone(record.solve_sequence)
+        self.assertIsNone(record.observation_time_ms)
+        self.assertIsNone(record.move_count)
+        self.assertIsNone(record.device)
+
+    def test_record_smart_mode(self):
+        """测试智能模式记录"""
+        record = TimerRecord.objects.create(
+            user=self.user,
+            time_ms=15000,
+            timing_mode='smart',
+            solve_sequence="R U R' U'",
+            observation_time_ms=3000,
+            move_count=25,
+            is_dnf=False,
+        )
+        self.assertEqual(record.timing_mode, 'smart')
+        self.assertEqual(record.solve_sequence, "R U R' U'")
+        self.assertEqual(record.observation_time_ms, 3000)
+        self.assertEqual(record.move_count, 25)
+        self.assertFalse(record.is_dnf)
+
+    def test_record_dnf(self):
+        """测试 DNF 记录"""
+        record = TimerRecord.objects.create(
+            user=self.user,
+            time_ms=0,
+            is_dnf=True,
+        )
+        self.assertTrue(record.is_dnf)
+
+    def test_smart_cube_device_create(self):
+        """测试创建设备"""
+        from apps.timer.models import SmartCubeDevice
+        device = SmartCubeDevice.objects.create(
+            user=self.user,
+            mac_address='AA:BB:CC:DD:EE:FF',
+            name='GAN i4',
+        )
+        self.assertEqual(device.user, self.user)
+        self.assertEqual(device.mac_address, 'AA:BB:CC:DD:EE:FF')
+        self.assertEqual(device.name, 'GAN i4')
+        self.assertTrue(device.is_active)
+
+    def test_smart_cube_device_unique_user_mac(self):
+        """测试用户+MAC 唯一约束"""
+        from apps.timer.models import SmartCubeDevice
+        SmartCubeDevice.objects.create(
+            user=self.user,
+            mac_address='AA:BB:CC:DD:EE:FF',
+        )
+        # 同一用户同一 MAC 不能重复创建
+        with self.assertRaises(Exception):
+            SmartCubeDevice.objects.create(
+                user=self.user,
+                mac_address='AA:BB:CC:DD:EE:FF',
+            )
+
+    def test_record_with_device(self):
+        """测试记录关联设备"""
+        from apps.timer.models import SmartCubeDevice
+        device = SmartCubeDevice.objects.create(
+            user=self.user,
+            mac_address='AA:BB:CC:DD:EE:FF',
+            name='GAN i4',
+        )
+        record = TimerRecord.objects.create(
+            user=self.user,
+            time_ms=15000,
+            timing_mode='smart',
+            device=device,
+        )
+        self.assertEqual(record.device, device)
+        self.assertEqual(device.records.count(), 1)
