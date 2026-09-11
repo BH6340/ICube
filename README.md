@@ -160,6 +160,8 @@ EMAIL_DISPLAY_NAME=ICube魔方平台
 | **UI 组件** | Element Plus 2.14 |
 | **3D 渲染** | Three.js 0.184 |
 | **HTTP 请求** | Axios 1.16 |
+| **BLE 通信** | aes-js（GAN Gen4 协议 AES-128-CBC 加解密） |
+| **动画引擎** | @tweenjs/tween.js（3D 魔方转动动画） |
 | **富文本编辑** | Quill (@vueup/vue-quill) |
 
 ### 移动端 (cube_app)
@@ -289,9 +291,11 @@ cube_api/
 │   │   │   ├── alipay_config.py # 支付宝支付配置
 │   │   │   └── keys/            # 支付宝密钥文件
 │   │   └── timer/               # 计时器模块
-│   │       ├── models.py        # TimerRecord
-│   │       ├── views.py         # 计时记录 CRUD
-│   │       └── serializers.py   # 计时器序列化器
+│   │       ├── models.py        # TimerRecord + SmartCubeDevice
+│   │       ├── views.py         # 计时记录 CRUD + 设备 CRUD + stats/trend
+│   │       ├── serializers.py   # 计时记录 + 设备序列化器
+│   │       ├── admin.py         # Badge 标签 + 时间格式化
+│   │       └── urls.py          # records + devices 路由
 │   ├── utils/                   # 工具类
 │   │   ├── common_response.py   # 统一 API 响应格式
 │   │   ├── common_exception.py  # 统一异常处理
@@ -343,7 +347,8 @@ cube_front/
 │   │   ├── HomeView.vue         # 首页布局
 │   │   ├── TutorialView.vue     # 教程页
 │   │   ├── FormulaView.vue      # 公式页
-│   │   ├── TimerView.vue        # 计时器页
+│   │   ├── TimerView.vue        # 计时器页（手动 + 智能模式）
+│   │   ├── SmartCubeView.vue    # 智能魔方页（BLE 连接 + 3D + 计时）
 │   │   ├── ShopView.vue         # 商城页
 │   │   ├── CartView.vue         # 购物车页
 │   │   ├── CheckoutView.vue     # 结算页
@@ -356,7 +361,12 @@ cube_front/
 │   ├── stores/                  # Pinia 状态管理
 │   ├── api/                     # API 接口封装
 │   ├── http/request.js          # Axios 请求封装（含 401 自动清除登录态）
-│   └── router/index.js          # 路由配置
+│   ├── utils/                   # 工具模块
+│   │   ├── gan-ble.js           # GAN Gen4 BLE 协议客户端
+│   │   ├── cube-timer.js        # 计时器状态机
+│   │   ├── cube-orientation.js  # 持握方向与转体检测
+│   │   └── cube-state.js        # 2D 魔方状态模拟
+│   └── router/index.js          # 路由配置（含 smart-cube 路由 + 守卫）
 ├── public/                      # 静态资源
 ├── scripts/CubeTest.html        # 3D 魔方测试页面
 └── package.json
@@ -490,7 +500,10 @@ ICube/
 ### 6. 计时器
 - 精确毫秒级计时，支持单次和多次计时
 - 记录自动保存到数据库
-- 成绩统计：平均成绩、最佳成绩
+- 成绩统计：平均成绩、最佳成绩、DNF 统计
+- **智能魔方模式**：通过 Web Bluetooth API 连接 GAN 智能魔方，自动打乱、实时计时、步数记录、复原检测
+- **3D 姿态跟随**：陀螺仪模式下 3D 魔方实时跟随真实魔方姿态
+- **设备管理**：支持设备注册与自动重连
 
 ### 7. 3D 魔方可视化
 - Three.js 渲染可交互 3D 魔方
@@ -688,9 +701,11 @@ ICube/
 | 接口 | 方法 | 说明 |
 |------|------|------|
 | `/api/timer/records/` | GET/POST | 记录列表/创建记录 |
-| `/api/timer/records/{id}/` | GET/DELETE | 记录详情/删除记录 |
-| `/api/timer/records/stats/` | GET | 分组统计信息 |
+| `/api/timer/records/{id}/` | DELETE | 删除记录 |
+| `/api/timer/records/stats/` | GET | 分组统计（含 DNF） |
 | `/api/timer/records/trend/` | GET | 按日期分组的趋势统计 |
+| `/api/timer/devices/` | GET/POST | 智能魔方设备列表/注册 |
+| `/api/timer/devices/{id}/` | DELETE | 删除设备 |
 
 ### 首页 API (`/api/home/`)
 
