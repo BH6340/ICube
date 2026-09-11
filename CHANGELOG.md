@@ -256,5 +256,6 @@
 - chore(deploy): 优化部署脚本与文档细节  (#28) (edf8183)
 - chore(gitignore): 新增git忽略配置 (#36) (b8b9e70)
 - chore(gitignore): 新增git忽略配置 (#37) (71f7dbe)
+- chore(cloudflared): 改用配置文件模式部署隧道 (#42) (d1a0c32)
 
 
