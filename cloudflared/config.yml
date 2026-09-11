@@ -1,0 +1,7 @@
+tunnel: ae8db8e0-9361-401e-9dd8-bd3c05829ac7
+credentials-file: /etc/cloudflared/.cloudflared/ae8db8e0-9361-401e-9dd8-bd3c05829ac7.json
+
+ingress:
+  - hostname: bh6340.me
+    service: http://icube_nginx:80
+  - service: http_status:404

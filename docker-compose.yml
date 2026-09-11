@@ -146,11 +146,15 @@ services:
 
   cloudflared:
     # Cloudflare Tunnel：免备案、免 SSL 证书的 HTTPS 接入
-    # 需要先在 Cloudflare 面板创建 Tunnel 获取 Token，填入 .env 的 CLOUDFLARE_TUNNEL_TOKEN
+    # 方式 1：token 模式（需在 Cloudflare 面板配 Public Hostname）
+    # 方式 2：config 模式（本地 config.yml 配置 ingress，无需面板配置）
+    # 当前使用方式 2：config.yml 指定 hostname → icube_nginx:80
     image: cloudflare/cloudflared:latest
     container_name: icube_cloudflared
     restart: unless-stopped
-    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    command: tunnel --no-autoupdate --config /etc/cloudflared/config.yml run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    volumes:
+      - ./cloudflared/config.yml:/etc/cloudflared/config.yml:ro
     depends_on:
       - nginx
     networks:
