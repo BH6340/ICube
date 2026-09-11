@@ -144,6 +144,18 @@ services:
     networks:
       - icube_network
 
+  cloudflared:
+    # Cloudflare Tunnel：免备案、免 SSL 证书的 HTTPS 接入
+    # 需要先在 Cloudflare 面板创建 Tunnel 获取 Token，填入 .env 的 CLOUDFLARE_TUNNEL_TOKEN
+    image: cloudflare/cloudflared:latest
+    container_name: icube_cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - nginx
+    networks:
+      - icube_network
+
 volumes:
   # 数据持久化卷
   mysql_data:
