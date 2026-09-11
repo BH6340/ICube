@@ -32,7 +32,7 @@ const props = defineProps({
   },
   background: {
     type: String,
-    default: '#f5f5f5'
+    default: null
   }
 })
 
@@ -42,18 +42,18 @@ const containerRef = ref(null)
 
 // Three.js 内部变量
 let scene, camera, renderer, controls
-let outerGroup  // 外层：整体姿态（陀螺仪控制）
-let cubeGroup   // 内层：层转动（MOVE 驱动）
+let outerGroup
+let cubeGroup
 let cubes = []
 const tweenGroup = new Group()
 let animationFrameId = null
-let needsRender = true // 按需渲染标记
+let needsRender = true
 
-// 共享资源（减少 GPU buffer 和 draw call 开销）
+// 共享资源
 let sharedGeometry = null
 let sharedEdgesGeometry = null
 let sharedEdgeMaterial = null
-let sharedMaterials = null // { U, D, R, L, F, B, INTERNAL }
+let sharedMaterials = null
 
 // 预分配临时对象（避免动画热路径中 GC）
 const _rotAxis = new THREE.Vector3()
@@ -66,13 +66,13 @@ let isAnimating = false
 
 // 标准配色（用户视角：U=白 D=黄 F=绿 B=蓝 R=红 L=橙）
 const COLOR_MAP = {
-  white: 0xf5f5f5,
-  yellow: 0xffd700,
-  green: 0x32cd32,
-  blue: 0x1e90ff,
-  red: 0xdc143c,
-  orange: 0xff8c00,
-  INTERNAL: 0x111111
+  white: 0xf0f0f0,
+  yellow: 0xffc400,
+  green: 0x1f9e1f,
+  blue: 0x1c5ed4,
+  red: 0xc40824,
+  orange: 0xe67400,
+  INTERNAL: 0x101010
 }
 
 // GAN 面字母 → 颜色名
@@ -135,14 +135,17 @@ function initThree() {
   const height = containerRef.value.clientHeight || 300
 
   scene = new THREE.Scene()
-  scene.background = new THREE.Color(props.background)
+
+  if (props.background) {
+    scene.background = new THREE.Color(props.background)
+  }
 
   // 相机
   camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100)
   camera.position.set(5.5, 5.5, 8)
 
   // 渲染器
-  renderer = new THREE.WebGLRenderer({ antialias: true })
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
   renderer.setSize(width, height)
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
   containerRef.value.appendChild(renderer.domElement)
@@ -201,9 +204,9 @@ function buildCube() {
   }
 
   // 创建共享资源（1 份 geometry + 1 份 edges + 7 个 material）
-  sharedGeometry = new THREE.BoxGeometry(0.92, 0.92, 0.92)
+  sharedGeometry = new THREE.BoxGeometry(0.984, 0.984, 0.984)
   sharedEdgesGeometry = new THREE.EdgesGeometry(sharedGeometry)
-  sharedEdgeMaterial = new THREE.LineBasicMaterial({ color: 0x000000 })
+  sharedEdgeMaterial = new THREE.LineBasicMaterial({ color: 0x222222 })
   sharedMaterials = {
     U: new THREE.MeshBasicMaterial({ color: COLOR_MAP[currentColorScheme.U] || COLOR_MAP.INTERNAL }),
     D: new THREE.MeshBasicMaterial({ color: COLOR_MAP[currentColorScheme.D] || COLOR_MAP.INTERNAL }),
@@ -520,6 +523,7 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   min-height: 300px;
+  background: #f5f5f5;
 }
 
 .cube-3d-container :deep(canvas) {

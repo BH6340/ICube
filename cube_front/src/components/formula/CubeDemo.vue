@@ -113,14 +113,14 @@ const parsedSteps = computed(() => {
 })
 
 const COLOR_MAP = {
-  yellow: 0xffd700,
-  white: 0xf5f5f5,
-  blue: 0x1e90ff,
-  green: 0x32cd32,
-  orange: 0xff8c00,
-  red: 0xdc143c,
+  yellow: 0xffc400,
+  white: 0xf0f0f0,
+  blue: 0x1c5ed4,
+  green: 0x1f9e1f,
+  orange: 0xe67400,
+  red: 0xc40824,
   gray: 0x808080,
-  INTERNAL: 0x111111
+  INTERNAL: 0x101010
 }
 
 let scene, camera, renderer, controls
@@ -136,21 +136,6 @@ const initThree = () => {
 
   scene = new THREE.Scene()
   scene.background = new THREE.Color('#f5f5f5')
-
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.9)
-  scene.add(ambientLight)
-
-  const pointLight1 = new THREE.PointLight(0xffffff, 1.5)
-  pointLight1.position.set(5, 5, 5)
-  scene.add(pointLight1)
-
-  const pointLight2 = new THREE.PointLight(0xffffff, 0.8)
-  pointLight2.position.set(-3, -3, -3)
-  scene.add(pointLight2)
-
-  const cameraLight = new THREE.PointLight(0xffffff, 0.6)
-  cameraLight.position.set(4, 4, 6)
-  scene.add(cameraLight)
 
   camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100)
   camera.position.set(4, 4, 6)
@@ -238,7 +223,7 @@ const buildCubeGeometry = (stateDefinition = null) => {
   for (let x = -1; x <= 1; x++) {
     for (let y = -1; y <= 1; y++) {
       for (let z = -1; z <= 1; z++) {
-        const geometry = new THREE.BoxGeometry(0.92, 0.92, 0.92)
+        const geometry = new THREE.BoxGeometry(0.984, 0.984, 0.984)
 
         const rColor = x === 1 ? getFaceColor('R', x, y, z, stateDefinition, defaultColors) : 'INTERNAL'
         const lColor = x === -1 ? getFaceColor('L', x, y, z, stateDefinition, defaultColors) : 'INTERNAL'
