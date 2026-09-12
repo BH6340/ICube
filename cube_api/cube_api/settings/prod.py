@@ -40,8 +40,6 @@ ALLOWED_HOSTS = [
 # ==================== CORS 配置 ====================
 
 # ALLOWED_ORIGIN 应为不含协议的主机名，代码会生成 HTTP 与 HTTPS 来源
-# 注意：本文件继承 dev.py 的 CORS_ALLOW_ALL_ORIGINS = True；
-# 若未显式覆盖为 False，下方白名单不会形成限制
 _allowed_origin = os.getenv('ALLOWED_ORIGIN', '')
 CORS_ALLOWED_ORIGINS = [
     f"{scheme}://{_allowed_origin}"
@@ -52,8 +50,23 @@ CORS_ALLOWED_ORIGINS = [
     "https://localhost",
 ]
 
+# 显式关闭开发环境的全开放开关，使上方白名单生效
+CORS_ALLOW_ALL_ORIGINS = False
+
 # 允许跨源请求携带 Cookie、Authorization 等凭证
 CORS_ALLOW_CREDENTIALS = True
+
+# ==================== CSRF 配置 ====================
+
+# Django 4.0+ 要求 HTTPS 请求显式声明信任来源，否则 CSRF 验证失败
+CSRF_TRUSTED_ORIGINS = [
+    f"{scheme}://{_allowed_origin}"
+    for scheme in ['https', 'http']
+    if _allowed_origin
+] + [
+    "http://localhost",
+    "https://localhost",
+]
 
 # ==================== 数据库配置 ====================
 
