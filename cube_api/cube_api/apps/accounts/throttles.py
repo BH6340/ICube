@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 自定义限流类
 
@@ -12,6 +11,7 @@
     - 配合 settings.py 中的 'login_scope' 配置限流频率
     - 继承 DRF 的 SimpleRateThrottle，自动使用 Redis 存储限流计数
 """
+
 from rest_framework.throttling import SimpleRateThrottle
 from rest_framework.viewsets import GenericViewSet
 
@@ -33,8 +33,9 @@ class LoginRateThrottle(SimpleRateThrottle):
             }
         }
     """
+
     # 限流范围名称，对应 settings.py 中的 'login_scope'
-    scope = 'login_scope'
+    scope = "login_scope"
 
     def get_cache_key(self, request, view: GenericViewSet):
         """
@@ -50,12 +51,12 @@ class LoginRateThrottle(SimpleRateThrottle):
             限流缓存键（字符串）或 None（不限流）
         """
         # 仅对登录动作生效，其他动作不限流
-        if view.action != 'login':
+        if view.action != "login":
             return None
 
         # 获取用户尝试登录的邮箱（支持嵌套的 user 键）
-        user_data = request.data.get('user', {})
-        email = user_data.get('email', '')
+        user_data = request.data.get("user", {})
+        email = user_data.get("email", "")
 
         # 如果没有传邮箱，交由其他校验处理（不限流）
         if not email:
@@ -68,10 +69,7 @@ class LoginRateThrottle(SimpleRateThrottle):
         # 生成 Redis 中独一无二的限流键
         # 格式：throttle_login_scope_{IP}_{email}
         # 例如：throttle_login_scope_192.168.1.1_test@example.com
-        return self.cache_format % {
-            'scope': self.scope,
-            'ident': f"{ident}_{email}"
-        }
+        return self.cache_format % {"scope": self.scope, "ident": f"{ident}_{email}"}
 
 
 class SendCodeRateThrottle(SimpleRateThrottle):
@@ -80,13 +78,11 @@ class SendCodeRateThrottle(SimpleRateThrottle):
 
     同一 IP 每分钟最多发送 1 次验证码，防止滥用。
     """
-    scope = 'send_code_scope'
+
+    scope = "send_code_scope"
 
     def get_cache_key(self, request, view):
-        if view.action != 'send_code':
+        if view.action != "send_code":
             return None
         ident = self.get_ident(request)
-        return self.cache_format % {
-            'scope': self.scope,
-            'ident': ident
-        }
+        return self.cache_format % {"scope": self.scope, "ident": ident}

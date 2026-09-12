@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 公式库过滤器
 
@@ -8,7 +7,9 @@
     - 难度等级支持多值过滤（逗号分隔）
     - 支持按分类、是否自定义过滤
 """
+
 import django_filters
+
 from .models import Formula
 
 
@@ -31,21 +32,22 @@ class FormulaFilter(django_filters.FilterSet):
     使用示例：
         /api/formulas/?difficulty=1,2,3&is_custom=true&created_by=1,2
     """
+
     # 难度等级支持多值过滤（逗号分隔）
-    difficulty = django_filters.BaseInFilter(field_name='difficulty', lookup_expr='in')
+    difficulty = django_filters.BaseInFilter(field_name="difficulty", lookup_expr="in")
     # 作者支持多值过滤（逗号分隔多个作者ID）
-    created_by = django_filters.BaseInFilter(field_name='created_by', lookup_expr='in')
+    created_by = django_filters.BaseInFilter(field_name="created_by", lookup_expr="in")
     author_username = django_filters.CharFilter(
-        field_name='created_by__username',
-        lookup_expr='exact',
+        field_name="created_by__username",
+        lookup_expr="exact",
     )
 
     class Meta:
         model = Formula
         fields = [
-            'category',
-            'is_custom',
-            'difficulty',
-            'created_by',
-            'author_username',
+            "category",
+            "is_custom",
+            "difficulty",
+            "created_by",
+            "author_username",
         ]

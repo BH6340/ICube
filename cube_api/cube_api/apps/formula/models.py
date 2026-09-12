@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 公式库模型层
 
@@ -15,8 +14,9 @@
     - **逆公式自动生成**：保存公式时自动生成逆公式
     - **前置状态推导**：支持从目标状态和逆公式推导前置状态
 """
-from django.db import models
+
 from django.contrib.auth import get_user_model
+from django.db import models
 
 User = get_user_model()
 
@@ -42,29 +42,30 @@ class CubeCategory(models.Model):
         - 用户自定义分类：created_by=用户, is_custom=True
         - 移除 unique_together，允许用户创建与系统分类重复的自定义分类
     """
-    order = models.IntegerField('阶数', default=3)
-    method = models.CharField('求解方法', max_length=50)
-    phase = models.CharField('阶段', max_length=50)
-    name = models.CharField('分类名称', max_length=100)
-    description = models.TextField('描述', blank=True)
-    sort_order = models.IntegerField('排序', default=0)
+
+    order = models.IntegerField("阶数", default=3)
+    method = models.CharField("求解方法", max_length=50)
+    phase = models.CharField("阶段", max_length=50)
+    name = models.CharField("分类名称", max_length=100)
+    description = models.TextField("描述", blank=True)
+    sort_order = models.IntegerField("排序", default=0)
     created_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         null=True,
         blank=True,
-        related_name='custom_categories',
-        help_text='创建者（为空表示系统预置分类）'
+        related_name="custom_categories",
+        help_text="创建者（为空表示系统预置分类）",
     )
-    is_custom = models.BooleanField('是否自定义', default=False)
+    is_custom = models.BooleanField("是否自定义", default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        app_label = 'formula'
-        db_table = 'formula_cube_category'
-        ordering = ['order', 'method', 'sort_order']
-        verbose_name = '魔方分类'
-        verbose_name_plural = '魔方分类'
+        app_label = "formula"
+        db_table = "formula_cube_category"
+        ordering = ["order", "method", "sort_order"]
+        verbose_name = "魔方分类"
+        verbose_name_plural = "魔方分类"
 
     def __str__(self):
         return f"{self.order}阶 {self.method} {self.phase}"
@@ -98,24 +99,21 @@ class CubeState(models.Model):
         - pos: [x, y, z] 坐标，范围 [-half, half]
         - faces: {"U": "Y", "R": "R", ...} 六个面的颜色
     """
-    name = models.CharField('状态名称', max_length=100, unique=True)
-    state_definition = models.JSONField('状态定义')
-    description = models.TextField('描述', blank=True)
+
+    name = models.CharField("状态名称", max_length=100, unique=True)
+    state_definition = models.JSONField("状态定义")
+    description = models.TextField("描述", blank=True)
     category = models.ForeignKey(
-        'CubeCategory',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='states'
+        "CubeCategory", on_delete=models.SET_NULL, null=True, blank=True, related_name="states"
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        app_label = 'formula'
-        db_table = 'formula_cube_state'
-        ordering = ['category', 'name']
-        verbose_name = '魔方状态'
-        verbose_name_plural = '魔方状态'
+        app_label = "formula"
+        db_table = "formula_cube_state"
+        ordering = ["category", "name"]
+        verbose_name = "魔方状态"
+        verbose_name_plural = "魔方状态"
 
     def __str__(self):
         return self.name
@@ -141,53 +139,37 @@ class Formula(models.Model):
         - is_custom: 是否为用户自定义公式
         - created_by: 创建者（仅自定义公式有值）
     """
+
     category = models.ForeignKey(
-        'CubeCategory',
-        on_delete=models.CASCADE,
-        related_name='formulas',
-        null=True,
-        blank=True
+        "CubeCategory", on_delete=models.CASCADE, related_name="formulas", null=True, blank=True
     )
-    name = models.CharField('公式名称', max_length=200)
-    notation = models.TextField('公式记号')
-    inverse_notation = models.TextField('逆公式', blank=True)
+    name = models.CharField("公式名称", max_length=200)
+    notation = models.TextField("公式记号")
+    inverse_notation = models.TextField("逆公式", blank=True)
 
     target_state = models.ForeignKey(
-        'CubeState',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='target_formulas'
+        "CubeState", on_delete=models.SET_NULL, null=True, blank=True, related_name="target_formulas"
     )
-    pre_state_definition = models.JSONField('前置状态定义', null=True, blank=True)
+    pre_state_definition = models.JSONField("前置状态定义", null=True, blank=True)
 
-    thumbnail = models.ImageField(
-        '缩略图',
-        upload_to='formula_thumbnails/',
-        null=True,
-        blank=True
-    )
-    difficulty = models.IntegerField('难度等级', default=1)
-    description = models.TextField('描述', blank=True)
-    view_count = models.IntegerField('浏览次数', default=0)
+    thumbnail = models.ImageField("缩略图", upload_to="formula_thumbnails/", null=True, blank=True)
+    difficulty = models.IntegerField("难度等级", default=1)
+    description = models.TextField("描述", blank=True)
+    view_count = models.IntegerField("浏览次数", default=0)
 
-    is_custom = models.BooleanField('是否自定义', default=False)
+    is_custom = models.BooleanField("是否自定义", default=False)
     created_by = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='custom_formulas'
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="custom_formulas"
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        app_label = 'formula'
-        db_table = 'formula_formula'
-        ordering = ['category', 'name']
-        verbose_name = '公式'
-        verbose_name_plural = '公式'
+        app_label = "formula"
+        db_table = "formula_formula"
+        ordering = ["category", "name"]
+        verbose_name = "公式"
+        verbose_name_plural = "公式"
 
     def __str__(self):
         return f"{self.category} - {self.name}"
@@ -204,6 +186,7 @@ class Formula(models.Model):
         """
         if self.notation and not self.inverse_notation:
             from .services import FormulaService
+
             self.inverse_notation = FormulaService.generate_inverse_notation(self.notation)
 
         super().save(*args, **kwargs)
@@ -224,9 +207,9 @@ class Formula(models.Model):
 
         if self.target_state and self.inverse_notation:
             return {
-                'derive_from_target': True,
-                'target_state': self.target_state.state_definition,
-                'inverse_notation': self.inverse_notation
+                "derive_from_target": True,
+                "target_state": self.target_state.state_definition,
+                "inverse_notation": self.inverse_notation,
             }
 
         return None
@@ -246,15 +229,16 @@ class FormulaTag(models.Model):
         - 独立的标签表，便于管理和复用
         - 支持自定义颜色，提升前端展示效果
     """
-    name = models.CharField('标签名称', max_length=50, unique=True)
-    color = models.CharField('标签颜色', max_length=7, default='#1890ff')
+
+    name = models.CharField("标签名称", max_length=50, unique=True)
+    color = models.CharField("标签颜色", max_length=7, default="#1890ff")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        app_label = 'formula'
-        db_table = 'formula_formula_tag'
-        verbose_name = '公式标签'
-        verbose_name_plural = '公式标签'
+        app_label = "formula"
+        db_table = "formula_formula_tag"
+        verbose_name = "公式标签"
+        verbose_name_plural = "公式标签"
 
     def __str__(self):
         return self.name
@@ -273,21 +257,14 @@ class FormulaTagRelation(models.Model):
     唯一性约束：
         - unique_together: 同一公式不能重复关联同一标签
     """
-    formula = models.ForeignKey(
-        'Formula',
-        on_delete=models.CASCADE,
-        related_name='tag_relations'
-    )
-    tag = models.ForeignKey(
-        'FormulaTag',
-        on_delete=models.CASCADE,
-        related_name='formula_relations'
-    )
+
+    formula = models.ForeignKey("Formula", on_delete=models.CASCADE, related_name="tag_relations")
+    tag = models.ForeignKey("FormulaTag", on_delete=models.CASCADE, related_name="formula_relations")
 
     class Meta:
-        app_label = 'formula'
-        db_table = 'formula_formula_tag_relation'
-        unique_together = ['formula', 'tag']
+        app_label = "formula"
+        db_table = "formula_formula_tag_relation"
+        unique_together = ["formula", "tag"]
 
 
 class FormulaCollection(models.Model):
@@ -308,13 +285,14 @@ class FormulaCollection(models.Model):
         - 独立的收藏记录表，便于查询用户收藏列表
         - 与 Formula 的收藏功能配合使用
     """
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='formula_collections')
-    formula = models.ForeignKey('Formula', on_delete=models.CASCADE, related_name='collections')
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="formula_collections")
+    formula = models.ForeignKey("Formula", on_delete=models.CASCADE, related_name="collections")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        app_label = 'formula'
-        db_table = 'formula_formula_collection'
-        unique_together = ['user', 'formula']
-        verbose_name = '公式收藏'
-        verbose_name_plural = '公式收藏'
+        app_label = "formula"
+        db_table = "formula_formula_collection"
+        unique_together = ["user", "formula"]
+        verbose_name = "公式收藏"
+        verbose_name_plural = "公式收藏"

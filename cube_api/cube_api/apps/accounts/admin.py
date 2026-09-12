@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 用户管理后台
 
@@ -14,9 +13,10 @@
     - 使用 @display 装饰器自定义列表页列（Unfold 特有，替代原生 admin.display 装饰器）
     - 使用 @action 装饰器定义批量操作（Unfold 特有，替代原生 admin.action 装饰器）
 """
+
 from django.contrib import admin
-from django.utils.safestring import mark_safe
 from django.utils.html import escape
+from django.utils.safestring import mark_safe
 
 # unfold.admin.ModelAdmin：Unfold 的基础 ModelAdmin
 # 继承自 Django 原生 ModelAdmin，额外提供 Tailwind CSS 样式支持、Tab 布局、高级过滤器等功能
@@ -25,7 +25,7 @@ from unfold.admin import ModelAdmin
 
 # unfold 装饰器：@display 用于自定义列表页列，@action 用于定义批量操作
 # 与原生 admin.display / admin.action 功能类似，但额外支持 Unfold 的样式参数（如 badge 类型）
-from unfold.decorators import display, action
+from unfold.decorators import action, display
 
 from .models import User
 
@@ -48,13 +48,13 @@ class UserAdmin(ModelAdmin):
     # 配置原因：头像放首位便于视觉识别用户，状态 Badge 直观展示账号可用性
     # 其中 avatar_preview 和 status_badge 是通过 @display 装饰器自定义的虚拟列
     list_display = (
-        "avatar_preview",    # 自定义列：头像预览缩略图
-        "email",             # 用户邮箱（登录凭证）
-        "username",          # 用户昵称
-        "followers_count",   # 自定义列：粉丝数量（从 Redis 缓存读取）
-        "following_count",   # 自定义列：关注数量（从 Redis 缓存读取）
-        "date_joined",       # 注册时间
-        "status_badge",      # 自定义列：激活状态 Badge 标签
+        "avatar_preview",  # 自定义列：头像预览缩略图
+        "email",  # 用户邮箱（登录凭证）
+        "username",  # 用户昵称
+        "followers_count",  # 自定义列：粉丝数量（从 Redis 缓存读取）
+        "following_count",  # 自定义列：关注数量（从 Redis 缓存读取）
+        "date_joined",  # 注册时间
+        "status_badge",  # 自定义列：激活状态 Badge 标签
     )
 
     # list_display_links：可点击跳转详情页的字段
@@ -129,7 +129,10 @@ class UserAdmin(ModelAdmin):
             "密码安全",
             {
                 "fields": ("password_display",),
-                "description": "密码以哈希方式安全存储，无法查看明文。如需修改密码，请使用页面顶部的「修改密码」链接。",
+                "description": (
+                    "密码以哈希方式安全存储，无法查看明文。"
+                    "如需修改密码，请使用页面顶部的「修改密码」链接。"
+                ),
             },
         ),
     )
@@ -162,7 +165,7 @@ class UserAdmin(ModelAdmin):
         Returns:
             HTML img 标签字符串
         """
-        if obj.image and hasattr(obj.image, 'url'):
+        if obj.image and hasattr(obj.image, "url"):
             return mark_safe(
                 f'<img src="{escape(obj.image.url)}" '
                 f'style="width:40px;height:40px;border-radius:50%;object-fit:cover;" '
@@ -170,7 +173,7 @@ class UserAdmin(ModelAdmin):
             )
         return mark_safe(
             '<div style="width:40px;height:40px;border-radius:50%;'
-            'background:#e5e7eb;display:flex;align-items:center;justify-content:center;'
+            "background:#e5e7eb;display:flex;align-items:center;justify-content:center;"
             'font-size:12px;color:#9ca3af;">N/A</div>'
         )
 
@@ -202,13 +205,11 @@ class UserAdmin(ModelAdmin):
         if obj.is_active:
             # 激活状态：绿色 Badge
             return mark_safe(
-                '<span class="px-2 py-1 text-xs font-medium rounded-full '
-                'bg-green-100 text-green-800">激活</span>'
+                '<span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">激活</span>'
             )
         # 禁用状态：红色 Badge
         return mark_safe(
-            '<span class="px-2 py-1 text-xs font-medium rounded-full '
-            'bg-red-100 text-red-800">禁用</span>'
+            '<span class="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">禁用</span>'
         )
 
     @display(description="密码")

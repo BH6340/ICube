@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 图片处理工具模块
 
@@ -18,12 +17,13 @@
     - WebP 转换：减小文件体积 50%+
     - 支持 RGBA/LA 等透明通道图片的转换
 """
-from PIL import Image, ImageDraw, ImageFont
+
 from io import BytesIO
-import os
+
+from PIL import Image, ImageDraw, ImageFont
 
 
-def compress_image(file, max_width=1200, max_height=1200, quality=85, output_format='JPEG'):
+def compress_image(file, max_width=1200, max_height=1200, quality=85, output_format="JPEG"):
     """
     图片压缩
 
@@ -50,15 +50,15 @@ def compress_image(file, max_width=1200, max_height=1200, quality=85, output_for
     file.seek(0)
 
     # 处理透明通道：转为 JPEG 时需要填充背景
-    if img.mode in ('RGBA', 'LA'):
-        if output_format == 'JPEG':
+    if img.mode in ("RGBA", "LA"):
+        if output_format == "JPEG":
             # 创建白色背景并粘贴原图片
-            background = Image.new('RGB', img.size, (255, 255, 255))
+            background = Image.new("RGB", img.size, (255, 255, 255))
             background.paste(img, mask=img.split()[-1])
             img = background
         else:
             # 其他格式保留透明通道
-            img = img.convert('RGBA')
+            img = img.convert("RGBA")
 
     # 尺寸缩放：等比例缩放到最大尺寸内
     width, height = img.size
@@ -95,7 +95,7 @@ def convert_to_webp(file, quality=85):
 
     buffer = BytesIO()
     # lossless=False 启用有损压缩，体积更小
-    img.save(buffer, format='WEBP', quality=quality, lossless=False)
+    img.save(buffer, format="WEBP", quality=quality, lossless=False)
     buffer.seek(0)
 
     return buffer
@@ -133,10 +133,10 @@ def crop_to_square(file):
 
     buffer = BytesIO()
     # 根据是否有透明通道选择输出格式
-    if img.mode in ('RGBA', 'LA'):
-        img.save(buffer, format='PNG', optimize=True)
+    if img.mode in ("RGBA", "LA"):
+        img.save(buffer, format="PNG", optimize=True)
     else:
-        img.save(buffer, format='JPEG', quality=85)
+        img.save(buffer, format="JPEG", quality=85)
     buffer.seek(0)
 
     return buffer
@@ -201,7 +201,7 @@ def process_image(file, max_width=1200, max_height=1200, quality=85, crop_square
 
     # 步骤 3：保存到缓冲区，可选 WebP 格式
     buffer = BytesIO()
-    output_format = 'WEBP' if convert_webp else 'JPEG'
+    output_format = "WEBP" if convert_webp else "JPEG"
     img.save(buffer, format=output_format, quality=quality, optimize=True)
     buffer.seek(0)
 
@@ -230,25 +230,25 @@ def generate_formula_thumbnail(formula_name, formula_notation, size=512):
         - 字体加载失败时回退到默认字体
     """
     # 创建白色背景画布
-    img = Image.new('RGB', (size, size), (255, 255, 255))
+    img = Image.new("RGB", (size, size), (255, 255, 255))
     draw = ImageDraw.Draw(img)
 
     # 尝试加载系统字体
     try:
         # 名称使用 Arial 字体
-        font_name = ImageFont.truetype('arial.ttf', size=24)
+        font_name = ImageFont.truetype("arial.ttf", size=24)
         # 记号使用 Courier 等宽字体
-        font_notation = ImageFont.truetype('cour.ttf', size=18)
-    except IOError:
+        font_notation = ImageFont.truetype("cour.ttf", size=18)
+    except OSError:
         # 字体文件不存在时使用默认字体
         font_name = ImageFont.load_default()
         font_notation = ImageFont.load_default()
 
     # 自动换行处理公式名称
     name_lines = []
-    current_line = ''
+    current_line = ""
     for word in formula_name.split():
-        test_line = f'{current_line} {word}'.strip()
+        test_line = f"{current_line} {word}".strip()
         # 检查当前行宽度是否超过限制
         if draw.textlength(test_line, font=font_name) < size - 40:
             current_line = test_line
@@ -260,9 +260,9 @@ def generate_formula_thumbnail(formula_name, formula_notation, size=512):
 
     # 自动换行处理公式记号
     notation_lines = []
-    current_line = ''
+    current_line = ""
     for step in formula_notation.split():
-        test_line = f'{current_line} {step}'.strip()
+        test_line = f"{current_line} {step}".strip()
         if draw.textlength(test_line, font=font_notation) < size - 40:
             current_line = test_line
         else:
@@ -289,7 +289,7 @@ def generate_formula_thumbnail(formula_name, formula_notation, size=512):
 
     # 保存为 WebP 格式
     buffer = BytesIO()
-    img.save(buffer, format='WEBP', quality=85, optimize=True)
+    img.save(buffer, format="WEBP", quality=85, optimize=True)
     buffer.seek(0)
 
     return buffer

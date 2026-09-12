@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Loguru 日志配置模块
 
@@ -20,14 +19,14 @@ Loguru 日志配置模块
     - 生产环境：统一输出到 all.log，ERROR 级别额外输出到 error.log，控制台输出 WARNING 级别
     - 日志文件大小达到 10MB 自动分割，保留 30 天
 """
+
+import json
+import logging
 import os
 import sys
-import logging
-import json
+from pathlib import Path
 
 from loguru import logger
-from pathlib import Path
-from datetime import datetime
 
 # 项目根目录
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -79,8 +78,8 @@ def _get_log_folder():
         Docker 环境返回 '/var/log/icube/'
         本地环境返回项目根目录下的 'log/' 目录
     """
-    if os.getenv('RUNNING_IN_DOCKER', 'false').lower() == 'true':
-        return '/var/log/icube/'
+    if os.getenv("RUNNING_IN_DOCKER", "false").lower() == "true":
+        return "/var/log/icube/"
     return os.path.join(BASE_DIR, "log/")
 
 
@@ -100,14 +99,14 @@ def setup_logging():
         - enqueue: 启用异步写入，提高性能
     """
     # 判断当前环境
-    is_production = os.getenv('DJANGO_ENV', 'dev').lower() == 'prod'
+    is_production = os.getenv("DJANGO_ENV", "dev").lower() == "prod"
     folder_ = _get_log_folder()
-    prefix_ = "cube-"            # 日志文件前缀
-    rotation_ = "10 MB"          # 日志文件大小限制
-    retention_ = "30 days"       # 日志保留时间
-    encoding_ = "utf-8"          # 文件编码
-    backtrace_ = True            # 启用异常回溯（用于调试）
-    diagnose_ = not is_production # 生产环境禁用诊断信息（避免暴露敏感信息）
+    prefix_ = "cube-"  # 日志文件前缀
+    rotation_ = "10 MB"  # 日志文件大小限制
+    retention_ = "30 days"  # 日志保留时间
+    encoding_ = "utf-8"  # 文件编码
+    backtrace_ = True  # 启用异常回溯（用于调试）
+    diagnose_ = not is_production  # 生产环境禁用诊断信息（避免暴露敏感信息）
 
     # 控制台日志级别：生产环境只输出 WARNING 及以上，开发环境输出 INFO 及以上
     console_level = "WARNING" if is_production else "INFO"
@@ -116,26 +115,32 @@ def setup_logging():
 
     # 文本格式（用于开发环境控制台和日志文件）
     format_text = (
-        '<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | '   # 时间（绿色）
-        '<level>{level: <8}</level> | '                       # 级别（带颜色）
-        '<magenta>{process}</magenta>:<yellow>{thread}</yellow> | '  # 进程和线程ID
-        '<cyan>{name}</cyan>:<cyan>{function}</cyan>:<yellow>{line}</yellow> - '  # 模块、函数、行号
-        '<level>{message}</level>'                             # 日志消息
+        "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "  # 时间（绿色）
+        "<level>{level: <8}</level> | "  # 级别（带颜色）
+        "<magenta>{process}</magenta>:<yellow>{thread}</yellow> | "  # 进程和线程ID
+        "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<yellow>{line}</yellow> - "  # 模块、函数、行号
+        "<level>{message}</level>"  # 日志消息
     )
 
     # JSON 格式（用于生产环境日志文件，便于日志分析工具解析）
     def format_json(record):
-        return json.dumps({
-            'timestamp': record['time'].strftime('%Y-%m-%dT%H:%M:%S.%f'),
-            'level': record['level'].name,
-            'process': record['process'],
-            'thread': record['thread'],
-            'module': record['name'],
-            'function': record['function'],
-            'line': record['line'],
-            'message': record['message'],
-            'exception': record['exception'] if record['exception'] else None,
-        }, ensure_ascii=False) + '\n'
+        return (
+            json.dumps(
+                {
+                    "timestamp": record["time"].strftime("%Y-%m-%dT%H:%M:%S.%f"),
+                    "level": record["level"].name,
+                    "process": record["process"],
+                    "thread": record["thread"],
+                    "module": record["name"],
+                    "function": record["function"],
+                    "line": record["line"],
+                    "message": record["message"],
+                    "exception": record["exception"] if record["exception"] else None,
+                },
+                ensure_ascii=False,
+            )
+            + "\n"
+        )
 
     # 确保日志目录存在
     if not os.path.exists(folder_):
@@ -205,7 +210,7 @@ def setup_logging():
         colorize=True,  # 控制台启用颜色
         backtrace=backtrace_,
         diagnose=diagnose_,
-        enqueue=False   # 控制台同步输出，确保实时显示
+        enqueue=False,  # 控制台同步输出，确保实时显示
     )
 
     # 配置标准 logging 模块，将其转发到 Loguru
@@ -214,19 +219,19 @@ def setup_logging():
     # 配置第三方库的日志级别
     # 将 Django、gunicorn、uvicorn 等库的日志也纳入 Loguru 管理
     loggers = [
-        ("django", "WARNING" if is_production else "INFO"),       # Django 核心日志
-        ("django.server", "WARNING"),                             # Django 服务器日志
-        ("django.db.backends", "WARNING"),                        # 数据库查询日志
-        ("django.utils.autoreload", "WARNING"),                   # 自动重载日志（开发环境频繁触发）
-        ("gunicorn", "INFO"),                                     # Gunicorn 日志
-        ("uvicorn", "INFO"),                                      # Uvicorn 日志
+        ("django", "WARNING" if is_production else "INFO"),  # Django 核心日志
+        ("django.server", "WARNING"),  # Django 服务器日志
+        ("django.db.backends", "WARNING"),  # 数据库查询日志
+        ("django.utils.autoreload", "WARNING"),  # 自动重载日志（开发环境频繁触发）
+        ("gunicorn", "INFO"),  # Gunicorn 日志
+        ("uvicorn", "INFO"),  # Uvicorn 日志
     ]
 
     for name, level in loggers:
         _logger = logging.getLogger(name)
         _logger.handlers = [InterceptHandler()]  # 使用 InterceptHandler 转发到 Loguru
-        _logger.setLevel(level)                  # 设置日志级别
-        _logger.propagate = False                # 禁止日志向上传播（避免重复输出）
+        _logger.setLevel(level)  # 设置日志级别
+        _logger.propagate = False  # 禁止日志向上传播（避免重复输出）
 
     # 输出日志系统初始化信息
     logger.info(f"Log folder: {folder_}, Environment: {'production' if is_production else 'development'}")

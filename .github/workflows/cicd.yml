@@ -106,7 +106,8 @@ jobs:
       # ---- Ruff 代码检查（不阻塞，仅提示）----
       - name: Ruff 代码检查
         if: steps.changed-backend.outputs.any_changed == 'true'
-        run: ruff check cube_api/cube_api/
+        working-directory: cube_api
+        run: ruff check cube_api/
         continue-on-error: true    # Lint 失败不阻塞测试和部署
 
       # ---- pytest 全量测试 ----

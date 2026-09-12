@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 商城模块视图集
 
@@ -16,23 +15,30 @@
     - **幂等性保证**：支付宝回调使用 select_for_update 防止重复处理
 """
 
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.response import Response
+from decimal import Decimal
+
 from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
-from .models import ProductCategory, Product, Cart, Order, OrderItem, Address
-from .serializers import (
-    ProductCategorySerializer, ProductListSerializer, ProductDetailSerializer,
-    CartSerializer, CartCreateSerializer, OrderSerializer, OrderCreateSerializer,
-    AddressSerializer
-)
-from .alipay_config import ALIPAY_CONFIG, generate_alipay_qr_code, generate_alipay_url, verify_alipay_notify
-from decimal import Decimal
-from utils.common_response import APIResponse
 from loguru import logger
+from rest_framework import viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from utils.common_response import APIResponse
+
+from .alipay_config import ALIPAY_CONFIG, generate_alipay_url, verify_alipay_notify
+from .models import Address, Cart, Order, OrderItem, Product, ProductCategory
+from .serializers import (
+    AddressSerializer,
+    CartCreateSerializer,
+    CartSerializer,
+    OrderCreateSerializer,
+    OrderSerializer,
+    ProductCategorySerializer,
+    ProductDetailSerializer,
+    ProductListSerializer,
+)
 
 
 class ProductCategoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -45,6 +51,7 @@ class ProductCategoryViewSet(viewsets.ReadOnlyModelViewSet):
         - **树形结构查询**：只查询顶级分类（parent__isnull=True），子分类通过 SerializerMethodField 递归获取
         - **无分页**：分类数据量较小，直接返回全部
     """
+
     queryset = ProductCategory.objects.filter(parent__isnull=True)
     serializer_class = ProductCategorySerializer
     pagination_class = None
@@ -66,6 +73,7 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         - **分类递归查询**：查询子分类商品时，同时包含父分类和子分类的商品
         - **多条件过滤**：支持分类、价格区间、关键词搜索和排序
     """
+
     queryset = Product.objects.filter(is_on_sale=True)
     serializer_class = ProductListSerializer
 
@@ -81,24 +89,24 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
             - sort: 排序字段（默认 -created_at）
         """
         queryset = super().get_queryset()
-        category = self.request.query_params.get('category')
+        category = self.request.query_params.get("category")
         if category:
-            category_ids = list(ProductCategory.objects.filter(id=category).values_list('id', flat=True))
-            children_ids = list(ProductCategory.objects.filter(parent_id=category).values_list('id', flat=True))
+            category_ids = list(ProductCategory.objects.filter(id=category).values_list("id", flat=True))
+            children_ids = list(ProductCategory.objects.filter(parent_id=category).values_list("id", flat=True))
             queryset = queryset.filter(category_id__in=category_ids + children_ids)
 
-        price_min = self.request.query_params.get('price_min')
-        price_max = self.request.query_params.get('price_max')
+        price_min = self.request.query_params.get("price_min")
+        price_max = self.request.query_params.get("price_max")
         if price_min:
             queryset = queryset.filter(price__gte=price_min)
         if price_max:
             queryset = queryset.filter(price__lte=price_max)
 
-        keyword = self.request.query_params.get('keyword')
+        keyword = self.request.query_params.get("keyword")
         if keyword:
             queryset = queryset.filter(name__icontains=keyword)
 
-        sort = self.request.query_params.get('sort', '-created_at')
+        sort = self.request.query_params.get("sort", "-created_at")
         queryset = queryset.order_by(sort)
 
         return queryset
@@ -121,6 +129,7 @@ class CartViewSet(viewsets.ModelViewSet):
         - **权限控制**：用户只能访问自己的购物车
         - **数量边界处理**：数量 <= 0 时自动删除，数量 > 库存时拒绝更新
     """
+
     queryset = Cart.objects.all()
     serializer_class = CartSerializer
     permission_classes = [IsAuthenticated]
@@ -137,31 +146,25 @@ class CartViewSet(viewsets.ModelViewSet):
             1. 如果购物车已存在相同商品且规格相同，数量累加（使用 F 表达式）
             2. 如果不存在或规格不同，创建新的购物车记录
         """
-        serializer = CartCreateSerializer(data=request.data, context={'request': request})
+        serializer = CartCreateSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
 
-        product = serializer.validated_data['product']
-        quantity = serializer.validated_data.get('quantity', 1)
-        selected_spec = serializer.validated_data.get('selected_spec', {})
+        product = serializer.validated_data["product"]
+        quantity = serializer.validated_data.get("quantity", 1)
+        selected_spec = serializer.validated_data.get("selected_spec", {})
 
-        cart = Cart.objects.filter(
-            user=request.user,
-            product=product
-        ).first()
+        cart = Cart.objects.filter(user=request.user, product=product).first()
 
         if cart and cart.selected_spec == selected_spec:
-            cart.quantity = F('quantity') + quantity
+            cart.quantity = F("quantity") + quantity
             cart.save()
             cart.refresh_from_db()
         else:
             cart = Cart.objects.create(
-                user=request.user,
-                product=product,
-                quantity=quantity,
-                selected_spec=selected_spec
+                user=request.user, product=product, quantity=quantity, selected_spec=selected_spec
             )
 
-        return APIResponse(data=CartSerializer(cart).data, msg='添加成功')
+        return APIResponse(data=CartSerializer(cart).data, msg="添加成功")
 
     def update(self, request, *args, **kwargs):
         """
@@ -172,13 +175,13 @@ class CartViewSet(viewsets.ModelViewSet):
             - 数量 > 库存：拒绝更新，返回错误
         """
         instance = self.get_object()
-        quantity = request.data.get('quantity')
+        quantity = request.data.get("quantity")
         if quantity is not None:
             if quantity <= 0:
                 instance.delete()
-                return APIResponse(msg='已删除')
+                return APIResponse(msg="已删除")
             if quantity > instance.product.stock:
-                return APIResponse(code=400, msg='库存不足')
+                return APIResponse(code=400, msg="库存不足")
             instance.quantity = quantity
             instance.save()
         return APIResponse(data=CartSerializer(instance).data)
@@ -187,7 +190,7 @@ class CartViewSet(viewsets.ModelViewSet):
         """删除购物车记录"""
         instance = self.get_object()
         instance.delete()
-        return APIResponse(msg='删除成功')
+        return APIResponse(msg="删除成功")
 
 
 class OrderViewSet(viewsets.ModelViewSet):
@@ -207,6 +210,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         - complete: 确认收货
         - alipay_notify: 支付宝异步回调（无需认证）
     """
+
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
@@ -214,7 +218,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """过滤当前用户的订单，支持状态筛选"""
         queryset = super().get_queryset().filter(user=self.request.user)
-        status_param = self.request.query_params.get('status')
+        status_param = self.request.query_params.get("status")
         if status_param:
             queryset = queryset.filter(status=status_param)
         return queryset
@@ -227,14 +231,14 @@ class OrderViewSet(viewsets.ModelViewSet):
             1. 通过订单号查询（优先）
             2. 通过 ID 查询（兼容）
         """
-        pk = kwargs.get('pk')
+        pk = kwargs.get("pk")
         try:
             order = Order.objects.get(order_no=pk, user=request.user)
         except Order.DoesNotExist:
             try:
                 order = self.get_object()
             except Exception:
-                return APIResponse(code=404, msg='订单不存在')
+                return APIResponse(code=404, msg="订单不存在")
         serializer = OrderSerializer(order)
         return APIResponse(data=serializer.data)
 
@@ -256,56 +260,55 @@ class OrderViewSet(viewsets.ModelViewSet):
             - **库存并发控制**：使用 F('stock') - quantity 避免并发超卖
             - **订单号生成**：时间戳 + UUID 保证唯一性
         """
-        serializer = OrderCreateSerializer(data=request.data, context={'request': request})
+        serializer = OrderCreateSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
 
-        cart_ids = serializer.validated_data['cart_ids']
-        address = serializer.validated_data['address']
+        cart_ids = serializer.validated_data["cart_ids"]
+        address = serializer.validated_data["address"]
 
         carts = Cart.objects.filter(id__in=cart_ids, user=request.user)
         if not carts.exists():
-            return APIResponse(code=400, msg='购物车商品不存在')
+            return APIResponse(code=400, msg="购物车商品不存在")
 
         total_amount = 0
         order_items = []
 
         for cart in carts:
             if cart.quantity > cart.product.stock:
-                return APIResponse(code=400, msg=f'{cart.product.name}库存不足')
+                return APIResponse(code=400, msg=f"{cart.product.name}库存不足")
 
             item_total = cart.product.price * cart.quantity
             total_amount += item_total
 
-            order_items.append({
-                'product': cart.product,
-                'price': cart.product.price,
-                'quantity': cart.quantity,
-                'selected_spec': cart.selected_spec
-            })
+            order_items.append(
+                {
+                    "product": cart.product,
+                    "price": cart.product.price,
+                    "quantity": cart.quantity,
+                    "selected_spec": cart.selected_spec,
+                }
+            )
 
-            cart.product.stock = F('stock') - cart.quantity
-            cart.product.sales_count = F('sales_count') + cart.quantity
+            cart.product.stock = F("stock") - cart.quantity
+            cart.product.sales_count = F("sales_count") + cart.quantity
             cart.product.save()
 
         carts.delete()
 
         order = Order.objects.create(
-            user=request.user,
-            order_no=Order.generate_order_no(),
-            total_amount=total_amount,
-            address=address
+            user=request.user, order_no=Order.generate_order_no(), total_amount=total_amount, address=address
         )
 
         for item_data in order_items:
             OrderItem.objects.create(
                 order=order,
-                product=item_data['product'],
-                price=item_data['price'],
-                quantity=item_data['quantity'],
-                selected_spec=item_data['selected_spec']
+                product=item_data["product"],
+                price=item_data["price"],
+                quantity=item_data["quantity"],
+                selected_spec=item_data["selected_spec"],
             )
 
-        return APIResponse(data=OrderSerializer(order).data, msg='下单成功')
+        return APIResponse(data=OrderSerializer(order).data, msg="下单成功")
 
     def pay(self, request, pk=None):
         """
@@ -318,20 +321,23 @@ class OrderViewSet(viewsets.ModelViewSet):
             - 支付宝配置失败：记录日志并返回服务不可用
         """
         order = self.get_object()
-        if order.status != 'pending':
-            return APIResponse(code=400, msg='订单状态不正确')
+        if order.status != "pending":
+            return APIResponse(code=400, msg="订单状态不正确")
 
-        subject = f'魔方商城订单-{order.order_no}'
+        subject = f"魔方商城订单-{order.order_no}"
 
         pay_url = generate_alipay_url(order.order_no, order.total_amount, subject)
         if pay_url:
-            return APIResponse(data={
-                'order': OrderSerializer(order).data,
-                'pay_url': pay_url,
-            }, msg='获取支付链接成功')
+            return APIResponse(
+                data={
+                    "order": OrderSerializer(order).data,
+                    "pay_url": pay_url,
+                },
+                msg="获取支付链接成功",
+            )
 
         logger.warning(f"支付宝支付失败 - 订单 {order.order_no}: SDK 初始化异常, return_url 或 notify_url 不可用")
-        return APIResponse(code=503, msg='支付宝支付接口配置异常，请稍后重试')
+        return APIResponse(code=503, msg="支付宝支付接口配置异常，请稍后重试")
 
     @transaction.atomic
     def cancel(self, request, pk=None):
@@ -345,18 +351,18 @@ class OrderViewSet(viewsets.ModelViewSet):
             2. 使用 F 表达式恢复库存、减少销量
         """
         order = self.get_object()
-        if order.status not in ['pending', 'paid']:
-            return APIResponse(code=400, msg='订单状态不允许取消')
+        if order.status not in ["pending", "paid"]:
+            return APIResponse(code=400, msg="订单状态不允许取消")
 
-        order.status = 'cancelled'
+        order.status = "cancelled"
         order.save()
 
         for item in order.items.all():
-            item.product.stock = F('stock') + item.quantity
-            item.product.sales_count = F('sales_count') - item.quantity
+            item.product.stock = F("stock") + item.quantity
+            item.product.sales_count = F("sales_count") - item.quantity
             item.product.save()
 
-        return APIResponse(data=OrderSerializer(order).data, msg='取消成功')
+        return APIResponse(data=OrderSerializer(order).data, msg="取消成功")
 
     @transaction.atomic
     def complete(self, request, pk=None):
@@ -366,16 +372,16 @@ class OrderViewSet(viewsets.ModelViewSet):
         仅已发货状态的订单可确认收货，确认后订单状态改为 completed。
         """
         order = self.get_object()
-        if order.status != 'shipped':
-            return APIResponse(code=400, msg='订单状态不正确')
+        if order.status != "shipped":
+            return APIResponse(code=400, msg="订单状态不正确")
 
-        order.status = 'completed'
+        order.status = "completed"
         order.completed_at = timezone.now()
         order.save()
 
-        return APIResponse(data=OrderSerializer(order).data, msg='确认收货成功')
+        return APIResponse(data=OrderSerializer(order).data, msg="确认收货成功")
 
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='notify')
+    @action(detail=False, methods=["post"], permission_classes=[AllowAny], url_path="notify")
     @transaction.atomic
     def alipay_notify(self, request):
         """
@@ -403,41 +409,43 @@ class OrderViewSet(viewsets.ModelViewSet):
             verified = verify_alipay_notify(request.data, raw_body)
         except Exception as e:
             logger.error(f"支付宝回调签名验证异常: {e}")
-            return Response('fail')
+            return Response("fail")
 
         if not verified:
             logger.warning(f"支付宝回调签名验证失败: {raw_data.get('out_trade_no', 'unknown')}")
-            return Response('fail')
+            return Response("fail")
 
-        order_no = raw_data.get('out_trade_no')
-        trade_status = raw_data.get('trade_status')
+        order_no = raw_data.get("out_trade_no")
+        trade_status = raw_data.get("trade_status")
         logger.info(f"支付宝回调验证通过 - 订单 {order_no}, 状态 {trade_status}")
 
         # 安全校验：app_id 必须一致
-        callback_app_id = raw_data.get('app_id', '')
-        if callback_app_id and callback_app_id != ALIPAY_CONFIG['app_id']:
+        callback_app_id = raw_data.get("app_id", "")
+        if callback_app_id and callback_app_id != ALIPAY_CONFIG["app_id"]:
             logger.warning(f"支付宝回调 app_id 不匹配: 回调={callback_app_id}, 配置={ALIPAY_CONFIG['app_id']}")
-            return Response('fail')
+            return Response("fail")
 
         try:
             order = Order.objects.select_for_update().get(order_no=order_no)
             # 安全校验：金额必须一致
-            callback_amount = Decimal(raw_data.get('total_amount', '0'))
+            callback_amount = Decimal(raw_data.get("total_amount", "0"))
             if callback_amount != order.total_amount:
-                logger.warning(f"支付宝回调金额不匹配: 回调={callback_amount}, 订单={order.total_amount}, 订单号={order_no}")
-                return Response('fail')
-            if trade_status in ('TRADE_SUCCESS', 'TRADE_FINISHED'):
-                if order.status == 'pending':
-                    order.status = 'paid'
+                logger.warning(
+                    f"支付宝回调金额不匹配: 回调={callback_amount}, 订单={order.total_amount}, 订单号={order_no}"
+                )
+                return Response("fail")
+            if trade_status in ("TRADE_SUCCESS", "TRADE_FINISHED"):
+                if order.status == "pending":
+                    order.status = "paid"
                     order.paid_at = timezone.now()
                     order.save()
                     logger.info(f"订单 {order_no} 已标记为已支付")
                 else:
                     logger.info(f"订单 {order_no} 已处理(status={order.status}), 跳过重复回调")
-            return Response('success')
+            return Response("success")
         except Order.DoesNotExist:
             logger.error(f"支付宝回调 - 订单 {order_no} 不存在")
-            return Response('fail')
+            return Response("fail")
 
 
 class AddressViewSet(viewsets.ModelViewSet):
@@ -452,6 +460,7 @@ class AddressViewSet(viewsets.ModelViewSet):
         - **排序管理**：按 sort_order 排序，默认地址排在最前面
         - **删除处理**：删除默认地址时，自动将第一个地址设为默认
     """
+
     queryset = Address.objects.all()
     serializer_class = AddressSerializer
     permission_classes = [IsAuthenticated]
@@ -466,7 +475,7 @@ class AddressViewSet(viewsets.ModelViewSet):
 
         返回结果按 is_default（默认地址优先）和 sort_order 排序。
         """
-        queryset = self.get_queryset().order_by('-is_default', 'sort_order')
+        queryset = self.get_queryset().order_by("-is_default", "sort_order")
         serializer = self.get_serializer(queryset, many=True)
         return APIResponse(data=serializer.data)
 
@@ -480,17 +489,17 @@ class AddressViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        is_default = serializer.validated_data.get('is_default', False)
+        is_default = serializer.validated_data.get("is_default", False)
         user = request.user
 
         if is_default:
             Address.objects.filter(user=user, is_default=True).update(is_default=False)
         else:
             if not Address.objects.filter(user=user, is_default=True).exists():
-                serializer.validated_data['is_default'] = True
+                serializer.validated_data["is_default"] = True
 
         serializer.save(user=user)
-        return APIResponse(data=serializer.data, msg='地址添加成功')
+        return APIResponse(data=serializer.data, msg="地址添加成功")
 
     def update(self, request, *args, **kwargs):
         """
@@ -498,21 +507,21 @@ class AddressViewSet(viewsets.ModelViewSet):
 
         如果设置了 is_default=True，自动将用户的其他默认地址取消。
         """
-        partial = kwargs.pop('partial', False)
+        partial = kwargs.pop("partial", False)
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
 
-        is_default = serializer.validated_data.get('is_default', False)
+        is_default = serializer.validated_data.get("is_default", False)
         if is_default and not instance.is_default:
             Address.objects.filter(user=request.user, is_default=True).update(is_default=False)
 
         serializer.save()
-        return APIResponse(data=serializer.data, msg='地址更新成功')
+        return APIResponse(data=serializer.data, msg="地址更新成功")
 
     def partial_update(self, request, *args, **kwargs):
         """部分更新地址（PATCH）"""
-        kwargs['partial'] = True
+        kwargs["partial"] = True
         return self.update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
@@ -531,9 +540,9 @@ class AddressViewSet(viewsets.ModelViewSet):
                 first_address.is_default = True
                 first_address.save()
 
-        return APIResponse(msg='地址删除成功')
+        return APIResponse(msg="地址删除成功")
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=["post"])
     def set_default(self, request, pk=None):
         """
         设置默认地址
@@ -542,10 +551,10 @@ class AddressViewSet(viewsets.ModelViewSet):
         """
         address = self.get_object()
         if address.is_default:
-            return APIResponse(msg='该地址已经是默认地址')
+            return APIResponse(msg="该地址已经是默认地址")
 
         Address.objects.filter(user=request.user, is_default=True).update(is_default=False)
         address.is_default = True
         address.save()
 
-        return APIResponse(data=AddressSerializer(address).data, msg='默认地址设置成功')
+        return APIResponse(data=AddressSerializer(address).data, msg="默认地址设置成功")

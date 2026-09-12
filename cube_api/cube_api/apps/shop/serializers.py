@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 商城模块序列化器
 
@@ -18,7 +17,8 @@
 """
 
 from rest_framework import serializers
-from .models import ProductCategory, Product, Cart, Order, OrderItem, Address
+
+from .models import Address, Cart, Order, OrderItem, Product, ProductCategory
 
 
 class ProductCategorySerializer(serializers.ModelSerializer):
@@ -31,11 +31,12 @@ class ProductCategorySerializer(serializers.ModelSerializer):
         - **递归序列化**：children 字段通过 get_children 方法递归序列化子分类
         - **完整字段**：包含分类的所有属性
     """
+
     children = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductCategory
-        fields = ['id', 'name', 'parent', 'icon', 'sort_order', 'description', 'children']
+        fields = ["id", "name", "parent", "icon", "sort_order", "description", "children"]
 
     def get_children(self, obj):
         """递归获取并序列化子分类"""
@@ -53,12 +54,26 @@ class ProductListSerializer(serializers.ModelSerializer):
         - **轻量字段**：不含完整描述等大字段
         - **分类名称**：通过 source 指定获取分类名称
     """
-    category_name = serializers.CharField(source='category.name', read_only=True)
+
+    category_name = serializers.CharField(source="category.name", read_only=True)
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'price', 'original_price', 'stock', 'images', 'thumbnail',
-                  'is_on_sale', 'sales_count', 'category', 'category_name', 'specs', 'created_at']
+        fields = [
+            "id",
+            "name",
+            "price",
+            "original_price",
+            "stock",
+            "images",
+            "thumbnail",
+            "is_on_sale",
+            "sales_count",
+            "category",
+            "category_name",
+            "specs",
+            "created_at",
+        ]
 
 
 class ProductDetailSerializer(serializers.ModelSerializer):
@@ -71,13 +86,28 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         - **完整字段**：包含 description 和 updated_at 等详情字段
         - **分类名称**：通过 source 指定获取分类名称
     """
-    category_name = serializers.CharField(source='category.name', read_only=True)
+
+    category_name = serializers.CharField(source="category.name", read_only=True)
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'description', 'price', 'original_price', 'stock', 'images',
-                  'thumbnail', 'is_on_sale', 'sales_count', 'category', 'category_name', 'specs',
-                  'created_at', 'updated_at']
+        fields = [
+            "id",
+            "name",
+            "description",
+            "price",
+            "original_price",
+            "stock",
+            "images",
+            "thumbnail",
+            "is_on_sale",
+            "sales_count",
+            "category",
+            "category_name",
+            "specs",
+            "created_at",
+            "updated_at",
+        ]
 
 
 class CartSerializer(serializers.ModelSerializer):
@@ -90,22 +120,23 @@ class CartSerializer(serializers.ModelSerializer):
         - **商品信息**：通过 product_info SerializerMethodField 聚合商品详情
         - **规格展示**：selected_spec 直接返回 JSON 格式的规格信息
     """
+
     product_info = serializers.SerializerMethodField()
 
     class Meta:
         model = Cart
-        fields = ['id', 'product', 'product_info', 'quantity', 'selected_spec', 'created_at']
+        fields = ["id", "product", "product_info", "quantity", "selected_spec", "created_at"]
 
     def get_product_info(self, obj):
         """聚合商品详情信息"""
         product = obj.product
         return {
-            'id': product.id,
-            'name': product.name,
-            'price': str(product.price),
-            'thumbnail': product.thumbnail.url if product.thumbnail else None,
-            'stock': product.stock,
-            'specs': product.specs
+            "id": product.id,
+            "name": product.name,
+            "price": str(product.price),
+            "thumbnail": product.thumbnail.url if product.thumbnail else None,
+            "stock": product.stock,
+            "specs": product.specs,
         }
 
 
@@ -119,18 +150,19 @@ class CartCreateSerializer(serializers.ModelSerializer):
         - **验证逻辑**：validate 方法验证商品是否上架、库存是否充足
         - **简化字段**：只包含 product、quantity、selected_spec 三个字段
     """
+
     class Meta:
         model = Cart
-        fields = ['product', 'quantity', 'selected_spec']
+        fields = ["product", "quantity", "selected_spec"]
 
     def validate(self, attrs):
         """验证商品上架状态和库存"""
-        product = attrs.get('product')
-        quantity = attrs.get('quantity', 1)
+        product = attrs.get("product")
+        quantity = attrs.get("quantity", 1)
         if not product.is_on_sale:
-            raise serializers.ValidationError('商品已下架')
+            raise serializers.ValidationError("商品已下架")
         if quantity > product.stock:
-            raise serializers.ValidationError('库存不足')
+            raise serializers.ValidationError("库存不足")
         return attrs
 
 
@@ -144,12 +176,13 @@ class OrderItemSerializer(serializers.ModelSerializer):
         - **商品信息**：通过 source 获取商品名称，通过 SerializerMethodField 获取图片
         - **快照数据**：price 和 selected_spec 是下单时的快照，不受后续变动影响
     """
-    product_name = serializers.CharField(source='product.name', read_only=True)
+
+    product_name = serializers.CharField(source="product.name", read_only=True)
     product_image = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderItem
-        fields = ['id', 'product', 'product_name', 'product_image', 'price', 'quantity', 'selected_spec']
+        fields = ["id", "product", "product_name", "product_image", "price", "quantity", "selected_spec"]
 
     def get_product_image(self, obj):
         """获取商品缩略图 URL"""
@@ -168,12 +201,23 @@ class OrderSerializer(serializers.ModelSerializer):
         - **嵌套序列化**：items 字段使用 OrderItemSerializer 序列化订单明细
         - **完整字段**：包含所有状态时间戳和地址信息
     """
+
     items = OrderItemSerializer(many=True, read_only=True)
 
     class Meta:
         model = Order
-        fields = ['id', 'order_no', 'total_amount', 'status', 'address', 'items',
-                  'created_at', 'paid_at', 'shipped_at', 'completed_at']
+        fields = [
+            "id",
+            "order_no",
+            "total_amount",
+            "status",
+            "address",
+            "items",
+            "created_at",
+            "paid_at",
+            "shipped_at",
+            "completed_at",
+        ]
 
 
 class OrderCreateSerializer(serializers.Serializer):
@@ -186,15 +230,16 @@ class OrderCreateSerializer(serializers.Serializer):
         - **自定义字段**：cart_ids（购物车 ID 列表）和 address（收货地址字典）
         - **权限验证**：validate_cart_ids 验证购物车商品属于当前用户
     """
+
     cart_ids = serializers.ListField(child=serializers.IntegerField())
     address = serializers.DictField()
 
     def validate_cart_ids(self, cart_ids):
         """验证购物车商品存在且属于当前用户"""
-        user = self.context['request'].user
+        user = self.context["request"].user
         carts = Cart.objects.filter(id__in=cart_ids, user=user)
         if not carts.exists():
-            raise serializers.ValidationError('购物车商品不存在')
+            raise serializers.ValidationError("购物车商品不存在")
         return cart_ids
 
 
@@ -209,10 +254,23 @@ class AddressSerializer(serializers.ModelSerializer):
         - **默认标识**：is_default 字段标识默认地址
         - **只读字段**：full_address 通过 property 方法生成完整地址字符串
     """
+
     full_address = serializers.CharField(read_only=True)
 
     class Meta:
         model = Address
-        fields = ['id', 'name', 'phone', 'province', 'city', 'district', 'detail',
-                  'is_default', 'sort_order', 'full_address', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        fields = [
+            "id",
+            "name",
+            "phone",
+            "province",
+            "city",
+            "district",
+            "detail",
+            "is_default",
+            "sort_order",
+            "full_address",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]

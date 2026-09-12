@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 计时器后台
 
@@ -12,13 +11,13 @@
     - 使用 @display 装饰器自定义格式化列和 Badge 列
     - date_hierarchy 提供日期层级导航（Unfold 样式优于原生 Django Admin）
 """
+
 from django.contrib import admin
 from django.utils.safestring import mark_safe
-
 from unfold.admin import ModelAdmin
 from unfold.decorators import display
 
-from .models import TimerRecord, SmartCubeDevice
+from .models import SmartCubeDevice, TimerRecord
 
 
 @admin.register(TimerRecord)
@@ -39,11 +38,11 @@ class TimerRecordAdmin(ModelAdmin):
     # 配置原因：用户和魔方类型放首位便于识别，formatted_time 提供可读时间
     # cube_type_badge 和 method_badge 用颜色区分不同类型和方法
     list_display = (
-        "user",                 # 记录所属用户
-        "cube_type_badge",      # 自定义列：魔方类型 Badge
-        "method_badge",         # 自定义列：还原方法 Badge
-        "formatted_time",       # 自定义列：格式化后的时间（MM:SS.mmm）
-        "created_at",           # 创建时间
+        "user",  # 记录所属用户
+        "cube_type_badge",  # 自定义列：魔方类型 Badge
+        "method_badge",  # 自定义列：还原方法 Badge
+        "formatted_time",  # 自定义列：格式化后的时间（MM:SS.mmm）
+        "created_at",  # 创建时间
     )
 
     # search_fields：搜索框支持的模糊搜索字段
@@ -54,9 +53,9 @@ class TimerRecordAdmin(ModelAdmin):
     # list_filter：侧边栏过滤器
     # 配置原因：魔方类型和还原方法是核心筛选维度，创建时间用于按时间段筛选
     list_filter = (
-        "cube_type",    # 魔方类型筛选
-        "method",       # 还原方法筛选
-        "created_at",   # 创建时间筛选
+        "cube_type",  # 魔方类型筛选
+        "method",  # 还原方法筛选
+        "created_at",  # 创建时间筛选
     )
 
     # date_hierarchy：日期层级导航
@@ -115,7 +114,7 @@ class TimerRecordAdmin(ModelAdmin):
         # get_cube_type_display() 返回 choices 的显示值（如 "三阶魔方"）
         return mark_safe(
             f'<span class="px-2 py-1 text-xs font-medium rounded-full {color_class}">'
-            f'{obj.get_cube_type_display()}</span>'
+            f"{obj.get_cube_type_display()}</span>"
         )
 
     @display(
@@ -148,8 +147,7 @@ class TimerRecordAdmin(ModelAdmin):
         }
         color_class = color_map.get(obj.method, "bg-gray-100 text-gray-800")
         return mark_safe(
-            f'<span class="px-2 py-1 text-xs font-medium rounded-full {color_class}">'
-            f'{obj.get_method_display()}</span>'
+            f'<span class="px-2 py-1 text-xs font-medium rounded-full {color_class}">{obj.get_method_display()}</span>'
         )
 
     @display(
@@ -188,6 +186,7 @@ class SmartCubeDeviceAdmin(ModelAdmin):
     """
     智能魔方设备管理 Admin
     """
+
     list_display = (
         "user",
         "name",
@@ -204,13 +203,6 @@ class SmartCubeDeviceAdmin(ModelAdmin):
 
     @display(description="状态", ordering="is_active")
     def is_active_badge(self, obj):
-        color_class = (
-            "bg-green-100 text-green-800"
-            if obj.is_active
-            else "bg-gray-100 text-gray-800"
-        )
+        color_class = "bg-green-100 text-green-800" if obj.is_active else "bg-gray-100 text-gray-800"
         label = "启用" if obj.is_active else "禁用"
-        return mark_safe(
-            f'<span class="px-2 py-1 text-xs font-medium rounded-full {color_class}">'
-            f"{label}</span>"
-        )
+        return mark_safe(f'<span class="px-2 py-1 text-xs font-medium rounded-full {color_class}">{label}</span>')

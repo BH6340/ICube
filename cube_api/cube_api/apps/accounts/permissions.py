@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 自定义权限类
 
@@ -16,6 +15,7 @@
     - 读操作（GET, HEAD, OPTIONS）通常允许所有用户
     - 写操作（POST, PUT, DELETE）需要特定权限
 """
+
 from rest_framework import permissions
 
 
@@ -46,15 +46,15 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
 
         # 写权限：只有对象的所有者才允许
         # 适配不同的模型，支持多种所有者字段名
-        if hasattr(obj, 'author'):
+        if hasattr(obj, "author"):
             return obj.author == request.user
-        elif hasattr(obj, 'user'):
+        elif hasattr(obj, "user"):
             return obj.user == request.user
-        elif hasattr(obj, 'owner'):
+        elif hasattr(obj, "owner"):
             return obj.owner == request.user
         else:
             # 如果没有明确的所有者字段，尝试常见的字段名
-            for field_name in ['author', 'user', 'creator', 'owner']:
+            for field_name in ["author", "user", "creator", "owner"]:
                 if hasattr(obj, field_name):
                     return getattr(obj, field_name) == request.user
 
@@ -123,9 +123,9 @@ class IsAuthenticatedAndOwner(permissions.BasePermission):
             False：无权限
         """
         # 检查是否是所有者
-        if hasattr(obj, 'author'):
+        if hasattr(obj, "author"):
             return obj.author == request.user
-        elif hasattr(obj, 'user'):
+        elif hasattr(obj, "user"):
             return obj.user == request.user
         return False
 
@@ -180,7 +180,7 @@ class IsFollowingOrReadOnly(permissions.BasePermission):
         """
         if request.method in permissions.SAFE_METHODS:
             # 对于读取操作，检查当前用户是否关注了作者
-            if hasattr(obj, 'author'):
+            if hasattr(obj, "author"):
                 return request.user.is_authenticated and request.user.following.filter(id=obj.author.id).exists()
             return False
         # 写操作：需要登录

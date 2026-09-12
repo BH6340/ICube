@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 商城模块路由配置
 
@@ -17,20 +16,27 @@
     - **支付宝回调**：通过 viewset 的 action 装饰器定义，无需手动路由
 """
 
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from .views import ProductCategoryViewSet, ProductViewSet, CartViewSet, OrderViewSet, AddressViewSet
+
+from .views import (
+    AddressViewSet,
+    CartViewSet,
+    OrderViewSet,
+    ProductCategoryViewSet,
+    ProductViewSet,
+)
 
 router = DefaultRouter()
-router.register('categories', ProductCategoryViewSet)
-router.register('products', ProductViewSet)
-router.register('cart', CartViewSet)
-router.register('orders', OrderViewSet)
-router.register('addresses', AddressViewSet)
+router.register("categories", ProductCategoryViewSet)
+router.register("products", ProductViewSet)
+router.register("cart", CartViewSet)
+router.register("orders", OrderViewSet)
+router.register("addresses", AddressViewSet)
 
 urlpatterns = [
-    path('', include(router.urls)),
-    path('orders/<int:pk>/pay/', OrderViewSet.as_view({'put': 'pay'}), name='order-pay'),
-    path('orders/<int:pk>/cancel/', OrderViewSet.as_view({'put': 'cancel'}), name='order-cancel'),
-    path('orders/<int:pk>/complete/', OrderViewSet.as_view({'put': 'complete'}), name='order-complete'),
+    path("", include(router.urls)),
+    path("orders/<int:pk>/pay/", OrderViewSet.as_view({"put": "pay"}), name="order-pay"),
+    path("orders/<int:pk>/cancel/", OrderViewSet.as_view({"put": "cancel"}), name="order-cancel"),
+    path("orders/<int:pk>/complete/", OrderViewSet.as_view({"put": "complete"}), name="order-complete"),
 ]

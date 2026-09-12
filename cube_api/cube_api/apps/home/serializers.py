@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 首页导航模块序列化器
 
@@ -10,7 +9,8 @@
 """
 
 from rest_framework import serializers
-from .models import NavigationMenu, Banner
+
+from .models import Banner, NavigationMenu
 
 
 class NavigationMenuSerializer(serializers.ModelSerializer):
@@ -23,9 +23,10 @@ class NavigationMenuSerializer(serializers.ModelSerializer):
         - **精简字段**：排除 id、sort_order 等后端内部字段
         - **match_paths**：保留路由匹配路径集，用于前端路由高亮
     """
+
     class Meta:
         model = NavigationMenu
-        fields = ('index', 'label', 'path', 'category', 'match_paths')
+        fields = ("index", "label", "path", "category", "match_paths")
 
 
 class BannerSerializer(serializers.ModelSerializer):
@@ -39,14 +40,15 @@ class BannerSerializer(serializers.ModelSerializer):
         - **精简字段**：排除 id、is_active 等后端内部字段
         - **排序字段**：保留 sort_order，便于前端排序（可选）
     """
+
     image = serializers.SerializerMethodField()
 
     class Meta:
         model = Banner
-        fields = ('title', 'description', 'image', 'link', 'sort_order')
+        fields = ("title", "description", "image", "link", "sort_order")
 
     def get_image(self, obj):
         if obj.image:
-            request = self.context.get('request')
+            request = self.context.get("request")
             return request.build_absolute_uri(obj.image.url) if request else obj.image.url
-        return ''
+        return ""

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 商城模块数据模型
 
@@ -16,10 +15,11 @@
     - **订单号生成**：时间戳 + UUID 保证唯一性
 """
 
-from django.db import models
-from django.contrib.auth import get_user_model
-from django.utils import timezone
 import uuid
+
+from django.contrib.auth import get_user_model
+from django.db import models
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -36,25 +36,20 @@ class ProductCategory(models.Model):
         - **图标字段**：icon 用于前端展示分类图标
         - **级联删除**：子分类的 parent 设为 NULL（SET_NULL），而非级联删除
     """
-    name = models.CharField('分类名称', max_length=100)
-    parent = models.ForeignKey(
-        'self',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='children'
-    )
-    icon = models.CharField('图标', max_length=100, blank=True)
-    sort_order = models.IntegerField('排序', default=0)
-    description = models.TextField('描述', blank=True)
+
+    name = models.CharField("分类名称", max_length=100)
+    parent = models.ForeignKey("self", on_delete=models.SET_NULL, null=True, blank=True, related_name="children")
+    icon = models.CharField("图标", max_length=100, blank=True)
+    sort_order = models.IntegerField("排序", default=0)
+    description = models.TextField("描述", blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        app_label = 'shop'
-        db_table = 'shop_product_category'
-        ordering = ['sort_order', 'id']
-        verbose_name = '商品分类'
-        verbose_name_plural = '商品分类'
+        app_label = "shop"
+        db_table = "shop_product_category"
+        ordering = ["sort_order", "id"]
+        verbose_name = "商品分类"
+        verbose_name_plural = "商品分类"
 
     def __str__(self):
         return self.name
@@ -73,36 +68,29 @@ class Product(models.Model):
         - **图片管理**：images（多图）+ thumbnail（缩略图）双字段设计
         - **上下架控制**：is_on_sale 控制商品是否可购买
     """
+
     category = models.ForeignKey(
-        ProductCategory,
-        on_delete=models.CASCADE,
-        related_name='products',
-        null=True,
-        blank=True
+        ProductCategory, on_delete=models.CASCADE, related_name="products", null=True, blank=True
     )
-    name = models.CharField('商品名称', max_length=200)
-    description = models.TextField('描述', blank=True)
-    price = models.DecimalField('价格', max_digits=10, decimal_places=2)
-    original_price = models.DecimalField(
-        '原价', max_digits=10, decimal_places=2, null=True, blank=True
-    )
-    stock = models.IntegerField('库存', default=0)
-    images = models.JSONField('商品图片', default=list)
-    thumbnail = models.ImageField(
-        '缩略图', upload_to='products/', null=True, blank=True
-    )
-    is_on_sale = models.BooleanField('是否上架', default=True)
-    sales_count = models.IntegerField('销量', default=0)
-    specs = models.JSONField('规格', default=dict)
+    name = models.CharField("商品名称", max_length=200)
+    description = models.TextField("描述", blank=True)
+    price = models.DecimalField("价格", max_digits=10, decimal_places=2)
+    original_price = models.DecimalField("原价", max_digits=10, decimal_places=2, null=True, blank=True)
+    stock = models.IntegerField("库存", default=0)
+    images = models.JSONField("商品图片", default=list)
+    thumbnail = models.ImageField("缩略图", upload_to="products/", null=True, blank=True)
+    is_on_sale = models.BooleanField("是否上架", default=True)
+    sales_count = models.IntegerField("销量", default=0)
+    specs = models.JSONField("规格", default=dict)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        app_label = 'shop'
-        db_table = 'shop_product'
-        ordering = ['-created_at']
-        verbose_name = '商品'
-        verbose_name_plural = '商品'
+        app_label = "shop"
+        db_table = "shop_product"
+        ordering = ["-created_at"]
+        verbose_name = "商品"
+        verbose_name_plural = "商品"
 
     def __str__(self):
         return self.name
@@ -119,21 +107,22 @@ class Cart(models.Model):
         - **数量控制**：quantity 默认值为 1，支持累加
         - **唯一性约束**：用户+商品+规格组合唯一（业务层保证）
     """
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='carts')
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='carts')
-    quantity = models.IntegerField('数量', default=1)
-    selected_spec = models.JSONField('选中规格', default=dict)
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="carts")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="carts")
+    quantity = models.IntegerField("数量", default=1)
+    selected_spec = models.JSONField("选中规格", default=dict)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        app_label = 'shop'
-        db_table = 'shop_cart'
-        verbose_name = '购物车'
-        verbose_name_plural = '购物车'
+        app_label = "shop"
+        db_table = "shop_cart"
+        verbose_name = "购物车"
+        verbose_name_plural = "购物车"
 
     def __str__(self):
-        return f'{self.user.username} - {self.product.name}'
+        return f"{self.user.username} - {self.product.name}"
 
 
 class Order(models.Model):
@@ -153,29 +142,30 @@ class Order(models.Model):
         - **地址存储**：address 使用 JSONField 灵活存储收货地址
         - **订单号生成**：generate_order_no 类方法生成唯一订单号
     """
+
     STATUS_CHOICES = [
-        ('pending', '待付款'),
-        ('paid', '已付款'),
-        ('shipped', '已发货'),
-        ('completed', '已完成'),
-        ('cancelled', '已取消'),
+        ("pending", "待付款"),
+        ("paid", "已付款"),
+        ("shipped", "已发货"),
+        ("completed", "已完成"),
+        ("cancelled", "已取消"),
     ]
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders')
-    order_no = models.CharField('订单号', max_length=32, unique=True)
-    total_amount = models.DecimalField('总金额', max_digits=12, decimal_places=2)
-    status = models.CharField('状态', max_length=20, choices=STATUS_CHOICES, default='pending')
-    address = models.JSONField('收货地址')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="orders")
+    order_no = models.CharField("订单号", max_length=32, unique=True)
+    total_amount = models.DecimalField("总金额", max_digits=12, decimal_places=2)
+    status = models.CharField("状态", max_length=20, choices=STATUS_CHOICES, default="pending")
+    address = models.JSONField("收货地址")
     created_at = models.DateTimeField(auto_now_add=True)
-    paid_at = models.DateTimeField('付款时间', null=True, blank=True)
-    shipped_at = models.DateTimeField('发货时间', null=True, blank=True)
-    completed_at = models.DateTimeField('完成时间', null=True, blank=True)
+    paid_at = models.DateTimeField("付款时间", null=True, blank=True)
+    shipped_at = models.DateTimeField("发货时间", null=True, blank=True)
+    completed_at = models.DateTimeField("完成时间", null=True, blank=True)
 
     class Meta:
-        app_label = 'shop'
-        db_table = 'shop_order'
-        ordering = ['-created_at']
-        verbose_name = '订单'
-        verbose_name_plural = '订单'
+        app_label = "shop"
+        db_table = "shop_order"
+        ordering = ["-created_at"]
+        verbose_name = "订单"
+        verbose_name_plural = "订单"
 
     def __str__(self):
         return self.order_no
@@ -193,9 +183,9 @@ class Order(models.Model):
             - **UUID**：保证唯一性，防止并发冲突
             - **前缀标识**：ORD 便于区分订单类型
         """
-        timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
+        timestamp = timezone.now().strftime("%Y%m%d%H%M%S")
         random_str = str(uuid.uuid4())[:8].upper()
-        return f'ORD{timestamp}{random_str}'
+        return f"ORD{timestamp}{random_str}"
 
 
 class OrderItem(models.Model):
@@ -209,20 +199,21 @@ class OrderItem(models.Model):
         - **规格记录**：selected_spec 记录购买时选择的规格
         - **关联查询**：通过 items 反向关联查询订单的所有商品
     """
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
+
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    price = models.DecimalField('单价', max_digits=10, decimal_places=2)
-    quantity = models.IntegerField('数量')
-    selected_spec = models.JSONField('选中规格', default=dict)
+    price = models.DecimalField("单价", max_digits=10, decimal_places=2)
+    quantity = models.IntegerField("数量")
+    selected_spec = models.JSONField("选中规格", default=dict)
 
     class Meta:
-        app_label = 'shop'
-        db_table = 'shop_order_item'
-        verbose_name = '订单明细'
-        verbose_name_plural = '订单明细'
+        app_label = "shop"
+        db_table = "shop_order_item"
+        verbose_name = "订单明细"
+        verbose_name_plural = "订单明细"
 
     def __str__(self):
-        return f'{self.order.order_no} - {self.product.name}'
+        return f"{self.order.order_no} - {self.product.name}"
 
 
 class Address(models.Model):
@@ -237,27 +228,28 @@ class Address(models.Model):
         - **地址结构**：省市区三级地址 + 详细地址，便于前端地址选择器对接
         - **排序控制**：sort_order 控制地址展示顺序，数值越小越靠前
     """
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='addresses', verbose_name='用户')
-    name = models.CharField('收货人', max_length=50)
-    phone = models.CharField('联系电话', max_length=20)
-    province = models.CharField('省份', max_length=50)
-    city = models.CharField('城市', max_length=50)
-    district = models.CharField('区县', max_length=50)
-    detail = models.CharField('详细地址', max_length=500)
-    is_default = models.BooleanField('是否默认', default=False)
-    sort_order = models.IntegerField('排序', default=0)
-    created_at = models.DateTimeField('创建时间', auto_now_add=True)
-    updated_at = models.DateTimeField('更新时间', auto_now=True)
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="addresses", verbose_name="用户")
+    name = models.CharField("收货人", max_length=50)
+    phone = models.CharField("联系电话", max_length=20)
+    province = models.CharField("省份", max_length=50)
+    city = models.CharField("城市", max_length=50)
+    district = models.CharField("区县", max_length=50)
+    detail = models.CharField("详细地址", max_length=500)
+    is_default = models.BooleanField("是否默认", default=False)
+    sort_order = models.IntegerField("排序", default=0)
+    created_at = models.DateTimeField("创建时间", auto_now_add=True)
+    updated_at = models.DateTimeField("更新时间", auto_now=True)
 
     class Meta:
-        app_label = 'shop'
-        db_table = 'shop_address'
-        ordering = ['sort_order', '-created_at']
-        verbose_name = '收货地址'
-        verbose_name_plural = '收货地址'
+        app_label = "shop"
+        db_table = "shop_address"
+        ordering = ["sort_order", "-created_at"]
+        verbose_name = "收货地址"
+        verbose_name_plural = "收货地址"
 
     def __str__(self):
-        return f'{self.name} - {self.phone} - {self.province}{self.city}{self.district}{self.detail}'
+        return f"{self.name} - {self.phone} - {self.province}{self.city}{self.district}{self.detail}"
 
     @property
     def full_address(self):
@@ -267,4 +259,4 @@ class Address(models.Model):
         Returns:
             完整地址（省市区 + 详细地址）
         """
-        return f'{self.province}{self.city}{self.district}{self.detail}'
+        return f"{self.province}{self.city}{self.district}{self.detail}"

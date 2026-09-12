@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 首页导航模块路由配置
 
@@ -10,15 +9,15 @@
     - **basename 设置**：显式指定 basename='nav-menus'，避免模型无主键的路由冲突
 """
 
-from django.urls import path, include
+from apps.home.views import AppVersionView, BannerViewSet, NavigationMenuViewSet
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from apps.home.views import NavigationMenuViewSet, BannerViewSet, AppVersionView
 
 router = DefaultRouter()
-router.register(r'navigation/menus', NavigationMenuViewSet, basename='nav-menus')
-router.register(r'banners', BannerViewSet, basename='banners')
+router.register(r"navigation/menus", NavigationMenuViewSet, basename="nav-menus")
+router.register(r"banners", BannerViewSet, basename="banners")
 
 urlpatterns = [
-    path('', include(router.urls)),
-    path('app/version/', AppVersionView.as_view(), name='app-version'),
+    path("", include(router.urls)),
+    path("app/version/", AppVersionView.as_view(), name="app-version"),
 ]

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 统一异常处理模块
 
@@ -24,10 +23,11 @@
        - 记录 error 级别的日志（包含堆栈）
        - 返回 code=999 的 APIResponse，屏蔽敏感信息
 """
-from rest_framework.exceptions import ValidationError
-from rest_framework.views import exception_handler as drf_exception_handler
+
 from loguru import logger
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
+from rest_framework.views import exception_handler as drf_exception_handler
 
 from .common_response import APIResponse
 
@@ -57,16 +57,16 @@ def common_exception_handler(exc, context):
         APIResponse: 统一格式的异常响应
     """
     # 从上下文中提取请求和视图对象
-    request = context.get('request')
-    view = context.get('view')
+    request = context.get("request")
+    view = context.get("view")
 
     # 提取有价值的诊断信息，用于日志记录
     # 用户信息：优先获取 email，如果是匿名用户则显示 'Anonymous'
-    user = getattr(request.user, 'email', 'Anonymous') if request else 'Anonymous'
+    user = getattr(request.user, "email", "Anonymous") if request else "Anonymous"
     # 请求路径：便于定位问题接口
-    path = request.path if request else 'Unknown'
+    path = request.path if request else "Unknown"
     # HTTP 方法：GET/POST/PUT/DELETE 等
-    method = request.method if request else 'N/A'
+    method = request.method if request else "N/A"
     # 视图类名：包含模块路径，便于定位代码位置
     view_name = f"{view.__class__.__module__}.{view.__class__.__name__}"
 
@@ -90,7 +90,7 @@ def common_exception_handler(exc, context):
                 msg = f"{first_field}: {first_error[0] if isinstance(first_error, list) else first_error}"
             else:
                 # 其他字典类型错误，尝试获取 'detail' 字段，否则转为字符串
-                msg = response.data.get('detail') or str(response.data)
+                msg = response.data.get("detail") or str(response.data)
         elif isinstance(response.data, list):
             # 列表类型错误，取第一个元素
             msg = response.data[0]
@@ -100,9 +100,7 @@ def common_exception_handler(exc, context):
 
         # 记录警告日志（业务错误使用 warning 级别）
         # 使用 logger.bind 添加结构化上下文信息，便于日志分析
-        logger.bind(user=user, path=path, method=method, view=view_name).warning(
-            f"Business Error | {msg}"
-        )
+        logger.bind(user=user, path=path, method=method, view=view_name).warning(f"Business Error | {msg}")
 
         # 返回统一格式的业务错误响应，code=998 表示业务逻辑错误
         return APIResponse(code=998, msg=msg, status=response.status_code)
@@ -112,16 +110,10 @@ def common_exception_handler(exc, context):
 
     # 记录错误日志（使用 error 级别，会触发 loguru 的 backtrace 记录）
     # 详细记录异常信息，便于排查问题
-    logger.bind(user=user, path=path, method=method, view=view_name).error(
-        f"Internal Server Error | Detail: {str(exc)}"
-    )
+    logger.bind(user=user, path=path, method=method, view=view_name).error(f"Internal Server Error | Detail: {exc!s}")
     # Loguru 的 diagnose=True 配置会在此处提供非常详细的堆栈跟踪信息
     # 这些信息只会出现在日志文件中，不会暴露给客户端
 
     # 返回统一格式的系统错误响应，code=999 表示系统内部错误
     # 注意：不要返回异常详情给客户端，只返回友好的错误提示
-    return APIResponse(
-        code=999,
-        msg="系统开小差了，请稍后再试",
-        status=status.HTTP_500_INTERNAL_SERVER_ERROR
-    )
+    return APIResponse(code=999, msg="系统开小差了，请稍后再试", status=status.HTTP_500_INTERNAL_SERVER_ERROR)

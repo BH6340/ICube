@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Accounts 模块服务层测试
 
@@ -7,19 +6,19 @@ Accounts 模块服务层测试
     - Token 黑名单管理
     - 缓存服务
 """
+
 import time
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
+from apps.accounts.authentication import CachedJWTAuthentication
+from apps.accounts.services import JWTCacheService, ProfileCacheService
 from django.contrib.auth import get_user_model
 from django.test import SimpleTestCase, TestCase
 from loguru import logger
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.test import APIRequestFactory
 from rest_framework_simplejwt.tokens import RefreshToken
-
-from apps.accounts.authentication import CachedJWTAuthentication
-from apps.accounts.services import JWTCacheService, ProfileCacheService
 
 User = get_user_model()
 
@@ -38,15 +37,11 @@ class AuthenticationLoggingTest(SimpleTestCase):
         logger.remove(self.sink_id)
 
     def _messages(self, level):
-        return "\n".join(
-            record["message"]
-            for record in self.records
-            if record["level"].name == level
-        )
+        return "\n".join(record["message"] for record in self.records if record["level"].name == level)
 
     @patch(
-        'django_redis.get_redis_connection',
-        side_effect=ConnectionError('redis://:redis-password@localhost'),
+        "django_redis.get_redis_connection",
+        side_effect=ConnectionError("redis://:redis-password@localhost"),
     )
     def test_redis_connection_failure_logs_sanitized_error(self, _mock_connection):
         with self.assertRaises(ConnectionError) as raised:
@@ -60,11 +55,13 @@ class AuthenticationLoggingTest(SimpleTestCase):
 
     def test_blacklist_query_failure_logs_sanitized_error(self):
         connection = Mock()
-        connection.exists.side_effect = TimeoutError('redis-password')
+        connection.exists.side_effect = TimeoutError("redis-password")
 
-        with patch.object(JWTCacheService, '_get_con', return_value=connection):
-            with self.assertRaises(TimeoutError) as raised:
-                JWTCacheService.is_blacklisted('sensitive-jti')
+        with (
+            patch.object(JWTCacheService, "_get_con", return_value=connection),
+            self.assertRaises(TimeoutError) as raised,
+        ):
+            JWTCacheService.is_blacklisted("sensitive-jti")
 
         messages = self._messages("ERROR")
         self.assertIn("查询 JWT 黑名单失败", messages)
@@ -75,15 +72,17 @@ class AuthenticationLoggingTest(SimpleTestCase):
 
     def test_blacklist_write_failure_logs_sanitized_error(self):
         connection = Mock()
-        connection.setex.side_effect = ConnectionError('redis-password')
+        connection.setex.side_effect = ConnectionError("redis-password")
         payload = {
-            'jti': 'sensitive-jti',
-            'exp': int(time.time()) + 300,
+            "jti": "sensitive-jti",
+            "exp": int(time.time()) + 300,
         }
 
-        with patch.object(JWTCacheService, '_get_con', return_value=connection):
-            with self.assertRaises(ConnectionError) as raised:
-                JWTCacheService.add_to_blacklist(payload)
+        with (
+            patch.object(JWTCacheService, "_get_con", return_value=connection),
+            self.assertRaises(ConnectionError) as raised,
+        ):
+            JWTCacheService.add_to_blacklist(payload)
 
         messages = self._messages("ERROR")
         self.assertIn("写入 JWT 黑名单失败", messages)
@@ -95,12 +94,14 @@ class AuthenticationLoggingTest(SimpleTestCase):
     def test_user_cache_read_failure_logs_sanitized_error(self):
         authentication = CachedJWTAuthentication()
 
-        with patch(
-            'apps.accounts.authentication.cache.get',
-            side_effect=ConnectionError('redis-password'),
+        with (
+            patch(
+                "apps.accounts.authentication.cache.get",
+                side_effect=ConnectionError("redis-password"),
+            ),
+            self.assertRaises(ConnectionError),
         ):
-            with self.assertRaises(ConnectionError):
-                authentication.get_user({'user_id': 7})
+            authentication.get_user({"user_id": 7})
 
         messages = self._messages("ERROR")
         self.assertIn("读取 JWT 用户缓存失败", messages)
@@ -111,18 +112,22 @@ class AuthenticationLoggingTest(SimpleTestCase):
         authentication = CachedJWTAuthentication()
         user = SimpleNamespace(id=7)
 
-        with patch(
-            'apps.accounts.authentication.cache.get',
-            return_value=None,
-        ), patch(
-            'apps.accounts.authentication.User.objects.get',
-            return_value=user,
-        ), patch(
-            'apps.accounts.authentication.cache.set',
-            side_effect=ConnectionError('redis-password'),
+        with (
+            patch(
+                "apps.accounts.authentication.cache.get",
+                return_value=None,
+            ),
+            patch(
+                "apps.accounts.authentication.User.objects.get",
+                return_value=user,
+            ),
+            patch(
+                "apps.accounts.authentication.cache.set",
+                side_effect=ConnectionError("redis-password"),
+            ),
+            self.assertRaises(ConnectionError),
         ):
-            with self.assertRaises(ConnectionError):
-                authentication.get_user({'user_id': 7})
+            authentication.get_user({"user_id": 7})
 
         messages = self._messages("ERROR")
         self.assertIn("写入 JWT 用户缓存失败", messages)
@@ -132,14 +137,14 @@ class AuthenticationLoggingTest(SimpleTestCase):
     def test_invalid_jwt_logs_warning_without_raw_token(self):
         authentication = CachedJWTAuthentication()
         request = APIRequestFactory().get(
-            '/api/forum/posts/',
-            HTTP_AUTHORIZATION='Token sensitive-raw-token',
+            "/api/forum/posts/",
+            HTTP_AUTHORIZATION="Token sensitive-raw-token",
         )
 
         with patch.object(
             authentication,
-            'get_validated_token',
-            side_effect=AuthenticationFailed('sensitive-raw-token'),
+            "get_validated_token",
+            side_effect=AuthenticationFailed("sensitive-raw-token"),
         ):
             result = authentication.authenticate(request)
 
@@ -153,8 +158,8 @@ class AuthenticationLoggingTest(SimpleTestCase):
     def test_malformed_authorization_header_logs_warning(self):
         authentication = CachedJWTAuthentication()
         request = APIRequestFactory().get(
-            '/api/forum/posts/',
-            HTTP_AUTHORIZATION='Token',
+            "/api/forum/posts/",
+            HTTP_AUTHORIZATION="Token",
         )
 
         try:
@@ -170,16 +175,19 @@ class AuthenticationLoggingTest(SimpleTestCase):
     def test_blacklisted_jwt_logs_warning_without_jti(self):
         authentication = CachedJWTAuthentication()
         request = APIRequestFactory().get(
-            '/api/forum/posts/',
-            HTTP_AUTHORIZATION='Token sensitive-raw-token',
+            "/api/forum/posts/",
+            HTTP_AUTHORIZATION="Token sensitive-raw-token",
         )
-        validated_token = {'jti': 'sensitive-jti', 'user_id': 7}
+        validated_token = {"jti": "sensitive-jti", "user_id": 7}
 
-        with patch.object(
-            authentication,
-            'get_validated_token',
-            return_value=validated_token,
-        ), patch.object(JWTCacheService, 'is_blacklisted', return_value=True):
+        with (
+            patch.object(
+                authentication,
+                "get_validated_token",
+                return_value=validated_token,
+            ),
+            patch.object(JWTCacheService, "is_blacklisted", return_value=True),
+        ):
             result = authentication.authenticate(request)
 
         self.assertIsNone(result)
@@ -192,21 +200,25 @@ class AuthenticationLoggingTest(SimpleTestCase):
     def test_valid_jwt_logs_debug_without_jti(self):
         authentication = CachedJWTAuthentication()
         request = APIRequestFactory().get(
-            '/api/forum/posts/',
-            HTTP_AUTHORIZATION='Token sensitive-raw-token',
+            "/api/forum/posts/",
+            HTTP_AUTHORIZATION="Token sensitive-raw-token",
         )
-        validated_token = {'jti': 'sensitive-jti', 'user_id': 7}
+        validated_token = {"jti": "sensitive-jti", "user_id": 7}
         user = SimpleNamespace(id=7)
 
-        with patch.object(
-            authentication,
-            'get_validated_token',
-            return_value=validated_token,
-        ), patch.object(
-            JWTCacheService,
-            'is_blacklisted',
-            return_value=False,
-        ), patch.object(authentication, 'get_user', return_value=user):
+        with (
+            patch.object(
+                authentication,
+                "get_validated_token",
+                return_value=validated_token,
+            ),
+            patch.object(
+                JWTCacheService,
+                "is_blacklisted",
+                return_value=False,
+            ),
+            patch.object(authentication, "get_user", return_value=user),
+        ):
             result = authentication.authenticate(request)
 
         self.assertEqual(result, (user, validated_token))
@@ -219,20 +231,24 @@ class AuthenticationLoggingTest(SimpleTestCase):
     def test_missing_user_logs_warning_and_returns_none(self):
         authentication = CachedJWTAuthentication()
         request = APIRequestFactory().get(
-            '/api/forum/posts/',
-            HTTP_AUTHORIZATION='Token sensitive-raw-token',
+            "/api/forum/posts/",
+            HTTP_AUTHORIZATION="Token sensitive-raw-token",
         )
-        validated_token = {'jti': 'sensitive-jti', 'user_id': 7}
+        validated_token = {"jti": "sensitive-jti", "user_id": 7}
 
-        with patch.object(
-            authentication,
-            'get_validated_token',
-            return_value=validated_token,
-        ), patch.object(
-            JWTCacheService,
-            'is_blacklisted',
-            return_value=False,
-        ), patch.object(authentication, 'get_user', return_value=None):
+        with (
+            patch.object(
+                authentication,
+                "get_validated_token",
+                return_value=validated_token,
+            ),
+            patch.object(
+                JWTCacheService,
+                "is_blacklisted",
+                return_value=False,
+            ),
+            patch.object(authentication, "get_user", return_value=None),
+        ):
             result = authentication.authenticate(request)
 
         self.assertIsNone(result)
@@ -248,11 +264,7 @@ class JWTCacheServiceTest(TestCase):
 
     def setUp(self):
         """创建测试用户"""
-        self.user = User.objects.create_user(
-            email='jwt@example.com',
-            password='testpass123456',
-            username='jwttester'
-        )
+        self.user = User.objects.create_user(email="jwt@example.com", password="testpass123456", username="jwttester")
 
     def test_add_to_blacklist_success(self):
         """测试添加 Token 到黑名单"""
@@ -282,16 +294,8 @@ class ProfileCacheServiceTest(TestCase):
 
     def setUp(self):
         """创建测试用户"""
-        self.user1 = User.objects.create_user(
-            email='user1@example.com',
-            password='testpass1',
-            username='user1'
-        )
-        self.user2 = User.objects.create_user(
-            email='user2@example.com',
-            password='testpass2',
-            username='user2'
-        )
+        self.user1 = User.objects.create_user(email="user1@example.com", password="testpass1", username="user1")
+        self.user2 = User.objects.create_user(email="user2@example.com", password="testpass2", username="user2")
         self.redis = ProfileCacheService._get_con()
         self.addCleanup(self._clear_profile_cache)
         self._clear_profile_cache()
@@ -344,9 +348,7 @@ class ProfileCacheServiceTest(TestCase):
     def test_update_follow_relation_follow(self):
         """测试更新关注关系（关注）"""
         ProfileCacheService.update_follow_relation(
-            from_user_id=self.user1.id,
-            to_user_id=self.user2.id,
-            is_follow=True
+            from_user_id=self.user1.id, to_user_id=self.user2.id, is_follow=True
         )
 
         # 验证关注状态
@@ -356,9 +358,9 @@ class ProfileCacheServiceTest(TestCase):
     def test_update_follow_relation_rebuilds_missing_cache(self):
         """缓存缺失时更新关系不会把增量误当完整集合"""
         user3 = User.objects.create_user(
-            email='user3@example.com',
-            password='testpass3',
-            username='user3',
+            email="user3@example.com",
+            password="testpass3",
+            username="user3",
         )
         self.addCleanup(
             self.redis.delete,
@@ -389,9 +391,7 @@ class ProfileCacheServiceTest(TestCase):
         self.user1.following.remove(self.user2)
 
         ProfileCacheService.update_follow_relation(
-            from_user_id=self.user1.id,
-            to_user_id=self.user2.id,
-            is_follow=False
+            from_user_id=self.user1.id, to_user_id=self.user2.id, is_follow=False
         )
 
         # 验证已取消关注

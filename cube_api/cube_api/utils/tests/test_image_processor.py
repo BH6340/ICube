@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Utils 模块测试
 
@@ -6,25 +5,26 @@ Utils 模块测试
     - image_processor: 图片压缩、格式转换、裁剪
     - image_url: URL 生成
 """
-from django.test import TestCase
-from io import BytesIO
-from PIL import Image
 
+from io import BytesIO
+
+from django.test import TestCase
+from PIL import Image
 from utils.image_processor import (
     compress_image,
     convert_to_webp,
     crop_to_square,
-    process_image,
     generate_formula_thumbnail,
+    process_image,
 )
 from utils.image_url import build_image_url
 
 
-def create_test_image(width=200, height=100, color='red'):
+def create_test_image(width=200, height=100, color="red"):
     """创建测试用图片"""
-    img = Image.new('RGB', (width, height), color=color)
+    img = Image.new("RGB", (width, height), color=color)
     buffer = BytesIO()
-    img.save(buffer, format='JPEG')
+    img.save(buffer, format="JPEG")
     buffer.seek(0)
     return buffer
 
@@ -32,7 +32,8 @@ def create_test_image(width=200, height=100, color='red'):
 def create_noisy_test_image(width=200, height=150):
     """创建带随机噪声的测试图（用于质量对比测试，确保质量差异体现在文件大小上）"""
     import random
-    img = Image.new('RGB', (width, height))
+
+    img = Image.new("RGB", (width, height))
     pixels = img.load()
     for x in range(width):
         for y in range(height):
@@ -42,7 +43,7 @@ def create_noisy_test_image(width=200, height=150):
                 random.randint(0, 255),
             )
     buffer = BytesIO()
-    img.save(buffer, format='JPEG', quality=100)
+    img.save(buffer, format="JPEG", quality=100)
     buffer.seek(0)
     return buffer
 
@@ -70,10 +71,10 @@ class CompressImageTest(TestCase):
     def test_compress_image_output_format(self):
         """测试压缩输出格式"""
         file = create_test_image()
-        result = compress_image(file, output_format='PNG')
+        result = compress_image(file, output_format="PNG")
 
         img = Image.open(result)
-        self.assertEqual(img.format, 'PNG')
+        self.assertEqual(img.format, "PNG")
 
     def test_compress_image_quality(self):
         """测试压缩质量参数"""
@@ -86,12 +87,12 @@ class CompressImageTest(TestCase):
 
     def test_compress_image_rgba_to_jpeg(self):
         """测试 RGBA 图片转 JPEG（透明通道处理）"""
-        img = Image.new('RGBA', (100, 100), color=(255, 0, 0, 128))
+        img = Image.new("RGBA", (100, 100), color=(255, 0, 0, 128))
         buffer = BytesIO()
-        img.save(buffer, format='PNG')
+        img.save(buffer, format="PNG")
         buffer.seek(0)
 
-        result = compress_image(buffer, output_format='JPEG')
+        result = compress_image(buffer, output_format="JPEG")
         # 应该成功转换，没有抛出异常
         self.assertIsNotNone(result)
 
@@ -105,7 +106,7 @@ class ConvertToWebPTest(TestCase):
         result = convert_to_webp(file)
 
         img = Image.open(result)
-        self.assertEqual(img.format, 'WEBP')
+        self.assertEqual(img.format, "WEBP")
 
     def test_convert_to_webp_quality(self):
         """测试 WebP 质量参数"""
@@ -146,13 +147,13 @@ class CropToSquareTest(TestCase):
 
     def test_crop_preserves_center(self):
         """测试裁剪保留中心区域"""
-        img = Image.new('RGB', (400, 200), color='red')
+        img = Image.new("RGB", (400, 200), color="red")
         for x in range(150, 250):
             for y in range(50, 150):
                 img.putpixel((x, y), (0, 0, 255))
 
         buffer = BytesIO()
-        img.save(buffer, format='JPEG')
+        img.save(buffer, format="JPEG")
         buffer.seek(0)
 
         result = crop_to_square(buffer)
@@ -188,22 +189,15 @@ class ProcessImageTest(TestCase):
         result = process_image(file, convert_webp=True)
 
         img = Image.open(result)
-        self.assertEqual(img.format, 'WEBP')
+        self.assertEqual(img.format, "WEBP")
 
     def test_process_image_full_pipeline(self):
         """测试完整流水线（裁剪 + 压缩 + WebP）"""
         file = create_test_image(width=1000, height=500)
-        result = process_image(
-            file,
-            max_width=256,
-            max_height=256,
-            quality=85,
-            crop_square=True,
-            convert_webp=True
-        )
+        result = process_image(file, max_width=256, max_height=256, quality=85, crop_square=True, convert_webp=True)
 
         img = Image.open(result)
-        self.assertEqual(img.format, 'WEBP')
+        self.assertEqual(img.format, "WEBP")
         self.assertEqual(img.size[0], img.size[1])
         self.assertLessEqual(img.size[0], 256)
 
@@ -213,30 +207,30 @@ class GenerateFormulaThumbnailTest(TestCase):
 
     def test_generate_thumbnail_success(self):
         """测试生成缩略图成功"""
-        result = generate_formula_thumbnail('测试公式', "R U R'U'")
+        result = generate_formula_thumbnail("测试公式", "R U R'U'")
 
         self.assertIsNotNone(result)
         result.seek(0)
 
         img = Image.open(result)
         self.assertEqual(img.size, (512, 512))
-        self.assertEqual(img.format, 'WEBP')
+        self.assertEqual(img.format, "WEBP")
 
     def test_generate_thumbnail_custom_size(self):
         """测试自定义尺寸的缩略图"""
-        result = generate_formula_thumbnail('测试', 'R U', size=256)
+        result = generate_formula_thumbnail("测试", "R U", size=256)
 
         img = Image.open(result)
         self.assertEqual(img.size, (256, 256))
 
     def test_generate_thumbnail_with_empty_name(self):
         """测试空名称（边界情况）"""
-        result = generate_formula_thumbnail('', 'R U')
+        result = generate_formula_thumbnail("", "R U")
         self.assertIsNotNone(result)
 
     def test_generate_thumbnail_with_empty_notation(self):
         """测试空记号（边界情况）"""
-        result = generate_formula_thumbnail('公式名', '')
+        result = generate_formula_thumbnail("公式名", "")
         self.assertIsNotNone(result)
 
 
@@ -246,31 +240,30 @@ class BuildImageUrlTest(TestCase):
     def test_build_url_with_none(self):
         """测试 None 输入"""
         result = build_image_url(None)
-        self.assertEqual(result, '')
+        self.assertEqual(result, "")
 
     def test_build_url_with_empty_string(self):
         """测试空字符串"""
-        result = build_image_url('')
-        self.assertEqual(result, '')
+        result = build_image_url("")
+        self.assertEqual(result, "")
 
     def test_build_url_with_relative_path(self):
         """测试相对路径"""
-        result = build_image_url('avatars/test.png')
-        self.assertIn('/media/avatars/test.png', result)
+        result = build_image_url("avatars/test.png")
+        self.assertIn("/media/avatars/test.png", result)
 
     def test_build_url_with_media_prefix(self):
         """测试已有 /media/ 前缀的路径"""
-        result = build_image_url('/media/avatars/test.png')
-        self.assertEqual(result, '/media/avatars/test.png')
+        result = build_image_url("/media/avatars/test.png")
+        self.assertEqual(result, "/media/avatars/test.png")
 
     def test_build_url_with_absolute_url(self):
         """测试已有完整 URL"""
-        absolute_url = 'http://example.com/image.png'
+        absolute_url = "http://example.com/image.png"
         result = build_image_url(absolute_url)
         self.assertEqual(result, absolute_url)
 
     def test_build_url_with_field_file(self):
         """测试 FieldFile 对象"""
-        from django.db.models.fields.files import FieldFile
-        result = build_image_url('avatars/test.png')
-        self.assertIn('avatars/test.png', result)
+        result = build_image_url("avatars/test.png")
+        self.assertIn("avatars/test.png", result)

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 首页导航菜单后台
 
@@ -11,13 +10,13 @@
     - 继承 unfold.admin.ModelAdmin 获取 Tailwind CSS 样式
     - 使用 @display 装饰器自定义分类 Badge 列
 """
+
 from django.contrib import admin
 from django.utils.safestring import mark_safe
-
 from unfold.admin import ModelAdmin
 from unfold.decorators import display
 
-from .models import NavigationMenu, Banner
+from .models import Banner, NavigationMenu
 
 
 @admin.register(NavigationMenu)
@@ -37,12 +36,12 @@ class NavigationMenuAdmin(ModelAdmin):
     # 配置原因：index 是菜单的唯一标识放首位，category_badge 用颜色区分分类
     # match_paths 是 JSON 数组，直接展示原始格式供管理员核对
     list_display = (
-        "index",            # 菜单唯一标识（如 "1"、"p-1"）
-        "label",            # 菜单显示名称
-        "path",             # 前端路由路径
-        "category_badge",   # 自定义列：分类 Badge 标签
-        "sort_order",       # 排序值
-        "match_paths",      # 路由匹配路径集（JSON 数组）
+        "index",  # 菜单唯一标识（如 "1"、"p-1"）
+        "label",  # 菜单显示名称
+        "path",  # 前端路由路径
+        "category_badge",  # 自定义列：分类 Badge 标签
+        "sort_order",  # 排序值
+        "match_paths",  # 路由匹配路径集（JSON 数组）
     )
 
     # list_editable：列表页可直接编辑的字段（无需进入详情页）
@@ -91,8 +90,7 @@ class NavigationMenuAdmin(ModelAdmin):
         if obj.category == "main":
             # 主导航栏：蓝色 Badge
             return mark_safe(
-                '<span class="px-2 py-1 text-xs font-medium rounded-full '
-                'bg-blue-100 text-blue-800">主导航栏</span>'
+                '<span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">主导航栏</span>'
             )
         # 个人中心导航栏：紫色 Badge
         return mark_safe(
@@ -116,13 +114,13 @@ class BannerAdmin(ModelAdmin):
     # ==================== 列表页配置 ====================
 
     list_display = (
-        "image_preview",     # 自定义列：图片预览
-        "title",             # 轮播图标题
-        "description",       # 轮播图描述
-        "link",              # 跳转链接
-        "is_active",         # 是否启用（可编辑）
-        "sort_order",        # 排序值（可编辑）
-        "created_at",        # 创建时间
+        "image_preview",  # 自定义列：图片预览
+        "title",  # 轮播图标题
+        "description",  # 轮播图描述
+        "link",  # 跳转链接
+        "is_active",  # 是否启用（可编辑）
+        "sort_order",  # 排序值（可编辑）
+        "created_at",  # 创建时间
     )
 
     list_editable = ("sort_order", "is_active")
@@ -138,13 +136,19 @@ class BannerAdmin(ModelAdmin):
     # ==================== 编辑页配置 ====================
 
     fieldsets = (
-        (None, {
-            "fields": ("title", "description", "image", "link"),
-        }),
-        ("高级设置", {
-            "fields": ("sort_order", "is_active"),
-            "classes": ("collapse",),
-        }),
+        (
+            None,
+            {
+                "fields": ("title", "description", "image", "link"),
+            },
+        ),
+        (
+            "高级设置",
+            {
+                "fields": ("sort_order", "is_active"),
+                "classes": ("collapse",),
+            },
+        ),
     )
 
     # ==================== 自定义列（@display 装饰器） ====================

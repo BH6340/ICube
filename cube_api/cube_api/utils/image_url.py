@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 图片 URL 生成工具
 
@@ -13,6 +12,7 @@
 核心函数：
     - build_image_url: 生成统一的图片URL
 """
+
 from django.conf import settings
 
 
@@ -43,20 +43,20 @@ def build_image_url(relative_path, absolute=False):
     Examples:
         >>> build_image_url('/media/avatars/user.png')
         '/media/avatars/user.png'
-        
+
         >>> build_image_url('forum/posts/image.png')
         '/media/forum/posts/image.png'
-        
+
         >>> build_image_url(image_field_file_object)
         '/media/formulas/F2L_001.png'
-        
+
         >>> build_image_url('/media/image.png', absolute=True)
         'http://localhost:8000/media/image.png'
     """
     # 边界条件：空路径直接返回空字符串
     if not relative_path:
-        return ''
-    
+        return ""
+
     # 关键处理：Django ImageFieldFile 对象不能直接调用字符串方法
     # hasattr(relative_path, 'path') 用于判断是否为文件对象
     # 需要先转换为字符串才能继续处理
@@ -64,46 +64,47 @@ def build_image_url(relative_path, absolute=False):
     # 所以改用 isinstance 判断，或者捕获异常
     try:
         from django.db.models.fields.files import FieldFile
+
         if isinstance(relative_path, FieldFile):
             # 直接用 name 属性，避免触发 path 属性的计算
             if relative_path.name:
                 relative_path = relative_path.name
             else:
-                return ''
+                return ""
     except ImportError:
         # 如果导入失败，尝试转换为字符串
         try:
             relative_path = str(relative_path)
         except (ValueError, TypeError, AttributeError):
-            return ''
+            return ""
     else:
         # 如果没有抛出 ImportError，还需要检查是否能成功转换为字符串
         if not isinstance(relative_path, str):
             try:
                 relative_path = str(relative_path)
             except (ValueError, TypeError, AttributeError):
-                return ''
-    
+                return ""
+
     # 如果已经是完整的绝对URL，直接返回，无需处理
-    if relative_path.startswith('http://') or relative_path.startswith('https://'):
+    if relative_path.startswith("http://") or relative_path.startswith("https://"):
         return relative_path
-    
+
     # 确保路径以 / 开头，便于后续拼接
-    if not relative_path.startswith('/'):
-        relative_path = '/' + relative_path
-    
+    if not relative_path.startswith("/"):
+        relative_path = "/" + relative_path
+
     # 统一添加 /media/ 前缀
     # 数据库中存储的图片路径可能有两种格式：
     # 1. '/media/avatars/user.png'（已带前缀）
     # 2. '/avatars/user.png'（不带前缀）
     # 这里统一处理为带 /media/ 前缀的格式
-    if not relative_path.startswith('/media/'):
-        relative_path = '/media' + relative_path
-    
+    if not relative_path.startswith("/media/"):
+        relative_path = "/media" + relative_path
+
     # 根据参数决定返回相对路径还是绝对路径
     # 默认返回相对路径，避免浏览器 PNA 策略阻止访问
     # 仅在需要发送邮件等场景下使用绝对路径
     if absolute:
-        return settings.SITE_DOMAIN.rstrip('/') + relative_path
-    
+        return settings.SITE_DOMAIN.rstrip("/") + relative_path
+
     return relative_path

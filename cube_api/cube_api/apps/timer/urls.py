@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 计时器模块路由配置
 
@@ -9,14 +8,15 @@
     - 设备管理：/api/timer/devices/
 """
 
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from .views import TimerRecordViewSet, SmartCubeDeviceViewSet
+
+from .views import SmartCubeDeviceViewSet, TimerRecordViewSet
 
 router = DefaultRouter()
-router.register('records', TimerRecordViewSet, basename='timer-record')
-router.register('devices', SmartCubeDeviceViewSet, basename='smart-cube-device')
+router.register("records", TimerRecordViewSet, basename="timer-record")
+router.register("devices", SmartCubeDeviceViewSet, basename="smart-cube-device")
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path("", include(router.urls)),
 ]
