@@ -185,6 +185,7 @@
 ## ci - CI/CD
 
 - ci(cicd): 替换路径检测工具并优化条件判断 (#16) (0d57f9d)
+- ci(cicd): 重构CI工作流，拆分Docker构建Job并优化路径检测 (#46) (bfc3d8b)
 
 
 ## build - 构建
