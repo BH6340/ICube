@@ -1,4 +1,4 @@
-# ============================================================================
+﻿# ============================================================================
 # ICube CI/CD 工作流
 # ============================================================================
 # 触发条件：
@@ -122,7 +122,7 @@ jobs:
       # ---- 覆盖率报告上传（保留 30 天）----
       - name: 上传覆盖率报告
         if: steps.changed-backend.outputs.any_changed == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-report
           path: cube_api/coverage.xml
@@ -358,7 +358,7 @@ jobs:
 
       - name: 上传部署日志
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: deploy-log-${{ github.run_id }}
           path: deploy.log
