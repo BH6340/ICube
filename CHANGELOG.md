@@ -119,6 +119,7 @@
 - fix(shop): 从支付宝回调数据中移除sign字段 (#24) (1111093)
 - fix(scripts): 修复数据库备份脚本的分支切换逻辑问题  (#35) (84e5d68)
 - fix(cube_api): 修复生产环境Admin登录403与CORS白名单失效问题 (#47) (25f5c14)
+- fix(prod settings): 修复多域名CORS和CSRF配置解析问题  (#48) (b921000)
 
 
 ## docs - 文档
