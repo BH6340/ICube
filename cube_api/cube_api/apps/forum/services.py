@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 论坛服务层
 
@@ -13,14 +12,15 @@
     - **幂等性设计**：点赞/收藏操作支持切换状态，避免重复操作
     - **F表达式更新**：使用 Django F 表达式避免并发更新问题
 """
-import sys
+
+import logging
+from datetime import timedelta
 
 from django.core.cache import cache
 from django.db.models import F
 from django.utils import timezone
-from datetime import timedelta
-from .models import Post, Comment
-import logging
+
+from .models import Comment, Post
 
 logger = logging.getLogger(__name__)
 
@@ -80,8 +80,8 @@ class PostCacheService:
             try:
                 post = Post.objects.get(id=post_id)
                 # 使用 F 表达式避免并发更新问题
-                post.view_count = F('view_count') + 1
-                post.save(update_fields=['view_count'])
+                post.view_count = F("view_count") + 1
+                post.save(update_fields=["view_count"])
                 post.refresh_from_db()
                 return post.view_count
             except Post.DoesNotExist:
@@ -106,7 +106,7 @@ class PostCacheService:
             if count is None:
                 try:
                     # 只获取 view_count 字段，减少查询开销
-                    post = Post.objects.only('view_count').get(id=post_id)
+                    post = Post.objects.only("view_count").get(id=post_id)
                     count = post.view_count
                     # 缓存 1 小时
                     cache.set(key, count, timeout=3600)
@@ -116,7 +116,7 @@ class PostCacheService:
         except Exception as e:
             logger.warning(f"Cache error in get_view_count: {e}")
             try:
-                post = Post.objects.only('view_count').get(id=post_id)
+                post = Post.objects.only("view_count").get(id=post_id)
                 return post.view_count
             except Post.DoesNotExist:
                 return 0
@@ -140,6 +140,7 @@ class PostCacheService:
         try:
             # 使用原生 Redis 连接，支持 keys 命令
             from django_redis import get_redis_connection
+
             con = get_redis_connection("default")
 
             # 获取所有浏览量缓存键
@@ -150,21 +151,18 @@ class PostCacheService:
             for key in keys:
                 try:
                     # Redis 返回的 key 可能是 bytes 类型，需要解码
-                    if isinstance(key, bytes):
-                        key_str = key.decode('utf-8')
-                    else:
-                        key_str = key
+                    key_str = key.decode("utf-8") if isinstance(key, bytes) else key
 
                     # 解析键格式：{prefix}:forum:post:{post_id}:view
                     # 倒数第二个部分是 post_id
-                    parts = key_str.split(':')
+                    parts = key_str.split(":")
                     post_id = parts[-2]
 
                     # 获取缓存的浏览量增量
                     views = con.get(key_str)
                     if views:
                         # 使用 F 表达式累加浏览量
-                        Post.objects.filter(id=post_id).update(view_count=F('view_count') + int(views))
+                        Post.objects.filter(id=post_id).update(view_count=F("view_count") + int(views))
                         # 同步完成后删除缓存键
                         con.delete(key_str)
                         count += 1
@@ -212,16 +210,16 @@ class PostInteractionService:
             # 已点赞：取消点赞
             like.delete()
             # 使用 F 表达式原子递减点赞数
-            Post.objects.filter(id=post_id).update(like_count=F('like_count') - 1)
+            Post.objects.filter(id=post_id).update(like_count=F("like_count") - 1)
             post = Post.objects.get(id=post_id)
-            return {'liked': False, 'like_count': post.like_count}
+            return {"liked": False, "like_count": post.like_count}
         else:
             # 未点赞：添加点赞
             PostLike.objects.create(post_id=post_id, user=user)
             # 使用 F 表达式原子递增点赞数
-            Post.objects.filter(id=post_id).update(like_count=F('like_count') + 1)
+            Post.objects.filter(id=post_id).update(like_count=F("like_count") + 1)
             post = Post.objects.get(id=post_id)
-            return {'liked': True, 'like_count': post.like_count}
+            return {"liked": True, "like_count": post.like_count}
 
     @staticmethod
     def toggle_collect(post_id, user):
@@ -246,16 +244,16 @@ class PostInteractionService:
             # 已收藏：取消收藏
             collect.delete()
             # 使用 F 表达式原子递减收藏数
-            Post.objects.filter(id=post_id).update(collect_count=F('collect_count') - 1)
+            Post.objects.filter(id=post_id).update(collect_count=F("collect_count") - 1)
             post = Post.objects.get(id=post_id)
-            return {'collected': False, 'collect_count': post.collect_count}
+            return {"collected": False, "collect_count": post.collect_count}
         else:
             # 未收藏：添加收藏
             PostCollect.objects.create(post_id=post_id, user=user)
             # 使用 F 表达式原子递增收藏数
-            Post.objects.filter(id=post_id).update(collect_count=F('collect_count') + 1)
+            Post.objects.filter(id=post_id).update(collect_count=F("collect_count") + 1)
             post = Post.objects.get(id=post_id)
-            return {'collected': True, 'collect_count': post.collect_count}
+            return {"collected": True, "collect_count": post.collect_count}
 
     @staticmethod
     def toggle_comment_reaction(comment_id, user, is_like):
@@ -275,8 +273,9 @@ class PostInteractionService:
         Returns:
             包含反应状态和计数的字典
         """
-        from .models import CommentLike, Comment
         from django.db.models import F
+
+        from .models import CommentLike
 
         # 查询用户是否已有反应记录
         existing = CommentLike.objects.filter(comment_id=comment_id, user=user)
@@ -289,9 +288,9 @@ class PostInteractionService:
                 existing.delete()
                 action_type = "canceled"
                 if is_like:
-                    Comment.objects.filter(id=comment_id).update(like_count=F('like_count') - 1)
+                    Comment.objects.filter(id=comment_id).update(like_count=F("like_count") - 1)
                 else:
-                    Comment.objects.filter(id=comment_id).update(dislike_count=F('dislike_count') - 1)
+                    Comment.objects.filter(id=comment_id).update(dislike_count=F("dislike_count") - 1)
             else:
                 # 切换操作：从点赞变为点踩，或反之
                 reaction.is_like = is_like
@@ -300,48 +299,45 @@ class PostInteractionService:
                 if is_like:
                     # 切换为点赞：点赞数+1，点踩数-1
                     Comment.objects.filter(id=comment_id).update(
-                        like_count=F('like_count') + 1,
-                        dislike_count=F('dislike_count') - 1
+                        like_count=F("like_count") + 1, dislike_count=F("dislike_count") - 1
                     )
                 else:
                     # 切换为点踩：点赞数-1，点踩数+1
                     Comment.objects.filter(id=comment_id).update(
-                        like_count=F('like_count') - 1,
-                        dislike_count=F('dislike_count') + 1
+                        like_count=F("like_count") - 1, dislike_count=F("dislike_count") + 1
                     )
         else:
             # 新建反应
             CommentLike.objects.create(comment_id=comment_id, user=user, is_like=is_like)
             action_type = "created"
             if is_like:
-                Comment.objects.filter(id=comment_id).update(like_count=F('like_count') + 1)
+                Comment.objects.filter(id=comment_id).update(like_count=F("like_count") + 1)
             else:
-                Comment.objects.filter(id=comment_id).update(dislike_count=F('dislike_count') + 1)
+                Comment.objects.filter(id=comment_id).update(dislike_count=F("dislike_count") + 1)
 
         # 获取最新的评论数据
         comment = Comment.objects.get(id=comment_id)
 
         # 计算当前用户的点赞/点踩状态
         user_reaction = CommentLike.objects.filter(comment_id=comment_id, user=user).first()
-        is_liked = (user_reaction.is_like == True) if user_reaction else False
-        is_disliked = (user_reaction.is_like == False) if user_reaction else False
+        is_liked = user_reaction.is_like if user_reaction else False
+        is_disliked = not user_reaction.is_like if user_reaction else False
 
         # 计算返回给前端的动作标识
-        if action_type == "canceled":
-            current_reaction = "none"
-        else:
-            current_reaction = "liked" if is_like else "disliked"
+        current_reaction = (
+            "none" if action_type == "canceled" else "liked" if is_like else "disliked"
+        )
 
         return {
-            'code': 100,
-            'msg': '请求成功',
-            'data': {
-                'reaction': current_reaction,
-                'like_count': comment.like_count,
-                'dislike_count': comment.dislike_count,
-                'liked': is_liked,
-                'disliked': is_disliked
-            }
+            "code": 100,
+            "msg": "请求成功",
+            "data": {
+                "reaction": current_reaction,
+                "like_count": comment.like_count,
+                "dislike_count": comment.dislike_count,
+                "liked": is_liked,
+                "disliked": is_disliked,
+            },
         }
 
 
@@ -378,12 +374,13 @@ class HotPostService:
 
         # 使用 annotate 在数据库层面计算热度分数
         # 这样可以利用数据库索引，性能优于在 Python 层面计算
-        posts = Post.objects.filter(
-            status='published',
-            created_at__gte=since
-        ).annotate(
-            # 热度计算公式：点赞×3 + 评论×2 + 浏览量×1
-            hot_score=F('like_count') * 3 + F('comment_count') * 2 + F('view_count')
-        ).order_by('-hot_score')[:limit]
+        posts = (
+            Post.objects.filter(status="published", created_at__gte=since)
+            .annotate(
+                # 热度计算公式：点赞×3 + 评论×2 + 浏览量×1
+                hot_score=F("like_count") * 3 + F("comment_count") * 2 + F("view_count")
+            )
+            .order_by("-hot_score")[:limit]
+        )
 
         return posts

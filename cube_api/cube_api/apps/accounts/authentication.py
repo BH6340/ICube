@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 自定义 JWT 认证模块
 
@@ -15,10 +14,11 @@
     - 通过缓存用户实例，避免每次请求都查询数据库
     - 通过黑名单机制，实现安全的退出登录功能
 """
+
 from django.core.cache import cache
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.exceptions import AuthenticationFailed
 from loguru import logger
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from .models import User
 from .services import JWTCacheService
@@ -61,7 +61,7 @@ class CachedJWTAuthentication(JWTAuthentication):
         Returns:
             User 对象或 None
         """
-        user_id = validated_token.get('user_id')
+        user_id = validated_token.get("user_id")
         if not user_id:
             return None
 
@@ -94,7 +94,7 @@ class CachedJWTAuthentication(JWTAuthentication):
             # 只存储用户 ID，不存储完整对象
             # 缓存有效期：1小时（3600秒）
             try:
-                cache.set(cache_key, user.id, timeout=60*60)
+                cache.set(cache_key, user.id, timeout=60 * 60)
             except Exception as exc:
                 logger.error(
                     "写入 JWT 用户缓存失败: user_id={}, exception_type={}",
@@ -133,7 +133,7 @@ class CachedJWTAuthentication(JWTAuthentication):
         if header is None:
             return None
 
-        request_path = getattr(request, 'path', '')
+        request_path = getattr(request, "path", "")
 
         try:
             # 从 Authorization 头中提取原始 Token
@@ -158,7 +158,7 @@ class CachedJWTAuthentication(JWTAuthentication):
 
             logger.debug(
                 "JWT 验证成功: user_id={}, path={}",
-                validated_token.get('user_id'),
+                validated_token.get("user_id"),
                 request_path,
             )
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Timer 模块测试
 
@@ -7,11 +6,10 @@ Timer 模块测试
     - 计时记录查询
     - 魔方类型与还原方法
 """
-from django.test import TestCase
-from django.contrib.auth import get_user_model
-from decimal import Decimal
 
 from apps.timer.models import TimerRecord
+from django.contrib.auth import get_user_model
+from django.test import TestCase
 
 User = get_user_model()
 
@@ -20,58 +18,47 @@ class TimerRecordModelTest(TestCase):
     """计时记录模型测试"""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            email='timer@example.com',
-            password='testpass',
-            username='timeruser'
-        )
+        self.user = User.objects.create_user(email="timer@example.com", password="testpass", username="timeruser")
         self.record = TimerRecord.objects.create(
-            user=self.user,
-            cube_type='3x3',
-            method='cfop',
-            time_ms=15432,
-            scramble="R U R' U'"
+            user=self.user, cube_type="3x3", method="cfop", time_ms=15432, scramble="R U R' U'"
         )
 
     def test_create_record_success(self):
         """测试创建计时记录"""
         self.assertEqual(self.record.user, self.user)
-        self.assertEqual(self.record.cube_type, '3x3')
-        self.assertEqual(self.record.method, 'cfop')
+        self.assertEqual(self.record.cube_type, "3x3")
+        self.assertEqual(self.record.method, "cfop")
         self.assertEqual(self.record.time_ms, 15432)
         self.assertEqual(self.record.scramble, "R U R' U'")
 
     def test_record_str_method(self):
         """测试 __str__ 方法"""
-        self.assertEqual(str(self.record), 'timeruser - 3x3 - 手动计时 - 15432ms')
+        self.assertEqual(str(self.record), "timeruser - 3x3 - 手动计时 - 15432ms")
 
     def test_record_default_values(self):
         """测试默认值"""
-        record = TimerRecord.objects.create(
-            user=self.user,
-            time_ms=10000
-        )
-        self.assertEqual(record.cube_type, '3x3')
-        self.assertEqual(record.method, 'layer')
-        self.assertEqual(record.scramble, '')
+        record = TimerRecord.objects.create(user=self.user, time_ms=10000)
+        self.assertEqual(record.cube_type, "3x3")
+        self.assertEqual(record.method, "layer")
+        self.assertEqual(record.scramble, "")
 
     def test_record_cube_type_choices(self):
         """测试魔方类型枚举"""
         valid_types = [choice[0] for choice in TimerRecord.CUBE_TYPE_CHOICES]
-        self.assertIn('2x2', valid_types)
-        self.assertIn('3x3', valid_types)
-        self.assertIn('4x4', valid_types)
-        self.assertIn('5x5', valid_types)
-        self.assertIn('other', valid_types)
+        self.assertIn("2x2", valid_types)
+        self.assertIn("3x3", valid_types)
+        self.assertIn("4x4", valid_types)
+        self.assertIn("5x5", valid_types)
+        self.assertIn("other", valid_types)
 
     def test_record_method_choices(self):
         """测试还原方法枚举"""
         valid_methods = [choice[0] for choice in TimerRecord.METHOD_CHOICES]
-        self.assertIn('layer', valid_methods)
-        self.assertIn('cfop', valid_methods)
-        self.assertIn('roux', valid_methods)
-        self.assertIn('zbll', valid_methods)
-        self.assertIn('other', valid_methods)
+        self.assertIn("layer", valid_methods)
+        self.assertIn("cfop", valid_methods)
+        self.assertIn("roux", valid_methods)
+        self.assertIn("zbll", valid_methods)
+        self.assertIn("other", valid_methods)
 
     def test_record_ordering(self):
         """测试记录排序（按创建时间倒序）"""
@@ -85,51 +72,37 @@ class TimerRecordModelTest(TestCase):
 
     def test_record_user_relation(self):
         """测试用户与记录的一对多关系"""
-        record2 = TimerRecord.objects.create(user=self.user, time_ms=20000)
+        TimerRecord.objects.create(user=self.user, time_ms=20000)
         self.assertEqual(self.user.timer_records.count(), 2)
 
     def test_record_with_different_cube_types(self):
         """测试不同魔方类型的记录"""
-        record_2x2 = TimerRecord.objects.create(
-            user=self.user, cube_type='2x2', method='layer', time_ms=8000
-        )
-        record_4x4 = TimerRecord.objects.create(
-            user=self.user, cube_type='4x4', method='cfop', time_ms=45000
-        )
-        self.assertEqual(record_2x2.cube_type, '2x2')
-        self.assertEqual(record_4x4.cube_type, '4x4')
+        record_2x2 = TimerRecord.objects.create(user=self.user, cube_type="2x2", method="layer", time_ms=8000)
+        record_4x4 = TimerRecord.objects.create(user=self.user, cube_type="4x4", method="cfop", time_ms=45000)
+        self.assertEqual(record_2x2.cube_type, "2x2")
+        self.assertEqual(record_4x4.cube_type, "4x4")
 
     def test_record_with_different_methods(self):
         """测试不同还原方法的记录"""
-        record_roux = TimerRecord.objects.create(
-            user=self.user, cube_type='3x3', method='roux', time_ms=12000
-        )
-        record_zbll = TimerRecord.objects.create(
-            user=self.user, cube_type='3x3', method='zbll', time_ms=9000
-        )
-        self.assertEqual(record_roux.method, 'roux')
-        self.assertEqual(record_zbll.method, 'zbll')
+        record_roux = TimerRecord.objects.create(user=self.user, cube_type="3x3", method="roux", time_ms=12000)
+        record_zbll = TimerRecord.objects.create(user=self.user, cube_type="3x3", method="zbll", time_ms=9000)
+        self.assertEqual(record_roux.method, "roux")
+        self.assertEqual(record_zbll.method, "zbll")
 
     def test_record_time_precision(self):
         """测试毫秒级时间精度"""
-        record = TimerRecord.objects.create(
-            user=self.user, time_ms=12345
-        )
+        record = TimerRecord.objects.create(user=self.user, time_ms=12345)
         self.assertEqual(record.time_ms, 12345)
 
     def test_record_scramble_optional(self):
         """测试打乱公式可选"""
-        record = TimerRecord.objects.create(
-            user=self.user, time_ms=10000
-        )
-        self.assertEqual(record.scramble, '')
+        record = TimerRecord.objects.create(user=self.user, time_ms=10000)
+        self.assertEqual(record.scramble, "")
 
     def test_record_timing_mode_default(self):
         """测试计时方式默认值为 manual"""
-        record = TimerRecord.objects.create(
-            user=self.user, time_ms=10000
-        )
-        self.assertEqual(record.timing_mode, 'manual')
+        record = TimerRecord.objects.create(user=self.user, time_ms=10000)
+        self.assertEqual(record.timing_mode, "manual")
         self.assertFalse(record.is_dnf)
         self.assertIsNone(record.solve_sequence)
         self.assertIsNone(record.observation_time_ms)
@@ -141,13 +114,13 @@ class TimerRecordModelTest(TestCase):
         record = TimerRecord.objects.create(
             user=self.user,
             time_ms=15000,
-            timing_mode='smart',
+            timing_mode="smart",
             solve_sequence="R U R' U'",
             observation_time_ms=3000,
             move_count=25,
             is_dnf=False,
         )
-        self.assertEqual(record.timing_mode, 'smart')
+        self.assertEqual(record.timing_mode, "smart")
         self.assertEqual(record.solve_sequence, "R U R' U'")
         self.assertEqual(record.observation_time_ms, 3000)
         self.assertEqual(record.move_count, 25)
@@ -165,42 +138,45 @@ class TimerRecordModelTest(TestCase):
     def test_smart_cube_device_create(self):
         """测试创建设备"""
         from apps.timer.models import SmartCubeDevice
+
         device = SmartCubeDevice.objects.create(
             user=self.user,
-            mac_address='AA:BB:CC:DD:EE:FF',
-            name='GAN i4',
+            mac_address="AA:BB:CC:DD:EE:FF",
+            name="GAN i4",
         )
         self.assertEqual(device.user, self.user)
-        self.assertEqual(device.mac_address, 'AA:BB:CC:DD:EE:FF')
-        self.assertEqual(device.name, 'GAN i4')
+        self.assertEqual(device.mac_address, "AA:BB:CC:DD:EE:FF")
+        self.assertEqual(device.name, "GAN i4")
         self.assertTrue(device.is_active)
 
     def test_smart_cube_device_unique_user_mac(self):
         """测试用户+MAC 唯一约束"""
         from apps.timer.models import SmartCubeDevice
+
         SmartCubeDevice.objects.create(
             user=self.user,
-            mac_address='AA:BB:CC:DD:EE:FF',
+            mac_address="AA:BB:CC:DD:EE:FF",
         )
         # 同一用户同一 MAC 不能重复创建
         with self.assertRaises(Exception):
             SmartCubeDevice.objects.create(
                 user=self.user,
-                mac_address='AA:BB:CC:DD:EE:FF',
+                mac_address="AA:BB:CC:DD:EE:FF",
             )
 
     def test_record_with_device(self):
         """测试记录关联设备"""
         from apps.timer.models import SmartCubeDevice
+
         device = SmartCubeDevice.objects.create(
             user=self.user,
-            mac_address='AA:BB:CC:DD:EE:FF',
-            name='GAN i4',
+            mac_address="AA:BB:CC:DD:EE:FF",
+            name="GAN i4",
         )
         record = TimerRecord.objects.create(
             user=self.user,
             time_ms=15000,
-            timing_mode='smart',
+            timing_mode="smart",
             device=device,
         )
         self.assertEqual(record.device, device)

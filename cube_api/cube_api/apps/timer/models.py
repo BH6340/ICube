@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 计时器模块数据模型
 
@@ -12,8 +11,8 @@
     - **打乱公式存储**：scramble 字段记录打乱公式，便于复盘
 """
 
-from django.db import models
 from django.contrib.auth import get_user_model
+from django.db import models
 
 User = get_user_model()
 
@@ -24,47 +23,24 @@ class SmartCubeDevice(models.Model):
 
     存储用户连接过的智能魔方设备信息，便于下次自动连接无需手动输入 MAC。
     """
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='smart_cube_devices',
-        verbose_name='用户'
-    )
-    mac_address = models.CharField(
-        'MAC 地址',
-        max_length=20
-    )
-    name = models.CharField(
-        '设备名称',
-        max_length=50,
-        blank=True
-    )
-    last_connected_at = models.DateTimeField(
-        '最后连接时间',
-        null=True,
-        blank=True
-    )
-    is_active = models.BooleanField(
-        '是否启用',
-        default=True
-    )
-    created_at = models.DateTimeField('创建时间', auto_now_add=True)
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="smart_cube_devices", verbose_name="用户")
+    mac_address = models.CharField("MAC 地址", max_length=20)
+    name = models.CharField("设备名称", max_length=50, blank=True)
+    last_connected_at = models.DateTimeField("最后连接时间", null=True, blank=True)
+    is_active = models.BooleanField("是否启用", default=True)
+    created_at = models.DateTimeField("创建时间", auto_now_add=True)
 
     class Meta:
-        app_label = 'timer'
-        db_table = 'smart_cube_device'
-        ordering = ['-last_connected_at']
-        verbose_name = '智能魔方设备'
-        verbose_name_plural = '智能魔方设备'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['user', 'mac_address'],
-                name='unique_user_mac'
-            )
-        ]
+        app_label = "timer"
+        db_table = "smart_cube_device"
+        ordering = ["-last_connected_at"]
+        verbose_name = "智能魔方设备"
+        verbose_name_plural = "智能魔方设备"
+        constraints = [models.UniqueConstraint(fields=["user", "mac_address"], name="unique_user_mac")]
 
     def __str__(self):
-        return f'{self.user.username} - {self.name or self.mac_address}'
+        return f"{self.user.username} - {self.name or self.mac_address}"
 
 
 class TimerRecord(models.Model):
@@ -97,74 +73,55 @@ class TimerRecord(models.Model):
         - **排序规则**：按创建时间倒序，最新记录优先显示
         - **向后兼容**：所有新增字段均为 nullable，旧数据自动归入 manual 模式
     """
+
     CUBE_TYPE_CHOICES = [
-        ('2x2', '二阶魔方'),
-        ('3x3', '三阶魔方'),
-        ('4x4', '四阶魔方'),
-        ('5x5', '五阶魔方'),
-        ('other', '其他'),
+        ("2x2", "二阶魔方"),
+        ("3x3", "三阶魔方"),
+        ("4x4", "四阶魔方"),
+        ("5x5", "五阶魔方"),
+        ("other", "其他"),
     ]
 
     METHOD_CHOICES = [
-        ('layer', '层先法'),
-        ('cfop', 'CFOP'),
-        ('roux', '桥式'),
-        ('zbll', 'ZBLL'),
-        ('other', '其他'),
+        ("layer", "层先法"),
+        ("cfop", "CFOP"),
+        ("roux", "桥式"),
+        ("zbll", "ZBLL"),
+        ("other", "其他"),
     ]
 
     TIMING_MODE_CHOICES = [
-        ('manual', '手动计时'),
-        ('smart', '智能魔方'),
+        ("manual", "手动计时"),
+        ("smart", "智能魔方"),
     ]
 
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='timer_records',
-        verbose_name='用户'
-    )
-    cube_type = models.CharField(
-        '魔方类型',
-        max_length=10,
-        choices=CUBE_TYPE_CHOICES,
-        default='3x3'
-    )
-    method = models.CharField(
-        '还原方法',
-        max_length=20,
-        choices=METHOD_CHOICES,
-        default='layer'
-    )
-    timing_mode = models.CharField(
-        '计时方式',
-        max_length=10,
-        choices=TIMING_MODE_CHOICES,
-        default='manual'
-    )
-    time_ms = models.IntegerField('还原时间(毫秒)')
-    scramble = models.TextField('打乱公式', blank=True)
-    solve_sequence = models.TextField('复原步骤序列', blank=True, null=True)
-    observation_time_ms = models.IntegerField('观察时间(毫秒)', null=True, blank=True)
-    move_count = models.IntegerField('复原步数', null=True, blank=True)
-    is_dnf = models.BooleanField('是否 DNF', default=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="timer_records", verbose_name="用户")
+    cube_type = models.CharField("魔方类型", max_length=10, choices=CUBE_TYPE_CHOICES, default="3x3")
+    method = models.CharField("还原方法", max_length=20, choices=METHOD_CHOICES, default="layer")
+    timing_mode = models.CharField("计时方式", max_length=10, choices=TIMING_MODE_CHOICES, default="manual")
+    time_ms = models.IntegerField("还原时间(毫秒)")
+    scramble = models.TextField("打乱公式", blank=True)
+    solve_sequence = models.TextField("复原步骤序列", blank=True, null=True)
+    observation_time_ms = models.IntegerField("观察时间(毫秒)", null=True, blank=True)
+    move_count = models.IntegerField("复原步数", null=True, blank=True)
+    is_dnf = models.BooleanField("是否 DNF", default=False)
     device = models.ForeignKey(
         SmartCubeDevice,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='records',
-        verbose_name='关联设备'
+        related_name="records",
+        verbose_name="关联设备",
     )
-    created_at = models.DateTimeField('创建时间', auto_now_add=True)
+    created_at = models.DateTimeField("创建时间", auto_now_add=True)
 
     class Meta:
-        app_label = 'timer'
-        db_table = 'timer_record'
-        ordering = ['-created_at']
-        verbose_name = '计时记录'
-        verbose_name_plural = '计时记录'
+        app_label = "timer"
+        db_table = "timer_record"
+        ordering = ["-created_at"]
+        verbose_name = "计时记录"
+        verbose_name_plural = "计时记录"
 
     def __str__(self):
-        mode = dict(self.TIMING_MODE_CHOICES).get(self.timing_mode, '')
-        return f'{self.user.username} - {self.cube_type} - {mode} - {self.time_ms}ms'
+        mode = dict(self.TIMING_MODE_CHOICES).get(self.timing_mode, "")
+        return f"{self.user.username} - {self.cube_type} - {mode} - {self.time_ms}ms"

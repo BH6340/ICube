@@ -16,9 +16,9 @@
               <span>难度筛选</span>
             </template>
             <el-checkbox-group v-model="selectedDifficulties" @change="handleFilterChange">
-              <el-checkbox label="基础" border>基础</el-checkbox>
-              <el-checkbox label="进阶" border>进阶</el-checkbox>
-              <el-checkbox label="困难" border>困难</el-checkbox>
+              <el-checkbox value="基础" label="基础" border>基础</el-checkbox>
+              <el-checkbox value="进阶" label="进阶" border>进阶</el-checkbox>
+              <el-checkbox value="困难" label="困难" border>困难</el-checkbox>
             </el-checkbox-group>
           </el-card>
 
@@ -108,7 +108,7 @@
                   </el-button>
                   <el-button
                       v-if="activeTab === 'collections'"
-                      type="text"
+                      type="link"
                       size="small"
                       @click.stop="removeCollectionItem(formula)"
                       class="collected"
@@ -807,5 +807,105 @@ onMounted(() => {
   color: #303133;
   border-bottom: 1px solid #e4e7ed;
   padding-bottom: 8px;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .formula-library {
+    padding: 12px 8px;
+  }
+
+  .sidebar {
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .toolbar-left {
+    width: 100%;
+  }
+
+  .toolbar-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .toolbar-tabs :deep(.el-tabs__nav-wrap) {
+    overflow-x: auto;
+  }
+
+  .toolbar-tabs :deep(.el-tabs__nav) {
+    min-width: max-content;
+  }
+
+  .formula-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+  }
+
+  .formula-name {
+    font-size: 14px;
+  }
+
+  .formula-notation {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
+  .formula-thumbnail {
+    height: 120px;
+    margin-bottom: 10px;
+  }
+
+  .formula-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .footer-right {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+  }
+
+  .footer-right .el-button {
+    flex: 1;
+  }
+
+  .pagination-wrapper {
+    margin-top: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .formula-library {
+    padding: 8px 4px;
+  }
+
+  .formula-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .toolbar-right {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .toolbar-right .el-select {
+    width: 100%;
+  }
+
+  .formula-card {
+    padding: 12px;
+  }
 }
 </style>

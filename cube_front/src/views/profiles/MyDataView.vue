@@ -533,4 +533,69 @@ watch([() => filterForm.cube_type, () => filterForm.method, () => filterForm.tim
   color: #909399;
   padding: 40px;
 }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .my-data-container {
+    padding: 12px 8px;
+  }
+
+  .filter-section :deep(.el-form-item) {
+    margin-right: 0;
+    margin-bottom: 10px;
+    width: 100%;
+  }
+
+  .filter-section :deep(.el-form-item__content) {
+    width: 100%;
+  }
+
+  .filter-section :deep(.el-select),
+  .filter-section :deep(.el-date-editor) {
+    width: 100% !important;
+  }
+
+  .stat-num {
+    font-size: 24px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+  }
+
+  .chart-container {
+    height: 280px;
+  }
+
+  .group-section :deep(.el-table),
+  .records-section :deep(.el-table) {
+    font-size: 12px;
+  }
+
+  .group-section :deep(.el-table th),
+  .records-section :deep(.el-table th),
+  .group-section :deep(.el-table td),
+  .records-section :deep(.el-table td) {
+    padding: 8px 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-section :deep(.el-col) {
+    margin-bottom: 10px;
+  }
+
+  .stat-num {
+    font-size: 20px;
+  }
+
+  .chart-container {
+    height: 220px;
+  }
+
+  .group-section :deep(.el-table__body-wrapper),
+  .records-section :deep(.el-table__body-wrapper) {
+    overflow-x: auto;
+  }
+}
 </style>

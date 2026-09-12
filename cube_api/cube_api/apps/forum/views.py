@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 论坛视图层
 
@@ -10,23 +9,29 @@
     - **权限控制**：登录用户可创建，只有作者可编辑/删除
     - **缓存策略**：浏览量使用 Redis 缓存，减少数据库压力
 """
-from drf_spectacular.utils import extend_schema, OpenApiParameter
-from rest_framework import viewsets, status, filters
+
+from apps.accounts.permissions import IsOwnerOrReadOnly
+from django.db.models import Count, F
+from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
-from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import F, Count
-
-from .models import Post, Tag, Comment, Report, PostCollect, PostImage
-from .serializers import (
-    PostSerializer, PostListSerializer, PostCreateUpdateSerializer,
-    TagSerializer, CommentSerializer, ReportSerializer, PostImageSerializer
-)
-from .services import PostCacheService, PostInteractionService, HotPostService
-from utils.common_response import APIResponse
 from utils.common_pagination import UnifiedPagination
+from utils.common_response import APIResponse
 from utils.image_processor import process_image
-from apps.accounts.permissions import IsOwnerOrReadOnly
+
+from .models import Comment, Post, PostCollect, PostImage, Report, Tag
+from .serializers import (
+    CommentSerializer,
+    PostCreateUpdateSerializer,
+    PostImageSerializer,
+    PostListSerializer,
+    PostSerializer,
+    ReportSerializer,
+    TagSerializer,
+)
+from .services import HotPostService, PostCacheService, PostInteractionService
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -51,17 +56,17 @@ class PostViewSet(viewsets.ModelViewSet):
     """
 
     # 查询集：只包含已发布的帖子，预加载相关数据
-    queryset = Post.objects.filter(status='published').select_related('author').prefetch_related('tags', 'images')
+    queryset = Post.objects.filter(status="published").select_related("author").prefetch_related("tags", "images")
     # 权限：登录用户可创建，只有作者可编辑/删除
     permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
     pagination_class = UnifiedPagination
     # 过滤器：搜索、排序、标签过滤
     filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
-    search_fields = ['title', 'content']
-    ordering_fields = ['created_at', 'view_count', 'like_count', 'comment_count', 'is_pinned', 'is_essence']
+    search_fields = ["title", "content"]
+    ordering_fields = ["created_at", "view_count", "like_count", "comment_count", "is_pinned", "is_essence"]
     # 默认排序：置顶优先 > 精华优先 > 最新发布优先
-    ordering = ['-is_pinned', '-is_essence', '-created_at']
-    filterset_fields = ['tags__name', 'is_pinned', 'is_essence', 'created_at']
+    ordering = ["-is_pinned", "-is_essence", "-created_at"]
+    filterset_fields = ["tags__name", "is_pinned", "is_essence", "created_at"]
 
     def get_serializer_class(self):
         """
@@ -75,11 +80,11 @@ class PostViewSet(viewsets.ModelViewSet):
         Returns:
             序列化器类
         """
-        if self.action == 'list':
+        if self.action == "list":
             return PostListSerializer
-        if self.action in ['my_posts', 'collected']:
+        if self.action in ["my_posts", "collected"]:
             return PostListSerializer
-        if self.action in ['create', 'update', 'partial_update']:
+        if self.action in ["create", "update", "partial_update"]:
             return PostCreateUpdateSerializer
         return PostSerializer
 
@@ -101,7 +106,7 @@ class PostViewSet(viewsets.ModelViewSet):
         """
         queryset = self.filter_queryset(self.get_queryset())
 
-        author_username = request.query_params.get('author_username', '').strip()
+        author_username = request.query_params.get("author_username", "").strip()
         if author_username:
             queryset = queryset.filter(
                 author__username=author_username,
@@ -109,24 +114,20 @@ class PostViewSet(viewsets.ModelViewSet):
             )
 
         # 按热度排序（查询参数 hot 存在时）
-        hot = request.query_params.get('hot')
+        hot = request.query_params.get("hot")
         if hot:
             queryset = queryset.annotate(
                 # 热度计算公式：点赞×3 + 评论×2 + 收藏×1
-                hot_score=(
-                        Count('likes') * 3 +
-                        Count('comments') * 2 +
-                        Count('collects')
-                )
-            ).order_by('-hot_score')
+                hot_score=(Count("likes") * 3 + Count("comments") * 2 + Count("collects"))
+            ).order_by("-hot_score")
 
         page = self.paginate_queryset(queryset)
 
         if page is not None:
-            serializer = self.get_serializer(page, many=True, context={'request': request})
+            serializer = self.get_serializer(page, many=True, context={"request": request})
             return self.get_paginated_response(serializer.data)
 
-        serializer = self.get_serializer(queryset, many=True, context={'request': request})
+        serializer = self.get_serializer(queryset, many=True, context={"request": request})
         return APIResponse(data=serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
@@ -146,7 +147,7 @@ class PostViewSet(viewsets.ModelViewSet):
         # 增加浏览量（使用缓存服务）
         PostCacheService.increase_view(instance.id)
 
-        serializer = self.get_serializer(instance, context={'request': request})
+        serializer = self.get_serializer(instance, context={"request": request})
         return APIResponse(post=serializer.data)
 
     def create(self, request, *args, **kwargs):
@@ -161,7 +162,7 @@ class PostViewSet(viewsets.ModelViewSet):
         Returns:
             APIResponse: 包含创建的帖子数据
         """
-        serializer = self.get_serializer(data=request.data, context={'request': request})
+        serializer = self.get_serializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         return APIResponse(post=serializer.data, status=status.HTTP_201_CREATED)
@@ -195,7 +196,7 @@ class PostViewSet(viewsets.ModelViewSet):
         Returns:
             APIResponse: 更新后的帖子数据
         """
-        partial = kwargs.pop('partial', False)
+        partial = kwargs.pop("partial", False)
         instance = self.get_object()
 
         # 权限检查：只有作者可以编辑
@@ -222,26 +223,24 @@ class PostViewSet(viewsets.ModelViewSet):
         Returns:
             APIResponse: 更新后的帖子数据
         """
-        kwargs['partial'] = True
+        kwargs["partial"] = True
         return self.update(request, *args, **kwargs)
 
     @extend_schema(
         summary="点赞帖子",
         description="切换帖子点赞状态，已点赞则取消，未点赞则点赞",
-        parameters=[
-            OpenApiParameter(name='id', type=int, location='path', description='帖子ID')
-        ],
+        parameters=[OpenApiParameter(name="id", type=int, location="path", description="帖子ID")],
         responses={
             200: {
-                'type': 'object',
-                'properties': {
-                    'liked': {'type': 'boolean', 'description': '点赞后的状态'},
-                    'like_count': {'type': 'integer', 'description': '当前点赞数'}
-                }
+                "type": "object",
+                "properties": {
+                    "liked": {"type": "boolean", "description": "点赞后的状态"},
+                    "like_count": {"type": "integer", "description": "当前点赞数"},
+                },
             }
-        }
+        },
     )
-    @action(detail=True, methods=['POST'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=["POST"], permission_classes=[IsAuthenticated])
     def like(self, request, pk=None):
         """
         点赞帖子
@@ -259,7 +258,7 @@ class PostViewSet(viewsets.ModelViewSet):
         result = PostInteractionService.toggle_like(post.id, request.user)
         return APIResponse(**result)
 
-    @action(detail=True, methods=['POST'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=["POST"], permission_classes=[IsAuthenticated])
     def collect(self, request, pk=None):
         """
         收藏帖子
@@ -277,7 +276,7 @@ class PostViewSet(viewsets.ModelViewSet):
         result = PostInteractionService.toggle_collect(post.id, request.user)
         return APIResponse(**result)
 
-    @action(detail=True, methods=['GET'], permission_classes=[IsAuthenticatedOrReadOnly])
+    @action(detail=True, methods=["GET"], permission_classes=[IsAuthenticatedOrReadOnly])
     def comments(self, request, pk=None):
         """
         获取帖子的评论（带分页）
@@ -298,19 +297,17 @@ class PostViewSet(viewsets.ModelViewSet):
         post = self.get_object()
 
         # 只获取一级评论（parent=None），排除已删除和隐藏的评论
-        comments = post.comments.filter(
-            parent=None, is_deleted=False, is_hidden=False
-        ).order_by('created_at')
+        comments = post.comments.filter(parent=None, is_deleted=False, is_hidden=False).order_by("created_at")
 
         page = self.paginate_queryset(comments)
         if page is not None:
-            serializer = CommentSerializer(page, many=True, context={'request': request})
+            serializer = CommentSerializer(page, many=True, context={"request": request})
             return self.get_paginated_response(serializer.data)
 
-        serializer = CommentSerializer(comments, many=True, context={'request': request})
+        serializer = CommentSerializer(comments, many=True, context={"request": request})
         return APIResponse(comments=serializer.data)
 
-    @action(detail=False, methods=['GET'], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=["GET"], permission_classes=[IsAuthenticated])
     def my_posts(self, request):
         """
         获取当前用户的帖子
@@ -327,13 +324,13 @@ class PostViewSet(viewsets.ModelViewSet):
         page = self.paginate_queryset(posts)
 
         if page is not None:
-            serializer = self.get_serializer(page, many=True, context={'request': request})
+            serializer = self.get_serializer(page, many=True, context={"request": request})
             return self.get_paginated_response(serializer.data)
 
-        serializer = self.get_serializer(posts, many=True, context={'request': request})
+        serializer = self.get_serializer(posts, many=True, context={"request": request})
         return APIResponse(posts=serializer.data)
 
-    @action(detail=False, methods=['GET'], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=["GET"], permission_classes=[IsAuthenticated])
     def collected(self, request):
         """
         获取当前用户收藏的帖子
@@ -346,18 +343,18 @@ class PostViewSet(viewsets.ModelViewSet):
         Returns:
             APIResponse: 包含收藏帖子列表的响应（带分页）
         """
-        post_ids = PostCollect.objects.filter(user=request.user).values_list('post_id', flat=True)
+        post_ids = PostCollect.objects.filter(user=request.user).values_list("post_id", flat=True)
         posts = self.get_queryset().filter(id__in=post_ids)
 
         page = self.paginate_queryset(posts)
         if page is not None:
-            serializer = self.get_serializer(page, many=True, context={'request': request})
+            serializer = self.get_serializer(page, many=True, context={"request": request})
             return self.get_paginated_response(serializer.data)
 
-        serializer = self.get_serializer(posts, many=True, context={'request': request})
+        serializer = self.get_serializer(posts, many=True, context={"request": request})
         return APIResponse(posts=serializer.data)
 
-    @action(detail=False, methods=['GET'])
+    @action(detail=False, methods=["GET"])
     def hot(self, request):
         """
         获取热门帖子
@@ -374,8 +371,8 @@ class PostViewSet(viewsets.ModelViewSet):
         Returns:
             APIResponse: 包含热门帖子列表的响应
         """
-        days = request.query_params.get('days', 7)
-        limit = request.query_params.get('limit', 20)
+        days = request.query_params.get("days", 7)
+        limit = request.query_params.get("limit", 20)
 
         try:
             days = int(days)
@@ -384,10 +381,10 @@ class PostViewSet(viewsets.ModelViewSet):
             days, limit = 7, 20
 
         posts = HotPostService.get_hot_posts(days, limit)
-        serializer = PostListSerializer(posts, many=True, context={'request': request})
+        serializer = PostListSerializer(posts, many=True, context={"request": request})
         return APIResponse(posts=serializer.data)
 
-    @action(detail=False, methods=['POST'], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=["POST"], permission_classes=[IsAuthenticated])
     def upload_image(self, request):
         """
         上传图片
@@ -407,49 +404,37 @@ class PostViewSet(viewsets.ModelViewSet):
         Returns:
             APIResponse: 包含图片信息的响应
         """
-        image_file = request.FILES.get('image')
+        image_file = request.FILES.get("image")
         if not image_file:
-            return APIResponse(code=400, msg='请选择图片文件')
+            return APIResponse(code=400, msg="请选择图片文件")
 
-        valid_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+        valid_types = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"]
         if image_file.content_type not in valid_types:
-            return APIResponse(code=400, msg='不支持的图片格式')
+            return APIResponse(code=400, msg="不支持的图片格式")
 
         if image_file.size > 5 * 1024 * 1024:
-            return APIResponse(code=400, msg='图片大小不能超过5MB')
+            return APIResponse(code=400, msg="图片大小不能超过5MB")
 
-        crop_square = request.data.get('crop_square', 'false').lower() == 'true'
+        crop_square = request.data.get("crop_square", "false").lower() == "true"
 
         processed_file = process_image(
-            image_file,
-            max_width=1200,
-            max_height=1200,
-            quality=85,
-            crop_square=crop_square,
-            convert_webp=True
+            image_file, max_width=1200, max_height=1200, quality=85, crop_square=crop_square, convert_webp=True
         )
 
-        from django.core.files.uploadedfile import InMemoryUploadedFile
         import os
-        ext = os.path.splitext(image_file.name)[1].lower()
+
+        from django.core.files.uploadedfile import InMemoryUploadedFile
+
         new_name = f"{os.path.splitext(image_file.name)[0]}_compressed.webp"
 
         processed_image = InMemoryUploadedFile(
-            processed_file,
-            None,
-            new_name,
-            'image/webp',
-            processed_file.tell(),
-            None
+            processed_file, None, new_name, "image/webp", processed_file.tell(), None
         )
 
-        post_image = PostImage(
-            image=processed_image,
-            alt=image_file.name.replace('.', '_')
-        )
+        post_image = PostImage(image=processed_image, alt=image_file.name.replace(".", "_"))
         post_image.save()
 
-        serializer = PostImageSerializer(post_image, context={'request': request})
+        serializer = PostImageSerializer(post_image, context={"request": request})
         return APIResponse(image=serializer.data)
 
 
@@ -468,7 +453,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         - 过滤已删除和隐藏的评论
     """
 
-    queryset = Comment.objects.filter(is_deleted=False, is_hidden=False).select_related('author', 'post')
+    queryset = Comment.objects.filter(is_deleted=False, is_hidden=False).select_related("author", "post")
     serializer_class = CommentSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
@@ -488,17 +473,17 @@ class CommentViewSet(viewsets.ModelViewSet):
             QuerySet: 根据动作类型过滤后的评论查询集
         """
         # 基础查询集：未删除、未隐藏的评论，预加载作者和帖子
-        queryset = Comment.objects.filter(is_deleted=False, is_hidden=False).select_related('author', 'post')
+        queryset = Comment.objects.filter(is_deleted=False, is_hidden=False).select_related("author", "post")
 
         # list 动作：只返回一级评论，支持按帖子过滤
-        if self.action == 'list':
-            post_id = self.request.query_params.get('post')
+        if self.action == "list":
+            post_id = self.request.query_params.get("post")
             if post_id:
                 queryset = queryset.filter(post_id=post_id)
-            return queryset.filter(parent=None).order_by('-created_at')
+            return queryset.filter(parent=None).order_by("-created_at")
 
         # 其他动作：允许查询所有层级的评论
-        return queryset.order_by('-created_at')
+        return queryset.order_by("-created_at")
 
     def create(self, request, *args, **kwargs):
         """
@@ -512,14 +497,14 @@ class CommentViewSet(viewsets.ModelViewSet):
         Returns:
             APIResponse: 包含创建的评论数据
         """
-        serializer = self.get_serializer(data=request.data, context={'request': request})
+        serializer = self.get_serializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
 
         # 更新帖子的评论数（排除已删除和隐藏的评论）
         post = serializer.instance.post
         post.comment_count = post.comments.filter(is_deleted=False, is_hidden=False).count()
-        post.save(update_fields=['comment_count'])
+        post.save(update_fields=["comment_count"])
 
         return APIResponse(comment=serializer.data, status=status.HTTP_201_CREATED)
 
@@ -548,11 +533,11 @@ class CommentViewSet(viewsets.ModelViewSet):
         # 更新帖子的评论数（排除已删除和隐藏的评论）
         post = comment.post
         post.comment_count = post.comments.filter(is_deleted=False, is_hidden=False).count()
-        post.save(update_fields=['comment_count'])
+        post.save(update_fields=["comment_count"])
 
         return APIResponse(msg="删除成功")
 
-    @action(detail=True, methods=['POST'])
+    @action(detail=True, methods=["POST"])
     def like(self, request, pk=None):
         """
         点赞评论
@@ -570,7 +555,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         result = PostInteractionService.toggle_comment_reaction(comment.id, request.user, is_like=True)
         return APIResponse(**result)
 
-    @action(detail=True, methods=['POST'])
+    @action(detail=True, methods=["POST"])
     def dislike(self, request, pk=None):
         """
         点踩评论
@@ -599,11 +584,12 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
         - 标签由管理员管理，普通用户只读
         - 支持搜索便于前端标签选择
     """
+
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [filters.SearchFilter]
-    search_fields = ['name']
+    search_fields = ["name"]
 
 
 class ReportViewSet(viewsets.ModelViewSet):
@@ -618,6 +604,7 @@ class ReportViewSet(viewsets.ModelViewSet):
 
     创建举报时自动增加被举报内容的举报计数。
     """
+
     queryset = Report.objects.all()
     serializer_class = ReportSerializer
     permission_classes = [IsAuthenticated]
@@ -649,7 +636,7 @@ class ReportViewSet(viewsets.ModelViewSet):
         Returns:
             APIResponse: 包含举报数据的响应
         """
-        serializer = self.get_serializer(data=request.data, context={'request': request})
+        serializer = self.get_serializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
 
@@ -657,9 +644,9 @@ class ReportViewSet(viewsets.ModelViewSet):
         content_type = serializer.instance.content_type
         object_id = serializer.instance.object_id
 
-        if content_type == 'post':
-            Post.objects.filter(id=object_id).update(report_count=F('report_count') + 1)
-        elif content_type == 'comment':
-            Comment.objects.filter(id=object_id).update(report_count=F('report_count') + 1)
+        if content_type == "post":
+            Post.objects.filter(id=object_id).update(report_count=F("report_count") + 1)
+        elif content_type == "comment":
+            Comment.objects.filter(id=object_id).update(report_count=F("report_count") + 1)
 
         return APIResponse(report=serializer.data, status=status.HTTP_201_CREATED)

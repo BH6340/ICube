@@ -438,4 +438,125 @@ onMounted(() => {
   display: flex;
   justify-content: center;
 }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .forum-container {
+    padding: 12px;
+    max-width: 100%;
+  }
+
+  .forum-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .forum-header h1 {
+    font-size: 22px;
+  }
+
+  .filter-card {
+    margin-bottom: 16px;
+  }
+
+  .filter-card :deep(.el-col) {
+    margin-bottom: 8px;
+  }
+
+  .filter-card :deep(.el-col:last-child) {
+    margin-bottom: 0;
+  }
+
+  .posts-list {
+    gap: 12px;
+  }
+
+  .post-content-wrapper {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .post-main {
+    width: 100%;
+  }
+
+  .post-title h3 {
+    font-size: 16px;
+  }
+
+  .post-info {
+    gap: 12px;
+    font-size: 12px;
+    flex-wrap: wrap;
+  }
+
+  .post-images {
+    width: 100%;
+    flex-shrink: 0;
+  }
+
+  .images-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .images-grid.single-image {
+    grid-template-columns: 1fr;
+  }
+
+  .image-item {
+    aspect-ratio: auto;
+    max-height: 200px;
+  }
+
+  .image-item img {
+    object-fit: contain;
+    max-height: 200px;
+  }
+
+  .post-stats {
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 12px;
+  }
+
+  .pagination :deep(.el-pagination) {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .forum-container {
+    padding: 8px;
+  }
+
+  .forum-header h1 {
+    font-size: 20px;
+  }
+
+  .post-title h3 {
+    font-size: 15px;
+  }
+
+  .post-info {
+    gap: 10px;
+    font-size: 11px;
+  }
+
+  .post-stats {
+    gap: 10px;
+    font-size: 11px;
+  }
+
+  .image-item {
+    max-height: 160px;
+  }
+
+  .image-item img {
+    max-height: 160px;
+  }
+}
 </style>

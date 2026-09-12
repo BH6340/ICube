@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 支付宝配置与支付集成模块
 
@@ -15,30 +14,30 @@
     - **公钥指纹校验**：启动时打印公钥指纹，便于与支付宝后台对比
 """
 
-from alipay import AliPay
 import os
 
+from alipay import AliPay
 from loguru import logger
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-_DEBUG = os.getenv('ALIPAY_DEBUG', 'True').lower() == 'true'
-_SCHEME = os.getenv('ALIPAY_SCHEME') or ('http' if _DEBUG else 'https')
-_SERVER_HOST = os.getenv('SERVER_HOST', 'localhost')
+_DEBUG = os.getenv("ALIPAY_DEBUG", "True").lower() == "true"
+_SCHEME = os.getenv("ALIPAY_SCHEME") or ("http" if _DEBUG else "https")
+_SERVER_HOST = os.getenv("SERVER_HOST", "localhost")
 
 ALIPAY_CONFIG = {
     # 应用 ID：支付宝开放平台创建的应用唯一标识
-    'app_id': os.getenv('ALIPAY_APP_ID', '9021000162660623'),
+    "app_id": os.getenv("ALIPAY_APP_ID", "9021000162660623"),
     # 应用私钥路径：用于对请求进行签名，必须妥善保管，不可泄露
-    'app_private_key_path': os.path.join(BASE_DIR, 'keys', 'app_private_key.pem'),
+    "app_private_key_path": os.path.join(BASE_DIR, "keys", "app_private_key.pem"),
     # 支付宝公钥路径：用于验证支付宝返回数据的签名，由支付宝生成
-    'alipay_public_key_path': os.path.join(BASE_DIR, 'keys', 'alipay_public_key.pem'),
+    "alipay_public_key_path": os.path.join(BASE_DIR, "keys", "alipay_public_key.pem"),
     # 异步回调地址：支付宝支付成功后主动通知的接口，必须是公网可访问的 POST 接口
-    'notify_url': f"{_SCHEME}://{_SERVER_HOST}/api/shop/orders/notify/",
+    "notify_url": f"{_SCHEME}://{_SERVER_HOST}/api/shop/orders/notify/",
     # 同步回调地址前缀：用户支付完成后跳转的页面地址
-    'return_url_prefix': f"{_SCHEME}://{_SERVER_HOST}/shop/pay",
+    "return_url_prefix": f"{_SCHEME}://{_SERVER_HOST}/shop/pay",
     # 调试模式：True 表示使用沙箱环境，生产环境通过 ALIPAY_DEBUG=False 切换
-    'debug': _DEBUG,
+    "debug": _DEBUG,
 }
 
 """
@@ -168,21 +167,21 @@ def get_alipay_client():
         - **公钥指纹校验**：启动时打印公钥模数前60位，便于与支付宝后台对比
         - **使用 RSA2 算法**：安全性更高，是支付宝推荐的标准算法
     """
-    app_id = ALIPAY_CONFIG['app_id']
-    app_private_key_path = ALIPAY_CONFIG['app_private_key_path']
-    alipay_public_key_path = ALIPAY_CONFIG['alipay_public_key_path']
+    app_id = ALIPAY_CONFIG["app_id"]
+    app_private_key_path = ALIPAY_CONFIG["app_private_key_path"]
+    alipay_public_key_path = ALIPAY_CONFIG["alipay_public_key_path"]
 
     if not app_id:
         return None
 
-    app_private_key = ''
+    app_private_key = ""
     if app_private_key_path and os.path.exists(app_private_key_path):
-        with open(app_private_key_path, 'r') as f:
+        with open(app_private_key_path) as f:
             app_private_key = f.read()
 
-    alipay_public_key = ''
+    alipay_public_key = ""
     if alipay_public_key_path and os.path.exists(alipay_public_key_path):
-        with open(alipay_public_key_path, 'r') as f:
+        with open(alipay_public_key_path) as f:
             alipay_public_key = f.read()
 
     if not app_private_key or not alipay_public_key:
@@ -192,6 +191,7 @@ def get_alipay_client():
     # 启动时打印公钥指纹，方便与支付宝后台对比
     try:
         from cryptography.hazmat.primitives.serialization import load_pem_public_key
+
         pub = load_pem_public_key(alipay_public_key.encode())
         nums = pub.public_numbers()
         logger.info(f"已加载支付宝公钥, modulus 前60位: {str(nums.n)[:60]}")
@@ -200,11 +200,11 @@ def get_alipay_client():
 
     alipay = AliPay(
         appid=app_id,
-        app_notify_url=ALIPAY_CONFIG['notify_url'],
+        app_notify_url=ALIPAY_CONFIG["notify_url"],
         app_private_key_string=app_private_key,
         alipay_public_key_string=alipay_public_key,
-        sign_type='RSA2',
-        debug=ALIPAY_CONFIG['debug'],
+        sign_type="RSA2",
+        debug=ALIPAY_CONFIG["debug"],
     )
 
     return alipay
@@ -231,26 +231,28 @@ def generate_alipay_url(order_no, total_amount, subject, return_url=None):
     if not alipay:
         return None
 
-    if ALIPAY_CONFIG['debug']:
-        gateway = 'https://openapi-sandbox.dl.alipaydev.com/gateway.do'
+    if ALIPAY_CONFIG["debug"]:
+        gateway = "https://openapi-sandbox.dl.alipaydev.com/gateway.do"
     else:
-        gateway = 'https://openapi.alipay.com/gateway.do'
+        gateway = "https://openapi.alipay.com/gateway.do"
 
     order_string = alipay.api_alipay_trade_page_pay(
         out_trade_no=order_no,
         total_amount=str(total_amount),
         subject=subject,
         return_url=return_url or f"{ALIPAY_CONFIG['return_url_prefix']}/{order_no}",
-        notify_url=ALIPAY_CONFIG['notify_url'],
+        notify_url=ALIPAY_CONFIG["notify_url"],
     )
 
     # python-alipay-sdk 3.x 某些版本返回完整 URL，某些版本只返回参数字符串，统一处理
-    if order_string.startswith('http'):
-        pay_url = order_string
-    else:
-        pay_url = f'{gateway}?{order_string}'
+    pay_url = order_string if order_string.startswith("http") else f"{gateway}?{order_string}"
 
-    logger.info(f"生成支付宝支付链接 - 订单 {order_no}\n  gateway: {gateway}\n  notify_url: {ALIPAY_CONFIG['notify_url']}\n  full_url: {pay_url}")
+    logger.info(
+        f"生成支付宝支付链接 - 订单 {order_no}\n"
+        f"  gateway: {gateway}\n"
+        f"  notify_url: {ALIPAY_CONFIG['notify_url']}\n"
+        f"  full_url: {pay_url}"
+    )
     return pay_url
 
 
@@ -280,11 +282,11 @@ def generate_alipay_qr_code(order_no, total_amount, subject):
             out_trade_no=order_no,
             total_amount=str(total_amount),
             subject=subject,
-            notify_url=ALIPAY_CONFIG['notify_url'],
+            notify_url=ALIPAY_CONFIG["notify_url"],
         )
 
-        if result.get('code') == '10000':
-            qr_code = result.get('qr_code')
+        if result.get("code") == "10000":
+            qr_code = result.get("qr_code")
             logger.info(f"QR码生成成功 - 订单 {order_no}")
             return qr_code
         else:
@@ -302,7 +304,7 @@ def verify_alipay_notify(data, raw_body=None):
         return False
 
     data_dict = {k: v[0] if isinstance(v, list) else v for k, v in data.items()}
-    sign_b64 = data_dict.pop('sign', '')
+    sign_b64 = data_dict.pop("sign", "")
     if not sign_b64:
         return False
 
@@ -317,33 +319,35 @@ def verify_alipay_notify(data, raw_body=None):
     try:
         import base64
         from urllib.parse import unquote, urlencode
+
         from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.asymmetric import padding
         from cryptography.hazmat.primitives.serialization import load_pem_public_key
 
-        key_path = ALIPAY_CONFIG['alipay_public_key_path']
+        key_path = ALIPAY_CONFIG["alipay_public_key_path"]
         if not os.path.exists(key_path):
             logger.error(f"支付宝公钥文件不存在: {key_path}")
             return False
 
-        with open(key_path, 'r') as f:
+        with open(key_path) as f:
             pub_key = load_pem_public_key(f.read().encode())
 
         if raw_body:
-            body_str = raw_body.decode('utf-8') if isinstance(raw_body, bytes) else raw_body
-            pairs = body_str.split('&')
+            body_str = raw_body.decode("utf-8") if isinstance(raw_body, bytes) else raw_body
+            pairs = body_str.split("&")
             msg_pairs = [
-                (p.split('=', 1)[0], unquote(p.split('=', 1)[1]))
-                for p in pairs if '=' in p and not p.startswith(('sign=', 'sign_type='))
+                (p.split("=", 1)[0], unquote(p.split("=", 1)[1]))
+                for p in pairs
+                if "=" in p and not p.startswith(("sign=", "sign_type="))
             ]
             msg_pairs.sort(key=lambda x: x[0])
-            message = '&'.join(f'{k}={v}' for k, v in msg_pairs)
+            message = "&".join(f"{k}={v}" for k, v in msg_pairs)
         else:
-            verify_data = {k: v for k, v in data_dict.items() if k not in ('sign', 'sign_type')}
+            verify_data = {k: v for k, v in data_dict.items() if k not in ("sign", "sign_type")}
             message = urlencode(sorted(verify_data.items()), doseq=False)
 
         signature_bytes = base64.b64decode(sign_b64)
-        pub_key.verify(signature_bytes, message.encode('utf-8'), padding.PKCS1v15(), hashes.SHA256())
+        pub_key.verify(signature_bytes, message.encode("utf-8"), padding.PKCS1v15(), hashes.SHA256())
         logger.info("手动 RSA2 验签通过")
         return True
     except Exception as e:

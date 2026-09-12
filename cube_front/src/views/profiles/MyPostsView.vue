@@ -246,4 +246,64 @@ onMounted(() => {
   display: flex;
   justify-content: center;
 }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .my-posts-container {
+    padding: 12px 8px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .page-header h1 {
+    font-size: 20px;
+  }
+
+  .post-card {
+    padding: 12px;
+  }
+
+  .post-title h3 {
+    font-size: 16px;
+  }
+
+  .post-stats {
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 12px;
+  }
+
+  .post-stats .time {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .pagination :deep(.el-pagination) {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .my-posts-container {
+    padding: 8px 4px;
+  }
+
+  .post-title h3 {
+    font-size: 15px;
+  }
+
+  .post-tags {
+    gap: 6px;
+  }
+
+  .post-stats {
+    gap: 10px;
+    font-size: 11px;
+  }
+}
 </style>

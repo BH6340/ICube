@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 公式库序列化器层
 
@@ -11,17 +10,25 @@
     - **缩略图处理**：统一使用 build_image_url 生成完整URL
     - **自定义公式**：自动识别用户创建的自定义公式
 """
-from drf_spectacular.utils import extend_schema_field
-from rest_framework import serializers
-from django.conf import settings
-from django.core.files.storage import default_storage
-from django.core.files.uploadedfile import InMemoryUploadedFile
+
 import os
 import uuid
 
-from .models import CubeCategory, CubeState, Formula, FormulaTag, FormulaTagRelation, FormulaCollection
-from .services import CubeStateService
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from drf_spectacular.utils import extend_schema_field
+from rest_framework import serializers
+
 from cube_api.utils.image_processor import process_image
+
+from .models import (
+    CubeCategory,
+    CubeState,
+    Formula,
+    FormulaCollection,
+    FormulaTag,
+    FormulaTagRelation,
+)
+from .services import CubeStateService
 
 
 class CubeCategorySerializer(serializers.ModelSerializer):
@@ -42,21 +49,29 @@ class CubeCategorySerializer(serializers.ModelSerializer):
         - created_by: 创建者信息（只读）
         - created_at: 创建时间
     """
+
     created_by = serializers.SerializerMethodField()
 
     class Meta:
         model = CubeCategory
-        fields = ('id', 'order', 'method', 'phase', 'name', 'description', 'sort_order', 
-                  'is_custom', 'created_by', 'created_at')
-        read_only_fields = ('created_by', 'is_custom', 'created_at')
+        fields = (
+            "id",
+            "order",
+            "method",
+            "phase",
+            "name",
+            "description",
+            "sort_order",
+            "is_custom",
+            "created_by",
+            "created_at",
+        )
+        read_only_fields = ("created_by", "is_custom", "created_at")
 
     def get_created_by(self, obj):
         """获取创建者信息"""
         if obj.created_by:
-            return {
-                'id': obj.created_by.id,
-                'username': obj.created_by.username
-            }
+            return {"id": obj.created_by.id, "username": obj.created_by.username}
         return None
 
 
@@ -80,8 +95,8 @@ class CubeStateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CubeState
-        fields = ('id', 'name', 'state_definition', 'description', 'category', 'created_at')
-        read_only_fields = ('created_at',)
+        fields = ("id", "name", "state_definition", "description", "category", "created_at")
+        read_only_fields = ("created_at",)
 
     def validate_state_definition(self, value):
         """
@@ -119,8 +134,8 @@ class FormulaTagSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FormulaTag
-        fields = ('id', 'name', 'color', 'created_at')
-        read_only_fields = ('created_at',)
+        fields = ("id", "name", "color", "created_at")
+        read_only_fields = ("created_at",)
 
 
 class FormulaSimpleSerializer(serializers.ModelSerializer):
@@ -140,12 +155,13 @@ class FormulaSimpleSerializer(serializers.ModelSerializer):
         - category_name: 分类名称（拼接阶数+方法+阶段）
         - thumbnail: 缩略图URL
     """
+
     category_name = serializers.SerializerMethodField()
     thumbnail = serializers.SerializerMethodField()
 
     class Meta:
         model = Formula
-        fields = ('id', 'name', 'notation', 'category_name', 'thumbnail')
+        fields = ("id", "name", "notation", "category_name", "thumbnail")
 
     def get_category_name(self, obj):
         """
@@ -159,7 +175,7 @@ class FormulaSimpleSerializer(serializers.ModelSerializer):
         """
         if obj.category:
             return f"{obj.category.order}阶 {obj.category.method} {obj.category.phase}"
-        return ''
+        return ""
 
     def get_thumbnail(self, obj):
         """
@@ -172,6 +188,7 @@ class FormulaSimpleSerializer(serializers.ModelSerializer):
             完整的缩略图URL或空字符串
         """
         from cube_api.utils.image_url import build_image_url
+
         return build_image_url(obj.thumbnail)
 
 
@@ -200,6 +217,7 @@ class FormulaListSerializer(serializers.ModelSerializer):
         - author: 作者信息（动态生成）
         - created_at: 创建时间
     """
+
     category = CubeCategorySerializer(read_only=True)
     target_state = CubeStateSerializer(read_only=True)
     tags = FormulaTagSerializer(many=True, read_only=True)
@@ -209,8 +227,19 @@ class FormulaListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Formula
         fields = (
-            'id', 'name', 'notation', 'inverse_notation', 'category', 'target_state',
-            'difficulty', 'thumbnail', 'is_custom', 'tags', 'view_count', 'author', 'created_at'
+            "id",
+            "name",
+            "notation",
+            "inverse_notation",
+            "category",
+            "target_state",
+            "difficulty",
+            "thumbnail",
+            "is_custom",
+            "tags",
+            "view_count",
+            "author",
+            "created_at",
         )
 
     def get_thumbnail(self, obj):
@@ -226,6 +255,7 @@ class FormulaListSerializer(serializers.ModelSerializer):
             完整的缩略图URL或空字符串
         """
         from cube_api.utils.image_url import build_image_url
+
         return build_image_url(obj.thumbnail)
 
     def get_author(self, obj):
@@ -242,11 +272,8 @@ class FormulaListSerializer(serializers.ModelSerializer):
             作者信息字典（包含 id 和 username）
         """
         if obj.created_by:
-            return {
-                'id': obj.created_by.id,
-                'username': obj.created_by.username
-            }
-        return {'id': 0, 'username': '官方'}
+            return {"id": obj.created_by.id, "username": obj.created_by.username}
+        return {"id": 0, "username": "官方"}
 
 
 class FormulaSerializer(serializers.ModelSerializer):
@@ -275,6 +302,7 @@ class FormulaSerializer(serializers.ModelSerializer):
         - is_custom: 是否自定义
         - view_count: 浏览次数
     """
+
     category = CubeCategorySerializer(read_only=True)
     category_id = serializers.IntegerField(write_only=True, required=False)
     target_state = CubeStateSerializer(read_only=True)
@@ -286,22 +314,34 @@ class FormulaSerializer(serializers.ModelSerializer):
     author = serializers.SerializerMethodField()
     # 用于批量关联标签的写入字段
     tag_ids = serializers.ListField(
-        child=serializers.IntegerField(),
-        write_only=True,
-        required=False,
-        help_text='标签ID列表'
+        child=serializers.IntegerField(), write_only=True, required=False, help_text="标签ID列表"
     )
 
     class Meta:
         model = Formula
         fields = (
-            'id', 'name', 'notation', 'inverse_notation', 'category', 'category_id',
-            'target_state', 'pre_state_definition', 'pre_state', 'thumbnail',
-            'thumbnail_file', 'thumbnail_path',
-            'difficulty', 'description', 'is_custom', 'tags', 'tag_ids',
-            'view_count', 'author', 'created_at'
+            "id",
+            "name",
+            "notation",
+            "inverse_notation",
+            "category",
+            "category_id",
+            "target_state",
+            "pre_state_definition",
+            "pre_state",
+            "thumbnail",
+            "thumbnail_file",
+            "thumbnail_path",
+            "difficulty",
+            "description",
+            "is_custom",
+            "tags",
+            "tag_ids",
+            "view_count",
+            "author",
+            "created_at",
         )
-        read_only_fields = ('inverse_notation', 'created_at', 'is_custom', 'view_count')
+        read_only_fields = ("inverse_notation", "created_at", "is_custom", "view_count")
 
     @extend_schema_field(serializers.JSONField)
     def get_pre_state(self, obj):
@@ -331,6 +371,7 @@ class FormulaSerializer(serializers.ModelSerializer):
             完整的缩略图URL或空字符串
         """
         from cube_api.utils.image_url import build_image_url
+
         return build_image_url(obj.thumbnail)
 
     def get_author(self, obj):
@@ -347,11 +388,8 @@ class FormulaSerializer(serializers.ModelSerializer):
             作者信息字典（包含 id 和 username）
         """
         if obj.created_by:
-            return {
-                'id': obj.created_by.id,
-                'username': obj.created_by.username
-            }
-        return {'id': 0, 'username': '官方'}
+            return {"id": obj.created_by.id, "username": obj.created_by.username}
+        return {"id": 0, "username": "官方"}
 
     def validate_pre_state_definition(self, value):
         """
@@ -394,74 +432,59 @@ class FormulaSerializer(serializers.ModelSerializer):
         Returns:
             创建的 Formula 对象
         """
-        tag_ids = validated_data.pop('tag_ids', [])
-        thumbnail_file = validated_data.pop('thumbnail_file', None)
-        thumbnail_path = validated_data.pop('thumbnail_path', None)
-        category_id = validated_data.pop('category_id', None)
-        request = self.context.get('request')
+        tag_ids = validated_data.pop("tag_ids", [])
+        thumbnail_file = validated_data.pop("thumbnail_file", None)
+        thumbnail_path = validated_data.pop("thumbnail_path", None)
+        category_id = validated_data.pop("category_id", None)
+        request = self.context.get("request")
 
         # 自动识别自定义公式
         if request and request.user.is_authenticated and not request.user.is_staff:
-            validated_data['is_custom'] = True
-            validated_data['created_by'] = request.user
+            validated_data["is_custom"] = True
+            validated_data["created_by"] = request.user
 
         # 处理分类关联
         if category_id:
             try:
                 category = CubeCategory.objects.get(id=category_id)
-                validated_data['category'] = category
+                validated_data["category"] = category
             except CubeCategory.DoesNotExist:
                 pass
 
         if thumbnail_file:
             processed_file = process_image(
-                thumbnail_file,
-                max_width=512,
-                max_height=512,
-                quality=85,
-                crop_square=True,
-                convert_webp=True
+                thumbnail_file, max_width=512, max_height=512, quality=85, crop_square=True, convert_webp=True
             )
 
             new_name = f"{os.path.splitext(thumbnail_file.name)[0]}_thumbnail.webp"
             processed_image = InMemoryUploadedFile(
-                processed_file,
-                None,
-                new_name,
-                'image/webp',
-                processed_file.tell(),
-                None
+                processed_file, None, new_name, "image/webp", processed_file.tell(), None
             )
 
-            validated_data['thumbnail'] = processed_image
+            validated_data["thumbnail"] = processed_image
         elif thumbnail_path:
             pass  # 引用已有图片路径，在 super().create() 之后通过 formula.thumbnail.name 设置
 
         if not thumbnail_file and not thumbnail_path:
-            formula_name = validated_data.get('name', '')
-            formula_notation = validated_data.get('notation', '')
+            formula_name = validated_data.get("name", "")
+            formula_notation = validated_data.get("notation", "")
             if formula_name or formula_notation:
                 from cube_api.utils.image_processor import generate_formula_thumbnail
+
                 buffer = generate_formula_thumbnail(formula_name, formula_notation)
                 new_name = f"auto_formula_{uuid.uuid4().hex}.webp"
-                processed_image = InMemoryUploadedFile(
-                    buffer,
-                    None,
-                    new_name,
-                    'image/webp',
-                    buffer.tell(),
-                    None
-                )
-                validated_data['thumbnail'] = processed_image
+                processed_image = InMemoryUploadedFile(buffer, None, new_name, "image/webp", buffer.tell(), None)
+                validated_data["thumbnail"] = processed_image
 
         formula = super().create(validated_data)
 
         # 如果是引用其他图片路径，需要重新设置
         if thumbnail_path:
-            if '/media/' in thumbnail_path:
-                relative_path = thumbnail_path.split('/media/')[1]
-            else:
-                relative_path = thumbnail_path
+            relative_path = (
+                thumbnail_path.split("/media/")[1]
+                if "/media/" in thumbnail_path
+                else thumbnail_path
+            )
             formula.thumbnail.name = relative_path
             formula.save()
 
@@ -471,9 +494,7 @@ class FormulaSerializer(serializers.ModelSerializer):
             default_state = CubeState.objects.filter(category=formula.category).first()
             # 回退：按同 phase 分类下的状态匹配（如自定义"四向F2L"回退到标准 F2L 状态）
             if not default_state and formula.category.phase:
-                default_state = CubeState.objects.filter(
-                    category__phase=formula.category.phase
-                ).first()
+                default_state = CubeState.objects.filter(category__phase=formula.category.phase).first()
             if default_state:
                 formula.target_state = default_state
                 formula.save()
@@ -504,73 +525,58 @@ class FormulaSerializer(serializers.ModelSerializer):
         Returns:
             更新后的 Formula 对象
         """
-        tag_ids = validated_data.pop('tag_ids', None)
-        thumbnail_file = validated_data.pop('thumbnail_file', None)
-        thumbnail_path = validated_data.pop('thumbnail_path', None)
-        category_id = validated_data.pop('category_id', None)
-        request = self.context.get('request')
+        tag_ids = validated_data.pop("tag_ids", None)
+        thumbnail_file = validated_data.pop("thumbnail_file", None)
+        thumbnail_path = validated_data.pop("thumbnail_path", None)
+        category_id = validated_data.pop("category_id", None)
 
         if thumbnail_file:
             processed_file = process_image(
-                thumbnail_file,
-                max_width=512,
-                max_height=512,
-                quality=85,
-                crop_square=True,
-                convert_webp=True
+                thumbnail_file, max_width=512, max_height=512, quality=85, crop_square=True, convert_webp=True
             )
 
             new_name = f"{os.path.splitext(thumbnail_file.name)[0]}_thumbnail.webp"
             processed_image = InMemoryUploadedFile(
-                processed_file,
-                None,
-                new_name,
-                'image/webp',
-                processed_file.tell(),
-                None
+                processed_file, None, new_name, "image/webp", processed_file.tell(), None
             )
 
-            validated_data['thumbnail'] = processed_image
+            validated_data["thumbnail"] = processed_image
         elif thumbnail_path:
             pass  # 引用已有图片路径，在 super().update() 之后通过 formula.thumbnail.name 设置
 
         if not thumbnail_file and not thumbnail_path and not instance.thumbnail:
-            formula_name = validated_data.get('name', instance.name)
-            formula_notation = validated_data.get('notation', instance.notation)
+            formula_name = validated_data.get("name", instance.name)
+            formula_notation = validated_data.get("notation", instance.notation)
             if formula_name or formula_notation:
                 from cube_api.utils.image_processor import generate_formula_thumbnail
+
                 buffer = generate_formula_thumbnail(formula_name, formula_notation)
                 new_name = f"auto_formula_{uuid.uuid4().hex}.webp"
-                processed_image = InMemoryUploadedFile(
-                    buffer,
-                    None,
-                    new_name,
-                    'image/webp',
-                    buffer.tell(),
-                    None
-                )
-                validated_data['thumbnail'] = processed_image
+                processed_image = InMemoryUploadedFile(buffer, None, new_name, "image/webp", buffer.tell(), None)
+                validated_data["thumbnail"] = processed_image
 
         if category_id:
             try:
                 category = CubeCategory.objects.get(id=category_id)
-                validated_data['category'] = category
+                validated_data["category"] = category
             except CubeCategory.DoesNotExist:
                 pass
 
         # 当公式记号被修改时，重新生成逆公式
-        if 'notation' in validated_data:
+        if "notation" in validated_data:
             from .services import FormulaService
-            validated_data['inverse_notation'] = FormulaService.generate_inverse_notation(validated_data['notation'])
+
+            validated_data["inverse_notation"] = FormulaService.generate_inverse_notation(validated_data["notation"])
 
         formula = super().update(instance, validated_data)
 
         # 如果是引用其他图片路径，需要重新设置
         if thumbnail_path:
-            if '/media/' in thumbnail_path:
-                relative_path = thumbnail_path.split('/media/')[1]
-            else:
-                relative_path = thumbnail_path
+            relative_path = (
+                thumbnail_path.split("/media/")[1]
+                if "/media/" in thumbnail_path
+                else thumbnail_path
+            )
             formula.thumbnail.name = relative_path
             formula.save()
 
@@ -585,9 +591,7 @@ class FormulaSerializer(serializers.ModelSerializer):
                     default_state = CubeState.objects.filter(category=category).first()
                     # 回退：按同 phase 分类下的状态匹配
                     if not default_state and category.phase:
-                        default_state = CubeState.objects.filter(
-                            category__phase=category.phase
-                        ).first()
+                        default_state = CubeState.objects.filter(category__phase=category.phase).first()
                     if default_state:
                         formula.target_state = default_state
                         formula.save()
@@ -616,7 +620,8 @@ class FormulaMatchSerializer(serializers.Serializer):
     验证逻辑：
         - state_definition 通过 CubeStateService 验证，确保格式正确
     """
-    state_definition = serializers.JSONField(help_text='用户当前魔方状态')
+
+    state_definition = serializers.JSONField(help_text="用户当前魔方状态")
 
     def validate_state_definition(self, value):
         """
@@ -654,12 +659,13 @@ class FormulaCollectionSerializer(serializers.ModelSerializer):
         - 用户字段自动设置为当前用户
         - 使用轻量级的 FormulaListSerializer 序列化公式
     """
+
     formula = FormulaListSerializer(read_only=True)
 
     class Meta:
         model = FormulaCollection
-        fields = ('id', 'formula', 'created_at')
-        read_only_fields = ('created_at',)
+        fields = ("id", "formula", "created_at")
+        read_only_fields = ("created_at",)
 
     def create(self, validated_data):
         """
@@ -673,5 +679,5 @@ class FormulaCollectionSerializer(serializers.ModelSerializer):
         Returns:
             创建的 FormulaCollection 对象
         """
-        validated_data['user'] = self.context['request'].user
+        validated_data["user"] = self.context["request"].user
         return super().create(validated_data)

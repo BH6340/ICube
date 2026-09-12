@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Home 模块测试
 
@@ -6,6 +5,7 @@ Home 模块测试
     - 首页数据聚合接口
     - 轮播图、公告等展示内容
 """
+
 from django.test import TestCase
 from rest_framework import status
 
@@ -15,5 +15,5 @@ class HomeAPITest(TestCase):
 
     def test_banner_list_api(self):
         """测试轮播图列表接口"""
-        response = self.client.get('/api/home/banners/')
+        response = self.client.get("/api/home/banners/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)

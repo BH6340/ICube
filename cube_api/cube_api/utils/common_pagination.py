@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 统一分页器模块
 
@@ -26,7 +25,9 @@
     class MyViewSet(viewsets.ModelViewSet):
         pagination_class = LargeResultsSetPagination
 """
+
 from rest_framework.pagination import PageNumberPagination
+
 from .common_response import APIResponse
 
 
@@ -63,11 +64,11 @@ class UnifiedPagination(PageNumberPagination):
     # 默认每页显示 20 条记录
     page_size = 20
     # 前端可通过 page_size 参数自定义每页条数
-    page_size_query_param = 'page_size'
+    page_size_query_param = "page_size"
     # 限制最大每页条数，防止一次请求过多数据
     max_page_size = 100
     # 页码参数名
-    page_query_param = 'page'
+    page_query_param = "page"
 
     def get_paginated_response(self, data):
         """
@@ -84,13 +85,13 @@ class UnifiedPagination(PageNumberPagination):
         return APIResponse(
             data={
                 # 总记录数，用于前端计算总页数
-                'count': self.page.paginator.count,
+                "count": self.page.paginator.count,
                 # 下一页链接，如果没有下一页则为 None
-                'next': self.get_next_link(),
+                "next": self.get_next_link(),
                 # 上一页链接，如果没有上一页则为 None
-                'previous': self.get_previous_link(),
+                "previous": self.get_previous_link(),
                 # 当前页的数据列表
-                'results': data
+                "results": data,
             }
         )
 
@@ -108,20 +109,20 @@ class UnifiedPagination(PageNumberPagination):
             dict: OpenAPI Schema 定义
         """
         return {
-            'type': 'object',
-            'properties': {
-                'code': {'type': 'integer', 'example': 100},
-                'msg': {'type': 'string', 'example': '请求成功'},
-                'data': {
-                    'type': 'object',
-                    'properties': {
-                        'count': {'type': 'integer', 'example': 100},
-                        'next': {'type': 'string', 'nullable': True, 'example': 'http://api.example.org/?page=4'},
-                        'previous': {'type': 'string', 'nullable': True, 'example': 'http://api.example.org/?page=2'},
-                        'results': schema,
-                    }
-                }
-            }
+            "type": "object",
+            "properties": {
+                "code": {"type": "integer", "example": 100},
+                "msg": {"type": "string", "example": "请求成功"},
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "count": {"type": "integer", "example": 100},
+                        "next": {"type": "string", "nullable": True, "example": "http://api.example.org/?page=4"},
+                        "previous": {"type": "string", "nullable": True, "example": "http://api.example.org/?page=2"},
+                        "results": schema,
+                    },
+                },
+            },
         }
 
 
@@ -138,7 +139,7 @@ class LargeResultsSetPagination(UnifiedPagination):
     """
 
     page_size = 50
-    page_size_query_param = 'page_size'
+    page_size_query_param = "page_size"
     max_page_size = 500
 
 
@@ -155,5 +156,5 @@ class SmallResultsSetPagination(UnifiedPagination):
     """
 
     page_size = 10
-    page_size_query_param = 'page_size'
+    page_size_query_param = "page_size"
     max_page_size = 50

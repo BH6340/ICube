@@ -1,7 +1,16 @@
 <template>
   <div class="formula-library">
+    <!-- 移动端：顶部搜索筛选栏 -->
+    <div class="mobile-search-bar">
+      <el-input v-model="searchKeyword" placeholder="搜索公式" prefix-icon="Search" clearable
+        @keyup.enter="handleSearch" @clear="handleSearch" @input="handleSearch" />
+      <el-button type="primary" plain @click="mobileFilterVisible = true" icon="Filter">
+        筛选
+      </el-button>
+    </div>
+
     <el-row :gutter="20">
-      <el-col :xs="24" :sm="8" :md="6">
+      <el-col :xs="24" :sm="8" :md="6" class="sidebar-col">
         <div class="sidebar">
           <el-card shadow="never" class="search-card">
             <template #header>
@@ -33,9 +42,9 @@
               <span>难度筛选</span>
             </template>
             <el-checkbox-group v-model="selectedDifficulties" @change="handleFilterChange">
-              <el-checkbox label="基础" border>基础</el-checkbox>
-              <el-checkbox label="进阶" border>进阶</el-checkbox>
-              <el-checkbox label="困难" border>困难</el-checkbox>
+              <el-checkbox value="基础" label="基础" border>基础</el-checkbox>
+              <el-checkbox value="进阶" label="进阶" border>进阶</el-checkbox>
+              <el-checkbox value="困难" label="困难" border>困难</el-checkbox>
             </el-checkbox-group>
           </el-card>
 
@@ -87,7 +96,7 @@
                 <div class="footer-right">
                   <el-button
                       v-if="isFormulaAuthor(formula)"
-                      type="text"
+                      type="link"
                       size="small"
                       @click.stop="handleEditFormula(formula)"
                       icon="Edit"
@@ -96,7 +105,7 @@
                   </el-button>
                   <el-button
                       v-if="isFormulaAuthor(formula)"
-                      type="text"
+                      type="link"
                       size="small"
                       @click.stop="handleDeleteFormula(formula)"
                       icon="Delete"
@@ -105,7 +114,7 @@
                     删除
                   </el-button>
                   <el-button
-                      type="text"
+                      type="link"
                       size="small"
                       @click.stop="toggleCollection(formula)"
                       :icon="isCollected(formula.id) ? 'Star' : 'Star'"
@@ -126,7 +135,51 @@
       </el-col>
     </el-row>
 
-    <el-dialog v-model="showDetailDialog" :title="selectedFormula?.name" width="900px" append-to-body>
+    <!-- 移动端筛选抽屉 -->
+    <el-drawer
+      v-model="mobileFilterVisible"
+      title="筛选条件"
+      direction="ltr"
+      size="85%"
+      class="mobile-filter-drawer"
+    >
+      <div class="mobile-filter-content">
+        <el-card shadow="never" class="filter-card">
+          <template #header>
+            <span>作者筛选</span>
+          </template>
+          <el-select v-model="selectedAuthor" @change="handleFilterChange" placeholder="选择作者" clearable style="width: 100%">
+            <el-option v-for="author in authorList" :key="author.id" :value="author.id" :label="author.username" />
+          </el-select>
+        </el-card>
+
+        <el-card shadow="never" class="category-card">
+          <template #header>
+            <span>公式分类</span>
+          </template>
+          <el-tree :data="categoryTree" :props="{ label: 'name', children: 'children' }" :expand-on-click-node="false"
+            :highlight-current="true" @node-click="handleMobileCategoryClick" default-expand-all />
+        </el-card>
+
+        <el-card shadow="never" class="filter-card">
+          <template #header>
+            <span>难度筛选</span>
+          </template>
+          <el-checkbox-group v-model="selectedDifficulties" @change="handleFilterChange">
+            <el-checkbox value="基础" label="基础" border>基础</el-checkbox>
+            <el-checkbox value="进阶" label="进阶" border>进阶</el-checkbox>
+            <el-checkbox value="困难" label="困难" border>困难</el-checkbox>
+          </el-checkbox-group>
+        </el-card>
+
+        <div class="mobile-filter-actions">
+          <el-button @click="resetMobileFilters" plain>重置</el-button>
+          <el-button type="primary" @click="mobileFilterVisible = false">确定</el-button>
+        </div>
+      </div>
+    </el-drawer>
+
+    <el-dialog v-model="showDetailDialog" :title="selectedFormula?.name" :width="isMobile ? '95%' : '900px'" append-to-body class="formula-detail-dialog">
       <div v-if="selectedFormula" class="formula-detail">
         <el-row :gutter="20">
           <el-col :xs="24" :sm="8">
@@ -206,10 +259,10 @@
  * - 支持 URL query 参数预加载指定公式详情
  */
 
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Picture, Star } from '@element-plus/icons-vue';
+import { Picture, Star, Filter } from '@element-plus/icons-vue';
 import { getFormulaCategories, getFormulaList, getFormulaDetail, getMyCollections, addCollection, removeCollection, getFormulaAuthors, deleteFormula } from '../../api/formula';
 import CubeDemo from './CubeDemo.vue';
 import FormulaEditor from './FormulaEditor.vue';
@@ -235,6 +288,36 @@ const authorList = ref([]);             // 作者列表
 const collectedFormulaIds = ref([]);    // 已收藏的公式 ID 列表
 const editFormula = ref(null);          // 正在编辑的公式对象
 const collectionMap = ref({});          // 收藏映射表（备用）
+
+// 移动端相关
+const mobileFilterVisible = ref(false); // 移动端筛选抽屉可见性
+const isMobile = ref(false);            // 是否为移动端
+
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 768;
+};
+
+const handleResize = () => {
+  checkMobile();
+};
+
+const handleMobileCategoryClick = (data) => {
+  if (data.raw) {
+    selectedCategory.value = data.raw.id;
+  } else {
+    selectedCategory.value = null;
+  }
+  currentPage.value = 1;
+  loadFormulas();
+};
+
+const resetMobileFilters = () => {
+  selectedCategory.value = null;
+  selectedDifficulties.value = [];
+  selectedAuthor.value = null;
+  currentPage.value = 1;
+  loadFormulas();
+};
 const difficultyLabel = (level) => {
   if (level === 1) return '基础';
   if (level === 2) return '进阶';
@@ -474,12 +557,52 @@ onMounted(() => {
   if (formulaId) {
     openFormulaById(formulaId);
   }
+
+  checkMobile();
+  window.addEventListener('resize', handleResize);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize);
 });
 </script>
 
 <style scoped>
 .formula-library {
   padding: 20px;
+}
+
+/* 移动端顶部搜索筛选栏 */
+.mobile-search-bar {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.mobile-search-bar .el-input {
+  flex: 1;
+}
+
+/* 移动端筛选抽屉 */
+.mobile-filter-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 4px 16px;
+}
+
+.mobile-filter-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 12px 0 0;
+  border-top: 1px solid #ebeef5;
+  margin-top: 8px;
+}
+
+.mobile-filter-actions .el-button {
+  flex: 1;
 }
 
 .sidebar {
@@ -732,5 +855,126 @@ onMounted(() => {
   color: #303133;
   border-bottom: 1px solid #e4e7ed;
   padding-bottom: 8px;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .formula-library {
+    padding: 12px;
+  }
+
+  /* 显示移动端顶部搜索栏 */
+  .mobile-search-bar {
+    display: flex;
+  }
+
+  /* 隐藏桌面端侧边栏 */
+  .sidebar-col {
+    display: none;
+  }
+
+  .formula-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+  }
+
+  .formula-header {
+    margin-bottom: 6px;
+  }
+
+  .formula-name {
+    font-size: 14px;
+  }
+
+  .formula-notation {
+    font-size: 11px;
+    padding: 4px 8px;
+    margin-bottom: 8px;
+  }
+
+  .formula-thumbnail {
+    height: 100px;
+    margin-bottom: 8px;
+  }
+
+  .formula-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .footer-left {
+    flex-wrap: wrap;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .footer-right {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+  }
+
+  .view-count, .category-tag, .author-name {
+    font-size: 11px;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .toolbar-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .pagination-wrapper {
+    margin-top: 20px;
+  }
+
+  /* 详情弹窗移动端适配 */
+  .formula-detail {
+    max-height: 75vh;
+  }
+
+  .formula-detail :deep(.el-col) {
+    margin-bottom: 16px;
+  }
+
+  .formula-detail :deep(.el-col:last-child) {
+    margin-bottom: 0;
+  }
+
+  .detail-thumbnail {
+    height: 160px;
+    margin-bottom: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .formula-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .formula-thumbnail {
+    height: 120px;
+  }
+
+  .formula-footer {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .footer-left {
+    width: auto;
+  }
+
+  .footer-right {
+    width: auto;
+  }
 }
 </style>

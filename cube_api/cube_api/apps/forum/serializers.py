@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 论坛序列化器层
 
@@ -10,10 +9,21 @@
     - **图片URL标准化**：统一使用 build_image_url 生成完整URL
     - **标签处理**：支持 tag_ids 字段批量关联标签
 """
+
+from apps.accounts.serializers import ProfileListSerializer, UserSerializer
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
-from .models import Post, Tag, Comment, PostLike, CommentLike, PostCollect, Report, PostImage
-from apps.accounts.serializers import ProfileListSerializer, UserSerializer
+
+from .models import (
+    Comment,
+    CommentLike,
+    Post,
+    PostCollect,
+    PostImage,
+    PostLike,
+    Report,
+    Tag,
+)
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -31,7 +41,7 @@ class TagSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tag
-        fields = ('id', 'name', 'color', 'use_count')
+        fields = ("id", "name", "color", "use_count")
 
 
 class PostImageSerializer(serializers.ModelSerializer):
@@ -48,12 +58,13 @@ class PostImageSerializer(serializers.ModelSerializer):
         - order: 排序
         - created_at: 创建时间
     """
+
     image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = PostImage
-        fields = ('id', 'image', 'image_url', 'alt', 'order', 'created_at')
-        read_only_fields = ('id', 'created_at')
+        fields = ("id", "image", "image_url", "alt", "order", "created_at")
+        read_only_fields = ("id", "created_at")
 
     def get_image_url(self, obj):
         """
@@ -68,9 +79,10 @@ class PostImageSerializer(serializers.ModelSerializer):
             完整的图片URL或空字符串
         """
         from cube_api.utils.image_url import build_image_url
+
         if obj.image:
             return build_image_url(obj.image.url)
-        return ''
+        return ""
 
 
 class PostListSerializer(serializers.ModelSerializer):
@@ -94,6 +106,7 @@ class PostListSerializer(serializers.ModelSerializer):
         - is_pinned/is_essence: 状态标记
         - created_at/updated_at: 时间
     """
+
     author = ProfileListSerializer(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     images = serializers.SerializerMethodField()
@@ -101,9 +114,18 @@ class PostListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = (
-            'id', 'title', 'author', 'view_count', 'like_count',
-            'comment_count', 'tags', 'images', 'is_pinned', 'is_essence',
-            'created_at', 'updated_at'
+            "id",
+            "title",
+            "author",
+            "view_count",
+            "like_count",
+            "comment_count",
+            "tags",
+            "images",
+            "is_pinned",
+            "is_essence",
+            "created_at",
+            "updated_at",
         )
 
     def get_images(self, obj):
@@ -135,6 +157,7 @@ class PostSerializer(serializers.ModelSerializer):
         - is_liked: 当前用户是否点赞
         - is_collected: 当前用户是否收藏
     """
+
     author = ProfileListSerializer(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     images = PostImageSerializer(many=True, read_only=True)
@@ -142,23 +165,45 @@ class PostSerializer(serializers.ModelSerializer):
     is_collected = serializers.SerializerMethodField()
     # 用于批量关联标签的写入字段
     tag_ids = serializers.ListField(
-        child=serializers.IntegerField(),
-        write_only=True,
-        required=False,
-        help_text='标签ID列表'
+        child=serializers.IntegerField(), write_only=True, required=False, help_text="标签ID列表"
     )
 
     class Meta:
         model = Post
         fields = (
-            'id', 'title', 'content', 'content_md', 'author', 'view_count', 'like_count',
-            'comment_count', 'collect_count', 'tags', 'images', 'tag_ids', 'is_pinned', 'is_essence',
-            'is_closed', 'status', 'report_count', 'created_at', 'updated_at',
-            'is_liked', 'is_collected'
+            "id",
+            "title",
+            "content",
+            "content_md",
+            "author",
+            "view_count",
+            "like_count",
+            "comment_count",
+            "collect_count",
+            "tags",
+            "images",
+            "tag_ids",
+            "is_pinned",
+            "is_essence",
+            "is_closed",
+            "status",
+            "report_count",
+            "created_at",
+            "updated_at",
+            "is_liked",
+            "is_collected",
         )
         # 统计字段和时间字段只读，由系统自动更新
-        read_only_fields = ('view_count', 'like_count', 'comment_count',
-                            'collect_count', 'report_count', 'status', 'created_at', 'updated_at')
+        read_only_fields = (
+            "view_count",
+            "like_count",
+            "comment_count",
+            "collect_count",
+            "report_count",
+            "status",
+            "created_at",
+            "updated_at",
+        )
 
     @extend_schema_field(serializers.BooleanField)
     def get_is_liked(self, obj):
@@ -173,7 +218,7 @@ class PostSerializer(serializers.ModelSerializer):
         Returns:
             True（已点赞）或 False（未点赞）
         """
-        request = self.context.get('request')
+        request = self.context.get("request")
         if request and request.user.is_authenticated:
             return PostLike.objects.filter(post=obj, user=request.user).exists()
         return False
@@ -191,7 +236,7 @@ class PostSerializer(serializers.ModelSerializer):
         Returns:
             True（已收藏）或 False（未收藏）
         """
-        request = self.context.get('request')
+        request = self.context.get("request")
         if request and request.user.is_authenticated:
             return PostCollect.objects.filter(post=obj, user=request.user).exists()
         return False
@@ -208,9 +253,9 @@ class PostSerializer(serializers.ModelSerializer):
         Returns:
             创建的 Post 对象
         """
-        tag_ids = validated_data.pop('tag_ids', [])
+        tag_ids = validated_data.pop("tag_ids", [])
         # 设置作者为当前用户
-        validated_data['author'] = self.context['request'].user
+        validated_data["author"] = self.context["request"].user
         post = super().create(validated_data)
 
         # 处理标签关联
@@ -236,7 +281,7 @@ class PostSerializer(serializers.ModelSerializer):
         Returns:
             更新后的 Post 对象
         """
-        tag_ids = validated_data.pop('tag_ids', None)
+        tag_ids = validated_data.pop("tag_ids", None)
         post = super().update(instance, validated_data)
 
         # 更新标签关联
@@ -265,23 +310,17 @@ class PostCreateUpdateSerializer(serializers.ModelSerializer):
         - 内容：至少 10 字符
         - 文件：只支持 .md 格式，大小不超过 5MB
     """
-    tag_ids = serializers.ListField(
-        child=serializers.IntegerField(),
-        write_only=True,
-        required=False
-    )
-    content_file = serializers.FileField(write_only=True, required=False, help_text='上传.md文件')
+
+    tag_ids = serializers.ListField(child=serializers.IntegerField(), write_only=True, required=False)
+    content_file = serializers.FileField(write_only=True, required=False, help_text="上传.md文件")
     images = serializers.ListField(
-        child=serializers.ImageField(),
-        write_only=True,
-        required=False,
-        help_text='上传图片列表'
+        child=serializers.ImageField(), write_only=True, required=False, help_text="上传图片列表"
     )
 
     class Meta:
         model = Post
-        fields = ('id', 'title', 'content', 'content_md', 'content_file', 'tag_ids', 'tags', 'images')
-        read_only_fields = ('id',)
+        fields = ("id", "title", "content", "content_md", "content_file", "tag_ids", "tags", "images")
+        read_only_fields = ("id",)
 
     def validate_title(self, value):
         """
@@ -317,7 +356,7 @@ class PostCreateUpdateSerializer(serializers.ModelSerializer):
         """
         if value and len(value.strip()) < 10:
             raise serializers.ValidationError("内容至少10个字符")
-        return value.strip() if value else ''
+        return value.strip() if value else ""
 
     def validate_content_file(self, value):
         """
@@ -332,7 +371,7 @@ class PostCreateUpdateSerializer(serializers.ModelSerializer):
         Returns:
             验证通过的文件对象
         """
-        if not value.name.endswith('.md'):
+        if not value.name.endswith(".md"):
             raise serializers.ValidationError("只支持.md格式的文件")
         if value.size > 1024 * 1024 * 5:  # 5MB
             raise serializers.ValidationError("文件大小不能超过5MB")
@@ -355,18 +394,18 @@ class PostCreateUpdateSerializer(serializers.ModelSerializer):
         Returns:
             创建的 Post 对象
         """
-        tag_ids = validated_data.pop('tag_ids', [])
-        content_file = validated_data.pop('content_file', None)
-        images = validated_data.pop('images', [])
+        tag_ids = validated_data.pop("tag_ids", [])
+        content_file = validated_data.pop("content_file", None)
+        images = validated_data.pop("images", [])
 
         # 处理 .md 文件上传
         if content_file:
-            content = content_file.read().decode('utf-8')
-            validated_data['content'] = content
-            validated_data['content_md'] = content
+            content = content_file.read().decode("utf-8")
+            validated_data["content"] = content
+            validated_data["content_md"] = content
 
         # 设置作者为当前用户
-        validated_data['author'] = self.context['request'].user
+        validated_data["author"] = self.context["request"].user
         post = Post.objects.create(**validated_data)
 
         # 处理标签关联
@@ -375,14 +414,9 @@ class PostCreateUpdateSerializer(serializers.ModelSerializer):
 
         # 处理直接上传的图片
         for idx, image in enumerate(images):
-            PostImage.objects.create(
-                post=post,
-                image=image,
-                alt=f'图片{idx + 1}',
-                order=idx
-            )
+            PostImage.objects.create(post=post, image=image, alt=f"图片{idx + 1}", order=idx)
 
-        self._sync_post_images(post, validated_data.get('content', ''))
+        self._sync_post_images(post, validated_data.get("content", ""))
 
         return post
 
@@ -404,11 +438,12 @@ class PostCreateUpdateSerializer(serializers.ModelSerializer):
             post: Post 对象
             content: 帖子内容（可能包含图片URL）
         """
-        import re
         import os
+        import re
+
         from django.conf import settings
 
-        image_urls = re.findall(r'!\[.*?\]\((.*?)\)', content)
+        image_urls = re.findall(r"!\[.*?\]\((.*?)\)", content)
 
         existing_images = set()
         for img in post.images.all():
@@ -416,8 +451,8 @@ class PostCreateUpdateSerializer(serializers.ModelSerializer):
 
         required_images = set()
         for url in image_urls:
-            if '/media/forum/posts/' in url or '/media/formulas/' in url:
-                image_path = url.split('/media/')[-1]
+            if "/media/forum/posts/" in url or "/media/formulas/" in url:
+                image_path = url.split("/media/")[-1]
                 required_images.add(image_path)
 
         for img in list(post.images.all()):
@@ -428,12 +463,7 @@ class PostCreateUpdateSerializer(serializers.ModelSerializer):
             if image_path not in existing_images:
                 full_path = os.path.join(settings.MEDIA_ROOT, image_path)
                 if os.path.exists(full_path):
-                    PostImage.objects.create(
-                        post=post,
-                        image=image_path,
-                        alt='图片',
-                        order=post.images.count()
-                    )
+                    PostImage.objects.create(post=post, image=image_path, alt="图片", order=post.images.count())
 
     def update(self, instance, validated_data):
         """
@@ -448,15 +478,15 @@ class PostCreateUpdateSerializer(serializers.ModelSerializer):
         Returns:
             更新后的 Post 对象
         """
-        tag_ids = validated_data.pop('tag_ids', None)
-        images = validated_data.pop('images', [])
-        content_file = validated_data.pop('content_file', None)
+        tag_ids = validated_data.pop("tag_ids", None)
+        images = validated_data.pop("images", [])
+        content_file = validated_data.pop("content_file", None)
 
         # 处理 .md 文件上传
         if content_file:
-            content = content_file.read().decode('utf-8')
-            validated_data['content'] = content
-            validated_data['content_md'] = content
+            content = content_file.read().decode("utf-8")
+            validated_data["content"] = content
+            validated_data["content_md"] = content
 
         post = super().update(instance, validated_data)
 
@@ -466,14 +496,9 @@ class PostCreateUpdateSerializer(serializers.ModelSerializer):
 
         # 处理直接上传的图片
         for idx, image in enumerate(images):
-            PostImage.objects.create(
-                post=post,
-                image=image,
-                alt=f'图片{idx + 1}',
-                order=idx
-            )
+            PostImage.objects.create(post=post, image=image, alt=f"图片{idx + 1}", order=idx)
 
-        self._sync_post_images(post, validated_data.get('content', ''))
+        self._sync_post_images(post, validated_data.get("content", ""))
 
         return post
 
@@ -494,6 +519,7 @@ class ReplySerializer(serializers.ModelSerializer):
         - liked: 当前用户是否点赞
         - disliked: 当前用户是否点踩
     """
+
     author = UserSerializer(read_only=True)
     reply_to_name = serializers.SerializerMethodField()
     liked = serializers.SerializerMethodField()
@@ -502,8 +528,16 @@ class ReplySerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = [
-            'id', 'content', 'created_at', 'author', 'parent',
-            'reply_to_name', 'like_count', 'dislike_count', 'liked', 'disliked'
+            "id",
+            "content",
+            "created_at",
+            "author",
+            "parent",
+            "reply_to_name",
+            "like_count",
+            "dislike_count",
+            "liked",
+            "disliked",
         ]
 
     def get_reply_to_name(self, obj):
@@ -532,7 +566,7 @@ class ReplySerializer(serializers.ModelSerializer):
         Returns:
             True（已点赞）或 False（未点赞）
         """
-        request = self.context.get('request')
+        request = self.context.get("request")
         if request and request.user.is_authenticated and not obj.is_deleted:
             return CommentLike.objects.filter(comment=obj, user=request.user, is_like=True).exists()
         return False
@@ -547,7 +581,7 @@ class ReplySerializer(serializers.ModelSerializer):
         Returns:
             True（已点踩）或 False（未点踩）
         """
-        request = self.context.get('request')
+        request = self.context.get("request")
         if request and request.user.is_authenticated and not obj.is_deleted:
             return CommentLike.objects.filter(comment=obj, user=request.user, is_like=False).exists()
         return False
@@ -570,6 +604,7 @@ class CommentSerializer(serializers.ModelSerializer):
         - liked: 当前用户是否点赞
         - disliked: 当前用户是否点踩
     """
+
     author = ProfileListSerializer(read_only=True)
     replies = serializers.SerializerMethodField()
     reply_count = serializers.SerializerMethodField()
@@ -579,12 +614,23 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = (
-            'id', 'post', 'author', 'parent', 'content', 'like_count',
-            'dislike_count', 'is_deleted', 'is_hidden', 'created_at',
-            'updated_at', 'replies', 'reply_count', 'liked', 'disliked'
+            "id",
+            "post",
+            "author",
+            "parent",
+            "content",
+            "like_count",
+            "dislike_count",
+            "is_deleted",
+            "is_hidden",
+            "created_at",
+            "updated_at",
+            "replies",
+            "reply_count",
+            "liked",
+            "disliked",
         )
-        read_only_fields = ('like_count', 'dislike_count', 'created_at',
-                            'updated_at', 'is_deleted', 'is_hidden')
+        read_only_fields = ("like_count", "dislike_count", "created_at", "updated_at", "is_deleted", "is_hidden")
 
     def get_replies(self, obj):
         """
@@ -612,9 +658,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
         def collect_replies(parent_comment):
             # 获取当前父节点下的直接子回复（排除已删除和隐藏的）
-            direct_replies = parent_comment.replies.filter(
-                is_deleted=False, is_hidden=False
-            ).order_by('created_at')
+            direct_replies = parent_comment.replies.filter(is_deleted=False, is_hidden=False).order_by("created_at")
 
             for reply in direct_replies:
                 all_descendants.append(reply)
@@ -640,6 +684,7 @@ class CommentSerializer(serializers.ModelSerializer):
         Returns:
             子孙评论总数
         """
+
         def count_descendants(parent_comment):
             # 计算直接子评论数量
             direct_count = parent_comment.replies.filter(is_deleted=False, is_hidden=False).count()
@@ -664,11 +709,9 @@ class CommentSerializer(serializers.ModelSerializer):
         Returns:
             True（已点赞）或 False（未点赞）
         """
-        request = self.context.get('request')
+        request = self.context.get("request")
         if request and request.user.is_authenticated and not obj.is_deleted:
-            return CommentLike.objects.filter(
-                comment=obj, user=request.user, is_like=True
-            ).exists()
+            return CommentLike.objects.filter(comment=obj, user=request.user, is_like=True).exists()
         return False
 
     @extend_schema_field(serializers.BooleanField)
@@ -682,11 +725,9 @@ class CommentSerializer(serializers.ModelSerializer):
         Returns:
             True（已点踩）或 False（未点踩）
         """
-        request = self.context.get('request')
+        request = self.context.get("request")
         if request and request.user.is_authenticated and not obj.is_deleted:
-            return CommentLike.objects.filter(
-                comment=obj, user=request.user, is_like=False
-            ).exists()
+            return CommentLike.objects.filter(comment=obj, user=request.user, is_like=False).exists()
         return False
 
     def create(self, validated_data):
@@ -701,7 +742,7 @@ class CommentSerializer(serializers.ModelSerializer):
         Returns:
             创建的 Comment 对象
         """
-        validated_data['author'] = self.context['request'].user
+        validated_data["author"] = self.context["request"].user
         return super().create(validated_data)
 
 
@@ -725,13 +766,13 @@ class ReportSerializer(serializers.ModelSerializer):
         - status: 处理状态（只读）
         - created_at: 创建时间（只读）
     """
+
     reporter = ProfileListSerializer(read_only=True)
 
     class Meta:
         model = Report
-        fields = ('id', 'content_type', 'object_id', 'reporter', 'reason',
-                  'description', 'status', 'created_at')
-        read_only_fields = ('status', 'created_at', 'reporter')
+        fields = ("id", "content_type", "object_id", "reporter", "reason", "description", "status", "created_at")
+        read_only_fields = ("status", "created_at", "reporter")
 
     def create(self, validated_data):
         """
@@ -745,5 +786,5 @@ class ReportSerializer(serializers.ModelSerializer):
         Returns:
             创建的 Report 对象
         """
-        validated_data['reporter'] = self.context['request'].user
+        validated_data["reporter"] = self.context["request"].user
         return super().create(validated_data)

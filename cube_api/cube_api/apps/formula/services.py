@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 公式库服务层
 
@@ -36,24 +35,60 @@ class FormulaService:
 
     # 操作逆映射表：键为正向操作，值为逆向操作
     NOTATION_INVERSE_MAP = {
-        'R': "R'", 'R\'': 'R', 'R2': 'R2',
-        'L': "L'", 'L\'': 'L', 'L2': 'L2',
-        'U': "U'", 'U\'': 'U', 'U2': 'U2',
-        'D': "D'", 'D\'': 'D', 'D2': 'D2',
-        'F': "F'", 'F\'': 'F', 'F2': 'F2',
-        'B': "B'", 'B\'': 'B', 'B2': 'B2',
-        'M': "M'", 'M\'': 'M', 'M2': 'M2',
-        'E': "E'", 'E\'': 'E', 'E2': 'E2',
-        'S': "S'", 'S\'': 'S', 'S2': 'S2',
-        'x': "x'", 'x\'': 'x', 'x2': 'x2',
-        'y': "y'", 'y\'': 'y', 'y2': 'y2',
-        'z': "z'", 'z\'': 'z', 'z2': 'z2',
-        'r': "r'", 'r\'': 'r', 'r2': 'r2',
-        'l': "l'", 'l\'': 'l', 'l2': 'l2',
-        'u': "u'", 'u\'': 'u', 'u2': 'u2',
-        'd': "d'", 'd\'': 'd', 'd2': 'd2',
-        'f': "f'", 'f\'': 'f', 'f2': 'f2',
-        'b': "b'", 'b\'': 'b', 'b2': 'b2',
+        "R": "R'",
+        "R'": "R",
+        "R2": "R2",
+        "L": "L'",
+        "L'": "L",
+        "L2": "L2",
+        "U": "U'",
+        "U'": "U",
+        "U2": "U2",
+        "D": "D'",
+        "D'": "D",
+        "D2": "D2",
+        "F": "F'",
+        "F'": "F",
+        "F2": "F2",
+        "B": "B'",
+        "B'": "B",
+        "B2": "B2",
+        "M": "M'",
+        "M'": "M",
+        "M2": "M2",
+        "E": "E'",
+        "E'": "E",
+        "E2": "E2",
+        "S": "S'",
+        "S'": "S",
+        "S2": "S2",
+        "x": "x'",
+        "x'": "x",
+        "x2": "x2",
+        "y": "y'",
+        "y'": "y",
+        "y2": "y2",
+        "z": "z'",
+        "z'": "z",
+        "z2": "z2",
+        "r": "r'",
+        "r'": "r",
+        "r2": "r2",
+        "l": "l'",
+        "l'": "l",
+        "l2": "l2",
+        "u": "u'",
+        "u'": "u",
+        "u2": "u2",
+        "d": "d'",
+        "d'": "d",
+        "d2": "d2",
+        "f": "f'",
+        "f'": "f",
+        "f2": "f2",
+        "b": "b'",
+        "b'": "b",
+        "b2": "b2",
     }
 
     @classmethod
@@ -84,7 +119,7 @@ class FormulaService:
         # 对每个步骤取逆操作
         inverse_steps = [cls.NOTATION_INVERSE_MAP.get(step, step) for step in reversed_steps]
         # 重新拼接
-        return ' '.join(inverse_steps)
+        return " ".join(inverse_steps)
 
 
 class CubeStateService:
@@ -110,12 +145,12 @@ class CubeStateService:
 
     # 标准配色方案：位置 → 颜色映射
     CENTER_COLORS = {
-        (0, 1, 0): "Y",   # 上中心块 → 黄色
+        (0, 1, 0): "Y",  # 上中心块 → 黄色
         (0, -1, 0): "W",  # 下中心块 → 白色
-        (0, 0, 1): "B",   # 前中心块 → 蓝色
+        (0, 0, 1): "B",  # 前中心块 → 蓝色
         (0, 0, -1): "G",  # 后中心块 → 绿色
         (-1, 0, 0): "O",  # 左中心块 → 橙色
-        (1, 0, 0): "R",   # 右中心块 → 红色
+        (1, 0, 0): "R",  # 右中心块 → 红色
     }
 
     @classmethod
@@ -145,35 +180,37 @@ class CubeStateService:
             return errors
 
         # 2. 验证 order 字段（阶数）
-        if 'order' not in state_def:
+        if "order" not in state_def:
             errors.append("缺少 order 字段")
         else:
-            if not isinstance(state_def['order'], int) or state_def['order'] < 2:
+            if not isinstance(state_def["order"], int) or state_def["order"] < 2:
                 errors.append("order 必须是大于等于2的整数")
 
         # 3. 验证 blocks 字段（块列表）
-        if 'blocks' not in state_def:
+        if "blocks" not in state_def:
             errors.append("缺少 blocks 字段")
         else:
-            if not isinstance(state_def['blocks'], list):
+            if not isinstance(state_def["blocks"], list):
                 errors.append("blocks 必须是列表格式")
             else:
                 # 验证块数量：order^3 个（order 非法时跳过数量校验，错误已在上面记录）
-                order_val = state_def.get('order')
+                order_val = state_def.get("order")
                 if isinstance(order_val, int) and order_val >= 2:
-                    expected_blocks = order_val ** 3
-                    if len(state_def['blocks']) != expected_blocks:
-                        errors.append(f"blocks 数量不正确，期望 {expected_blocks} 个，实际 {len(state_def['blocks'])} 个")
+                    expected_blocks = order_val**3
+                    if len(state_def["blocks"]) != expected_blocks:
+                        errors.append(
+                            f"blocks 数量不正确，期望 {expected_blocks} 个，实际 {len(state_def['blocks'])} 个"
+                        )
 
                 # 4. 验证每个块的定义
-                for block in state_def['blocks']:
+                for block in state_def["blocks"]:
                     errors.extend(cls._validate_block(block))
 
                 # 5. 验证中心块颜色（仅当 blocks 是列表时）
-                errors.extend(cls._validate_center_blocks(state_def['blocks']))
+                errors.extend(cls._validate_center_blocks(state_def["blocks"]))
 
                 # 6. 验证相邻块接触面颜色一致性（仅当 blocks 是列表时）
-                errors.extend(cls._validate_adjacent_blocks(state_def['blocks']))
+                errors.extend(cls._validate_adjacent_blocks(state_def["blocks"]))
 
         return errors
 
@@ -212,10 +249,10 @@ class CubeStateService:
             return errors
 
         # 验证 pos 字段（位置）
-        if 'pos' not in block:
+        if "pos" not in block:
             errors.append("缺少 pos 字段")
         else:
-            pos = block['pos']
+            pos = block["pos"]
             if not isinstance(pos, (list, tuple)) or len(pos) != 3:
                 errors.append("pos 必须是包含3个元素的列表或元组")
             else:
@@ -224,21 +261,21 @@ class CubeStateService:
                         errors.append("pos 的每个元素必须是整数")
 
         # 验证 faces 字段（面颜色）
-        if 'faces' not in block:
+        if "faces" not in block:
             errors.append("缺少 faces 字段")
         else:
-            faces = block['faces']
+            faces = block["faces"]
             if not isinstance(faces, dict):
                 errors.append("faces 必须是字典格式")
             else:
                 # 验证必须包含6个面
-                required_faces = ['U', 'R', 'F', 'D', 'L', 'B']
+                required_faces = ["U", "R", "F", "D", "L", "B"]
                 for face in required_faces:
                     if face not in faces:
                         errors.append(f"缺少 {face} 面")
 
                 # 验证颜色值有效
-                valid_colors = ['Y', 'W', 'B', 'G', 'O', 'R', '-', '?']
+                valid_colors = ["Y", "W", "B", "G", "O", "R", "-", "?"]
                 for face, color in faces.items():
                     if color not in valid_colors:
                         errors.append(f"面 {face} 的颜色 {color} 无效，有效值: {', '.join(valid_colors)}")
@@ -272,10 +309,10 @@ class CubeStateService:
         for pos, expected_color in cls.CENTER_COLORS.items():
             # 查找中心块
             block = cls._find_block_by_pos(blocks, pos)
-            if block and isinstance(block, dict) and 'faces' in block:
+            if block and isinstance(block, dict) and "faces" in block:
                 # 获取该中心块需要验证的面
                 face_key = cls._get_center_face_key(pos)
-                actual_color = block['faces'].get(face_key, '')
+                actual_color = block["faces"].get(face_key, "")
                 # 验证颜色是否正确
                 if actual_color != expected_color:
                     errors.append(f"中心块 {pos} 的 {face_key} 面颜色错误，期望 {expected_color}，实际 {actual_color}")
@@ -307,27 +344,29 @@ class CubeStateService:
             # 跳过结构不合法的 block（前面的 _validate_block 已报告错误）
             if not isinstance(block, dict):
                 continue
-            if 'pos' not in block or not isinstance(block['pos'], (list, tuple)) or len(block['pos']) != 3:
+            if "pos" not in block or not isinstance(block["pos"], (list, tuple)) or len(block["pos"]) != 3:
                 continue
-            if 'faces' not in block or not isinstance(block['faces'], dict):
+            if "faces" not in block or not isinstance(block["faces"], dict):
                 continue
-            pos = tuple(block['pos'])
+            pos = tuple(block["pos"])
 
             # 获取所有相邻位置
             for direction, neighbor_pos in cls._get_neighbors(pos):
                 neighbor = cls._find_block_by_pos(blocks, neighbor_pos)
-                if neighbor and isinstance(neighbor, dict) and 'faces' in neighbor:
+                if neighbor and isinstance(neighbor, dict) and "faces" in neighbor:
                     # 获取当前块的接触面和相邻块的对应面
                     my_face = cls._direction_to_face(direction)
                     neighbor_face = cls._opposite_face(my_face)
 
                     # 获取接触面颜色
-                    my_color = block['faces'].get(my_face, '-')
-                    neighbor_color = neighbor['faces'].get(neighbor_face, '-')
+                    my_color = block["faces"].get(my_face, "-")
+                    neighbor_color = neighbor["faces"].get(neighbor_face, "-")
 
                     # 如果两个颜色都不为 '-' 且不一致，则报错
-                    if my_color != '-' and neighbor_color != '-' and my_color != neighbor_color:
-                        errors.append(f"块 {pos} 的 {my_face} 面与相邻块 {neighbor_pos} 的 {neighbor_face} 面颜色不一致")
+                    if my_color != "-" and neighbor_color != "-" and my_color != neighbor_color:
+                        errors.append(
+                            f"块 {pos} 的 {my_face} 面与相邻块 {neighbor_pos} 的 {neighbor_face} 面颜色不一致"
+                        )
 
         return errors
 
@@ -347,9 +386,9 @@ class CubeStateService:
         """
         pos_tuple = tuple(pos) if isinstance(pos, list) else pos
         for block in blocks:
-            if not isinstance(block, dict) or 'pos' not in block:
+            if not isinstance(block, dict) or "pos" not in block:
                 continue
-            block_pos = block['pos']
+            block_pos = block["pos"]
             if not isinstance(block_pos, (list, tuple)):
                 continue
             block_pos = tuple(block_pos) if isinstance(block_pos, list) else block_pos
@@ -398,9 +437,12 @@ class CubeStateService:
             相邻位置列表（方向, 位置元组）
         """
         deltas = {
-            'R': (1, 0, 0), 'L': (-1, 0, 0),
-            'U': (0, 1, 0), 'D': (0, -1, 0),
-            'F': (0, 0, 1), 'B': (0, 0, -1),
+            "R": (1, 0, 0),
+            "L": (-1, 0, 0),
+            "U": (0, 1, 0),
+            "D": (0, -1, 0),
+            "F": (0, 0, 1),
+            "B": (0, 0, -1),
         }
 
         neighbors = []
@@ -446,7 +488,7 @@ class CubeStateService:
         Returns:
             对面的面
         """
-        opposites = {'U': 'D', 'D': 'U', 'F': 'B', 'B': 'F', 'L': 'R', 'R': 'L'}
+        opposites = {"U": "D", "D": "U", "F": "B", "B": "F", "L": "R", "R": "L"}
         return opposites.get(face, face)
 
 
@@ -491,10 +533,7 @@ class FormulaMatchService:
                 matched.append(formula)
 
         # 2. 目标状态匹配：应用公式后比较结果状态与公式的目标状态
-        for formula in Formula.objects.filter(
-            pre_state_definition__isnull=True,
-            target_state__isnull=False
-        ):
+        for formula in Formula.objects.filter(pre_state_definition__isnull=True, target_state__isnull=False):
             # 执行公式得到结果状态
             result_state = cls._execute_formula(user_state, formula.notation)
             # 比较结果状态与目标状态
@@ -521,19 +560,19 @@ class FormulaMatchService:
         Returns:
             True（匹配）或 False（不匹配）
         """
-        for block in formula_state.get('blocks', []):
-            pos = block['pos']
-            faces = block.get('faces', {})
+        for block in formula_state.get("blocks", []):
+            pos = block["pos"]
+            faces = block.get("faces", {})
 
             # 在用户状态中找到对应位置的块
-            user_block = cls._find_block_by_pos(user_state.get('blocks', []), pos)
+            user_block = cls._find_block_by_pos(user_state.get("blocks", []), pos)
             if not user_block:
                 continue
 
             # 比较每个指定的面颜色
             for face, color in faces.items():
                 # '-' 表示不关心，跳过比较
-                if color != '-' and user_block.get('faces', {}).get(face, '-') != color:
+                if color != "-" and user_block.get("faces", {}).get(face, "-") != color:
                     return False
 
         return True
@@ -554,7 +593,7 @@ class FormulaMatchService:
         """
         pos_tuple = tuple(pos) if isinstance(pos, list) else pos
         for block in blocks:
-            block_pos = tuple(block['pos']) if isinstance(block['pos'], list) else block['pos']
+            block_pos = tuple(block["pos"]) if isinstance(block["pos"], list) else block["pos"]
             if block_pos == pos_tuple:
                 return block
         return None

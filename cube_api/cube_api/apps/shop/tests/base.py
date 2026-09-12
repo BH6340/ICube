@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Shop 应用测试基类
 
@@ -7,13 +6,14 @@ Shop 应用测试基类
     - 测试商品、分类、订单创建
     - API 客户端认证
 """
-from django.test import TestCase
-from django.contrib.auth import get_user_model
-from django.core.cache import cache
-from rest_framework.test import APIClient
+
 from decimal import Decimal
 
-from apps.shop.models import ProductCategory, Product, Cart, Order, Address
+from apps.shop.models import Address, Cart, Order, Product, ProductCategory
+from django.contrib.auth import get_user_model
+from django.core.cache import cache
+from django.test import TestCase
+from rest_framework.test import APIClient
 
 User = get_user_model()
 
@@ -30,39 +30,24 @@ class ShopBaseTestCase(TestCase):
         self.client = APIClient()
 
         # 创建测试用户
-        self.user = self.create_test_user(
-            email='shop_test@example.com',
-            password='test123456',
-            username='shop_tester'
-        )
+        self.user = self.create_test_user(email="shop_test@example.com", password="test123456", username="shop_tester")
 
         # 创建第二个用户（用于购物车隔离测试）
         self.user2 = self.create_test_user(
-            email='shop_test2@example.com',
-            password='test123456',
-            username='shop_tester2'
+            email="shop_test2@example.com", password="test123456", username="shop_tester2"
         )
 
         # 创建测试商品分类
-        self.category = self.create_test_category(
-            name='魔方商品',
-            description='魔方相关商品'
-        )
+        self.category = self.create_test_category(name="魔方商品", description="魔方相关商品")
 
         # 创建测试商品
         self.product = self.create_test_product(
-            name='三阶魔方',
-            price=Decimal('99.99'),
-            stock=100,
-            category=self.category
+            name="三阶魔方", price=Decimal("99.99"), stock=100, category=self.category
         )
 
         # 创建第二个商品
         self.product2 = self.create_test_product(
-            name='四阶魔方',
-            price=Decimal('199.99'),
-            stock=50,
-            category=self.category
+            name="四阶魔方", price=Decimal("199.99"), stock=50, category=self.category
         )
 
         # 创建测试地址
@@ -77,29 +62,16 @@ class ShopBaseTestCase(TestCase):
 
     def create_test_user(self, email, password, username, **kwargs):
         """创建普通测试用户"""
-        return User.objects.create_user(
-            email=email,
-            password=password,
-            username=username,
-            **kwargs
-        )
+        return User.objects.create_user(email=email, password=password, username=username, **kwargs)
 
-    def create_test_category(self, name='测试分类', parent=None, **kwargs):
+    def create_test_category(self, name="测试分类", parent=None, **kwargs):
         """创建测试商品分类"""
-        return ProductCategory.objects.create(
-            name=name,
-            parent=parent,
-            **kwargs
-        )
+        return ProductCategory.objects.create(name=name, parent=parent, **kwargs)
 
-    def create_test_product(self, name='测试商品', price=Decimal('10.00'), stock=100, category=None, **kwargs):
+    def create_test_product(self, name="测试商品", price=Decimal("10.00"), stock=100, category=None, **kwargs):
         """创建测试商品"""
         return Product.objects.create(
-            name=name,
-            price=price,
-            stock=stock,
-            category=category or self.category,
-            **kwargs
+            name=name, price=price, stock=stock, category=category or self.category, **kwargs
         )
 
     def create_test_cart(self, user=None, product=None, quantity=1, **kwargs):
@@ -108,14 +80,9 @@ class ShopBaseTestCase(TestCase):
             user = self.user
         if product is None:
             product = self.product
-        return Cart.objects.create(
-            user=user,
-            product=product,
-            quantity=quantity,
-            **kwargs
-        )
+        return Cart.objects.create(user=user, product=product, quantity=quantity, **kwargs)
 
-    def create_test_address(self, user=None, name='张三', phone='13800138000', **kwargs):
+    def create_test_address(self, user=None, name="张三", phone="13800138000", **kwargs):
         """创建测试地址"""
         if user is None:
             user = self.user
@@ -123,14 +90,14 @@ class ShopBaseTestCase(TestCase):
             user=user,
             name=name,
             phone=phone,
-            province='广东省',
-            city='深圳市',
-            district='南山区',
-            detail='科技园路1号',
-            **kwargs
+            province="广东省",
+            city="深圳市",
+            district="南山区",
+            detail="科技园路1号",
+            **kwargs,
         )
 
-    def create_test_order(self, user=None, total_amount=None, status='pending', address=None, **kwargs):
+    def create_test_order(self, user=None, total_amount=None, status="pending", address=None, **kwargs):
         """创建测试订单"""
         if user is None:
             user = self.user
@@ -138,12 +105,12 @@ class ShopBaseTestCase(TestCase):
             total_amount = self.product.price
         if address is None:
             address = {
-                'name': '张三',
-                'phone': '13800138000',
-                'province': '广东省',
-                'city': '深圳市',
-                'district': '南山区',
-                'detail': '科技园路1号'
+                "name": "张三",
+                "phone": "13800138000",
+                "province": "广东省",
+                "city": "深圳市",
+                "district": "南山区",
+                "detail": "科技园路1号",
             }
         return Order.objects.create(
             user=user,
@@ -151,7 +118,7 @@ class ShopBaseTestCase(TestCase):
             total_amount=total_amount,
             status=status,
             address=address,
-            **kwargs
+            **kwargs,
         )
 
     def authenticate(self, user=None):
@@ -170,18 +137,15 @@ class ShopBaseTestCase(TestCase):
 
         if address is None:
             address = {
-                'name': '张三',
-                'phone': '13800138000',
-                'province': '广东省',
-                'city': '深圳市',
-                'district': '南山区',
-                'detail': '科技园路1号'
+                "name": "张三",
+                "phone": "13800138000",
+                "province": "广东省",
+                "city": "深圳市",
+                "district": "南山区",
+                "detail": "科技园路1号",
             }
 
-        return {
-            'cart_ids': cart_ids,
-            'address': address
-        }
+        return {"cart_ids": cart_ids, "address": address}
 
 
 class ShopAPITestCase(ShopBaseTestCase):

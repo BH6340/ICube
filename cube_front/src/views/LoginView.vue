@@ -40,12 +40,12 @@
       </el-tabs>
 
       <div class="auth-footer">
-        <el-link type="primary" :underline="false" style="font-size: 14px;" @click="$router.push('/forgot-password')">
+        <el-link type="primary" underline="never" style="font-size: 14px;" @click="$router.push('/forgot-password')">
           忘记密码？
         </el-link>
         <span style="margin: 0 8px;">|</span>
         <span>新用户？</span>
-        <el-link type="primary" :underline="false" style="font-size: 14px;" @click="$router.push('/register')">
+        <el-link type="primary" underline="never" style="font-size: 14px;" @click="$router.push('/register')">
           创建账号
         </el-link>
       </div>
@@ -203,5 +203,44 @@ h2 {
   text-align: center;
   margin-bottom: 30px;
   color: #409EFF;
+}
+
+/* 移动端适配 */
+@media (max-width: 480px) {
+  .auth-container {
+    height: auto;
+    padding: 40px 16px;
+    min-height: calc(80vh - 60px);
+  }
+
+  .auth-card {
+    width: 100%;
+    max-width: 360px;
+    padding: 16px;
+  }
+
+  h2 {
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
+
+  .code-row {
+    gap: 8px;
+  }
+
+  .code-row .el-button {
+    padding: 8px 10px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .full-width {
+    margin-top: 16px;
+  }
+
+  .auth-footer {
+    margin-top: 12px;
+    font-size: 13px;
+  }
 }
 </style>

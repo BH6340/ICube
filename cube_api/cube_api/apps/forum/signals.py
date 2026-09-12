@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 论坛信号处理器
 
@@ -12,8 +11,10 @@
     - 使用信号机制解耦业务逻辑，避免在多个地方重复更新计数
     - 确保计数的准确性和一致性
 """
-from django.db.models.signals import post_save, post_delete
+
+from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
+
 from .models import Comment, Tag
 
 
@@ -38,7 +39,7 @@ def update_post_comment_count(sender, instance, created, **kwargs):
         post = instance.post
         # 重新计算评论数（排除已删除和隐藏的评论）
         post.comment_count = post.comments.filter(is_deleted=False, is_hidden=False).count()
-        post.save(update_fields=['comment_count'])
+        post.save(update_fields=["comment_count"])
 
 
 @receiver(post_delete, sender=Comment)
@@ -59,7 +60,7 @@ def update_post_comment_count_on_delete(sender, instance, **kwargs):
     post = instance.post
     # 重新计算评论数（排除已删除和隐藏的评论）
     post.comment_count = post.comments.filter(is_deleted=False, is_hidden=False).count()
-    post.save(update_fields=['comment_count'])
+    post.save(update_fields=["comment_count"])
 
 
 @receiver(post_save, sender=Tag)
@@ -80,4 +81,4 @@ def update_tag_use_count(sender, instance, **kwargs):
     """
     # 重新计算标签的使用次数
     instance.use_count = instance.posts.count()
-    instance.save(update_fields=['use_count'])
+    instance.save(update_fields=["use_count"])

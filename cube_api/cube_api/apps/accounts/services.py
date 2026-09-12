@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 用户认证模块缓存服务
 
@@ -13,9 +12,11 @@
     - 使用 Pipeline 批量操作，减少网络往返
     - 测试环境兼容：处理 Django 测试缓存代理层的特殊情况
 """
+
 import datetime
 import random
 import string
+import time
 
 from django.conf import settings
 from django.core.mail import send_mail
@@ -51,6 +52,7 @@ class JWTCacheService:
         """
         try:
             from django_redis import get_redis_connection
+
             con = get_redis_connection("default")
         except Exception as exc:
             logger.error(
@@ -62,7 +64,7 @@ class JWTCacheService:
 
         # 测试环境兼容：如果 con 被 Django 代理层包装，
         # 通过 .client.get_client() 获取原生 redis-py 客户端实例
-        if hasattr(con, 'client') and hasattr(con.client, 'get_client'):
+        if hasattr(con, "client") and hasattr(con.client, "get_client"):
             con = con.client.get_client()
 
         logger.debug("获取 Redis 连接成功: alias=default")
@@ -90,7 +92,7 @@ class JWTCacheService:
 
         # 计算该 Token 还有多久自然过期
         exp_timestamp = payload.get("exp")
-        now_timestamp = int(datetime.datetime.now(datetime.timezone.utc).timestamp())
+        now_timestamp = int(datetime.datetime.now(datetime.UTC).timestamp())
         remaining_seconds = exp_timestamp - now_timestamp
 
         # 如果已经过期了，就不需要加入黑名单了
@@ -155,16 +157,16 @@ class EmailCodeService:
         - 测试环境（'test' in sys.argv）所有邮箱均为假邮箱
     """
 
-    CODE_PREFIX = 'email_code'
-    CODE_TTL = 300          # 验证码有效期 5 分钟
-    RESEND_INTERVAL = 60    # 重发间隔 60 秒
-    TEST_CODE = '999999'    # 测试模式固定验证码
-    CODE_LENGTH = 6         # 验证码位数
+    CODE_PREFIX = "email_code"
+    CODE_TTL = 300  # 验证码有效期 5 分钟
+    RESEND_INTERVAL = 60  # 重发间隔 60 秒
+    TEST_CODE = "999999"  # 测试模式固定验证码
+    CODE_LENGTH = 6  # 验证码位数
 
     @staticmethod
     def _get_con():
         con = get_redis_connection("default")
-        if hasattr(con, 'client') and hasattr(con.client, 'get_client'):
+        if hasattr(con, "client") and hasattr(con.client, "get_client"):
             return con.client.get_client()
         return con
 
@@ -182,9 +184,10 @@ class EmailCodeService:
     def _is_test_email(cls, email):
         """判断是否为假邮箱：测试环境全部为 True，开发环境匹配后缀列表"""
         import sys
-        if 'test' in sys.argv:
+
+        if "test" in sys.argv:
             return True
-        suffixes = getattr(settings, 'EMAIL_TEST_SUFFIXES', [])
+        suffixes = getattr(settings, "EMAIL_TEST_SUFFIXES", [])
         email_lower = email.lower()
         return any(email_lower.endswith(s.lower()) for s in suffixes)
 
@@ -210,17 +213,17 @@ class EmailCodeService:
         is_test = cls._is_test_email(email)
 
         # 生成验证码
-        smtp_enabled = getattr(settings, 'EMAIL_SMTP_ENABLED', True)
+        smtp_enabled = getattr(settings, "EMAIL_SMTP_ENABLED", True)
         if is_test or not smtp_enabled:
             code = cls.TEST_CODE
         else:
-            code = ''.join(random.choices(string.digits, k=cls.CODE_LENGTH))
+            code = "".join(random.choices(string.digits, k=cls.CODE_LENGTH))
 
         # 存入 Redis
         code_key = cls._key(action, email)
         pipe = con.pipeline()
         pipe.setex(code_key, cls.CODE_TTL, code)
-        pipe.setex(send_time_key, cls.RESEND_INTERVAL, int(datetime.datetime.now().timestamp()))
+        pipe.setex(send_time_key, cls.RESEND_INTERVAL, int(time.time()))
         pipe.execute()
 
         # 假邮箱或 SMTP 未启用时不实际发送
@@ -230,11 +233,11 @@ class EmailCodeService:
 
         # 真实发送邮件
         subject_map = {
-            'register': 'ICube 注册验证码',
-            'login': 'ICube 登录验证码',
-            'reset': 'ICube 重置密码验证码',
+            "register": "ICube 注册验证码",
+            "login": "ICube 登录验证码",
+            "reset": "ICube 重置密码验证码",
         }
-        subject = subject_map.get(action, 'ICube 验证码')
+        subject = subject_map.get(action, "ICube 验证码")
         message = f"您的验证码是：{code}，5分钟内有效。如非本人操作请忽略此邮件。"
 
         try:
@@ -307,11 +310,12 @@ class ProfileCacheService:
             redis-py 客户端实例
         """
         from django_redis import get_redis_connection
+
         con = get_redis_connection("default")
 
         # 测试环境兼容：如果 con 被 Django 代理层包装，
         # 通过 .client.get_client() 获取原生 redis-py 客户端实例
-        if hasattr(con, 'client') and hasattr(con.client, 'get_client'):
+        if hasattr(con, "client") and hasattr(con.client, "get_client"):
             return con.client.get_client()
 
         return con
@@ -344,7 +348,7 @@ class ProfileCacheService:
         # 2. 缓存未命中：安全降级查库
         try:
             user = User.objects.get(id=user_id)
-            following_ids = list(user.following.values_list('id', flat=True))
+            following_ids = list(user.following.values_list("id", flat=True))
         except User.DoesNotExist:
             following_ids = []
 
@@ -412,7 +416,7 @@ class ProfileCacheService:
         # 缓存未命中：查库重建
         try:
             user = User.objects.get(id=user_id)
-            followers_ids = list(user.followers.values_list('id', flat=True))
+            followers_ids = list(user.followers.values_list("id", flat=True))
         except User.DoesNotExist:
             followers_ids = []
 
@@ -464,6 +468,7 @@ class ProfileCacheService:
             公式收藏数量
         """
         from apps.formula.models import FormulaCollection
+
         try:
             return FormulaCollection.objects.filter(user_id=user_id).count()
         except Exception:
@@ -492,17 +497,13 @@ class ProfileCacheService:
 
         try:
             from_user = User.objects.get(id=from_user_id)
-            following_ids = set(
-                from_user.following.values_list('id', flat=True)
-            )
+            following_ids = set(from_user.following.values_list("id", flat=True))
         except User.DoesNotExist:
             following_ids = set()
 
         try:
             to_user = User.objects.get(id=to_user_id)
-            followers_ids = set(
-                to_user.followers.values_list('id', flat=True)
-            )
+            followers_ids = set(to_user.followers.values_list("id", flat=True))
         except User.DoesNotExist:
             followers_ids = set()
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 统一响应封装模块
 
@@ -22,8 +21,9 @@
     - 998: 业务逻辑错误（客户端行为错误）
     - 999: 系统内部错误（服务端异常）
 """
-from rest_framework.response import Response
+
 from rest_framework import status as http_status
+from rest_framework.response import Response
 
 
 class APIResponse(Response):
@@ -52,25 +52,25 @@ class APIResponse(Response):
     Examples:
         >>> APIResponse()
         {"code": 100, "msg": "请求成功"}
-        
+
         >>> APIResponse(data={"user": {...}}, msg="登录成功")
         {"code": 100, "msg": "登录成功", "data": {"user": {...}}}
-        
+
         >>> APIResponse(code=400, msg="参数错误")
         {"code": 400, "msg": "参数错误"}
-        
+
         >>> APIResponse(code=999, msg="系统错误", status=500)
         {"code": 999, "msg": "系统错误"}  // HTTP 状态码为 500
     """
 
-    def __init__(self, code=100, msg='请求成功', status=200, headers={}, **kwargs):
+    def __init__(self, code=100, msg="请求成功", status=200, headers=None, **kwargs):
         # 构建响应数据结构
-        data = {'code': code, 'msg': msg}
+        data = {"code": code, "msg": msg}
         # 将额外参数合并到 data 中
         if kwargs:
             data.update(kwargs)
         # 调用父类构造函数，传入封装后的数据
-        super().__init__(data=data, status=status, headers=headers)
+        super().__init__(data=data, status=status, headers=headers or {})
 
 
 class PaginatedResponse(APIResponse):
@@ -107,10 +107,10 @@ class PaginatedResponse(APIResponse):
         # 构建分页数据结构
         # 使用 hasattr 检查分页器类型，确保兼容性
         data = {
-            "count": paginator.page.paginator.count if hasattr(paginator, 'page') else 0,
-            "next": paginator.get_next_link() if hasattr(paginator, 'get_next_link') else None,
-            "previous": paginator.get_previous_link() if hasattr(paginator, 'get_previous_link') else None,
-            "results": page_data
+            "count": paginator.page.paginator.count if hasattr(paginator, "page") else 0,
+            "next": paginator.get_next_link() if hasattr(paginator, "get_next_link") else None,
+            "previous": paginator.get_previous_link() if hasattr(paginator, "get_previous_link") else None,
+            "results": page_data,
         }
         # 调用父类构造函数
         super().__init__(data=data, code=code, msg=msg, status=status)
@@ -140,9 +140,9 @@ class PageNumberPaginationResponse(APIResponse):
         # has_next() / has_previous() 方法判断是否存在下一页/上一页
         # next_page_number() / previous_page_number() 获取页码（不是完整链接）
         data = {
-            "count": page.paginator.count if hasattr(page, 'paginator') else len(page),
-            "next": page.next_page_number() if hasattr(page, 'has_next') and page.has_next() else None,
-            "previous": page.previous_page_number() if hasattr(page, 'has_previous') and page.has_previous() else None,
-            "results": page_data
+            "count": page.paginator.count if hasattr(page, "paginator") else len(page),
+            "next": page.next_page_number() if hasattr(page, "has_next") and page.has_next() else None,
+            "previous": page.previous_page_number() if hasattr(page, "has_previous") and page.has_previous() else None,
+            "results": page_data,
         }
         super().__init__(data=data, code=code, msg=msg, status=status)

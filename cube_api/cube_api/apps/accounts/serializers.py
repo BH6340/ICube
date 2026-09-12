@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 用户认证模块序列化器
 
@@ -15,17 +14,19 @@
     - 使用 SerializerMethodField 处理动态字段（关注状态、统计数据）
     - 使用 build_image_url 统一处理图片 URL
 """
+
+import os
+
+from django.core.cache import cache
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
-from django.core.cache import cache
-from django.conf import settings
-import os
+
+from cube_api.utils.image_processor import process_image
 
 from .models import User
 from .services import ProfileCacheService
-from cube_api.utils.image_processor import process_image
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -41,15 +42,18 @@ class UserSerializer(serializers.ModelSerializer):
         - bio: 个人简介
         - image: 头像 URL（通过 SerializerMethodField 处理）
     """
+
     # 头像 URL：通过 SerializerMethodField 动态生成
-    # 当你需要返回的数据在数据库模型（Model）中没有直接对应的字段，或者该字段的值需要经过复杂的逻辑计算、数据库查询或权限判断才能生成时，使用 SerializerMethodField。
+    # 当你需要返回的数据在数据库模型中没有直接对应的字段，
+    # 或者该字段的值需要经过复杂的逻辑计算、数据库查询或权限判断
+    # 才能生成时，使用 SerializerMethodField。
     image = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'password', 'bio', 'image')
+        fields = ("username", "email", "password", "bio", "image")
         # 密码仅用于写入，不返回给前端
-        extra_kwargs = {'password': {'write_only': True}}
+        extra_kwargs = {"password": {"write_only": True}}
 
     def get_image(self, obj):
         """
@@ -62,6 +66,7 @@ class UserSerializer(serializers.ModelSerializer):
             标准化的头像 URL
         """
         from cube_api.utils.image_url import build_image_url
+
         return build_image_url(obj.image)
 
     def create(self, validated_data):
@@ -91,15 +96,17 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         - bio: 个人简介
         - image: 头像（文件上传）
     """
+
     image = serializers.SerializerMethodField(read_only=True)
     avatar = serializers.ImageField(write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = User
-        fields = ('username', 'bio', 'image', 'avatar')
+        fields = ("username", "bio", "image", "avatar")
 
     def get_image(self, obj):
         from cube_api.utils.image_url import build_image_url
+
         return build_image_url(obj.image)
 
     def update(self, instance: User, validated_data):
@@ -118,26 +125,16 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         Returns:
             更新后的 User 对象
         """
-        image_file = validated_data.pop('avatar', None)
+        image_file = validated_data.pop("avatar", None)
 
         if image_file:
             processed_file = process_image(
-                image_file,
-                max_width=512,
-                max_height=512,
-                quality=85,
-                crop_square=True,
-                convert_webp=True
+                image_file, max_width=512, max_height=512, quality=85, crop_square=True, convert_webp=True
             )
 
             new_name = f"{os.path.splitext(image_file.name)[0]}_avatar.webp"
             processed_image = InMemoryUploadedFile(
-                processed_file,
-                None,
-                new_name,
-                'image/webp',
-                processed_file.tell(),
-                None
+                processed_file, None, new_name, "image/webp", processed_file.tell(), None
             )
 
             saved_path = default_storage.save(f"avatars/{new_name}", processed_image)
@@ -166,6 +163,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         - collection_count: 公式收藏数量
         - image: 头像 URL（标准化处理）
     """
+
     # 当前登录用户是否关注了该用户
     following = serializers.SerializerMethodField()
     # 粉丝数量
@@ -184,9 +182,15 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
-            'username', 'bio', 'image', 'following',
-            'followers_count', 'following_count', 'collection_count',
-            'post_count', 'custom_formula_count'
+            "username",
+            "bio",
+            "image",
+            "following",
+            "followers_count",
+            "following_count",
+            "collection_count",
+            "post_count",
+            "custom_formula_count",
         )
 
     def get_image(self, obj):
@@ -200,6 +204,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             标准化的头像 URL
         """
         from cube_api.utils.image_url import build_image_url
+
         return build_image_url(obj.image)
 
     @extend_schema_field(serializers.BooleanField)
@@ -214,7 +219,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             True：已关注
             False：未关注或未登录
         """
-        request = self.context.get('request')
+        request = self.context.get("request")
         if request is None or not request.user.is_authenticated:
             return False
 
@@ -263,7 +268,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.IntegerField)
     def get_post_count(self, obj) -> int:
         """获取已发布文章数量"""
-        return obj.posts.filter(status='published').count()
+        return obj.posts.filter(status="published").count()
 
     @extend_schema_field(serializers.IntegerField)
     def get_custom_formula_count(self, obj) -> int:
@@ -283,20 +288,22 @@ class ProfileListSerializer(serializers.ModelSerializer):
         - image: 头像 URL
         - following: 当前登录用户是否关注了该用户
     """
+
     following = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ('username', 'bio', 'image', 'following')
+        fields = ("username", "bio", "image", "following")
 
     def get_image(self, obj):
         from cube_api.utils.image_url import build_image_url
+
         return build_image_url(obj.image)
 
     @extend_schema_field(serializers.BooleanField)
     def get_following(self, obj):
-        request = self.context.get('request')
+        request = self.context.get("request")
         if request is None or not request.user.is_authenticated:
             return False
         return ProfileCacheService.is_following(request.user.id, obj.id)
@@ -304,12 +311,14 @@ class ProfileListSerializer(serializers.ModelSerializer):
 
 class SendCodeSerializer(serializers.Serializer):
     """发送验证码序列化器"""
+
     email = serializers.EmailField()
-    action = serializers.ChoiceField(choices=['register', 'login', 'reset'])
+    action = serializers.ChoiceField(choices=["register", "login", "reset"])
 
 
 class RegisterWithCodeSerializer(serializers.Serializer):
     """验证码注册序列化器"""
+
     email = serializers.EmailField()
     code = serializers.CharField(max_length=6)
     password = serializers.CharField(write_only=True)
@@ -318,12 +327,14 @@ class RegisterWithCodeSerializer(serializers.Serializer):
 
 class LoginWithCodeSerializer(serializers.Serializer):
     """验证码登录序列化器"""
+
     email = serializers.EmailField()
     code = serializers.CharField(max_length=6)
 
 
 class ResetPasswordSerializer(serializers.Serializer):
     """重置密码序列化器"""
+
     email = serializers.EmailField()
     code = serializers.CharField(max_length=6)
     new_password = serializers.CharField(write_only=True)

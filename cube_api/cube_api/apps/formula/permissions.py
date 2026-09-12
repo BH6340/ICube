@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 公式库权限模块
 
@@ -14,6 +13,7 @@
     - 支持 SAFE_METHODS（GET/HEAD/OPTIONS）只读放行
     - 区分管理员权限和普通用户权限
 """
+
 from rest_framework import permissions
 
 
@@ -84,7 +84,7 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
             return True
 
         # 检查是否为对象的创建者
-        if hasattr(obj, 'created_by') and obj.created_by == request.user:
+        if hasattr(obj, "created_by") and obj.created_by == request.user:
             return True
 
         # 管理员也可以操作

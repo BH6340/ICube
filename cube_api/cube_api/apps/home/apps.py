@@ -2,5 +2,5 @@ from django.apps import AppConfig
 
 
 class HomeConfig(AppConfig):
-    name = 'apps.home'
-    verbose_name = '主页'
+    name = "apps.home"
+    verbose_name = "主页"

@@ -368,4 +368,71 @@ onMounted(() => {
   display: flex;
   gap: 8px;
 }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .address-container {
+    padding: 12px;
+  }
+
+  .address-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .address-title {
+    font-size: 20px;
+  }
+
+  .address-card {
+    flex-direction: column;
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .address-radio {
+    padding-top: 0;
+  }
+
+  .address-header-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .address-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .address-actions .el-button {
+    flex: 1;
+    min-width: 80px;
+  }
+}
+
+@media (max-width: 480px) {
+  .address-container {
+    padding: 8px;
+  }
+
+  .address-card {
+    padding: 12px;
+  }
+
+  .address-name {
+    font-size: 15px;
+  }
+
+  .address-detail {
+    font-size: 13px;
+  }
+
+  .address-actions .el-button {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+}
 </style>

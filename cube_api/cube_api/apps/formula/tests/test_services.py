@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Formula 模块服务层测试
 
@@ -7,9 +6,9 @@ Formula 模块服务层测试
     - CubeStateService: 魔方状态验证
     - FormulaMatchService: 公式匹配
 """
-from django.test import TestCase
 
-from apps.formula.services import FormulaService, CubeStateService, FormulaMatchService
+from apps.formula.services import CubeStateService, FormulaMatchService, FormulaService
+from django.test import TestCase
 
 
 class FormulaServiceTest(TestCase):
@@ -85,27 +84,24 @@ class CubeStateServiceTest(TestCase):
         """准备有效的状态定义（3阶魔方需27个块）"""
         # 中心块标准配色
         center_colors = {
-            (0, 1, 0): ('U', 'Y'),
-            (0, -1, 0): ('D', 'W'),
-            (0, 0, 1): ('F', 'B'),
-            (0, 0, -1): ('B', 'G'),
-            (-1, 0, 0): ('L', 'O'),
-            (1, 0, 0): ('R', 'R'),
+            (0, 1, 0): ("U", "Y"),
+            (0, -1, 0): ("D", "W"),
+            (0, 0, 1): ("F", "B"),
+            (0, 0, -1): ("B", "G"),
+            (-1, 0, 0): ("L", "O"),
+            (1, 0, 0): ("R", "R"),
         }
         blocks = []
         for i in [-1, 0, 1]:
             for j in [-1, 0, 1]:
                 for k in [-1, 0, 1]:
-                    faces = {'U': '-', 'R': '-', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}
+                    faces = {"U": "-", "R": "-", "F": "-", "D": "-", "L": "-", "B": "-"}
                     if (i, j, k) in center_colors:
                         face, color = center_colors[(i, j, k)]
                         faces[face] = color
-                    blocks.append({'pos': [i, j, k], 'faces': faces})
+                    blocks.append({"pos": [i, j, k], "faces": faces})
 
-        self.valid_state = {
-            'order': 3,
-            'blocks': blocks
-        }
+        self.valid_state = {"order": 3, "blocks": blocks}
 
     def test_validate_valid_state(self):
         """测试验证有效的状态定义"""
@@ -120,133 +116,140 @@ class CubeStateServiceTest(TestCase):
 
     def test_validate_missing_order(self):
         """测试缺少 order 字段"""
-        state = {'blocks': []}
+        state = {"blocks": []}
         errors = CubeStateService.validate_state_definition(state)
-        self.assertTrue(any('order' in e for e in errors))
+        self.assertTrue(any("order" in e for e in errors))
 
     def test_validate_invalid_order(self):
         """测试 order 字段无效"""
-        state = {'order': 'invalid', 'blocks': []}
+        state = {"order": "invalid", "blocks": []}
         errors = CubeStateService.validate_state_definition(state)
-        self.assertTrue(any('order' in e for e in errors))
+        self.assertTrue(any("order" in e for e in errors))
 
     def test_validate_order_too_small(self):
         """测试阶数太小"""
-        state = {'order': 1, 'blocks': []}
+        state = {"order": 1, "blocks": []}
         errors = CubeStateService.validate_state_definition(state)
-        self.assertTrue(any('order' in e for e in errors))
+        self.assertTrue(any("order" in e for e in errors))
 
     def test_validate_missing_blocks(self):
         """测试缺少 blocks 字段"""
-        state = {'order': 3}
+        state = {"order": 3}
         errors = CubeStateService.validate_state_definition(state)
-        self.assertTrue(any('blocks' in e for e in errors))
+        self.assertTrue(any("blocks" in e for e in errors))
 
     def test_validate_blocks_not_list(self):
         """测试 blocks 不是列表"""
-        state = {'order': 3, 'blocks': 'not a list'}
+        state = {"order": 3, "blocks": "not a list"}
         errors = CubeStateService.validate_state_definition(state)
-        self.assertTrue(any('blocks' in e for e in errors))
+        self.assertTrue(any("blocks" in e for e in errors))
 
     def test_validate_wrong_block_count(self):
         """测试块数量不正确"""
-        state = {'order': 3, 'blocks': [{'pos': [0, 1, 0], 'faces': {}}]}
+        state = {"order": 3, "blocks": [{"pos": [0, 1, 0], "faces": {}}]}
         errors = CubeStateService.validate_state_definition(state)
-        self.assertTrue(any('数量' in e for e in errors))
+        self.assertTrue(any("数量" in e for e in errors))
 
     def test_validate_invalid_block_format(self):
         """测试块格式无效"""
         state = {
-            'order': 3,
-            'blocks': [
-                'not a dict',  # 无效格式
-            ] + [
-                {'pos': [i, j, k], 'faces': {'U': '-', 'R': '-', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}}
-                for i in [-1, 0, 1]
-                for j in [-1, 0, 1]
-                for k in [-1, 0, 1]
-            ][:27]
+            "order": 3,
+            "blocks": [
+                "not a dict",  # 无效格式
+                *[
+                    {"pos": [i, j, k], "faces": {"U": "-", "R": "-", "F": "-", "D": "-", "L": "-", "B": "-"}}
+                    for i in [-1, 0, 1]
+                    for j in [-1, 0, 1]
+                    for k in [-1, 0, 1]
+                ][:27],
+            ]
         }
         # 调整 blocks 数量为 27
-        state['blocks'] = state['blocks'][:27]
+        state["blocks"] = state["blocks"][:27]
         errors = CubeStateService.validate_state_definition(state)
-        self.assertTrue(any('字典格式' in e for e in errors))
+        self.assertTrue(any("字典格式" in e for e in errors))
 
     def test_validate_invalid_pos_format(self):
         """测试位置格式无效"""
         state = {
-            'order': 3,
-            'blocks': [
-                {'pos': 'invalid', 'faces': {'U': '-', 'R': '-', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}},
-            ] + [
-                {'pos': [i, j, k], 'faces': {'U': '-', 'R': '-', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}}
-                for i in [-1, 0, 1]
-                for j in [-1, 0, 1]
-                for k in [-1, 0, 1]
-            ][:27]
+            "order": 3,
+            "blocks": [
+                {"pos": "invalid", "faces": {"U": "-", "R": "-", "F": "-", "D": "-", "L": "-", "B": "-"}},
+                *[
+                    {"pos": [i, j, k], "faces": {"U": "-", "R": "-", "F": "-", "D": "-", "L": "-", "B": "-"}}
+                    for i in [-1, 0, 1]
+                    for j in [-1, 0, 1]
+                    for k in [-1, 0, 1]
+                ][:27],
+            ]
         }
-        state['blocks'] = state['blocks'][:27]
+        state["blocks"] = state["blocks"][:27]
         errors = CubeStateService.validate_state_definition(state)
-        self.assertTrue(any('pos' in e for e in errors))
+        self.assertTrue(any("pos" in e for e in errors))
 
     def test_validate_missing_faces(self):
         """测试缺少面字段"""
         state = {
-            'order': 3,
-            'blocks': [
-                {'pos': [0, 1, 0], 'faces': {}},
-            ] + [
-                {'pos': [i, j, k], 'faces': {'U': '-', 'R': '-', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}}
-                for i in [-1, 0, 1]
-                for j in [-1, 0, 1]
-                for k in [-1, 0, 1]
-            ][:27]
+            "order": 3,
+            "blocks": [
+                {"pos": [0, 1, 0], "faces": {}},
+                *[
+                    {"pos": [i, j, k], "faces": {"U": "-", "R": "-", "F": "-", "D": "-", "L": "-", "B": "-"}}
+                    for i in [-1, 0, 1]
+                    for j in [-1, 0, 1]
+                    for k in [-1, 0, 1]
+                ][:27],
+            ]
         }
-        state['blocks'] = state['blocks'][:27]
+        state["blocks"] = state["blocks"][:27]
         errors = CubeStateService.validate_state_definition(state)
-        self.assertTrue(any('faces' in e or 'U' in e for e in errors))
+        self.assertTrue(any("faces" in e or "U" in e for e in errors))
 
     def test_validate_invalid_color(self):
         """测试无效颜色值"""
         state = {
-            'order': 3,
-            'blocks': [
-                {'pos': [0, 1, 0], 'faces': {'U': 'X', 'R': '-', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}},
-            ] + [
-                {'pos': [i, j, k], 'faces': {'U': '-', 'R': '-', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}}
-                for i in [-1, 0, 1]
-                for j in [-1, 0, 1]
-                for k in [-1, 0, 1]
-            ][:27]
+            "order": 3,
+            "blocks": [
+                {"pos": [0, 1, 0], "faces": {"U": "X", "R": "-", "F": "-", "D": "-", "L": "-", "B": "-"}},
+                *[
+                    {"pos": [i, j, k], "faces": {"U": "-", "R": "-", "F": "-", "D": "-", "L": "-", "B": "-"}}
+                    for i in [-1, 0, 1]
+                    for j in [-1, 0, 1]
+                    for k in [-1, 0, 1]
+                ][:27],
+            ],
         }
-        state['blocks'] = state['blocks'][:27]
+        state["blocks"] = state["blocks"][:27]
         errors = CubeStateService.validate_state_definition(state)
-        self.assertTrue(any('颜色' in e for e in errors))
+        self.assertTrue(any("颜色" in e for e in errors))
 
     def test_validate_all_center_colors_correct(self):
         """测试所有中心块颜色正确"""
         state = {
-            'order': 3,
-            'blocks': [
+            "order": 3,
+            "blocks": [
                 # 中心块
-                {'pos': [0, 1, 0], 'faces': {'U': 'Y', 'R': '-', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}},  # 上
-                {'pos': [0, -1, 0], 'faces': {'U': '-', 'R': '-', 'F': '-', 'D': 'W', 'L': '-', 'B': '-'}},  # 下
-                {'pos': [0, 0, 1], 'faces': {'U': '-', 'R': '-', 'F': 'B', 'D': '-', 'L': '-', 'B': '-'}},  # 前
-                {'pos': [0, 0, -1], 'faces': {'U': '-', 'R': '-', 'F': '-', 'D': '-', 'L': '-', 'B': 'G'}},  # 后
-                {'pos': [-1, 0, 0], 'faces': {'U': '-', 'R': '-', 'F': '-', 'D': '-', 'L': 'O', 'B': '-'}},  # 左
-                {'pos': [1, 0, 0], 'faces': {'U': '-', 'R': 'R', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}},  # 右
-            ] + [
-                {'pos': [i, j, k], 'faces': {'U': '-', 'R': '-', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}}
+                {"pos": [0, 1, 0], "faces": {"U": "Y", "R": "-", "F": "-", "D": "-", "L": "-", "B": "-"}},  # 上
+                {"pos": [0, -1, 0], "faces": {"U": "-", "R": "-", "F": "-", "D": "W", "L": "-", "B": "-"}},  # 下
+                {"pos": [0, 0, 1], "faces": {"U": "-", "R": "-", "F": "B", "D": "-", "L": "-", "B": "-"}},  # 前
+                {"pos": [0, 0, -1], "faces": {"U": "-", "R": "-", "F": "-", "D": "-", "L": "-", "B": "G"}},  # 后
+                {"pos": [-1, 0, 0], "faces": {"U": "-", "R": "-", "F": "-", "D": "-", "L": "O", "B": "-"}},  # 左
+                {"pos": [1, 0, 0], "faces": {"U": "-", "R": "R", "F": "-", "D": "-", "L": "-", "B": "-"}},  # 右
+            ]
+            + [
+                {"pos": [i, j, k], "faces": {"U": "-", "R": "-", "F": "-", "D": "-", "L": "-", "B": "-"}}
                 for i in [-1, 0, 1]
                 for j in [-1, 0, 1]
                 for k in [-1, 0, 1]
                 if (i, j, k) not in [(0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1), (-1, 0, 0), (1, 0, 0)]
-            ]
+            ],
         }
         # 确保有 27 个块
-        while len(state['blocks']) < 27:
-            state['blocks'].append({'pos': [0, 0, 0], 'faces': {'U': '-', 'R': '-', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}})
-        state['blocks'] = state['blocks'][:27]
+        while len(state["blocks"]) < 27:
+            state["blocks"].append(
+                {"pos": [0, 0, 0], "faces": {"U": "-", "R": "-", "F": "-", "D": "-", "L": "-", "B": "-"}}
+            )
+        state["blocks"] = state["blocks"][:27]
 
         errors = CubeStateService.validate_state_definition(state)
         self.assertEqual(errors, [])
@@ -254,23 +257,29 @@ class CubeStateServiceTest(TestCase):
     def test_validate_wrong_center_color(self):
         """测试中心块颜色错误"""
         state = {
-            'order': 3,
-            'blocks': [
-                {'pos': [0, 1, 0], 'faces': {'U': 'R', 'R': '-', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}},  # 上中心应为 Y
-            ] + [
-                {'pos': [i, j, k], 'faces': {'U': '-', 'R': '-', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}}
+            "order": 3,
+            "blocks": [
+                {
+                    "pos": [0, 1, 0],
+                    "faces": {"U": "R", "R": "-", "F": "-", "D": "-", "L": "-", "B": "-"},
+                },  # 上中心应为 Y
+            ]
+            + [
+                {"pos": [i, j, k], "faces": {"U": "-", "R": "-", "F": "-", "D": "-", "L": "-", "B": "-"}}
                 for i in [-1, 0, 1]
                 for j in [-1, 0, 1]
                 for k in [-1, 0, 1]
                 if (i, j, k) != (0, 1, 0)
-            ]
+            ],
         }
-        while len(state['blocks']) < 27:
-            state['blocks'].append({'pos': [0, 0, 0], 'faces': {'U': '-', 'R': '-', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}})
-        state['blocks'] = state['blocks'][:27]
+        while len(state["blocks"]) < 27:
+            state["blocks"].append(
+                {"pos": [0, 0, 0], "faces": {"U": "-", "R": "-", "F": "-", "D": "-", "L": "-", "B": "-"}}
+            )
+        state["blocks"] = state["blocks"][:27]
 
         errors = CubeStateService.validate_state_definition(state)
-        self.assertTrue(any('中心块' in e for e in errors))
+        self.assertTrue(any("中心块" in e for e in errors))
 
 
 class FormulaMatchServiceTest(TestCase):
@@ -278,29 +287,27 @@ class FormulaMatchServiceTest(TestCase):
 
     def setUp(self):
         """创建测试数据"""
-        from apps.formula.models import CubeCategory, CubeState, Formula
+        from apps.formula.models import CubeCategory, CubeState
 
-        self.category = CubeCategory.objects.create(
-            order=3, method='CFOP', phase='OLL', name='匹配测试分类'
-        )
+        self.category = CubeCategory.objects.create(order=3, method="CFOP", phase="OLL", name="匹配测试分类")
         self.state = CubeState.objects.create(
-            name='匹配测试状态',
+            name="匹配测试状态",
             state_definition={
-                'order': 3,
-                'blocks': [
-                    {'pos': [0, 1, 0], 'faces': {'U': 'Y', 'R': '-', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}},
-                ]
+                "order": 3,
+                "blocks": [
+                    {"pos": [0, 1, 0], "faces": {"U": "Y", "R": "-", "F": "-", "D": "-", "L": "-", "B": "-"}},
+                ],
             },
-            category=self.category
+            category=self.category,
         )
 
     def test_match_formulas_empty_state(self):
         """测试空状态匹配（无匹配公式）"""
         user_state = {
-            'order': 3,
-            'blocks': [
-                {'pos': [0, 1, 0], 'faces': {'U': 'Y', 'R': '-', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}},
-            ]
+            "order": 3,
+            "blocks": [
+                {"pos": [0, 1, 0], "faces": {"U": "Y", "R": "-", "F": "-", "D": "-", "L": "-", "B": "-"}},
+            ],
         }
         result = FormulaMatchService.match_formulas(user_state)
         self.assertIsInstance(result, list)
@@ -310,19 +317,14 @@ class FormulaMatchServiceTest(TestCase):
         from apps.formula.models import Formula
 
         pre_state = {
-            'order': 3,
-            'blocks': [
-                {'pos': [0, 1, 0], 'faces': {'U': 'Y', 'R': 'R', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}},
-            ]
+            "order": 3,
+            "blocks": [
+                {"pos": [0, 1, 0], "faces": {"U": "Y", "R": "R", "F": "-", "D": "-", "L": "-", "B": "-"}},
+            ],
         }
 
         # 创建有前置状态的公式
-        Formula.objects.create(
-            name='匹配公式',
-            notation="R U",
-            category=self.category,
-            pre_state_definition=pre_state
-        )
+        Formula.objects.create(name="匹配公式", notation="R U", category=self.category, pre_state_definition=pre_state)
 
         # 用户状态匹配前置状态
         user_state = pre_state.copy()
@@ -332,16 +334,16 @@ class FormulaMatchServiceTest(TestCase):
     def test_match_state_match_partial(self):
         """测试部分匹配（'-' 不关心的面）"""
         formula_state = {
-            'order': 3,
-            'blocks': [
-                {'pos': [0, 1, 0], 'faces': {'U': 'Y', 'R': '-', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}},
-            ]
+            "order": 3,
+            "blocks": [
+                {"pos": [0, 1, 0], "faces": {"U": "Y", "R": "-", "F": "-", "D": "-", "L": "-", "B": "-"}},
+            ],
         }
         user_state = {
-            'order': 3,
-            'blocks': [
-                {'pos': [0, 1, 0], 'faces': {'U': 'Y', 'R': 'R', 'F': 'B', 'D': '-', 'L': '-', 'B': '-'}},
-            ]
+            "order": 3,
+            "blocks": [
+                {"pos": [0, 1, 0], "faces": {"U": "Y", "R": "R", "F": "B", "D": "-", "L": "-", "B": "-"}},
+            ],
         }
 
         # 公式中 R 面为 '-'（不关心），用户状态 R 面为 'R'，应该匹配
@@ -351,16 +353,16 @@ class FormulaMatchServiceTest(TestCase):
     def test_match_state_mismatch(self):
         """测试不匹配的状态"""
         formula_state = {
-            'order': 3,
-            'blocks': [
-                {'pos': [0, 1, 0], 'faces': {'U': 'R', 'R': '-', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}},
-            ]
+            "order": 3,
+            "blocks": [
+                {"pos": [0, 1, 0], "faces": {"U": "R", "R": "-", "F": "-", "D": "-", "L": "-", "B": "-"}},
+            ],
         }
         user_state = {
-            'order': 3,
-            'blocks': [
-                {'pos': [0, 1, 0], 'faces': {'U': 'Y', 'R': '-', 'F': '-', 'D': '-', 'L': '-', 'B': '-'}},
-            ]
+            "order": 3,
+            "blocks": [
+                {"pos": [0, 1, 0], "faces": {"U": "Y", "R": "-", "F": "-", "D": "-", "L": "-", "B": "-"}},
+            ],
         }
 
         # 公式中 U 面为 'R'，用户状态 U 面为 'Y'，不匹配

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 商城模块后台管理
 
@@ -11,12 +10,12 @@
 """
 
 from django.contrib import admin
-from django.utils.safestring import mark_safe
 from django.utils import timezone
+from django.utils.safestring import mark_safe
 from unfold.admin import ModelAdmin
-from unfold.decorators import display, action
+from unfold.decorators import action, display
 
-from .models import ProductCategory, Product, Cart, Order, OrderItem, Address
+from .models import Address, Cart, Order, OrderItem, Product, ProductCategory
 
 
 @admin.register(ProductCategory)
@@ -30,19 +29,19 @@ class ProductCategoryAdmin(ModelAdmin):
 
     # list_display: 列表页展示字段配置
     # 为什么这样配：展示分类核心信息，便于快速识别分类层级与排序
-    list_display = ['name', 'parent', 'sort_order', 'created_at']
+    list_display = ["name", "parent", "sort_order", "created_at"]
 
     # list_filter: 列表页侧边筛选器配置
     # 为什么这样配：通过 parent 筛选可快速查看某父分类下的所有子分类
-    list_filter = ['parent']
+    list_filter = ["parent"]
 
     # search_fields: 搜索框可搜索字段配置
     # 为什么这样配：分类名称是识别分类的主要方式，按名称搜索最直观
-    search_fields = ['name']
+    search_fields = ["name"]
 
     # list_editable: 列表页可直接编辑字段配置
     # 为什么这样配：sort_order 需要频繁调整，列表内编辑避免逐条进入详情页
-    list_editable = ['sort_order']
+    list_editable = ["sort_order"]
 
 
 @admin.register(Product)
@@ -62,57 +61,69 @@ class ProductAdmin(ModelAdmin):
     # 为什么这样配：缩略图+名称+分类+价格+库存Badge+上架Badge+销量+创建时间
     # 一屏展示商品运营所需的关键信息，Badge 让状态一目了然
     list_display = [
-        'thumbnail_preview',
-        'images_preview',
-        'name',
-        'category',
-        'price',
-        'stock_badge',
-        'is_on_sale_badge',
-        'sales_count',
-        'created_at',
+        "thumbnail_preview",
+        "images_preview",
+        "name",
+        "category",
+        "price",
+        "stock_badge",
+        "is_on_sale_badge",
+        "sales_count",
+        "created_at",
     ]
 
     # search_fields: 搜索框可搜索字段配置
     # 为什么这样配：商品名称和描述都可能包含用户查找的关键词
-    search_fields = ['name', 'description']
+    search_fields = ["name", "description"]
 
     # list_filter: 列表页侧边筛选器配置
     # 为什么这样配：按分类筛选便于品类管理，按上架状态筛选便于上下架核对，按创建时间筛选便于新商品排查
-    list_filter = ['category', 'is_on_sale', 'created_at']
+    list_filter = ["category", "is_on_sale", "created_at"]
 
     # fieldsets: 详情页字段分组配置
     # 为什么这样配：商品字段较多，分组展示提升可读性与编辑效率
     fieldsets = (
         # 基础信息组：商品归属分类与基础描述信息
-        ('基础信息', {
-            'fields': ('category', 'name', 'description'),
-        }),
+        (
+            "基础信息",
+            {
+                "fields": ("category", "name", "description"),
+            },
+        ),
         # 价格库存组：与销售策略直接相关的字段集中管理
-        ('价格库存', {
-            'fields': ('price', 'original_price', 'stock', 'is_on_sale', 'sales_count'),
-        }),
+        (
+            "价格库存",
+            {
+                "fields": ("price", "original_price", "stock", "is_on_sale", "sales_count"),
+            },
+        ),
         # 图片组：缩略图与多图分离，避免与文本字段混杂
-        ('图片', {
-            'fields': ('thumbnail', 'images'),
-        }),
+        (
+            "图片",
+            {
+                "fields": ("thumbnail", "images"),
+            },
+        ),
         # 规格组：规格配置独立分组，便于运营维护
-        ('规格', {
-            'fields': ('specs',),
-        }),
+        (
+            "规格",
+            {
+                "fields": ("specs",),
+            },
+        ),
     )
 
     # readonly_fields: 只读字段配置
     # 为什么这样配：sales_count 为系统统计字段，由订单流程自动更新，人工修改会导致数据失真
-    readonly_fields = ['sales_count']
+    readonly_fields = ["sales_count"]
 
     # raw_id_fields: 外键弹窗选择字段配置
     # 为什么这样配：分类数量可能很多，下拉框会加载全部数据影响性能，改为弹窗搜索选择
-    raw_id_fields = ['category']
+    raw_id_fields = ["category"]
 
     # actions: 自定义批量动作配置
     # 为什么这样配：批量上下架是日常运营高频操作，提供一键批量处理提升效率
-    actions = ['batch_on_sale', 'batch_off_sale']
+    actions = ["batch_on_sale", "batch_off_sale"]
 
     @display(description="缩略图", ordering=None)
     def thumbnail_preview(self, obj):
@@ -120,7 +131,7 @@ class ProductAdmin(ModelAdmin):
         缩略图预览：在列表页展示商品缩略图
         """
         if not obj.thumbnail:
-            return '暂无图片'
+            return "暂无图片"
         return mark_safe(
             f'<img src="{obj.thumbnail.url}" '
             f'style="max-width: 80px; max-height: 80px; object-fit: cover; '
@@ -135,12 +146,16 @@ class ProductAdmin(ModelAdmin):
         images 字段是 JSONField，存储图片URL列表
         """
         if not obj.images or not isinstance(obj.images, list):
-            return '无'
-        preview_html = ''
-        for idx, img_url in enumerate(obj.images[:3]):
-            preview_html += f'<img src="{img_url}" style="max-width:40px;max-height:40px;object-fit:cover;border-radius:2px;margin-right:2px;" />'
+            return "无"
+        preview_html = ""
+        for _idx, img_url in enumerate(obj.images[:3]):
+            preview_html += (
+                f'<img src="{img_url}" '
+                f'style="max-width:40px;max-height:40px;'
+                f'object-fit:cover;border-radius:2px;margin-right:2px;" />'
+            )
         if len(obj.images) > 3:
-            preview_html += f'<span style="font-size:12px;color:#999;">+{len(obj.images)-3}</span>'
+            preview_html += f'<span style="font-size:12px;color:#999;">+{len(obj.images) - 3}</span>'
         return mark_safe(preview_html)
 
     @display(description="库存", ordering="stock")
@@ -156,20 +171,18 @@ class ProductAdmin(ModelAdmin):
         """
         if obj.stock == 0:
             # 缺货：红色 Badge
-            color_class = 'bg-red-100 text-red-800'
-            text = '缺货'
+            color_class = "bg-red-100 text-red-800"
+            text = "缺货"
         elif obj.stock < 10:
             # 库存偏低：黄色 Badge
-            color_class = 'bg-yellow-100 text-yellow-800'
-            text = f'{obj.stock}件'
+            color_class = "bg-yellow-100 text-yellow-800"
+            text = f"{obj.stock}件"
         else:
             # 库存充足：绿色 Badge
-            color_class = 'bg-green-100 text-green-800'
-            text = f'{obj.stock}件'
+            color_class = "bg-green-100 text-green-800"
+            text = f"{obj.stock}件"
         # mark_safe 标记 HTML 安全，使用 Tailwind CSS 类名渲染 Badge
-        return mark_safe(
-            f'<span class="px-2 py-1 rounded-full text-xs font-medium {color_class}">{text}</span>'
-        )
+        return mark_safe(f'<span class="px-2 py-1 rounded-full text-xs font-medium {color_class}">{text}</span>')
 
     @display(description="上架状态", boolean=True, ordering="is_on_sale")
     def is_on_sale_badge(self, obj):
@@ -192,7 +205,7 @@ class ProductAdmin(ModelAdmin):
         """
         # update 批量更新，避免逐条 save 触发多次 SQL
         updated = queryset.update(is_on_sale=True)
-        self.message_user(request, f'成功上架 {updated} 件商品')
+        self.message_user(request, f"成功上架 {updated} 件商品")
 
     @action(description="批量下架")
     def batch_off_sale(self, request, queryset):
@@ -204,7 +217,7 @@ class ProductAdmin(ModelAdmin):
         """
         # update 批量更新，避免逐条 save 触发多次 SQL
         updated = queryset.update(is_on_sale=False)
-        self.message_user(request, f'成功下架 {updated} 件商品')
+        self.message_user(request, f"成功下架 {updated} 件商品")
 
 
 @admin.register(Cart)
@@ -218,15 +231,15 @@ class CartAdmin(ModelAdmin):
 
     # list_display: 列表页展示字段配置
     # 为什么这样配：展示用户、商品、数量、加入时间，便于排查购物车记录问题
-    list_display = ['user', 'product', 'quantity', 'created_at']
+    list_display = ["user", "product", "quantity", "created_at"]
 
     # list_filter: 列表页侧边筛选器配置
     # 为什么这样配：按加入时间筛选便于排查某时段的购物车异常
-    list_filter = ['created_at']
+    list_filter = ["created_at"]
 
     # raw_id_fields: 外键弹窗选择字段配置
     # 为什么这样配：user 和 product 表数据量大，下拉框加载性能差，改为弹窗搜索选择
-    raw_id_fields = ['user', 'product']
+    raw_id_fields = ["user", "product"]
 
 
 @admin.register(Order)
@@ -245,55 +258,64 @@ class OrderAdmin(ModelAdmin):
     # 为什么这样配：订单号+用户+金额+状态Badge+创建时间+付款时间
     # 状态 Badge 让订单流转阶段一目了然，便于运营跟进
     list_display = [
-        'order_no',
-        'user',
-        'total_amount',
-        'status_badge',
-        'created_at',
-        'paid_at',
+        "order_no",
+        "user",
+        "total_amount",
+        "status_badge",
+        "created_at",
+        "paid_at",
     ]
 
     # search_fields: 搜索框可搜索字段配置
     # 为什么这样配：订单号是用户与客服沟通的主要凭证，按订单号搜索最精准高效
-    search_fields = ['order_no']
+    search_fields = ["order_no"]
 
     # list_filter: 列表页侧边筛选器配置
     # 为什么这样配：按状态筛选便于跟进不同流转阶段的订单，按创建时间筛选便于按日排查
-    list_filter = ['status', 'created_at']
+    list_filter = ["status", "created_at"]
 
     # fieldsets: 详情页字段分组配置
     # 为什么这样配：订单字段较多，按基础信息/状态流转/时间分组展示逻辑清晰
     fieldsets = (
         # 基础信息组：订单核心数据
-        ('基础信息', {
-            'fields': ('order_no', 'user', 'total_amount', 'address'),
-        }),
+        (
+            "基础信息",
+            {
+                "fields": ("order_no", "user", "total_amount", "address"),
+            },
+        ),
         # 状态流转组：订单状态与各阶段时间戳集中展示
-        ('状态流转', {
-            'fields': ('status', 'paid_at', 'shipped_at', 'completed_at'),
-        }),
+        (
+            "状态流转",
+            {
+                "fields": ("status", "paid_at", "shipped_at", "completed_at"),
+            },
+        ),
         # 时间组：创建时间独立分组
-        ('时间', {
-            'fields': ('created_at',),
-        }),
+        (
+            "时间",
+            {
+                "fields": ("created_at",),
+            },
+        ),
     )
 
     # readonly_fields: 只读字段配置
     # 为什么这样配：order_no 为系统生成的唯一订单号，人工修改会破坏与支付/物流的关联；
     # created_at/paid_at/shipped_at/completed_at 为系统时间戳，需由业务流程自动写入，人工修改会导致状态流转时间失真
-    readonly_fields = ['order_no', 'created_at', 'paid_at', 'shipped_at', 'completed_at']
+    readonly_fields = ["order_no", "created_at", "paid_at", "shipped_at", "completed_at"]
 
     # actions: 自定义批量动作配置
     # 为什么这样配：批量发货与批量完成是仓储与售后环节的高频操作
-    actions = ['batch_ship', 'batch_complete']
+    actions = ["batch_ship", "batch_complete"]
 
     # raw_id_fields: 外键弹窗选择字段配置
     # 为什么这样配：user 表数据量大，下拉框加载性能差，改为弹窗搜索选择
-    raw_id_fields = ['user']
+    raw_id_fields = ["user"]
 
     # date_hierarchy: 时间层级导航配置
     # 为什么这样配：按创建日期提供年/月/日层级钻取导航，便于按时间维度快速定位订单
-    date_hierarchy = 'created_at'
+    date_hierarchy = "created_at"
 
     @display(description="状态", ordering="status")
     def status_badge(self, obj):
@@ -310,20 +332,16 @@ class OrderAdmin(ModelAdmin):
         """
         # 状态到（颜色类、显示文本）的映射表
         status_map = {
-            'pending': ('bg-yellow-100 text-yellow-800', '待付款'),
-            'paid': ('bg-blue-100 text-blue-800', '已付款'),
-            'shipped': ('bg-purple-100 text-purple-800', '已发货'),
-            'completed': ('bg-green-100 text-green-800', '已完成'),
-            'cancelled': ('bg-red-100 text-red-800', '已取消'),
+            "pending": ("bg-yellow-100 text-yellow-800", "待付款"),
+            "paid": ("bg-blue-100 text-blue-800", "已付款"),
+            "shipped": ("bg-purple-100 text-purple-800", "已发货"),
+            "completed": ("bg-green-100 text-green-800", "已完成"),
+            "cancelled": ("bg-red-100 text-red-800", "已取消"),
         }
         # 默认兜底样式，防止出现未定义状态时崩溃
-        color_class, text = status_map.get(
-            obj.status, ('bg-gray-100 text-gray-800', obj.status)
-        )
+        color_class, text = status_map.get(obj.status, ("bg-gray-100 text-gray-800", obj.status))
         # mark_safe 标记 HTML 安全，使用 Tailwind CSS 类名渲染 Badge
-        return mark_safe(
-            f'<span class="px-2 py-1 rounded-full text-xs font-medium {color_class}">{text}</span>'
-        )
+        return mark_safe(f'<span class="px-2 py-1 rounded-full text-xs font-medium {color_class}">{text}</span>')
 
     @action(description="批量发货")
     def batch_ship(self, request, queryset):
@@ -334,8 +352,8 @@ class OrderAdmin(ModelAdmin):
         适用于已付款订单的批量发货处理场景。
         """
         # update 批量更新状态与发货时间，timezone.now() 保证时间一致性
-        updated = queryset.update(status='shipped', shipped_at=timezone.now())
-        self.message_user(request, f'成功发货 {updated} 个订单')
+        updated = queryset.update(status="shipped", shipped_at=timezone.now())
+        self.message_user(request, f"成功发货 {updated} 个订单")
 
     @action(description="批量完成")
     def batch_complete(self, request, queryset):
@@ -346,8 +364,8 @@ class OrderAdmin(ModelAdmin):
         适用于已签收订单的批量完结处理场景。
         """
         # update 批量更新状态与完成时间，timezone.now() 保证时间一致性
-        updated = queryset.update(status='completed', completed_at=timezone.now())
-        self.message_user(request, f'成功完成 {updated} 个订单')
+        updated = queryset.update(status="completed", completed_at=timezone.now())
+        self.message_user(request, f"成功完成 {updated} 个订单")
 
 
 @admin.register(OrderItem)
@@ -361,11 +379,11 @@ class OrderItemAdmin(ModelAdmin):
 
     # list_display: 列表页展示字段配置
     # 为什么这样配：展示所属订单、商品、单价、数量，便于核对订单明细
-    list_display = ['order', 'product', 'price', 'quantity']
+    list_display = ["order", "product", "price", "quantity"]
 
     # raw_id_fields: 外键弹窗选择字段配置
     # 为什么这样配：order 和 product 表数据量大，下拉框加载性能差，改为弹窗搜索选择
-    raw_id_fields = ['order', 'product']
+    raw_id_fields = ["order", "product"]
 
 
 @admin.register(Address)
@@ -380,34 +398,34 @@ class AddressAdmin(ModelAdmin):
     # 为什么这样配：展示用户、收货人、电话、完整地址、默认状态、创建时间
     # 默认地址 Badge 让默认地址一目了然，便于客服核对用户地址
     list_display = [
-        'user',
-        'name',
-        'phone',
-        'full_address_display',
-        'is_default',
-        'sort_order',
-        'created_at',
+        "user",
+        "name",
+        "phone",
+        "full_address_display",
+        "is_default",
+        "sort_order",
+        "created_at",
     ]
 
     # search_fields: 搜索框可搜索字段配置
     # 为什么这样配：按收货人姓名和电话搜索便于快速定位用户地址
-    search_fields = ['name', 'phone']
+    search_fields = ["name", "phone"]
 
     # list_filter: 列表页侧边筛选器配置
     # 为什么这样配：按默认状态筛选便于查看用户的默认地址
-    list_filter = ['is_default']
+    list_filter = ["is_default"]
 
     # list_editable: 列表页可直接编辑字段配置
     # 为什么这样配：sort_order 和 is_default 需要频繁调整，列表内编辑提升效率
-    list_editable = ['sort_order', 'is_default']
+    list_editable = ["sort_order", "is_default"]
 
     # readonly_fields: 只读字段配置
     # 为什么这样配：created_at 和 updated_at 为系统时间戳，由数据库自动维护
-    readonly_fields = ['created_at', 'updated_at']
+    readonly_fields = ["created_at", "updated_at"]
 
     # raw_id_fields: 外键弹窗选择字段配置
     # 为什么这样配：user 表数据量大，下拉框加载性能差，改为弹窗搜索选择
-    raw_id_fields = ['user']
+    raw_id_fields = ["user"]
 
     @display(description="完整地址", ordering=None)
     def full_address_display(self, obj):

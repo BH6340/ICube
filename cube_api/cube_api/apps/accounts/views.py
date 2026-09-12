@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 用户认证模块视图
 
@@ -15,23 +14,34 @@
     - 使用自定义限流类防止暴力破解
     - 关注操作同时更新数据库和 Redis 缓存
 """
-from drf_spectacular.utils import extend_schema, OpenApiRequest, OpenApiResponse
-from rest_framework.decorators import action
-from rest_framework import status, viewsets, generics
+
 from django.contrib.auth import authenticate
 from django.db.models import Case, IntegerField, Value, When
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from drf_spectacular.utils import OpenApiRequest, OpenApiResponse, extend_schema
+from rest_framework import generics, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.permissions import (
+    AllowAny,
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+)
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
+from utils.common_pagination import UnifiedPagination
+from utils.common_response import APIResponse
 
 from .models import User
 from .serializers import (
-    UserSerializer, ProfileSerializer, UserUpdateSerializer, ProfileListSerializer,
-    SendCodeSerializer, RegisterWithCodeSerializer, LoginWithCodeSerializer, ResetPasswordSerializer,
+    LoginWithCodeSerializer,
+    ProfileListSerializer,
+    ProfileSerializer,
+    RegisterWithCodeSerializer,
+    ResetPasswordSerializer,
+    SendCodeSerializer,
+    UserSerializer,
+    UserUpdateSerializer,
 )
-from utils.common_response import APIResponse
-from utils.common_pagination import UnifiedPagination
-from .services import ProfileCacheService, JWTCacheService, EmailCodeService
+from .services import EmailCodeService, JWTCacheService, ProfileCacheService
 from .throttles import LoginRateThrottle, SendCodeRateThrottle
 
 
@@ -46,6 +56,7 @@ class AuthViewSet(viewsets.GenericViewSet):
         - login: 用户登录
         - logout: 用户退出（需登录）
     """
+
     serializer_class = UserSerializer
     # 登录注册不需要权限校验
     permission_classes = [AllowAny]
@@ -61,9 +72,9 @@ class AuthViewSet(viewsets.GenericViewSet):
             限流类实例列表
         """
         throttles = super().get_throttles()
-        if self.action == 'login':
+        if self.action == "login":
             throttles.append(LoginRateThrottle())
-        elif self.action == 'send_code':
+        elif self.action == "send_code":
             throttles.append(SendCodeRateThrottle())
         return throttles
 
@@ -72,28 +83,25 @@ class AuthViewSet(viewsets.GenericViewSet):
         description="使用邮箱和密码注册，支持自动处理用户名重名问题",
         request=OpenApiRequest(
             request={
-                'application/json': {
-                    'type': 'object',
-                    'properties': {
-                        'user': {
-                            'type': 'object',
-                            'properties': {
-                                'email': {'type': 'string', 'format': 'email'},
-                                'password': {'type': 'string'},
-                                'username': {'type': 'string'}
+                "application/json": {
+                    "type": "object",
+                    "properties": {
+                        "user": {
+                            "type": "object",
+                            "properties": {
+                                "email": {"type": "string", "format": "email"},
+                                "password": {"type": "string"},
+                                "username": {"type": "string"},
                             },
-                            'required': ['email', 'password']
+                            "required": ["email", "password"],
                         }
-                    }
+                    },
                 }
             }
         ),
-        responses={
-            201: UserSerializer,
-            400: OpenApiResponse(description='注册失败')
-        }
+        responses={201: UserSerializer, 400: OpenApiResponse(description="注册失败")},
     )
-    @action(detail=False, methods=['POST'])
+    @action(detail=False, methods=["POST"])
     def register(self, request):
         """
         用户注册
@@ -110,16 +118,16 @@ class AuthViewSet(viewsets.GenericViewSet):
         Returns:
             APIResponse: 包含用户信息的响应
         """
-        user_data = request.data.get('user', {})
+        user_data = request.data.get("user", {})
 
         # 处理用户名重名问题
         # 如果用户名已存在，自动添加数字后缀（如 username_1, username_2）
-        username = user_data.get('username')
+        username = user_data.get("username")
         if username and User.objects.filter(username=username).exists():
             counter = 1
             while User.objects.filter(username=f"{username}_{counter}").exists():
                 counter += 1
-            user_data['username'] = f"{username}_{counter}"
+            user_data["username"] = f"{username}_{counter}"
 
         # 验证并保存用户
         serializer = self.get_serializer(data=user_data)
@@ -132,43 +140,40 @@ class AuthViewSet(viewsets.GenericViewSet):
         summary="用户登录",
         description="使用邮箱和密码登录，返回 JWT Token",
         request={
-            'application/json': {
-                'type': 'object',
-                'properties': {
-                    'user': {
-                        'type': 'object',
-                        'properties': {
-                            'email': {'type': 'string', 'format': 'email'},
-                            'password': {'type': 'string'}
-                        },
-                        'required': ['email', 'password']
+            "application/json": {
+                "type": "object",
+                "properties": {
+                    "user": {
+                        "type": "object",
+                        "properties": {"email": {"type": "string", "format": "email"}, "password": {"type": "string"}},
+                        "required": ["email", "password"],
                     }
-                }
+                },
             }
         },
         responses={
             200: OpenApiResponse(
-                description='登录成功',
+                description="登录成功",
                 response={
-                    'type': 'object',
-                    'properties': {
-                        'code': {'type': 'integer'},
-                        'msg': {'type': 'string'},
-                        'user': {
-                            'type': 'object',
-                            'properties': {
-                                'username': {'type': 'string'},
-                                'email': {'type': 'string'},
-                                'token': {'type': 'string'}
-                            }
-                        }
-                    }
-                }
+                    "type": "object",
+                    "properties": {
+                        "code": {"type": "integer"},
+                        "msg": {"type": "string"},
+                        "user": {
+                            "type": "object",
+                            "properties": {
+                                "username": {"type": "string"},
+                                "email": {"type": "string"},
+                                "token": {"type": "string"},
+                            },
+                        },
+                    },
+                },
             ),
-            401: OpenApiResponse(description='邮箱或密码错误')
-        }
+            401: OpenApiResponse(description="邮箱或密码错误"),
+        },
     )
-    @action(detail=False, methods=['POST'], permission_classes=[AllowAny])
+    @action(detail=False, methods=["POST"], permission_classes=[AllowAny])
     def login(self, request):
         """
         用户登录
@@ -186,13 +191,10 @@ class AuthViewSet(viewsets.GenericViewSet):
         Returns:
             APIResponse: 包含用户信息和 Token 的响应
         """
-        user_data = request.data.get('user', {})
+        user_data = request.data.get("user", {})
 
         # 使用 Django 的 authenticate 函数验证邮箱和密码
-        user = authenticate(
-            email=user_data.get('email'),
-            password=user_data.get('password')
-        )
+        user = authenticate(email=user_data.get("email"), password=user_data.get("password"))
 
         # 验证失败：返回 401 错误
         if not user:
@@ -204,7 +206,7 @@ class AuthViewSet(viewsets.GenericViewSet):
 
         # 将 Token 添加到返回数据中
         res_data = serializer.data
-        res_data['token'] = str(token.access_token)
+        res_data["token"] = str(token.access_token)
 
         return APIResponse(user=res_data)
 
@@ -212,9 +214,9 @@ class AuthViewSet(viewsets.GenericViewSet):
         summary="发送邮箱验证码",
         description="发送6位数字验证码到指定邮箱，支持注册/登录/重置密码三种场景",
         request=SendCodeSerializer,
-        responses={200: OpenApiResponse(description='发送成功'), 400: OpenApiResponse(description='发送失败')}
+        responses={200: OpenApiResponse(description="发送成功"), 400: OpenApiResponse(description="发送失败")},
     )
-    @action(detail=False, methods=['POST'])
+    @action(detail=False, methods=["POST"])
     def send_code(self, request):
         """
         发送邮箱验证码
@@ -225,11 +227,11 @@ class AuthViewSet(viewsets.GenericViewSet):
         """
         serializer = SendCodeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data['email']
-        action_type = serializer.validated_data['action']
+        email = serializer.validated_data["email"]
+        action_type = serializer.validated_data["action"]
 
         # 场景校验
-        if action_type == 'register':
+        if action_type == "register":
             if User.objects.filter(email=email).exists():
                 return APIResponse(code=103, msg="该邮箱已注册")
         else:
@@ -245,20 +247,20 @@ class AuthViewSet(viewsets.GenericViewSet):
         summary="验证码注册",
         description="使用邮箱+验证码+密码注册新用户，注册成功返回JWT Token",
         request=RegisterWithCodeSerializer,
-        responses={201: OpenApiResponse(description='注册成功'), 400: OpenApiResponse(description='注册失败')}
+        responses={201: OpenApiResponse(description="注册成功"), 400: OpenApiResponse(description="注册失败")},
     )
-    @action(detail=False, methods=['POST'])
+    @action(detail=False, methods=["POST"])
     def register_with_code(self, request):
         """验证码注册：验证码通过后创建用户并返回 JWT"""
         serializer = RegisterWithCodeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data['email']
-        code = serializer.validated_data['code']
-        password = serializer.validated_data['password']
-        username = serializer.validated_data.get('username')
+        email = serializer.validated_data["email"]
+        code = serializer.validated_data["code"]
+        password = serializer.validated_data["password"]
+        username = serializer.validated_data.get("username")
 
         # 验证码校验
-        valid, msg = EmailCodeService.verify_code('register', email, code)
+        valid, msg = EmailCodeService.verify_code("register", email, code)
         if not valid:
             return APIResponse(code=106, msg=msg)
 
@@ -268,7 +270,7 @@ class AuthViewSet(viewsets.GenericViewSet):
 
         # 用户名处理
         if not username:
-            username = email.split('@')[0]
+            username = email.split("@")[0]
         if User.objects.filter(username=username).exists():
             counter = 1
             while User.objects.filter(username=f"{username}_{counter}").exists():
@@ -279,24 +281,24 @@ class AuthViewSet(viewsets.GenericViewSet):
         user_serializer = UserSerializer(user)
         token = RefreshToken.for_user(user)
         res_data = user_serializer.data
-        res_data['token'] = str(token.access_token)
+        res_data["token"] = str(token.access_token)
         return APIResponse(user=res_data, status=status.HTTP_201_CREATED)
 
     @extend_schema(
         summary="验证码登录",
         description="使用邮箱+验证码免密登录，验证通过后返回JWT Token",
         request=LoginWithCodeSerializer,
-        responses={200: OpenApiResponse(description='登录成功'), 400: OpenApiResponse(description='登录失败')}
+        responses={200: OpenApiResponse(description="登录成功"), 400: OpenApiResponse(description="登录失败")},
     )
-    @action(detail=False, methods=['POST'])
+    @action(detail=False, methods=["POST"])
     def login_with_code(self, request):
         """验证码登录：验证码通过后查找用户并返回 JWT"""
         serializer = LoginWithCodeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data['email']
-        code = serializer.validated_data['code']
+        email = serializer.validated_data["email"]
+        code = serializer.validated_data["code"]
 
-        valid, msg = EmailCodeService.verify_code('login', email, code)
+        valid, msg = EmailCodeService.verify_code("login", email, code)
         if not valid:
             return APIResponse(code=106, msg=msg)
 
@@ -308,25 +310,25 @@ class AuthViewSet(viewsets.GenericViewSet):
         user_serializer = UserSerializer(user)
         token = RefreshToken.for_user(user)
         res_data = user_serializer.data
-        res_data['token'] = str(token.access_token)
+        res_data["token"] = str(token.access_token)
         return APIResponse(user=res_data)
 
     @extend_schema(
         summary="重置密码",
         description="使用邮箱+验证码重置密码，重置后需重新登录",
         request=ResetPasswordSerializer,
-        responses={200: OpenApiResponse(description='重置成功'), 400: OpenApiResponse(description='重置失败')}
+        responses={200: OpenApiResponse(description="重置成功"), 400: OpenApiResponse(description="重置失败")},
     )
-    @action(detail=False, methods=['POST'])
+    @action(detail=False, methods=["POST"])
     def reset_password(self, request):
         """重置密码：验证码通过后设置新密码"""
         serializer = ResetPasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data['email']
-        code = serializer.validated_data['code']
-        new_password = serializer.validated_data['new_password']
+        email = serializer.validated_data["email"]
+        code = serializer.validated_data["code"]
+        new_password = serializer.validated_data["new_password"]
 
-        valid, msg = EmailCodeService.verify_code('reset', email, code)
+        valid, msg = EmailCodeService.verify_code("reset", email, code)
         if not valid:
             return APIResponse(code=106, msg=msg)
 
@@ -340,11 +342,12 @@ class AuthViewSet(viewsets.GenericViewSet):
 
         # 清理用户实例缓存，使旧 Token 失效
         from django.core.cache import cache
+
         cache.delete(f"user_instance_cache_{user.id}")
 
         return APIResponse(msg="密码重置成功，请重新登录")
 
-    @action(detail=False, methods=['POST'], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=["POST"], permission_classes=[IsAuthenticated])
     def logout(self, request):
         """
         用户退出登录
@@ -384,6 +387,7 @@ class UserView(generics.RetrieveUpdateAPIView):
         - 支持文件上传（头像）
         - 返回数据包裹在 'user' 键中
     """
+
     permission_classes = [IsAuthenticated]
     # 支持多种内容类型：普通表单、文件上传、JSON
     parser_classes = [MultiPartParser, FormParser, JSONParser]
@@ -398,7 +402,7 @@ class UserView(generics.RetrieveUpdateAPIView):
         Returns:
             序列化器类
         """
-        if self.request.method in ['PUT', 'PATCH']:
+        if self.request.method in ["PUT", "PATCH"]:
             return UserUpdateSerializer
         return UserSerializer
 
@@ -438,7 +442,7 @@ class UserView(generics.RetrieveUpdateAPIView):
             APIResponse: 更新后的用户资料（包裹在 'user' 键中）
         """
         # 强制设为部分更新，容错率更高
-        partial = kwargs.pop('partial', True)
+        partial = kwargs.pop("partial", True)
         instance = self.get_object()
 
         # 直接使用展平的 request.data，不再取嵌套的 user 键
@@ -468,13 +472,14 @@ class ProfileDetailView(viewsets.ReadOnlyModelViewSet):
         - 动态选择序列化器：列表使用轻量级的 ProfileListSerializer
         - 关注操作同时更新数据库和 Redis 缓存
     """
+
     queryset = User.objects.filter(is_active=True)
     serializer_class = ProfileSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
     pagination_class = UnifiedPagination
     # 使用 username 作为查找字段（更友好的 URL）
-    lookup_field = 'username'
-    lookup_value_regex = r'[^/]+'
+    lookup_field = "username"
+    lookup_value_regex = r"[^/]+"
 
     def get_serializer_class(self):
         """
@@ -486,9 +491,9 @@ class ProfileDetailView(viewsets.ReadOnlyModelViewSet):
         Returns:
             序列化器类
         """
-        if self.action in ['following', 'followers']:
+        if self.action in ["following", "followers"]:
             return ProfileListSerializer
-        if self.action == 'list' and 'search' in self.request.query_params:
+        if self.action == "list" and "search" in self.request.query_params:
             return ProfileListSerializer
         return self.serializer_class
 
@@ -499,26 +504,29 @@ class ProfileDetailView(viewsets.ReadOnlyModelViewSet):
         Returns:
             APIResponse: 包含用户资料列表的响应（包裹在 'profiles' 键中）
         """
-        if 'search' in request.query_params:
-            keyword = request.query_params.get('search', '').strip()
+        if "search" in request.query_params:
+            keyword = request.query_params.get("search", "").strip()
             queryset = self.get_queryset().none()
 
             if keyword:
-                queryset = self.get_queryset().filter(
-                    username__icontains=keyword
-                ).annotate(
-                    exact_match=Case(
-                        When(username__iexact=keyword, then=Value(0)),
-                        default=Value(1),
-                        output_field=IntegerField(),
+                queryset = (
+                    self.get_queryset()
+                    .filter(username__icontains=keyword)
+                    .annotate(
+                        exact_match=Case(
+                            When(username__iexact=keyword, then=Value(0)),
+                            default=Value(1),
+                            output_field=IntegerField(),
+                        )
                     )
-                ).order_by('exact_match', 'username')
+                    .order_by("exact_match", "username")
+                )
 
             page = self.paginate_queryset(queryset)
             serializer = self.get_serializer(
                 page,
                 many=True,
-                context={'request': request},
+                context={"request": request},
             )
             return self.get_paginated_response(serializer.data)
 
@@ -541,10 +549,10 @@ class ProfileDetailView(viewsets.ReadOnlyModelViewSet):
         """
         instance = self.get_object()
         # 传递 request 上下文，确保关注状态能正确计算
-        serializer = self.get_serializer(instance, context={'request': request})
+        serializer = self.get_serializer(instance, context={"request": request})
         return APIResponse(profiles=serializer.data)
 
-    @action(detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=["post", "delete"], permission_classes=[IsAuthenticated])
     def follow(self, request, **kwargs):
         """
         关注/取消关注用户
@@ -569,33 +577,29 @@ class ProfileDetailView(viewsets.ReadOnlyModelViewSet):
         if request.user == profile:
             return APIResponse(code=103, msg="不能关注或取关自己")
 
-        if request.method == 'POST':
+        if request.method == "POST":
             # 关注动作
             # 1. 更新数据库
             request.user.following.add(profile)
             # 2. 同步更新 Redis 缓存
             ProfileCacheService.update_follow_relation(
-                from_user_id=request.user.id,
-                to_user_id=profile.id,
-                is_follow=True
+                from_user_id=request.user.id, to_user_id=profile.id, is_follow=True
             )
             return APIResponse(msg="关注成功")
-        elif request.method == 'DELETE':
+        elif request.method == "DELETE":
             # 取消关注动作
             # 1. 更新数据库
             request.user.following.remove(profile)
             # 2. 同步更新 Redis 缓存
             ProfileCacheService.update_follow_relation(
-                from_user_id=request.user.id,
-                to_user_id=profile.id,
-                is_follow=False
+                from_user_id=request.user.id, to_user_id=profile.id, is_follow=False
             )
             return APIResponse(msg="取消关注成功")
 
         serializer = self.get_serializer(profile)
         return APIResponse(profile=serializer.data)
 
-    @action(detail=True, methods=['GET'], permission_classes=[IsAuthenticatedOrReadOnly])
+    @action(detail=True, methods=["GET"], permission_classes=[IsAuthenticatedOrReadOnly])
     def following(self, request, **kwargs):
         """
         获取用户关注的人列表
@@ -612,29 +616,27 @@ class ProfileDetailView(viewsets.ReadOnlyModelViewSet):
         profile_user = self.get_object()
 
         # 获取该用户关注的所有人
-        following_queryset = profile_user.following.filter(
-            is_active=True
-        ).order_by('username')
+        following_queryset = profile_user.following.filter(is_active=True).order_by("username")
 
         # 序列化，传递 request 上下文确保关注状态能正确计算
-        if 'page' in request.query_params or 'page_size' in request.query_params:
+        if "page" in request.query_params or "page_size" in request.query_params:
             page = self.paginate_queryset(following_queryset)
             serializer = self.get_serializer(
                 page,
                 many=True,
-                context={'request': request},
+                context={"request": request},
             )
             return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(
             following_queryset,
             many=True,
-            context={'request': request},
+            context={"request": request},
         )
 
         return APIResponse(profiles=serializer.data)
 
-    @action(detail=True, methods=['GET'], permission_classes=[IsAuthenticatedOrReadOnly])
+    @action(detail=True, methods=["GET"], permission_classes=[IsAuthenticatedOrReadOnly])
     def followers(self, request, **kwargs):
         """
         获取用户的粉丝列表
@@ -651,24 +653,22 @@ class ProfileDetailView(viewsets.ReadOnlyModelViewSet):
         profile_user = self.get_object()
 
         # 获取粉丝集合
-        followers_queryset = profile_user.followers.filter(
-            is_active=True
-        ).order_by('username')
+        followers_queryset = profile_user.followers.filter(is_active=True).order_by("username")
 
         # 序列化，传递 request 上下文确保关注状态能正确计算
-        if 'page' in request.query_params or 'page_size' in request.query_params:
+        if "page" in request.query_params or "page_size" in request.query_params:
             page = self.paginate_queryset(followers_queryset)
             serializer = self.get_serializer(
                 page,
                 many=True,
-                context={'request': request},
+                context={"request": request},
             )
             return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(
             followers_queryset,
             many=True,
-            context={'request': request},
+            context={"request": request},
         )
 
         return APIResponse(profiles=serializer.data)

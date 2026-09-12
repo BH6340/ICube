@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 用户认证模块模型
 
@@ -15,7 +14,9 @@
     - 支持懒加载重建：缓存未命中时从数据库查询并回写 Redis
     - 使用 -1 占位符防止缓存穿透（空集合场景）
 """
+
 from __future__ import annotations
+
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
@@ -33,9 +34,7 @@ class UserManager(BaseUserManager):
         本项目使用 email 作为登录凭证，需要自定义管理器。
     """
 
-    def create_user(
-            self, email: str, password: str | None = None, **other_fields
-    ) -> User:
+    def create_user(self, email: str, password: str | None = None, **other_fields) -> User:
         """
         创建普通用户
 
@@ -126,26 +125,17 @@ class User(AbstractUser):
         max_length=60,
         db_index=True,
         unique=True,
-        validators=[
-            UnicodeUsernameValidator(
-                message="用户名只能包含字母、数字和 @/./+/-/_ 字符"
-            )
-        ],
+        validators=[UnicodeUsernameValidator(message="用户名只能包含字母、数字和 @/./+/-/_ 字符")],
         error_messages={
-            'unique': "该用户名已被使用",
-        }
+            "unique": "该用户名已被使用",
+        },
     )
 
     # 个人简介（可选）
     bio = models.TextField(blank=True)
 
     # 头像（可选，上传路径：avatars/）
-    image = models.ImageField(
-        '头像',
-        upload_to='avatars/',
-        null=True,
-        blank=True
-    )
+    image = models.ImageField("头像", upload_to="avatars/", null=True, blank=True)
 
     # ==================== 关注关系 ====================
 
@@ -153,12 +143,7 @@ class User(AbstractUser):
     # symmetrical=False：非对称关系（A 关注 B 不代表 B 关注 A）
     # related_name="following"：反向查询名为 following（获取用户关注的人）
     # Django 会自动创建中间表：accounts_user_followers
-    followers = models.ManyToManyField(
-        "self",
-        blank=True,
-        symmetrical=False,
-        related_name="following"
-    )
+    followers = models.ManyToManyField("self", blank=True, symmetrical=False, related_name="following")
 
     # ==================== 认证配置 ====================
 
@@ -175,8 +160,8 @@ class User(AbstractUser):
     objects = UserManager()
 
     class Meta:
-        app_label = 'accounts'       # 明确指定所属应用
-        verbose_name = "用户"        # 单数显示名称
+        app_label = "accounts"  # 明确指定所属应用
+        verbose_name = "用户"  # 单数显示名称
         verbose_name_plural = "用户"  # 复数显示名称
         ordering = ["-date_joined"]  # 默认按注册时间倒序排列
 
@@ -214,7 +199,7 @@ class User(AbstractUser):
 
     # ==================== 关注/取关操作 ====================
 
-    def follow(self, user: "User") -> None:
+    def follow(self, user: User) -> None:
         """
         关注用户
 
@@ -236,7 +221,7 @@ class User(AbstractUser):
             # 对方的粉丝集合中加入自己 ID
             con.sadd(user._followers_cache_key(), self.id)
 
-    def unfollow(self, user: "User") -> None:
+    def unfollow(self, user: User) -> None:
         """
         取消关注用户
 
@@ -277,7 +262,7 @@ class User(AbstractUser):
             return con.scard(key)
 
         # 缓存重建（Lazy Load）
-        followers_ids = list(self.followers.values_list('id', flat=True))
+        followers_ids = list(self.followers.values_list("id", flat=True))
         if followers_ids:
             con.sadd(key, *followers_ids)
         return len(followers_ids)
@@ -298,7 +283,7 @@ class User(AbstractUser):
         if con.exists(key):
             return con.scard(key)
 
-        following_ids = list(self.following.values_list('id', flat=True))
+        following_ids = list(self.following.values_list("id", flat=True))
         if following_ids:
             con.sadd(key, *following_ids)
         return len(following_ids)

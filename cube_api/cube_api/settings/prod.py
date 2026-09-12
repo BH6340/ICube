@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 生产环境配置文件
 
@@ -16,6 +15,7 @@
     8. STATIC_ROOT（静态文件收集目录）
     9. 邮件 SMTP 配置（生产环境邮件服务器与认证设定）
 """
+
 import os
 
 # 继承开发环境配置，再覆盖生产环境差异项
@@ -29,13 +29,16 @@ DEBUG = False
 
 # Django 加密签名密钥，生产环境必须通过 SECRET_KEY 覆盖
 # 默认值仅作为启动兜底，不应在真实生产环境使用
-SECRET_KEY = os.getenv('SECRET_KEY', SECRET_KEY)
+SECRET_KEY = os.getenv("SECRET_KEY", SECRET_KEY)
 
 # ALLOWED_HOSTS 使用逗号分隔的主机名，不包含协议和端口
 # 额外保留 Docker 服务名、容器名和本地回环地址
-ALLOWED_HOSTS = [
-    h.strip() for h in os.getenv('ALLOWED_HOSTS', '').split(',') if h.strip()
-] + ['localhost', '127.0.0.1', 'icube_api', 'api']
+ALLOWED_HOSTS = [h.strip() for h in os.getenv("ALLOWED_HOSTS", "").split(",") if h.strip()] + [
+    "localhost",
+    "127.0.0.1",
+    "icube_api",
+    "api",
+]
 
 # ==================== CORS 配置 ====================
 
@@ -61,11 +64,15 @@ CORS_ALLOW_CREDENTIALS = True
 # ==================== CSRF 配置 ====================
 
 # Django 4.0+ 要求 HTTPS 请求显式声明信任来源，否则 CSRF 验证失败
+<<<<<<< HEAD
+CSRF_TRUSTED_ORIGINS = [f"{scheme}://{host}" for host in _allowed_origins for scheme in ["https", "http"]] + [
+=======
 CSRF_TRUSTED_ORIGINS = [
     f"{scheme}://{host}"
     for host in _allowed_origins
     for scheme in ['https', 'http']
 ] + [
+>>>>>>> 2cfbf694094aaeafca512c4f78fa1c806a55fea7
     "http://localhost",
     "https://localhost",
 ]
@@ -74,15 +81,15 @@ CSRF_TRUSTED_ORIGINS = [
 
 # 生产数据库参数优先从环境变量读取
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('DB_NAME', 'icube_db'),       # 数据库名称
-        'USER': os.getenv('DB_USER', 'icube_api'),      # 数据库用户名
-        'PASSWORD': os.getenv('DB_PASSWORD', 'icube123'), # 数据库密码（必须通过环境变量配置）
-        'HOST': os.getenv('DB_HOST', 'db'),             # 数据库主机（Docker 环境中使用服务名 'db'）
-        'PORT': os.getenv('DB_PORT', '3306'),           # 数据库端口
-        'OPTIONS': {
-            'charset': 'utf8mb4',  # 使用 utf8mb4 字符集，支持 emoji 表情
+    "default": {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": os.getenv("DB_NAME", "icube_db"),  # 数据库名称
+        "USER": os.getenv("DB_USER", "icube_api"),  # 数据库用户名
+        "PASSWORD": os.getenv("DB_PASSWORD", "icube123"),  # 数据库密码（必须通过环境变量配置）
+        "HOST": os.getenv("DB_HOST", "db"),  # 数据库主机（Docker 环境中使用服务名 'db'）
+        "PORT": os.getenv("DB_PORT", "3306"),  # 数据库端口
+        "OPTIONS": {
+            "charset": "utf8mb4",  # 使用 utf8mb4 字符集，支持 emoji 表情
         },
     }
 }
@@ -90,39 +97,41 @@ DATABASES = {
 # ==================== 缓存配置 ====================
 
 CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
         # Docker 网络内通过 redis 服务名连接
-        'LOCATION': os.getenv('REDIS_URL', 'redis://redis:6379/1'),
+        "LOCATION": os.getenv("REDIS_URL", "redis://redis:6379/1"),
         # 复用 dev.py 的阻塞连接池与 JSON 序列化配置
-        'OPTIONS': REDIS_BASE_OPTIONS,
-        'KEY_PREFIX': 'icube_prod',    # 生产环境使用独立的键前缀
-        'TIMEOUT': 86400,              # 默认缓存有效期：24 小时
+        "OPTIONS": REDIS_BASE_OPTIONS,
+        "KEY_PREFIX": "icube_prod",  # 生产环境使用独立的键前缀
+        "TIMEOUT": 86400,  # 默认缓存有效期：24 小时
     }
 }
 
 # ==================== django-unfold 配置 ====================
 
 # 允许同源页面嵌入管理后台，满足 Unfold 组件需求
-X_FRAME_OPTIONS = 'SAMEORIGIN'
+X_FRAME_OPTIONS = "SAMEORIGIN"
 
 # ==================== 静态文件配置 ====================
 
 # collectstatic 输出目录，由 Nginx 通过共享卷提供静态资源
-STATIC_ROOT = os.path.join(BASE_DIR, 'collected_static')
+STATIC_ROOT = os.path.join(BASE_DIR, "collected_static")
 
 # ==================== 邮件 SMTP 配置 ====================
 
 # 生产环境通过环境变量覆盖邮件配置
-EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.qq.com')
-EMAIL_PORT = int(os.getenv('EMAIL_PORT', 465))
-EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'True') == 'True'
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
-EMAIL_DISPLAY_NAME = os.getenv('EMAIL_DISPLAY_NAME', 'ICube魔方平台')
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', f'"{EMAIL_DISPLAY_NAME}" <{EMAIL_HOST_USER}>' if EMAIL_HOST_USER else EMAIL_HOST_USER)
+EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.qq.com")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", 465))
+EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "True") == "True"
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_DISPLAY_NAME = os.getenv("EMAIL_DISPLAY_NAME", "ICube魔方平台")
+DEFAULT_FROM_EMAIL = os.getenv(
+    "DEFAULT_FROM_EMAIL", f'"{EMAIL_DISPLAY_NAME}" <{EMAIL_HOST_USER}>' if EMAIL_HOST_USER else EMAIL_HOST_USER
+)
 # 生产环境不禁用任何邮箱后缀
 EMAIL_TEST_SUFFIXES = []
 
 # SMTP 发送开关：False 时所有邮箱都用 999999 固定验证码（服务器端口被封时使用）
-EMAIL_SMTP_ENABLED = os.getenv('EMAIL_SMTP_ENABLED', 'True') == 'True'
+EMAIL_SMTP_ENABLED = os.getenv("EMAIL_SMTP_ENABLED", "True") == "True"

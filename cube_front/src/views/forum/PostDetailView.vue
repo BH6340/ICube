@@ -503,6 +503,16 @@ onMounted(() => {
 @media (max-width: 768px) {
   .post-detail-container {
     padding: 12px;
+    max-width: 100%;
+  }
+
+  .post-card {
+    margin-bottom: 12px;
+  }
+
+  .post-header {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
   }
 
   .post-title {
@@ -512,11 +522,80 @@ onMounted(() => {
   .author-section {
     flex-direction: column;
     align-items: flex-start;
+    gap: 12px;
   }
 
   .post-actions {
     width: 100%;
     justify-content: flex-start;
+    gap: 8px;
+  }
+
+  .post-actions .el-button {
+    flex: 1;
+    justify-content: center;
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+
+  .post-stats {
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 13px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+  }
+
+  .post-tags {
+    margin-bottom: 16px;
+    gap: 8px;
+  }
+
+  .tags-label {
+    font-size: 13px;
+  }
+
+  .post-content {
+    padding: 12px 0;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  .post-content :deep(img) {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .comments-header h3 {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .post-detail-container {
+    padding: 8px;
+  }
+
+  .post-title {
+    font-size: 20px;
+  }
+
+  .post-actions {
+    flex-wrap: wrap;
+  }
+
+  .post-actions .el-button {
+    flex: 1 1 45%;
+    font-size: 12px;
+  }
+
+  .post-stats {
+    gap: 10px;
+    font-size: 12px;
+  }
+
+  .post-content {
+    font-size: 14px;
   }
 }
 </style>
