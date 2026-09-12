@@ -118,6 +118,7 @@
 - fix(shop): 修复支付宝回调 scheme 环境变量读取逻辑 (#23) (6a9c345)
 - fix(shop): 从支付宝回调数据中移除sign字段 (#24) (1111093)
 - fix(scripts): 修复数据库备份脚本的分支切换逻辑问题  (#35) (84e5d68)
+- fix(cube_api): 修复生产环境Admin登录403与CORS白名单失效问题 (#47) (25f5c14)
 
 
 ## docs - 文档
@@ -159,6 +160,7 @@
 - docs: 更新ICube面试文档  (#33) (da42a6e)
 - docs: 更新ICube面试文档 (#34) (9c0125b)
 - docs(env): 添加 Cloudflare Tunnel 配置示例  (#41) (2ca4c3a)
+- fix(cube_api): 修复生产环境Admin登录403与CORS白名单失效问题 (#47) (25f5c14)
 
 
 ## refactor - 重构
