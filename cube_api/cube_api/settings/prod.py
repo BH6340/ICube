@@ -39,12 +39,14 @@ ALLOWED_HOSTS = [
 
 # ==================== CORS 配置 ====================
 
-# ALLOWED_ORIGIN 应为不含协议的主机名，代码会生成 HTTP 与 HTTPS 来源
-_allowed_origin = os.getenv('ALLOWED_ORIGIN', '')
+# ALLOWED_ORIGIN 使用逗号分隔的主机名（不含协议），与 ALLOWED_HOSTS 格式一致
+_allowed_origins = [
+    host.strip() for host in os.getenv('ALLOWED_ORIGIN', '').split(',') if host.strip()
+]
 CORS_ALLOWED_ORIGINS = [
-    f"{scheme}://{_allowed_origin}"
+    f"{scheme}://{host}"
+    for host in _allowed_origins
     for scheme in ['http', 'https']
-    if _allowed_origin
 ] + [
     "http://localhost",
     "https://localhost",
@@ -60,9 +62,9 @@ CORS_ALLOW_CREDENTIALS = True
 
 # Django 4.0+ 要求 HTTPS 请求显式声明信任来源，否则 CSRF 验证失败
 CSRF_TRUSTED_ORIGINS = [
-    f"{scheme}://{_allowed_origin}"
+    f"{scheme}://{host}"
+    for host in _allowed_origins
     for scheme in ['https', 'http']
-    if _allowed_origin
 ] + [
     "http://localhost",
     "https://localhost",
