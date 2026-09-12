@@ -326,8 +326,17 @@ watch(
     gap: 8px;
   }
 
+  .page-header h1 {
+    font-size: 24px;
+  }
+
+  .page-header p {
+    font-size: 13px;
+  }
+
   .search-panel :deep(.el-input-group__append .el-button) {
-    padding-inline: 18px;
+    padding-inline: 14px;
+    font-size: 13px;
   }
 }
 </style>

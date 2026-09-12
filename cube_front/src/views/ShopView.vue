@@ -1,7 +1,16 @@
 <template>
   <div class="shop-view">
+    <!-- 移动端：顶部搜索筛选栏 -->
+    <div class="mobile-search-bar">
+      <el-input v-model="searchKeyword" placeholder="搜索商品" prefix-icon="Search" clearable
+        @keyup.enter="handleSearch" @clear="handleSearch" @input="handleSearch" />
+      <el-button type="primary" plain @click="mobileFilterVisible = true" icon="Filter">
+        筛选
+      </el-button>
+    </div>
+
     <el-row :gutter="20">
-      <el-col :xs="24" :sm="8" :md="6">
+      <el-col :xs="24" :sm="8" :md="6" class="sidebar-col">
         <div class="sidebar">
           <el-card shadow="never" class="search-card">
             <template #header>
@@ -108,12 +117,66 @@
       </el-col>
     </el-row>
 
-    <el-dialog v-model="showDetailDialog" :title="selectedProduct?.name" width="800px">
+    <!-- 移动端筛选抽屉 -->
+    <el-drawer
+      v-model="mobileFilterVisible"
+      title="筛选条件"
+      direction="ltr"
+      size="85%"
+      class="mobile-filter-drawer"
+    >
+      <div class="mobile-filter-content">
+        <el-card shadow="never" class="category-card">
+          <template #header>
+            <span>商品分类</span>
+          </template>
+          <el-tree :data="categoryTree" :props="{ label: 'name', children: 'children' }"
+            :expand-on-click-node="false" :highlight-current="true"
+            @node-click="handleMobileCategoryClick" default-expand-all />
+        </el-card>
+
+        <el-card shadow="never" class="price-card">
+          <template #header>
+            <span>价格区间</span>
+          </template>
+          <el-form :inline="false" class="price-form">
+            <div class="price-input-row">
+              <el-form-item>
+                <el-input v-model="priceMin" placeholder="最低价" size="small" type="number" />
+              </el-form-item>
+              <span class="price-separator">-</span>
+              <el-form-item>
+                <el-input v-model="priceMax" placeholder="最高价" size="small" type="number" />
+              </el-form-item>
+              <el-form-item>
+                <el-button type="primary" size="small" @click="handleMobilePriceFilter">筛选</el-button>
+              </el-form-item>
+            </div>
+          </el-form>
+          <div class="price-tags">
+            <el-tag
+              v-for="tag in priceTags"
+              :key="tag.key"
+              :type="selectedPriceTag === tag.key ? 'primary' : 'info'"
+              :effect="selectedPriceTag === tag.key ? 'dark' : 'light'"
+              @click="selectPriceTag(tag)"
+            >{{ tag.label }}</el-tag>
+          </div>
+        </el-card>
+
+        <div class="mobile-filter-actions">
+          <el-button @click="resetMobileFilters" plain>重置</el-button>
+          <el-button type="primary" @click="mobileFilterVisible = false">确定</el-button>
+        </div>
+      </div>
+    </el-drawer>
+
+    <el-dialog v-model="showDetailDialog" :title="selectedProduct?.name" :width="isMobile ? '95%' : '800px'" class="product-detail-dialog">
       <div v-if="selectedProduct" class="product-detail">
         <el-row :gutter="20">
           <el-col :xs="24" :sm="10">
             <div class="detail-images">
-              <el-carousel height="300px" indicator-position="bottom">
+              <el-carousel height="300px">
                 <el-carousel-item v-for="(img, idx) in productImages" :key="idx">
                   <img :src="img" :alt="selectedProduct.name" class="carousel-img" />
                 </el-carousel-item>
@@ -192,9 +255,9 @@
  *   - 使用 useCartRefresh 跨组件同步购物车状态
  *   - selectedSpec 用 reactive 存储规格选择，支持多规格商品
  */
-import { ref, computed, onMounted, reactive } from 'vue'
+import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
-import { ShoppingBag, ShoppingCart } from '@element-plus/icons-vue'
+import { ShoppingBag, ShoppingCart, Filter } from '@element-plus/icons-vue'
 import { getCategories, getProducts, getProductDetail, addToCart } from '@/api/shop'
 import { useUserStore } from '@/stores/user'
 import { useCartRefresh } from '@/stores/cart'
@@ -224,6 +287,39 @@ const showDetailDialog = ref(false)
 const selectedProduct = ref(null)
 const quantity = ref(1)
 const selectedSpec = reactive({})
+
+// 移动端相关
+const mobileFilterVisible = ref(false)
+const isMobile = ref(false)
+
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 768
+}
+
+const handleResize = () => {
+  checkMobile()
+}
+
+const handleMobileCategoryClick = (data) => {
+  selectedCategory.value = data.id
+  currentPage.value = 1
+  loadProducts()
+}
+
+const handleMobilePriceFilter = () => {
+  currentPage.value = 1
+  selectedPriceTag.value = null
+  loadProducts()
+}
+
+const resetMobileFilters = () => {
+  selectedCategory.value = null
+  priceMin.value = ''
+  priceMax.value = ''
+  selectedPriceTag.value = null
+  currentPage.value = 1
+  loadProducts()
+}
 
 const productImages = computed(() => {
   if (!selectedProduct.value) return []
@@ -379,12 +475,51 @@ const loadProducts = async () => {
 onMounted(() => {
   loadCategories()
   loadProducts()
+  checkMobile()
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 
 <style scoped>
 .shop-view {
   padding: 20px;
+}
+
+/* 移动端顶部搜索筛选栏 */
+.mobile-search-bar {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.mobile-search-bar .el-input {
+  flex: 1;
+}
+
+/* 移动端筛选抽屉 */
+.mobile-filter-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 4px 16px;
+}
+
+.mobile-filter-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 12px 0 0;
+  border-top: 1px solid #ebeef5;
+  margin-top: 8px;
+}
+
+.mobile-filter-actions .el-button {
+  flex: 1;
 }
 
 .sidebar {
@@ -630,5 +765,145 @@ onMounted(() => {
 
 .detail-desc p {
   margin: 0;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .shop-view {
+    padding: 12px;
+  }
+
+  /* 显示移动端顶部搜索栏 */
+  .mobile-search-bar {
+    display: flex;
+  }
+
+  /* 隐藏桌面端侧边栏 */
+  .sidebar-col {
+    display: none;
+  }
+
+  .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+  }
+
+  .product-image {
+    height: 120px;
+  }
+
+  .product-info {
+    padding: 8px;
+  }
+
+  .product-name {
+    font-size: 13px;
+  }
+
+  .product-desc {
+    font-size: 12px;
+  }
+
+  .current-price {
+    font-size: 16px;
+  }
+
+  .original-price {
+    font-size: 12px;
+  }
+
+  .product-meta {
+    font-size: 11px;
+    gap: 10px;
+  }
+
+  .product-actions {
+    padding: 0 8px 8px;
+  }
+
+  .product-actions .el-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .pagination-wrapper {
+    margin-top: 20px;
+  }
+
+  .detail-price .current {
+    font-size: 22px;
+  }
+
+  /* 详情弹窗移动端适配 */
+  .product-detail :deep(.el-col) {
+    margin-bottom: 16px;
+  }
+
+  .product-detail :deep(.el-col:last-child) {
+    margin-bottom: 0;
+  }
+
+  .detail-images :deep(.el-carousel) {
+    height: 250px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .product-image {
+    height: 100px;
+  }
+
+  .product-name {
+    font-size: 12px;
+    -webkit-line-clamp: 2;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    white-space: normal;
+    line-height: 1.3;
+    height: 32px;
+  }
+
+  .product-desc {
+    display: none;
+  }
+
+  .current-price {
+    font-size: 15px;
+  }
+
+  .product-meta {
+    flex-direction: column;
+    gap: 2px;
+  }
+}
+
+/* 商品详情弹窗响应式（全局样式，因 dialog teleport 到 body） */
+@media (max-width: 768px) {
+  :global(.product-detail-dialog .el-dialog) {
+    width: 92% !important;
+    margin: 5vh auto !important;
+  }
+
+  :global(.product-detail-dialog .el-dialog__body) {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  :global(.product-detail-dialog .el-dialog) {
+    width: 95% !important;
+    margin: 3vh auto !important;
+  }
 }
 </style>

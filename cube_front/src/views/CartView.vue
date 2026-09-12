@@ -34,7 +34,7 @@
           </div>
           <div class="item-total">¥{{ (item.product_info.price * item.quantity).toFixed(2) }}</div>
           <div class="item-delete">
-            <el-button type="text" @click="handleDelete(item)">删除</el-button>
+            <el-button type="link" @click="handleDelete(item)">删除</el-button>
           </div>
         </div>
       </div>
@@ -288,5 +288,106 @@ onMounted(() => {
   font-size: 20px;
   font-weight: 700;
   color: #f56c6c;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .cart-view {
+    padding: 12px;
+  }
+
+  .cart-item {
+    flex-wrap: wrap;
+    padding: 12px;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .item-image {
+    width: 64px;
+    height: 64px;
+  }
+
+  .item-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .item-name {
+    font-size: 13px;
+  }
+
+  .item-spec {
+    font-size: 11px;
+  }
+
+  .item-price {
+    font-size: 13px;
+  }
+
+  .item-quantity {
+    order: 10;
+    width: auto;
+    margin-left: auto;
+  }
+
+  .item-total {
+    order: 11;
+    width: auto;
+    font-size: 13px;
+    text-align: right;
+  }
+
+  .item-delete {
+    order: 12;
+    width: auto;
+  }
+
+  .cart-footer {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .select-all {
+    justify-content: space-between;
+  }
+
+  .total-section {
+    justify-content: space-between;
+  }
+
+  .total-price {
+    font-size: 18px;
+  }
+
+  .total-section .el-button {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .cart-item {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .item-image {
+    width: 56px;
+    height: 56px;
+  }
+
+  .item-name {
+    font-size: 12px;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .item-quantity .el-input-number {
+    width: 100px;
+  }
 }
 </style>

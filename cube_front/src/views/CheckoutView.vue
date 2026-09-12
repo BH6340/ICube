@@ -38,29 +38,29 @@
 
           <el-form :model="addressForm" label-position="top" class="address-form">
             <el-row :gutter="20">
-              <el-col :span="12">
+              <el-col :xs="24" :span="12">
                 <el-form-item label="收货人" prop="name">
                   <el-input v-model="addressForm.name" placeholder="请输入收货人姓名" />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :xs="24" :span="12">
                 <el-form-item label="联系电话" prop="phone">
                   <el-input v-model="addressForm.phone" placeholder="请输入联系电话" />
                 </el-form-item>
               </el-col>
             </el-row>
             <el-row :gutter="10">
-              <el-col :span="8">
+              <el-col :xs="24" :sm="8" :span="8">
                 <el-form-item label="省份" prop="province">
                   <el-input v-model="addressForm.province" placeholder="请输入省份" />
                 </el-form-item>
               </el-col>
-              <el-col :span="8">
+              <el-col :xs="24" :sm="8" :span="8">
                 <el-form-item label="城市" prop="city">
                   <el-input v-model="addressForm.city" placeholder="请输入城市" />
                 </el-form-item>
               </el-col>
-              <el-col :span="8">
+              <el-col :xs="24" :sm="8" :span="8">
                 <el-form-item label="区县" prop="district">
                   <el-input v-model="addressForm.district" placeholder="请输入区县" />
                 </el-form-item>
@@ -450,5 +450,107 @@ onMounted(() => {
 
 .checkout-actions {
   padding-top: 10px;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .checkout-view {
+    padding: 12px;
+  }
+
+  .address-card,
+  .order-card,
+  .summary-card {
+    margin-bottom: 12px;
+  }
+
+  .address-option {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .address-header-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .address-name {
+    font-size: 14px;
+  }
+
+  .address-phone {
+    font-size: 12px;
+  }
+
+  .address-detail {
+    font-size: 12px;
+  }
+
+  .order-item {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 0;
+  }
+
+  .order-item .item-image {
+    width: 56px;
+    height: 56px;
+  }
+
+  .order-item .item-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .order-item .item-name {
+    font-size: 13px;
+  }
+
+  .order-item .item-spec {
+    font-size: 11px;
+  }
+
+  .order-item .item-price {
+    font-size: 13px;
+    width: auto;
+  }
+
+  .order-item .item-quantity {
+    width: auto;
+    font-size: 12px;
+    margin-left: auto;
+  }
+
+  .order-item .item-total {
+    font-size: 13px;
+    width: auto;
+  }
+
+  .summary-row.total .value {
+    font-size: 18px;
+  }
+
+  .checkout-actions .el-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .checkout-view {
+    padding: 8px;
+  }
+
+  .address-option {
+    padding: 10px;
+  }
+
+  .order-item .item-name {
+    font-size: 12px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.3;
+  }
 }
 </style>

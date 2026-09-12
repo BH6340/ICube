@@ -793,4 +793,129 @@ onMounted(() => {
   font-size: 14px;
   color: #606266;
 }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .profile-info-container {
+    padding: 12px 8px;
+  }
+
+  .profile-layout-wrapper {
+    gap: 12px;
+  }
+
+  .profile-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
+  }
+
+  .profile-meta {
+    width: 100%;
+  }
+
+  .name-row {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .username {
+    font-size: 20px;
+  }
+
+  .bio-text {
+    font-size: 13px;
+  }
+
+  .action-btn {
+    width: 100%;
+  }
+
+  .action-btn .el-button {
+    width: 100%;
+  }
+
+  .stats-row {
+    flex-wrap: wrap;
+  }
+
+  .stats-item {
+    flex: 0 0 50%;
+    padding: 12px 0;
+    border-right: none;
+    border-bottom: 1px solid #ebeef5;
+  }
+
+  .stats-item:nth-child(2n) {
+    border-right: none;
+  }
+
+  .stats-item:nth-last-child(-n+2) {
+    border-bottom: none;
+  }
+
+  .stats-num {
+    font-size: 20px;
+  }
+
+  .stats-label {
+    font-size: 12px;
+  }
+
+  .quick-entry-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .quick-entry-item {
+    padding: 12px 6px;
+    gap: 6px;
+  }
+
+  .entry-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+  }
+
+  .entry-icon .el-icon {
+    font-size: 20px !important;
+  }
+
+  .entry-label {
+    font-size: 12px;
+  }
+
+  .user-item {
+    padding: 10px 8px;
+    gap: 10px;
+  }
+
+  .user-bio-mini {
+    max-width: 160px;
+  }
+
+  .list-action-btn .el-button {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .quick-entry-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .entry-label {
+    font-size: 11px;
+  }
+
+  .user-bio-mini {
+    max-width: 100px;
+  }
+
+  .stats-item {
+    flex: 0 0 50%;
+  }
+}
 </style>

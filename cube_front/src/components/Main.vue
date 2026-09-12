@@ -7,9 +7,8 @@
     <el-row :gutter="20">
       <el-col :span="24">
         <el-carousel 
-          height="360px" 
-          border-radius="12px" 
-          indicator-position="bottom"
+          :height="carouselHeight"
+          border-radius="12px"
           :interval="5000"
           :autoplay="true"
           :pause-on-hover="true"
@@ -47,13 +46,13 @@
     <!-- 左右两列布局，分别展示热门帖子和精选公式 -->
     <el-row :gutter="20" style="margin-top: 30px;">
       <!-- 热门帖子列 -->
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12" :span="12">
         <el-card class="section-card" shadow="hover">
           <template #header>
             <div class="section-header">
               <span class="section-icon">📢</span>
               <span class="section-title">热门帖子</span>
-              <el-button type="text" size="small" @click="router.push('/forum')">查看更多 →</el-button>
+              <el-button type="link" size="small" @click="router.push('/forum')">查看更多 →</el-button>
             </div>
           </template>
           <!-- 加载骨架屏 -->
@@ -82,13 +81,13 @@
       </el-col>
 
       <!-- 精选公式列 -->
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12" :span="12" class="formula-col">
         <el-card class="section-card" shadow="hover">
           <template #header>
             <div class="section-header">
               <span class="section-icon">✨</span>
               <span class="section-title">精选公式</span>
-              <el-button type="text" size="small" @click="router.push('/formulas')">查看更多 →</el-button>
+              <el-button type="link" size="small" @click="router.push('/formulas')">查看更多 →</el-button>
             </div>
           </template>
           <!-- 加载骨架屏 -->
@@ -126,7 +125,7 @@
           </template>
           <el-row :gutter="20">
             <!-- 层先法教程 -->
-            <el-col :span="8">
+            <el-col :xs="24" :sm="24" :md="8" :span="8">
               <div class="tutorial-card" @click="goToBeginnerTutorial">
                 <div class="tutorial-icon">📚</div>
                 <div class="tutorial-info">
@@ -137,7 +136,7 @@
               </div>
             </el-col>
             <!-- CFOP教程 -->
-            <el-col :span="8">
+            <el-col :xs="24" :sm="24" :md="8" :span="8" class="tutorial-col">
               <div class="tutorial-card" @click="goToTutorial('cfop')">
                 <div class="tutorial-icon">⚡</div>
                 <div class="tutorial-info">
@@ -148,7 +147,7 @@
               </div>
             </el-col>
             <!-- 桥式教程（即将推出） -->
-            <el-col :span="8">
+            <el-col :xs="24" :sm="24" :md="8" :span="8" class="tutorial-col">
               <div class="tutorial-card" @click="goToTutorial('roux')">
                 <div class="tutorial-icon">🏆</div>
                 <div class="tutorial-info">
@@ -210,7 +209,7 @@
  * - 响应式布局，适配不同屏幕尺寸
  */
 
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getPosts } from '@/api/posts'                    // 获取帖子 API
@@ -227,6 +226,28 @@ const formulaCategories = ref([])    // 公式分类列表
 const loadingPosts = ref(false)      // 帖子加载状态
 const loadingFormulas = ref(false)   // 公式加载状态
 const loadingCategories = ref(false) // 分类加载状态
+
+// 响应式轮播图高度
+const carouselHeight = ref('360px')
+
+const updateCarouselHeight = () => {
+  const width = window.innerWidth
+  if (width < 480) {
+    carouselHeight.value = '200px'
+  } else if (width < 768) {
+    carouselHeight.value = '240px'
+  } else if (width < 1024) {
+    carouselHeight.value = '300px'
+  } else {
+    carouselHeight.value = '360px'
+  }
+}
+
+let resizeTimer = null
+const handleResize = () => {
+  if (resizeTimer) clearTimeout(resizeTimer)
+  resizeTimer = setTimeout(updateCarouselHeight, 100)
+}
 
 /**
  * 从后端获取轮播图数据
@@ -391,10 +412,17 @@ const goToFormulaList = (categoryName) => {
  * 2. 各模块独立加载，互不阻塞
  */
 onMounted(() => {
+  updateCarouselHeight()
+  window.addEventListener('resize', handleResize)
   loadBanners()
   loadHotPosts()
   loadHotFormulas()
   loadFormulaCategories()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  if (resizeTimer) clearTimeout(resizeTimer)
 })
 </script>
 
@@ -659,5 +687,131 @@ onMounted(() => {
 
 .category-tag:hover {
   transform: scale(1.05);
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .main-content {
+    padding: 12px 0;
+  }
+
+  .formula-col {
+    margin-top: 16px;
+  }
+
+  .tutorial-col {
+    margin-top: 16px;
+  }
+
+  .carousel-overlay {
+    padding: 20px 16px;
+  }
+
+  .carousel-title {
+    font-size: 18px;
+  }
+
+  .carousel-description {
+    font-size: 12px;
+    -webkit-line-clamp: 1;
+  }
+
+  .carousel-link-indicator {
+    margin-top: 10px;
+    font-size: 12px;
+  }
+
+  .section-title {
+    font-size: 16px;
+  }
+
+  .section-icon {
+    font-size: 16px;
+    margin-right: 6px;
+  }
+
+  .post-title, .formula-name {
+    font-size: 13px;
+  }
+
+  .post-meta, .formula-category {
+    font-size: 11px;
+  }
+
+  .post-stats, .formula-stats {
+    gap: 8px;
+  }
+
+  .stat-item {
+    font-size: 11px;
+  }
+
+  .tutorial-card {
+    padding: 16px;
+  }
+
+  .tutorial-icon {
+    font-size: 32px;
+    margin-bottom: 8px;
+  }
+
+  .tutorial-info h4 {
+    font-size: 15px;
+  }
+
+  .tutorial-info p {
+    font-size: 11px;
+  }
+
+  .category-tag {
+    padding: 4px 12px;
+    font-size: 13px;
+  }
+
+  .category-list {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .carousel-overlay {
+    padding: 16px 12px;
+  }
+
+  .carousel-title {
+    font-size: 16px;
+    margin-bottom: 4px;
+  }
+
+  .carousel-description {
+    display: none;
+  }
+
+  .carousel-link-indicator {
+    margin-top: 8px;
+    font-size: 11px;
+  }
+
+  .el-carousel__indicators--bottom {
+    bottom: 10px;
+  }
+
+  .el-carousel__indicator {
+    width: 8px;
+    height: 8px;
+  }
+
+  .el-carousel__indicator.is-active {
+    width: 16px;
+  }
+
+  .post-item, .formula-item {
+    padding: 10px 0;
+  }
+
+  .section-header {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
 }
 </style>

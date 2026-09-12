@@ -1271,4 +1271,133 @@ onBeforeUnmount(() => {
 .face-block-d .face-block-letter { color: #303030; }
 .face-block-l { background: #e8923c; }
 .face-block-b { background: #409eff; }
+
+/* 移动端适配 */
+@media (max-width: 900px) {
+  .smart-cube-container {
+    flex-direction: column;
+    gap: 16px;
+    padding: 12px;
+  }
+
+  .cube-panel {
+    position: static;
+    width: 100%;
+  }
+
+  .cube-wrapper {
+    max-height: 350px;
+  }
+
+  .control-panel {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* 移动端卡片重排序：计时器置顶，数据统计和历史记录放最底部 */
+  .timer-card {
+    order: 1;
+  }
+
+  .connection-card {
+    order: 2;
+  }
+
+  .orientation-card {
+    order: 3;
+  }
+
+  .moves-card {
+    order: 4;
+  }
+
+  .debug-card {
+    order: 5;
+  }
+
+  /* 移动端连接区紧凑化 */
+  .connection-card :deep(.el-card__header) {
+    padding: 10px 14px;
+  }
+
+  .connection-card :deep(.el-card__body) {
+    padding: 12px 14px;
+  }
+
+  .connection-controls {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .connection-controls .el-button {
+    flex: 1;
+    min-width: 80px;
+  }
+
+  .device-info :deep(.el-descriptions) {
+    font-size: 12px;
+  }
+
+  .timer-main {
+    font-size: 36px;
+  }
+}
+
+@media (max-width: 480px) {
+  .smart-cube-container {
+    padding: 8px;
+    gap: 12px;
+  }
+
+  .cube-wrapper {
+    max-height: 280px;
+  }
+
+  .timer-main {
+    font-size: 32px;
+    letter-spacing: 1px;
+  }
+
+  .timer-sub {
+    font-size: 12px;
+  }
+
+  .result-header {
+    font-size: 16px;
+  }
+
+  .result-body {
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 13px;
+  }
+
+  .move-chip {
+    min-width: 32px;
+    height: 30px;
+    padding: 0 8px;
+    font-size: 14px;
+  }
+
+  .moves-list {
+    max-height: 200px;
+  }
+
+  .debug-log {
+    max-height: 200px;
+  }
+
+  .front-face-blocks {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .face-block {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    height: auto;
+  }
+}
 </style>

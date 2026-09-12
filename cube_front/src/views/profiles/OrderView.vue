@@ -309,4 +309,85 @@ onMounted(() => {
   display: flex;
   gap: 8px;
 }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .order-view {
+    padding: 12px 8px;
+  }
+
+  .header-wrapper {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .order-tabs :deep(.el-tabs__nav-wrap) {
+    overflow-x: auto;
+  }
+
+  .order-tabs :deep(.el-tabs__nav) {
+    min-width: max-content;
+  }
+
+  .order-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 10px 12px;
+  }
+
+  .order-items {
+    padding: 10px 12px;
+  }
+
+  .order-item-row {
+    gap: 10px;
+    padding: 8px 0;
+  }
+
+  .item-image {
+    width: 64px;
+    height: 64px;
+  }
+
+  .item-name {
+    font-size: 13px;
+  }
+
+  .item-spec {
+    font-size: 11px;
+  }
+
+  .order-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .order-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  .order-view {
+    padding: 8px 4px;
+  }
+
+  .order-actions .el-button {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .item-price {
+    font-size: 13px;
+  }
+
+  .total-price {
+    font-size: 15px;
+  }
+}
 </style>
