@@ -216,6 +216,7 @@
 - style(refactor): 优化代码链接处理和滚动定位逻辑 (a4a9f98)
 - style(docs): 切换代码面板为深色主题并添加语法高亮 (21a0eef)
 - style: 优化文档页面UI风格与交互细节 (977e8fd)
+- style: 完成全站移动端适配第二轮优化 + 修复Element Plus弃用警告 (#49) (9335592)
 
 
 ## chore - 杂务
