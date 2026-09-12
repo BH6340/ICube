@@ -121,6 +121,7 @@ test_api.ps1
 test_collections.ps1
 debug-formula-categories-500.md
 init_data.sql.backup
+data/init_data.sql.backup_*
 .trae-html-designs/
 scripts/build-apk.sh
 slow-query-optimization/
