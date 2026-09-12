@@ -64,15 +64,7 @@ CORS_ALLOW_CREDENTIALS = True
 # ==================== CSRF 配置 ====================
 
 # Django 4.0+ 要求 HTTPS 请求显式声明信任来源，否则 CSRF 验证失败
-<<<<<<< HEAD
 CSRF_TRUSTED_ORIGINS = [f"{scheme}://{host}" for host in _allowed_origins for scheme in ["https", "http"]] + [
-=======
-CSRF_TRUSTED_ORIGINS = [
-    f"{scheme}://{host}"
-    for host in _allowed_origins
-    for scheme in ['https', 'http']
-] + [
->>>>>>> 2cfbf694094aaeafca512c4f78fa1c806a55fea7
     "http://localhost",
     "https://localhost",
 ]
