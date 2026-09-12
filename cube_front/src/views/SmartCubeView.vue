@@ -47,6 +47,14 @@
             <el-descriptions-item label="电量">
               <span v-if="deviceInfo.battery !== null">{{ deviceInfo.battery }}%</span>
               <span v-else class="text-muted">—</span>
+              <el-button
+                link
+                type="primary"
+                size="small"
+                :disabled="!connected"
+                @click="refreshBattery"
+                style="margin-left: 4px"
+              >刷新</el-button>
             </el-descriptions-item>
             <el-descriptions-item label="复原状态">
               <el-tag v-if="faceletsReceived" :type="isSolved ? 'success' : 'warning'" size="small">
@@ -436,7 +444,7 @@ const handleEvent = (event) => {
       break
     case 'BATTERY':
       deviceInfo.battery = event.batteryLevel
-      addLog('BATTERY', `${event.batteryLevel}%`)
+      addLog('BATTERY', `${event.batteryLevel}%（dataLen=${event.dataLength}, raw=[${event.raw?.join(',')}]）`)
       break
     case 'HARDWARE':
       if (event.hardwareName) deviceInfo.name = event.hardwareName
@@ -503,6 +511,7 @@ const frontFaceOptions = ref([])
 
 let macResolve = null
 let gyroTimer = null
+let batteryTimer = null  // 电量定时查询
 
 const FACE_COLOR_NAMES = { U: '白', D: '黄', R: '红', L: '橙', F: '绿', B: '蓝' }
 
@@ -732,6 +741,12 @@ async function handleConnect() {
         addLog('GYRO', '未检测到陀螺仪数据，切换到经典模式')
       }
     }, 3000)
+
+    // 定时查询电量（每 30 秒），连接后立即查一次
+    if (batteryTimer) clearInterval(batteryTimer)
+    batteryTimer = setInterval(() => {
+      if (client.connected) client.requestBattery().catch(() => {})
+    }, 30000)
   } catch (err) {
     if (err.name === 'NotFoundError') {
       ElMessage.info('已取消设备选择')
@@ -742,6 +757,12 @@ async function handleConnect() {
   } finally {
     connecting.value = false
   }
+}
+
+function refreshBattery() {
+  if (!client.connected) return
+  addLog('BATTERY', '手动请求电量…')
+  client.requestBattery().catch(err => addLog('ERROR', '电量请求失败: ' + err.message))
 }
 
 async function handleReset() {
@@ -798,6 +819,7 @@ async function handleDisconnect() {
   orientationDetail.value = ''
   initialOrientation.value = ''
   tracker.reset()
+  if (batteryTimer) { clearInterval(batteryTimer); batteryTimer = null }
 }
 
 function submitMac() {
@@ -850,6 +872,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('beforeunload', beforeUnloadHandler)
   if (gyroTimer) clearTimeout(gyroTimer)
   if (gyroRafId) cancelAnimationFrame(gyroRafId)
+  if (batteryTimer) { clearInterval(batteryTimer); batteryTimer = null }
   // 单例模式：组件销毁不主动断开 BLE 连接，保持连接到其他页面
 })
 </script>

@@ -203,8 +203,10 @@ class Gen4ProtocolDriver {
           this._lastSerial = facelets.serial
         }
       } else if (eventType === EventType.BATTERY) {
-        const batteryLevel = msg.getBitWord(8 + dataLength * 8 - 8, 8)
-        events.push({ type: 'BATTERY', timestamp, batteryLevel })
+        // dataLength=2 时：第 1 字节 = 充电状态，第 2 字节 = 电量百分比
+        const charging = msg.getBitWord(16, 8)
+        const batteryLevel = dataLength >= 2 ? msg.getBitWord(24, 8) : msg.getBitWord(16, 8)
+        events.push({ type: 'BATTERY', timestamp, batteryLevel, charging, dataLength })
       } else if (eventType === EventType.GYRO) {
         const gyro = this._parseGyro(msg, timestamp)
         if (gyro) events.push(gyro)
@@ -529,6 +531,11 @@ export class GanCubeClient {
   /** 复位魔方硬件状态 */
   async resetCube() {
     await this.sendCommand('REQUEST_RESET')
+  }
+
+  /** 请求电量信息 */
+  async requestBattery() {
+    await this.sendCommand('REQUEST_BATTERY')
   }
 
   /** 断开连接（用户主动断开，完全清理） */
