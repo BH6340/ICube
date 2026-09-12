@@ -37,7 +37,7 @@ on:
       - 'scripts/**'
       - '.github/workflows/cicd.yml'
       - 'docs/**'                  # 文档（触发部署，CI 自动 skip）
-      - 'README.md'                # 项目说明
+      - 'README.md'
 
 # ============================== 全局环境变量 ==============================
 env:
@@ -46,7 +46,7 @@ env:
 
 jobs:
   # ===========================================================================
-  # CI Job 1/3：后端 Lint + Test
+  # CI Job 1/4：后端 Lint + Test
   # ===========================================================================
   # 职责：Ruff 代码检查 + pytest 全量测试 + 覆盖率报告
   # 触发：push 到 dev/main 或 PR 中含后端代码变更
@@ -55,19 +55,29 @@ jobs:
   backend-check:
     name: 后端 Lint + Test
     runs-on: ubuntu-latest
-    # PR 场景：如果 PR 只改了前端，跳过整个 Job
-    if: |
-      github.event_name == 'push' ||
-      !contains(github.event.pull_request.changed_files, 'cube_front/')
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2           # push 场景需要 HEAD~1；PR 场景会 fetch base
 
       # ---- 路径检测：只有 cube_api/** 变更时才执行后续步骤 ----
       - name: 检查是否有后端代码变更
         id: changed-backend
-        uses: tj-actions/changed-files@v45
-        with:
-          files: cube_api/**
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            # PR 场景：与目标分支比较
+            git fetch origin ${{ github.base_ref }} --depth=1
+            CHANGED=$(git diff --name-only origin/${{ github.base_ref }} HEAD | grep -c '^cube_api/' || true)
+          else
+            # push 场景：与上一个 commit 比较
+            CHANGED=$(git diff --name-only HEAD~1 HEAD | grep -c '^cube_api/' || true)
+          fi
+          if [[ $CHANGED -gt 0 ]]; then
+            echo "any_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "any_changed=false" >> $GITHUB_OUTPUT
+          fi
+          echo "后端变更文件数: $CHANGED"
 
       # ---- 系统依赖：mysqlclient 编译需要 MySQL 开发库 ----
       - name: 安装系统依赖（mysqlclient 编译需要）
@@ -119,7 +129,7 @@ jobs:
           retention-days: 30
 
   # ===========================================================================
-  # CI Job 2/3：前端构建验证
+  # CI Job 2/4：前端构建验证
   # ===========================================================================
   # 职责：npm ci + vite build，验证前端代码可正常构建
   # 触发：push 到 dev/main 或 PR 中含前端代码变更
@@ -128,19 +138,27 @@ jobs:
   frontend-check:
     name: 前端 Build 验证
     runs-on: ubuntu-latest
-    # PR 场景：如果 PR 只改了后端，跳过整个 Job
-    if: |
-      github.event_name == 'push' ||
-      !contains(github.event.pull_request.changed_files, 'cube_api/')
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
 
       # ---- 路径检测：只有 cube_front/** 变更时才执行后续步骤 ----
       - name: 检查是否有前端代码变更
         id: changed-frontend
-        uses: tj-actions/changed-files@v45
-        with:
-          files: cube_front/**
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git fetch origin ${{ github.base_ref }} --depth=1
+            CHANGED=$(git diff --name-only origin/${{ github.base_ref }} HEAD | grep -c '^cube_front/' || true)
+          else
+            CHANGED=$(git diff --name-only HEAD~1 HEAD | grep -c '^cube_front/' || true)
+          fi
+          if [[ $CHANGED -gt 0 ]]; then
+            echo "any_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "any_changed=false" >> $GITHUB_OUTPUT
+          fi
+          echo "前端变更文件数: $CHANGED"
 
       # ---- Node.js 环境 ----
       - uses: actions/setup-node@v5
@@ -163,64 +181,128 @@ jobs:
         run: npm run build
 
   # ===========================================================================
-  # CI Job 3/3：Docker 镜像构建验证
+  # CI Job 3/4：后端 Docker 镜像构建验证
   # ===========================================================================
-  # 职责：验证前后端 Dockerfile 可正常构建 + compose 配置语法正确
-  # 触发：Dockerfile 或 docker-compose.yml 变更时
-  # 耗时：~3min
+  # 职责：验证后端 Dockerfile 可正常构建
+  # 触发：后端 Dockerfile 或 docker-compose.yml 变更时
+  # 使用 BuildKit 层缓存加速：依赖不变时约 30s
   # ===========================================================================
-  docker-build:
-    name: Docker 镜像构建验证
+  docker-build-api:
+    name: 后端 Docker 构建验证
     runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'push' ||
-      !contains(github.event.pull_request.changed_files, 'cube_api/')
     steps:
       - uses: actions/checkout@v5
-
-      # ---- 路径检测：Dockerfile 或 compose 变更时才执行 ----
-      - name: 检查是否有 Docker 相关变更
-        id: changed-docker
-        uses: tj-actions/changed-files@v45
         with:
-          files: |
-            docker-compose.yml
-            **/Dockerfile
-            cube_api/Dockerfile
-            cube_front/Dockerfile
+          fetch-depth: 2
 
-      # ---- 后端镜像构建 ----
+      # ---- 路径检测：Docker 相关文件变更时才构建 ----
+      - name: 检查是否有后端 Docker 相关变更
+        id: changed-docker-api
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git fetch origin ${{ github.base_ref }} --depth=1
+            DIFF_CMD="git diff --name-only origin/${{ github.base_ref }} HEAD"
+          else
+            DIFF_CMD="git diff --name-only HEAD~1 HEAD"
+          fi
+          CHANGED=$(eval $DIFF_CMD | grep -cE '^(docker-compose\.yml|cube_api/Dockerfile)' || true)
+          if [[ $CHANGED -gt 0 ]]; then
+            echo "any_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "any_changed=false" >> $GITHUB_OUTPUT
+          fi
+          echo "后端 Docker 变更文件数: $CHANGED"
+
+      # ---- 启用 Docker BuildKit ----
+      - name: 设置 Docker Buildx
+        if: steps.changed-docker-api.outputs.any_changed == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      # ---- 构建后端镜像（带层缓存）----
       - name: 构建后端镜像
-        if: steps.changed-docker.outputs.any_changed == 'true'
-        run: docker build -t icube-api-ci ./cube_api
+        if: steps.changed-docker-api.outputs.any_changed == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./cube_api
+          push: false
+          load: true
+          tags: icube-api-ci:latest
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,scope=api,mode=max
 
-      # ---- 前端镜像构建 ----
+  # ===========================================================================
+  # CI Job 4/4：前端 Docker 镜像构建验证 + compose 校验
+  # ===========================================================================
+  # 职责：验证前端 Dockerfile 可正常构建 + compose 配置语法正确
+  # 触发：前端 Dockerfile 或 docker-compose.yml 变更时
+  # 使用 BuildKit 层缓存加速：依赖不变时约 20s
+  # ===========================================================================
+  docker-build-front:
+    name: 前端 Docker 构建验证
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      # ---- 路径检测：Docker 相关文件变更时才构建 ----
+      - name: 检查是否有前端 Docker 相关变更
+        id: changed-docker-front
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git fetch origin ${{ github.base_ref }} --depth=1
+            DIFF_CMD="git diff --name-only origin/${{ github.base_ref }} HEAD"
+          else
+            DIFF_CMD="git diff --name-only HEAD~1 HEAD"
+          fi
+          CHANGED=$(eval $DIFF_CMD | grep -cE '^(docker-compose\.yml|cube_front/Dockerfile)' || true)
+          if [[ $CHANGED -gt 0 ]]; then
+            echo "any_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "any_changed=false" >> $GITHUB_OUTPUT
+          fi
+          echo "前端 Docker 变更文件数: $CHANGED"
+
+      # ---- 启用 Docker BuildKit ----
+      - name: 设置 Docker Buildx
+        if: steps.changed-docker-front.outputs.any_changed == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      # ---- 构建前端镜像（带层缓存）----
       - name: 构建前端镜像
-        if: steps.changed-docker.outputs.any_changed == 'true'
-        run: docker build -t icube-front-ci ./cube_front
+        if: steps.changed-docker-front.outputs.any_changed == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./cube_front
+          push: false
+          load: true
+          tags: icube-front-ci:latest
+          cache-from: type=gha,scope=front
+          cache-to: type=gha,scope=front,mode=max
 
       # ---- compose 配置语法校验 ----
       - name: 验证 compose 配置
-        if: steps.changed-docker.outputs.any_changed == 'true'
+        if: steps.changed-docker-front.outputs.any_changed == 'true'
         run: docker compose config -q
 
   # ===========================================================================
   # CD Job：自动部署（仅 push 到 main 时触发）
   # ===========================================================================
   # 职责：SSH 到服务器执行部署，含强制同步、迁移检查、健康检查、自动回滚
-  # 依赖：backend-check + frontend-check + docker-build 全部通过或跳过
+  # 依赖：backend-check + frontend-check + docker-build-api + docker-build-front 全部通过或跳过
   # 后续：deploy → sync-dev → changelog
   # ===========================================================================
   deploy:
     name: 部署到生产服务器
-    needs: [backend-check, frontend-check, docker-build]
+    needs: [backend-check, frontend-check, docker-build-api, docker-build-front]
     # 仅 push 到 main 时部署；CI Job 可以是 success 或 skipped（路径过滤跳过）
     if: |
       github.event_name == 'push' && github.ref == 'refs/heads/main' &&
       !cancelled() &&
       (needs.backend-check.result == 'success' || needs.backend-check.result == 'skipped') &&
       (needs.frontend-check.result == 'success' || needs.frontend-check.result == 'skipped') &&
-      (needs.docker-build.result == 'success' || needs.docker-build.result == 'skipped')
+      (needs.docker-build-api.result == 'success' || needs.docker-build-api.result == 'skipped') &&
+      (needs.docker-build-front.result == 'success' || needs.docker-build-front.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
