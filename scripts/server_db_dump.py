@@ -17,16 +17,18 @@ ICube 服务端数据库转储脚本
   DB_USER             数据库用户名（默认 root）
   DB_ROOT_PASSWORD    数据库密码（默认 icube_root123）
   DB_CONTAINER        Docker MySQL 容器名（默认 db）
-  OUTPUT_FILE         输出文件名（默认 init_data.sql）
+  OUTPUT_FILE         输出文件路径（默认 data/init_data.sql）
   REPO_PATH           项目根目录（默认自动检测为脚本上级目录）
   MEDIA_DIR           媒体目录（默认 cube_api/media）
   BACKUP_BRANCH       备份提交的目标分支（默认 dev）
-  BACKUP_KEEP_COUNT   本地 SQL 备份保留份数（默认 7）
+  BACKUP_KEEP_COUNT   本地 SQL 备份保留份数（默认 7，0 表示不按份数限制）
+  BACKUP_KEEP_DAYS    本地 SQL 备份保留天数（默认 0 表示不按天数限制，与份数取更严格的）
   GIT_REMOTE          Git 远端名称（默认 origin）
   GIT_AUTHOR_NAME     Git 提交作者名（默认 ICube Server）
   GIT_AUTHOR_EMAIL    Git 提交作者邮箱（默认 icube@localhost）
-  PUSH_MAX_RETRIES    push 失败最大重试次数（默认 3）
+  PUSH_MAX_RETRIES    push 失败最大重试次数（默认 5）
   PUSH_RETRY_DELAY    push 重试间隔秒数（默认 30）
+  PUSH_BACKOFF_MULT   推送重试退避倍数（默认 2，指数退避）
 """
 
 import os
@@ -58,7 +60,7 @@ DB_NAME          = os.environ.get("DB_NAME", "icube_db")
 DB_USER          = os.environ.get("DB_USER", "root")
 DB_ROOT_PASSWORD = os.environ.get("DB_ROOT_PASSWORD", "icube_root123")
 DB_CONTAINER     = os.environ.get("DB_CONTAINER", "db")
-OUTPUT_FILE      = os.environ.get("OUTPUT_FILE", "init_data.sql")
+OUTPUT_FILE      = os.environ.get("OUTPUT_FILE", "data/init_data.sql")
 REPO_PATH        = os.path.abspath(os.environ.get("REPO_PATH", _PROJECT_ROOT))
 MEDIA_DIR        = os.environ.get("MEDIA_DIR", "cube_api/media")
 BACKUP_BRANCH    = os.environ.get("BACKUP_BRANCH", "dev")
@@ -70,10 +72,12 @@ DRY_RUN  = "--dry-run" in sys.argv
 NO_PUSH  = "--no-push" in sys.argv
 NO_MEDIA = "--no-media" in sys.argv
 
-PUSH_MAX_RETRIES = int(os.environ.get("PUSH_MAX_RETRIES", "3"))
-PUSH_RETRY_DELAY = int(os.environ.get("PUSH_RETRY_DELAY", "30"))
+PUSH_MAX_RETRIES  = int(os.environ.get("PUSH_MAX_RETRIES", "5"))
+PUSH_RETRY_DELAY  = int(os.environ.get("PUSH_RETRY_DELAY", "30"))
+PUSH_BACKOFF_MULT = float(os.environ.get("PUSH_BACKOFF_MULT", "2"))
 
-BACKUP_KEEP_COUNT = int(os.environ.get("BACKUP_KEEP_COUNT", "7"))  # 保留最近几份 SQL 备份
+BACKUP_KEEP_COUNT = int(os.environ.get("BACKUP_KEEP_COUNT", "7"))  # 保留最近几份 SQL 备份（0=不限制）
+BACKUP_KEEP_DAYS  = int(os.environ.get("BACKUP_KEEP_DAYS", "0"))   # 保留最近几天的 SQL 备份（0=不限制）
 
 LOG_DIR  = os.path.join(REPO_PATH, "logs")
 LOG_FILE = os.path.join(LOG_DIR, f"server_dump_{datetime.datetime.now().strftime('%Y%m%d')}.log")
@@ -167,7 +171,12 @@ def _run(cmd, **kw):
 def backup_original_file():
     out_path = os.path.join(REPO_PATH, OUTPUT_FILE)
     if not os.path.exists(out_path):
+        # 确保输出目录存在
+        os.makedirs(os.path.dirname(out_path), exist_ok=True)
         return
+
+    # 确保输出目录存在
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
     # 带时间戳的备份文件名
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -175,17 +184,38 @@ def backup_original_file():
     shutil.copy2(out_path, bak)
     logger.info(f"已备份原文件: {bak}")
 
-    # 清理旧备份，只保留最近 BACKUP_KEEP_COUNT 份
+    # 清理旧备份
     import glob
     pattern = os.path.join(REPO_PATH, f"{OUTPUT_FILE}.backup_*")
     backups = sorted(glob.glob(pattern), reverse=True)
-    if len(backups) > BACKUP_KEEP_COUNT:
+
+    # 先按份数清理
+    if BACKUP_KEEP_COUNT > 0 and len(backups) > BACKUP_KEEP_COUNT:
         for old in backups[BACKUP_KEEP_COUNT:]:
             try:
                 os.remove(old)
-                logger.info(f"清理旧备份: {os.path.basename(old)}")
+                logger.info(f"清理旧备份（份数超限）: {os.path.basename(old)}")
             except OSError as e:
                 logger.warning(f"清理旧备份失败 {old}: {e}")
+        # 重新获取列表
+        backups = sorted(glob.glob(pattern), reverse=True)
+
+    # 再按天数清理
+    if BACKUP_KEEP_DAYS > 0:
+        cutoff = datetime.datetime.now() - datetime.timedelta(days=BACKUP_KEEP_DAYS)
+        # 从文件名中解析时间戳：init_data.sql.backup_YYYYMMDD_HHMMSS
+        for bak_file in backups:
+            basename = os.path.basename(bak_file)
+            # 提取时间戳部分
+            ts_match = basename.split(".backup_")[-1]
+            try:
+                bak_time = datetime.datetime.strptime(ts_match, "%Y%m%d_%H%M%S")
+                if bak_time < cutoff:
+                    os.remove(bak_file)
+                    logger.info(f"清理旧备份（天数超限）: {basename}")
+            except ValueError:
+                # 文件名格式不匹配，跳过
+                continue
 
 
 def export_database():
@@ -230,6 +260,9 @@ def export_database():
     full_content = header + sql_content
 
     out_path = os.path.join(REPO_PATH, OUTPUT_FILE)
+
+    # 确保输出目录存在
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
     if DRY_RUN:
         logger.info(f"[DRY-RUN] 跳过写入 {OUTPUT_FILE}（{len(full_content)} 字符）")
@@ -379,21 +412,35 @@ def git_push():
     if not _git_pull_rebase():
         logger.warning("git pull --rebase 失败，仍尝试推送")
 
-    # push，显式指定远端和分支，失败自动重试
+    # push，显式指定远端和分支，失败自动重试（指数退避）
     pr = None
+    delay = PUSH_RETRY_DELAY
     for attempt in range(1, PUSH_MAX_RETRIES + 1):
         pr = _run(["git", "push", GIT_REMOTE, BACKUP_BRANCH])
         if pr.returncode == 0:
             logger.info("成功推送到远程仓库")
             break
 
-        logger.warning(f"第 {attempt} 次 push 失败: {pr.stderr.strip()}")
+        stderr = pr.stderr.strip()
+        logger.warning(f"第 {attempt} 次 push 失败: {stderr}")
+
+        # 诊断常见错误原因
+        if "Permission denied" in stderr or "permission denied" in stderr:
+            logger.error("权限被拒绝：请检查 SSH key 是否配置正确、是否有仓库推送权限")
+        elif "could not read Username" in stderr or "Authentication failed" in stderr:
+            logger.error("认证失败：请检查 Git 凭据配置")
+        elif "repository not found" in stderr:
+            logger.error("仓库不存在：请检查 GIT_REMOTE 配置和远端仓库地址")
+        elif "non-fast-forward" in stderr or "rejected" in stderr:
+            logger.warning("远端有新提交，将在重试前 pull --rebase 同步")
 
         if attempt < PUSH_MAX_RETRIES:
-            logger.info(f"{PUSH_RETRY_DELAY} 秒后重试（{attempt}/{PUSH_MAX_RETRIES}）...")
-            time.sleep(PUSH_RETRY_DELAY)
+            logger.info(f"{delay:.0f} 秒后重试（{attempt}/{PUSH_MAX_RETRIES}）...")
+            time.sleep(delay)
             # 重试前先同步远端
             _git_pull_rebase()
+            # 指数退避
+            delay *= PUSH_BACKOFF_MULT
     else:
         logger.error(f"git push 失败，已重试 {PUSH_MAX_RETRIES} 次")
 
@@ -434,6 +481,44 @@ def _git_pull_rebase(silent_on_no_remote=False):
     return False
 
 
+def _check_git_env():
+    """预检 Git 环境，诊断推送可能失败的原因。"""
+    logger.info("预检 Git 环境...")
+
+    # 检查是否为 Git 仓库
+    r = _run(["git", "rev-parse", "--is-inside-work-tree"])
+    if r.returncode != 0 or r.stdout.strip() != "true":
+        logger.error("当前目录不是 Git 仓库")
+        return False
+
+    # 检查远端是否配置
+    r = _run(["git", "remote", "-v"])
+    if r.returncode != 0 or not r.stdout.strip():
+        logger.error("未配置 Git 远端，请先 git remote add origin <url>")
+        return False
+    logger.info(f"Git 远端: {GIT_REMOTE}")
+
+    # 检查当前分支
+    r = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"])
+    if r.returncode == 0:
+        logger.info(f"当前分支: {r.stdout.strip()}")
+
+    # 尝试 fetch 远端，检查连通性
+    r = _run(["git", "fetch", GIT_REMOTE, "--dry-run"])
+    if r.returncode != 0:
+        stderr = r.stderr.strip()
+        logger.warning(f"无法连接远端 {GIT_REMOTE}: {stderr}")
+        if "Permission denied" in stderr:
+            logger.warning("  → SSH 权限问题：请确认服务器 SSH 公钥已添加到 Git 平台")
+            logger.warning("  → 可执行: ssh -T git@<git-host> 测试连通性")
+        elif "Could not resolve hostname" in stderr:
+            logger.warning("  → DNS 解析失败：请检查服务器网络和 Git 远端地址")
+        return False
+
+    logger.info("Git 环境预检通过")
+    return True
+
+
 def main():
     _setup_logger()
     logger.info("=" * 60)
@@ -454,6 +539,10 @@ def main():
         if r.returncode != 0 or not r.stdout.strip():
             logger.error(f"未找到 {DB_CONTAINER} 容器，请在项目目录（含 docker-compose.yml）下运行")
             return 1
+
+        # 检查 Git 环境（推送前预检）
+        if not NO_PUSH:
+            _check_git_env()
 
         # 1. 备份原文件
         if not DRY_RUN:

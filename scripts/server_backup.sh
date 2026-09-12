@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # --------------------------------------------------------------
 # ICube 服务端数据库转储脚本（crontab 入口）
-# 通过 Docker mysqldump 导出数据库到 init_data.sql 并推送到 Git
+# 通过 Docker mysqldump 导出数据库到 data/init_data.sql 并推送到 Git
 # 手动一键执行
 # python server_db_dump.py
 

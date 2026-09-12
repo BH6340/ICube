@@ -22,7 +22,7 @@ services:
       # 持久化数据库数据，容器重建后仍保留
       - mysql_data:/var/lib/mysql
       # MySQL 首次初始化时自动执行初始化脚本
-      - ./init_data.sql:/docker-entrypoint-initdb.d/02_init_data.sql
+      - ./data/init_data.sql:/docker-entrypoint-initdb.d/02_init_data.sql
     ports:
       # 本地直接连接；服务器远程连接使用 SSH 隧道，不向公网开放 MySQL
       - "127.0.0.1:3306:3306"
