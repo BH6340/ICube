@@ -156,6 +156,8 @@ services:
     environment:
       - TZ=Asia/Shanghai
       - TUNNEL_TRANSPORT_PROTOCOL=http2
+      - TUNNEL_EDGE_IP_VERSION=4
+      - TUNNEL_HA_CONNECTIONS=8
     volumes:
       - ./cloudflared/config.yml:/etc/cloudflared/config.yml:ro
     depends_on:
