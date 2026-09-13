@@ -163,9 +163,9 @@ def _git_env():
     return env
 
 
-def _run(cmd, **kw):
+def _run(cmd, text=True, **kw):
     return subprocess.run(cmd, cwd=REPO_PATH, env=_git_env(),
-                          capture_output=True, text=True, **kw)
+                          capture_output=True, text=text, **kw)
 
 
 def backup_original_file():
@@ -352,12 +352,18 @@ def git_push():
     # 切换到备份分支（main 受保护不能直接 push）
     if not on_backup_branch:
         logger.info(f"切换到备份分支: {BACKUP_BRANCH}")
-        # 保存导出的文件内容（切换分支可能会覆盖已跟踪文件）
+        # 保存导出的文件内容到内存，切分支后写回
         out_path = os.path.join(REPO_PATH, OUTPUT_FILE)
         saved_content = None
         if os.path.isfile(out_path):
             with open(out_path, "r", encoding="utf-8") as f:
                 saved_content = f.read()
+
+        # 丢弃工作区对已跟踪文件的修改，避免 checkout 时因文件差异被拒绝
+        # 内容已保存到内存，切到目标分支后会恢复
+        r = _run(["git", "checkout", "--", OUTPUT_FILE])
+        if r.returncode != 0:
+            logger.warning(f"丢弃工作区修改失败: {r.stderr.strip()}")
 
         if not _ensure_backup_branch():
             logger.error("切换备份分支失败，终止推送")
