@@ -191,6 +191,7 @@
 
 - ci(cicd): 替换路径检测工具并优化条件判断 (#16) (0d57f9d)
 - ci(cicd): 重构CI工作流，拆分Docker构建Job并优化路径检测 (#46) (bfc3d8b)
+- ci(cloudflared): 调整隧道配置并添加时区环境变量  (#55) (07d1753)
 
 
 ## build - 构建
