@@ -163,6 +163,7 @@
 - docs: 更新ICube面试文档 (#34) (9c0125b)
 - docs(env): 添加 Cloudflare Tunnel 配置示例  (#41) (2ca4c3a)
 - fix(cube_api): 修复生产环境Admin登录403与CORS白名单失效问题 (#47) (25f5c14)
+- docs: 自动更新 CHANGELOG (#51) (354c306)
 
 
 ## refactor - 重构
@@ -265,5 +266,6 @@
 - chore(gitignore): 新增git忽略配置 (#36) (b8b9e70)
 - chore(gitignore): 新增git忽略配置 (#37) (71f7dbe)
 - chore(cloudflared): 改用配置文件模式部署隧道 (#42) (d1a0c32)
+- chore(scripts): 优化数据库备份脚本的git checkout逻辑  (#52) (4a8aed5)
 
 
