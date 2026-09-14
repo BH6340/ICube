@@ -272,5 +272,6 @@
 - chore(cloudflared): 为隧道添加http2协议参数  (#54) (bbaeb73)
 - chore(ci): 为cloudflared添加两个环境变量 (#56) (707a037)
 - chore(deploy): 配置DuckDNS HTTPS反向代理服务 (#57) (94215d4)
+- chore(deploy): 优化后端更新逻辑，改为重建镜像而非仅重启 (#60) (659f619)
 
 
