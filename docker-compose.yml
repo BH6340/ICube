@@ -120,6 +120,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "8443:8443"
     volumes:
       # Nginx 站点配置和 HTTPS 证书
       - ./nginx/conf.d:/etc/nginx/conf.d

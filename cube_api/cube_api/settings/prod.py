@@ -67,6 +67,8 @@ CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [f"{scheme}://{host}" for host in _allowed_origins for scheme in ["https", "http"]] + [
     "http://localhost",
     "https://localhost",
+    "https://bh6340.duckdns.org:8443",
+    "http://bh6340.duckdns.org:8443",
 ]
 
 # ==================== 数据库配置 ====================
