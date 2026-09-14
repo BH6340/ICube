@@ -205,6 +205,7 @@
 - build: 打包构建前端项目，更新产物文件 (5ffdaef)
 - build: 重构全栈Docker部署流程，优化镜像构建与运维体验 (5c4aa64)
 - build(scripts): add restart action to dev-local.ps1 (dc7f4d2)
+- build(settings): 新增HTTPS非标准端口配置支持 (#59) (844f54a)
 
 
 ## style - 样式
