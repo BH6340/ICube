@@ -270,5 +270,6 @@
 - chore(scripts): 优化数据库备份脚本的git checkout逻辑  (#52) (4a8aed5)
 - chore(cloudflared): 为隧道添加http2协议参数  (#54) (bbaeb73)
 - chore(ci): 为cloudflared添加两个环境变量 (#56) (707a037)
+- chore(deploy): 配置DuckDNS HTTPS反向代理服务 (#57) (94215d4)
 
 
