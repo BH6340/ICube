@@ -18,6 +18,7 @@
 
 from rest_framework import serializers
 
+from cube_api.utils.image_url import build_image_url
 from .models import Address, Cart, Order, OrderItem, Product, ProductCategory
 
 
@@ -56,6 +57,8 @@ class ProductListSerializer(serializers.ModelSerializer):
     """
 
     category_name = serializers.CharField(source="category.name", read_only=True)
+    thumbnail = serializers.SerializerMethodField()
+    images = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -75,6 +78,12 @@ class ProductListSerializer(serializers.ModelSerializer):
             "created_at",
         ]
 
+    def get_thumbnail(self, obj):
+        return build_image_url(obj.thumbnail)
+
+    def get_images(self, obj):
+        return [build_image_url(img) for img in (obj.images or [])]
+
 
 class ProductDetailSerializer(serializers.ModelSerializer):
     """
@@ -88,6 +97,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     """
 
     category_name = serializers.CharField(source="category.name", read_only=True)
+    thumbnail = serializers.SerializerMethodField()
+    images = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -108,6 +119,12 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
+
+    def get_thumbnail(self, obj):
+        return build_image_url(obj.thumbnail)
+
+    def get_images(self, obj):
+        return [build_image_url(img) for img in (obj.images or [])]
 
 
 class CartSerializer(serializers.ModelSerializer):
@@ -134,7 +151,7 @@ class CartSerializer(serializers.ModelSerializer):
             "id": product.id,
             "name": product.name,
             "price": str(product.price),
-            "thumbnail": product.thumbnail.url if product.thumbnail else None,
+            "thumbnail": build_image_url(product.thumbnail) if product.thumbnail else None,
             "stock": product.stock,
             "specs": product.specs,
         }
@@ -186,9 +203,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     def get_product_image(self, obj):
         """获取商品缩略图 URL"""
-        if obj.product.thumbnail:
-            return obj.product.thumbnail.url
-        return None
+        return build_image_url(obj.product.thumbnail) if obj.product.thumbnail else None
 
 
 class OrderSerializer(serializers.ModelSerializer):

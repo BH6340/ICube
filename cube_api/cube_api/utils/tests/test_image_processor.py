@@ -258,10 +258,14 @@ class BuildImageUrlTest(TestCase):
         self.assertEqual(result, "/media/avatars/test.png")
 
     def test_build_url_with_absolute_url(self):
-        """测试已有完整 URL"""
-        absolute_url = "http://example.com/image.png"
-        result = build_image_url(absolute_url)
-        self.assertEqual(result, absolute_url)
+        """测试已有完整 URL，应提取路径部分转为相对路径"""
+        result = build_image_url("http://example.com/media/image.png")
+        self.assertEqual(result, "/media/image.png")
+
+    def test_build_url_with_https_absolute_url(self):
+        """测试 HTTPS 完整 URL，应提取路径部分转为相对路径"""
+        result = build_image_url("https://bh6340.duckdns.org/media/banners/banner1.png")
+        self.assertEqual(result, "/media/banners/banner1.png")
 
     def test_build_url_with_field_file(self):
         """测试 FieldFile 对象"""

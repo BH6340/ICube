@@ -85,9 +85,13 @@ def build_image_url(relative_path, absolute=False):
             except (ValueError, TypeError, AttributeError):
                 return ""
 
-    # 如果已经是完整的绝对URL，直接返回，无需处理
+    # 如果是完整的绝对URL，提取路径部分转为相对路径
+    # 避免 DB 中存储的绝对路径（如 http://bh6340.duckdns.org/media/xxx.png）
+    # 在非标准端口场景下缺少端口导致图片加载失败
     if relative_path.startswith("http://") or relative_path.startswith("https://"):
-        return relative_path
+        from urllib.parse import urlparse
+
+        relative_path = urlparse(relative_path).path
 
     # 确保路径以 / 开头，便于后续拼接
     if not relative_path.startswith("/"):
