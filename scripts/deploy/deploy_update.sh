@@ -432,13 +432,14 @@ fi
 docker compose exec -T api python manage.py collectstatic --noinput 2>&1 | tail -1
 pass "静态文件收集完成"
 
-# --- 后端重启 ---
+# --- 后端重建 ---
 if [ "$CHANGE_BACK" -gt 0 ] || [ "$CHANGE_MIGR" -gt 0 ] || [ "$CHANGE_COMPOSE" -gt 0 ]; then
-    warn "检测到后端/migration/compose 变更，重启 api 容器"
-    docker compose restart api
-    pass "api 容器已重启"
+    warn "检测到后端/migration/compose 变更，重建 api 镜像并重启容器"
+    docker compose build --pull api
+    docker compose up -d --force-recreate api
+    pass "api 镜像已重建并重启"
 else
-    info "无后端核心变更，跳过 api restart"
+    info "无后端核心变更，跳过 api rebuild"
 fi
 
 # ============================== [6/6] 健康检查 + 自动回滚 ==============================
