@@ -64,11 +64,14 @@ CORS_ALLOW_CREDENTIALS = True
 # ==================== CSRF 配置 ====================
 
 # Django 4.0+ 要求 HTTPS 请求显式声明信任来源，否则 CSRF 验证失败
-CSRF_TRUSTED_ORIGINS = [f"{scheme}://{host}" for host in _allowed_origins for scheme in ["https", "http"]] + [
+# 非标准端口（如 8443）时，浏览器的 Origin 头包含端口，需在信任来源中带上端口
+# 通过 HTTPS_PORT 环境变量配置，不填则不追加带端口的来源
+_https_port = os.getenv("HTTPS_PORT", "").strip()
+_csrf_base = [f"{scheme}://{host}" for host in _allowed_origins for scheme in ["https", "http"]]
+_csrf_with_port = [f"{scheme}://{host}:{_https_port}" for host in _allowed_origins for scheme in ["https", "http"]] if _https_port else []
+CSRF_TRUSTED_ORIGINS = _csrf_base + _csrf_with_port + [
     "http://localhost",
     "https://localhost",
-    "https://bh6340.duckdns.org:8443",
-    "http://bh6340.duckdns.org:8443",
 ]
 
 # ==================== 数据库配置 ====================
