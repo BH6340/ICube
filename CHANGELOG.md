@@ -70,6 +70,7 @@
 - feat(ci): pytest替代manage.py test并新增覆盖率报告和部署日志持久化 (#8) (b350693)
 - feat(shop): 完成支付宝集成安全优化与配置化改造 (#21) (3665e16)
 - feat(smart-cube): 新增智能魔方计时器功能 (#39) (4a4d884)
+- feat(cube-app): 全量更新APP功能与资源，新增用户社交与智能魔方支持  &  ci(github-actions): 为安卓构建步骤添加gradlew可执行权限  (#62) (3117735)
 
 
 ## fix - 修复

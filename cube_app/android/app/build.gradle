@@ -26,7 +26,11 @@ android {
         release {
             def storeFilePath = System.getenv("KEYSTORE_FILE") ?: keystoreProperties.getProperty('storeFile', '')
             if (storeFilePath) {
-                storeFile file(storeFilePath)
+                def storeFileObj = new File(storeFilePath)
+                if (!storeFileObj.isAbsolute()) {
+                    storeFileObj = rootProject.file(storeFilePath)
+                }
+                storeFile storeFileObj
                 storePassword System.getenv("KEYSTORE_PASSWORD") ?: keystoreProperties.getProperty('storePassword', '')
                 keyAlias System.getenv("KEY_ALIAS") ?: keystoreProperties.getProperty('keyAlias', '')
                 keyPassword System.getenv("KEY_PASSWORD") ?: keystoreProperties.getProperty('keyPassword', '')
