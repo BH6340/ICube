@@ -80,6 +80,18 @@ const routes = [
     meta: { title: '我的' },
   },
   {
+    path: '/users',
+    name: 'UserSearch',
+    component: () => import('@/views/UserSearchView.vue'),
+    meta: { title: '魔友搜索', noTabbar: true },
+  },
+  {
+    path: '/users/:username',
+    name: 'UserProfile',
+    component: () => import('@/views/UserProfileView.vue'),
+    meta: { title: '用户主页', noTabbar: true },
+  },
+  {
     path: '/timer-records',
     redirect: '/timer?tab=records',
   },
