@@ -4,7 +4,34 @@
   <!-- :ellipsis="false" 禁止菜单项省略，确保所有菜单项都显示 -->
   <!-- :default-active 绑定当前激活的菜单索引，@select 监听菜单点击事件 -->
   <div class="header-wrapper">
-    <el-menu mode="horizontal" :ellipsis="false" class="nav-menu" :default-active="activeMenuIndex"
+    <!-- 移动端独立 header bar（脱离 el-menu，确保标题正确显示） -->
+    <div class="mobile-header-bar">
+      <div class="mobile-left" @click="$router.push('/')">
+        <img src="@/assets/cube.svg" alt="ICube Logo" class="logo-img"/>
+        <span class="site-name">ICube</span>
+      </div>
+      <div class="mobile-title">{{ route.meta.title || 'ICube' }}</div>
+      <div class="mobile-right">
+        <div class="cart-section" v-if="userStore.token" @click="goToCart">
+          <el-badge :value="cartCount" :max="99" :hidden="cartCount <= 0" class="cart-badge">
+            <el-icon size="22" color="#409EFF">
+              <ShoppingCart />
+            </el-icon>
+          </el-badge>
+        </div>
+        <template v-if="!userStore.token">
+          <el-icon size="22" color="#409EFF" class="mobile-user-icon" @click="mobileMenuVisible = true">
+            <User />
+          </el-icon>
+        </template>
+        <template v-else>
+          <el-avatar :size="28" :src="userStore.image || defaultAvatar" class="avatar-hover" @click="mobileMenuVisible = true"/>
+        </template>
+      </div>
+    </div>
+
+    <!-- 桌面端 el-menu -->
+    <el-menu mode="horizontal" :ellipsis="false" class="nav-menu desktop-menu" :default-active="activeMenuIndex"
              @select="handleMenuSelect">
       <!-- Logo 区域 -->
       <el-menu-item index="logo" class="logo-section">
@@ -20,17 +47,9 @@
       <!-- 占位符，将右侧元素推到最右边 -->
       <div class="flex-grow"/>
 
-      <!-- 移动端：汉堡菜单按钮 -->
-      <div class="mobile-hamburger" @click.stop="mobileMenuVisible = true">
-        <el-icon size="24" color="#409EFF">
-          <Menu />
-        </el-icon>
-      </div>
-
       <!-- 购物车图标（仅登录用户显示） -->
-      <!-- 使用 el-badge 显示购物车数量，最多显示99 -->
       <div class="cart-section" v-if="userStore.token" @click="goToCart">
-        <el-badge :value="cartCount" :max="99" class="cart-badge">
+        <el-badge :value="cartCount" :max="99" :hidden="cartCount <= 0" class="cart-badge">
           <el-icon size="24" color="#409EFF">
             <ShoppingCart />
           </el-icon>
@@ -38,7 +57,6 @@
       </div>
 
       <!-- 用户认证区域 -->
-      <!-- 根据登录状态显示不同内容：未登录显示登录/注册按钮，已登录显示用户下拉菜单 -->
       <div class="auth-section">
         <template v-if="!userStore.token">
           <el-button text @click="$router.push('/login')" class="desktop-only">登录</el-button>
@@ -48,7 +66,6 @@
           </el-icon>
         </template>
         <template v-else>
-          <!-- 用户信息下拉菜单 -->
           <el-dropdown @command="handleDropdownCommand" trigger="click" class="desktop-only">
             <div class="user-info">
               <el-avatar :size="32" :src="userStore.image || defaultAvatar" class="avatar-hover"/>
@@ -159,7 +176,7 @@ import {useMenuStore} from '@/stores/menu'      // 菜单状态管理
 import {useCartRefresh} from '@/stores/cart'    // 购物车刷新状态
 import {useRouter, useRoute} from 'vue-router'  // 路由实例
 import {ElMessage} from 'element-plus'          // 消息提示
-import {ArrowDown, ShoppingCart, Menu, User, ArrowRight, SwitchButton} from '@element-plus/icons-vue'
+import {ArrowDown, ShoppingCart, User, ArrowRight, SwitchButton} from '@element-plus/icons-vue'
 import defaultAvatar from '@/assets/default_avatar.svg'
 import {logoutApi} from "@/api/user.js"         // 退出登录 API
 import {getCart} from "@/api/shop.js"           // 获取购物车 API
@@ -391,6 +408,10 @@ const handleMobileLogout = async () => {
   position: relative;
 }
 
+.mobile-header-bar {
+  display: none;
+}
+
 .nav-menu {
   align-items: center;
   padding: 0 20px;
@@ -423,24 +444,23 @@ const handleMobileLogout = async () => {
   flex-grow: 1;
 }
 
-.mobile-hamburger {
+.mobile-page-title {
   display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 0 8px;
-  cursor: pointer;
-  height: 60px;
 }
 
 .cart-section {
   display: flex;
   align-items: center;
+  justify-content: center;
   padding: 0 15px;
   cursor: pointer;
+  height: 100%;
 }
 
 .cart-badge {
   cursor: pointer;
+  display: flex;
+  align-items: center;
 }
 
 .el-menu-item {
@@ -583,68 +603,72 @@ const handleMobileLogout = async () => {
 }
 
 @media (max-width: 768px) {
-  .nav-menu {
-    box-sizing: border-box;
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    padding-inline: 8px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    flex-wrap: nowrap;
-    scrollbar-width: none;
+  .header-wrapper {
     height: 52px;
   }
 
-  .nav-menu::-webkit-scrollbar {
-    display: none;
+  /* 移动端显示独立 header bar */
+  .mobile-header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 52px;
+    padding: 0 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    background: #fff;
   }
 
-  .logo-section {
-    margin-right: 4px;
-    height: 52px !important;
+  .mobile-left {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    cursor: pointer;
   }
 
-  .logo-img {
+  .mobile-left .logo-img {
     width: 28px;
     height: 28px;
     margin-right: 6px;
   }
 
-  .site-name {
+  .mobile-left .site-name {
     font-size: 18px;
+    font-weight: 600;
+    color: #303133;
   }
 
-  .desktop-menu-item {
-    display: none !important;
+  .mobile-title {
+    flex: 1;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 600;
+    color: #303133;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    padding: 0 8px;
   }
 
-  .mobile-hamburger {
-    display: flex;
-    order: 2;
-    height: 52px;
-  }
-
-  .cart-section,
-  .auth-section {
-    flex-shrink: 0;
-    padding-inline: 8px;
-  }
-
-  .desktop-only {
-    display: none !important;
-  }
-
-  .mobile-only {
+  .mobile-right {
     display: flex;
     align-items: center;
-    cursor: pointer;
+    flex-shrink: 0;
+    gap: 12px;
   }
 
-  .el-menu-item {
-    font-size: 14px !important;
-    height: 52px !important;
-    line-height: 52px !important;
+  .mobile-right .cart-section {
+    padding: 0;
+  }
+
+  .mobile-user-icon {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+  }
+
+  /* 移动端隐藏桌面端 el-menu */
+  .desktop-menu {
+    display: none !important;
   }
 
   .drawer-header {

@@ -1,7 +1,6 @@
 <template>
   <div class="my-posts-container">
     <div class="page-header">
-      <h1>我的帖子</h1>
       <el-button type="primary" @click="goToCreate">
         <el-icon><Edit /></el-icon>
         发布新帖
@@ -18,8 +17,10 @@
       >
         <div class="post-header">
           <div class="post-title">
-            <span v-if="post.is_pinned" class="pin-badge">置顶</span>
-            <span v-if="post.is_essence" class="essence-badge">精华</span>
+            <div class="badges">
+              <span v-if="post.is_pinned" class="pin-badge">置顶</span>
+              <span v-if="post.is_essence" class="essence-badge">精华</span>
+            </div>
             <h3>{{ post.title }}</h3>
           </div>
         </div>
@@ -37,11 +38,19 @@
           </el-tag>
         </div>
 
+        <div class="post-content-preview" v-if="post.content_preview">
+          {{ post.content_preview }}
+        </div>
+
         <div class="post-stats">
           <span><el-icon><View /></el-icon> {{ post.view_count }}</span>
           <span><el-icon><Star /></el-icon> {{ post.like_count }}</span>
           <span><el-icon><ChatLineRound /></el-icon> {{ post.comment_count }}</span>
           <span class="time">{{ formatTime(post.created_at) }}</span>
+        </div>
+
+        <div class="post-comment-link" v-if="post.comment_count > 0" @click.stop="goToDetail(post.id)">
+          查看 {{ post.comment_count }} 条评论
         </div>
       </el-card>
 
@@ -157,15 +166,9 @@ onMounted(() => {
 
 .page-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   margin-bottom: 20px;
-}
-
-.page-header h1 {
-  margin: 0;
-  font-size: 24px;
-  color: #303133;
 }
 
 .posts-list {
@@ -192,13 +195,25 @@ onMounted(() => {
 .post-title {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+}
+
+.post-title .badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .post-title h3 {
   margin: 0;
   font-size: 18px;
   color: #303133;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pin-badge {
@@ -207,6 +222,8 @@ onMounted(() => {
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .essence-badge {
@@ -215,6 +232,8 @@ onMounted(() => {
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .post-tags {
@@ -241,6 +260,33 @@ onMounted(() => {
   margin-left: auto;
 }
 
+.post-content-preview {
+  color: #909399;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 8px 0 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.post-comment-link {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background-color: #f5f7fa;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #909399;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.post-comment-link:hover {
+  color: #409eff;
+}
+
 .pagination {
   margin-top: 20px;
   display: flex;
@@ -254,14 +300,8 @@ onMounted(() => {
   }
 
   .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-
-  .page-header h1 {
-    font-size: 20px;
+    margin-bottom: 12px;
+    padding-top: 2px;
   }
 
   .post-card {
@@ -281,6 +321,16 @@ onMounted(() => {
   .post-stats .time {
     margin-left: 0;
     width: 100%;
+  }
+
+  .post-content-preview {
+    font-size: 13px;
+    margin: 6px 0 10px;
+  }
+
+  .post-comment-link {
+    font-size: 12px;
+    padding: 5px 8px;
   }
 
   .pagination :deep(.el-pagination) {

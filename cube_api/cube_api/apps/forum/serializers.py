@@ -110,12 +110,14 @@ class PostListSerializer(serializers.ModelSerializer):
     author = ProfileListSerializer(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     images = serializers.SerializerMethodField()
+    content_preview = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
         fields = (
             "id",
             "title",
+            "content_preview",
             "author",
             "view_count",
             "like_count",
@@ -140,6 +142,56 @@ class PostListSerializer(serializers.ModelSerializer):
         """
         images = obj.images.all()[:4]
         return PostImageSerializer(images, many=True, context=self.context).data
+
+    @extend_schema_field(serializers.CharField)
+    def get_content_preview(self, obj):
+        """
+        获取帖子内容预览（纯文本，前100字）
+
+        从 Markdown 内容中提取纯文本，去掉 markdown 标记、图片链接等，
+        截取前 100 字用于列表页预览展示。
+
+        Args:
+            obj: Post 对象
+
+        Returns:
+            纯文本预览字符串，空内容返回空字符串
+        """
+        import re
+
+        content = obj.content or ""
+        if not content.strip():
+            return ""
+
+        # 去掉 Markdown 图片语法 ![alt](url)
+        text = re.sub(r"!\[.*?\]\(.*?\)", "", content)
+        # 去掉 Markdown 链接语法 [text](url) → 保留 text
+        text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)
+        # 去掉标题标记 #
+        text = re.sub(r"^#{1,6}\s*", "", text, flags=re.MULTILINE)
+        # 去掉粗体/斜体标记 ** __ * _
+        text = re.sub(r"\*\*([^*]+)\*\*", r"\1", text)
+        text = re.sub(r"__([^_]+)__", r"\1", text)
+        text = re.sub(r"\*([^*]+)\*", r"\1", text)
+        text = re.sub(r"_([^_]+)_", r"\1", text)
+        # 去掉行内代码 `code`
+        text = re.sub(r"`([^`]+)`", r"\1", text)
+        # 去掉代码块 ```...```
+        text = re.sub(r"```[\s\S]*?```", "", text)
+        # 去掉引用标记 >
+        text = re.sub(r"^>\s*", "", text, flags=re.MULTILINE)
+        # 去掉无序列表标记 - * +
+        text = re.sub(r"^[-*+]\s+", "", text, flags=re.MULTILINE)
+        # 去掉有序列表标记 1. 2.
+        text = re.sub(r"^\d+\.\s+", "", text, flags=re.MULTILINE)
+        # 去掉水平线 --- ***
+        text = re.sub(r"^[-*_]{3,}\s*$", "", text, flags=re.MULTILINE)
+        # 合并多余空白
+        text = re.sub(r"\s+", " ", text).strip()
+
+        if len(text) > 100:
+            return text[:100] + "..."
+        return text
 
 
 class PostSerializer(serializers.ModelSerializer):

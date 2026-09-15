@@ -54,52 +54,62 @@ const router = createRouter({
                 {
                     path: '',
                     name: 'home',
-                    component: () => import('@/components/Main.vue')
+                    component: () => import('@/components/Main.vue'),
+                    meta: { title: '首页' }
                 },
                 {
                     path: 'tutorials',
                     name: 'tutorials',
-                    component: () => import('@/views/TutorialView.vue')
+                    component: () => import('@/views/TutorialView.vue'),
+                    meta: { title: '教程' }
                 },
                 {
                     path: 'tutorial/beginner',
                     name: 'beginnerTutorial',
-                    component: () => import('@/views/tutorial/BeginnerTutorial.vue')
+                    component: () => import('@/views/tutorial/BeginnerTutorial.vue'),
+                    meta: { title: '新手教程' }
                 },
                 {
                     path: 'tutorial/cfop',
                     name: 'cfopTutorial',
-                    component: () => import('@/views/tutorial/CFOPTutorial.vue')
+                    component: () => import('@/views/tutorial/CFOPTutorial.vue'),
+                    meta: { title: 'CFOP 教程' }
                 },
                 {
                     path: 'tutorial/oll-essentials',
                     name: 'ollEssentials',
-                    component: () => import('@/views/tutorial/OLLEssentials.vue')
+                    component: () => import('@/views/tutorial/OLLEssentials.vue'),
+                    meta: { title: 'OLL 精华' }
                 },
                 {
                     path: 'tutorial/pll-essentials',
                     name: 'pllEssentials',
-                    component: () => import('@/views/tutorial/PLLEssentials.vue')
+                    component: () => import('@/views/tutorial/PLLEssentials.vue'),
+                    meta: { title: 'PLL 精华' }
                 },
                 {
                     path: 'tutorial/complete-oll',
                     name: 'completeOLL',
-                    component: () => import('@/views/tutorial/CompleteOLL.vue')
+                    component: () => import('@/views/tutorial/CompleteOLL.vue'),
+                    meta: { title: '完整 OLL' }
                 },
                 {
                     path: 'tutorial/complete-pll',
                     name: 'completePLL',
-                    component: () => import('@/views/tutorial/CompletePLL.vue')
+                    component: () => import('@/views/tutorial/CompletePLL.vue'),
+                    meta: { title: '完整 PLL' }
                 },
                 {
                     path: 'formulas',
                     name: 'formulas',
-                    component: () => import('@/views/FormulaView.vue')
+                    component: () => import('@/views/FormulaView.vue'),
+                    meta: { title: '公式库' }
                 },
                 {
                     path: 'timer',
                     name: 'timer',
-                    component: () => import('@/views/TimerView.vue')
+                    component: () => import('@/views/TimerView.vue'),
+                    meta: { title: '计时器' }
                 },
                 {
                     path: 'smart-cube',
@@ -108,115 +118,124 @@ const router = createRouter({
                 {
                     path: 'forum',
                     name: 'forum',
-                    component: () => import('@/views/forum/ForumView.vue')
+                    component: () => import('@/views/forum/ForumView.vue'),
+                    meta: { title: '论坛' }
                 },
                 {
                     path: 'forum/post/:id',
                     name: 'postDetail',
-                    component: () => import('@/views/forum/PostDetailView.vue')
+                    component: () => import('@/views/forum/PostDetailView.vue'),
+                    meta: { title: '帖子详情' }
                 },
                 {
                     path: 'forum/create',
                     name: 'createPost',
                     component: () => import('@/views/forum/PostEditorView.vue'),
-                    meta: { requiresAuth: true }
+                    meta: { requiresAuth: true, title: '发布帖子' }
                 },
                 {
                     path: 'forum/edit/:id',
                     name: 'editPost',
                     component: () => import('@/views/forum/PostEditorView.vue'),
-                    meta: { requiresAuth: true }
+                    meta: { requiresAuth: true, title: '编辑帖子' }
                 },
                 {
                     path: 'users',
                     name: 'userSearch',
-                    component: () => import('@/views/users/UserSearchView.vue')
+                    component: () => import('@/views/users/UserSearchView.vue'),
+                    meta: { title: '用户搜索' }
                 },
                 {
                     path: 'users/:username',
                     name: 'userProfile',
-                    component: () => import('@/views/users/UserProfileView.vue')
+                    component: () => import('@/views/users/UserProfileView.vue'),
+                    meta: { title: '用户主页' }
                 },
                 {
                     path: 'shop',
                     name: 'shop',
-                    component: () => import('@/views/ShopView.vue')
+                    component: () => import('@/views/ShopView.vue'),
+                    meta: { title: '商城' }
                 },
                 {
                     path: 'shop/cart',
                     name: 'shopCart',
                     component: () => import('@/views/CartView.vue'),
-                    meta: { requiresAuth: true }
+                    meta: { requiresAuth: true, title: '购物车' }
                 },
                 {
                     path: 'shop/checkout',
                     name: 'shopCheckout',
                     component: () => import('@/views/CheckoutView.vue'),
-                    meta: { requiresAuth: true }
+                    meta: { requiresAuth: true, title: '结算' }
                 },
                 {
                     path: 'shop/pay/callback',
                     name: 'shopPayCallback',
-                    component: () => import('@/views/PayCallbackView.vue')
+                    component: () => import('@/views/PayCallbackView.vue'),
+                    meta: { title: '支付结果' }
                 },
                 {
                     path: 'shop/pay/:orderNo',
                     name: 'shopPay',
                     component: () => import('@/views/PayView.vue'),
-                    meta: { requiresAuth: true }
+                    meta: { requiresAuth: true, title: '支付' }
                 },
                 {
                     path: 'profiles/info',
                     name: 'profileInfo',
                     component: () => import('@/views/profiles/InfoView.vue'),
-                    meta: { requiresAuth: true }
+                    meta: { requiresAuth: true, title: '个人信息' }
                 },
                 {
                     path: 'profiles/collections',
                     name: 'profileCollections',
                     component: () => import('@/views/profiles/CollectionView.vue'),
-                    meta: { requiresAuth: true }
+                    meta: { requiresAuth: true, title: '我的收藏' }
                 },
                 {
                     path: 'profiles/orders',
                     name: 'profileOrders',
                     component: () => import('@/views/profiles/OrderView.vue'),
-                    meta: { requiresAuth: true }
+                    meta: { requiresAuth: true, title: '我的订单' }
                 },
                 {
                     path: 'profiles/posts',
                     name: 'profilePosts',
                     component: () => import('@/views/profiles/MyPostsView.vue'),
-                    meta: { requiresAuth: true }
+                    meta: { requiresAuth: true, title: '我的帖子' }
                 },
                 {
                     path: 'profiles/data',
                     name: 'profileData',
                     component: () => import('@/views/profiles/MyDataView.vue'),
-                    meta: { requiresAuth: true }
+                    meta: { requiresAuth: true, title: '数据统计' }
                 },
                 {
                     path: 'profiles/addresses',
                     name: 'profileAddresses',
                     component: () => import('@/views/profiles/AddressView.vue'),
-                    meta: { requiresAuth: true }
+                    meta: { requiresAuth: true, title: '收货地址' }
                 }
             ]
         },
         {
             path: '/login',
             name: 'login',
-            component: () => import('@/views/LoginView.vue')
+            component: () => import('@/views/LoginView.vue'),
+            meta: { title: '登录' }
         },
         {
             path: '/register',
             name: 'register',
-            component: () => import('@/views/RegisterView.vue')
+            component: () => import('@/views/RegisterView.vue'),
+            meta: { title: '注册' }
         },
         {
             path: '/forgot-password',
             name: 'forgot-password',
-            component: () => import('@/views/ForgotPasswordView.vue')
+            component: () => import('@/views/ForgotPasswordView.vue'),
+            meta: { title: '忘记密码' }
         }
     ]
 })
