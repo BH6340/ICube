@@ -208,6 +208,7 @@
 - build: 重构全栈Docker部署流程，优化镜像构建与运维体验 (5c4aa64)
 - build(scripts): add restart action to dev-local.ps1 (dc7f4d2)
 - build(settings): 新增HTTPS非标准端口配置支持 (#59) (844f54a)
+- build(ci/deploy): 修复生产环境域名与下载链接问题，更新APP版本 (#63) (c478a72)
 
 
 ## style - 样式
