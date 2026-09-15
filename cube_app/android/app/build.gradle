@@ -1,5 +1,11 @@
 apply plugin: 'com.android.application'
 
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.icube.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,8 +22,20 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            def storeFilePath = System.getenv("KEYSTORE_FILE") ?: keystoreProperties.getProperty('storeFile', '')
+            if (storeFilePath) {
+                storeFile file(storeFilePath)
+                storePassword System.getenv("KEYSTORE_PASSWORD") ?: keystoreProperties.getProperty('storePassword', '')
+                keyAlias System.getenv("KEY_ALIAS") ?: keystoreProperties.getProperty('keyAlias', '')
+                keyPassword System.getenv("KEY_PASSWORD") ?: keystoreProperties.getProperty('keyPassword', '')
+            }
+        }
+    }
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

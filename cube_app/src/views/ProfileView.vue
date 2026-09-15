@@ -15,6 +15,7 @@ import { getProfileApi, updateProfileApi, logoutApi } from '@/api/user'
 import { getLatestVersion } from '@/api/home'
 import { buildMediaUrl } from '@/utils/media-url'
 import { version as appVersion } from '../../package.json'
+import { Browser } from '@capacitor/browser'
 import ImageCropper from '@/components/ImageCropper.vue'
 import { cropAndCompress } from '@/utils/image-compress'
 import { getDownloadCount } from '@/utils/formula-download'
@@ -262,9 +263,16 @@ async function checkUpdate() {
   }
 }
 
-function downloadApk() {
-  if (updateInfo.value?.download_url) {
-    window.open(updateInfo.value.download_url, '_system')
+async function downloadApk() {
+  const url = updateInfo.value?.download_url
+  if (!url) {
+    showToast('下载地址不可用')
+    return
+  }
+  try {
+    await Browser.open({ url, windowName: '_self' })
+  } catch {
+    showToast('打开浏览器失败，请稍后重试')
   }
 }
 
@@ -345,6 +353,7 @@ async function onRefresh() {
           <van-cell title="公式收藏" icon="star-o" is-link @click="goToCollected" />
           <van-cell title="公式下载" icon="down" is-link @click="goToDownloads" />
           <van-cell title="个人数据" icon="chart-trending-o" is-link @click="goToTimerRecords" />
+          <van-cell title="搜索魔友" icon="search" is-link @click="router.push({ name: 'UserSearch' })" />
           <van-cell title="编辑资料" icon="edit" is-link @click="openEdit" />
           <van-cell title="检查更新" icon="upgrade" is-link @click="checkUpdate" :value="`v${appVersion}`" />
           <van-cell title="退出登录" icon="cross" is-link @click="confirmLogout" class="logout-cell" />
@@ -439,9 +448,10 @@ async function onRefresh() {
     <van-dialog
       v-model:show="updateShow"
       title="发现新版本"
-      show-cancel-button
-      confirm-button-text="下载"
+      :show-cancel-button="!updateInfo?.force_update"
+      confirm-button-text="前往下载"
       cancel-button-text="稍后"
+      :close-on-click-overlay="false"
       @confirm="downloadApk"
     >
       <div class="update-content">

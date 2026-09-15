@@ -40,6 +40,9 @@ ALLOWED_HOSTS = [h.strip() for h in os.getenv("ALLOWED_HOSTS", "").split(",") if
     "api",
 ]
 
+# Nginx 终止 SSL 后通过 HTTP 转发给 Django，需信任 X-Forwarded-Proto 头判断真实协议
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 # ==================== CORS 配置 ====================
 
 # ALLOWED_ORIGIN 使用逗号分隔的主机名（不含协议），与 ALLOWED_HOSTS 格式一致

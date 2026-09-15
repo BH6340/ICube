@@ -185,6 +185,7 @@
 - refactor(scripts): 重构数据库备份脚本，新增多项特性与稳定性改进 (#38) (5ce8b81)
 - refactor(3d-cube): 优化配色与渲染细节  &  feat(timer): 新增智能魔方功能模块 (#44) (c6731e2)
 - refactor: 迁移备份文件到data目录并优化备份推送流程 (#45) (5b69533)
+- refactor(frontend): 重构多个页面布局与功能，新增帖子预览功能 (#61) (8532554)
 
 
 ## ci - CI/CD

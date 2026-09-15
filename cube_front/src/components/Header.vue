@@ -138,6 +138,10 @@
             <span>购物车</span>
             <el-badge v-if="cartCount > 0" :value="cartCount" :max="99" class="drawer-badge" />
           </div>
+          <div class="drawer-footer-item" @click="appDownloadVisible = true">
+            <el-icon><Download /></el-icon>
+            <span>下载 APP</span>
+          </div>
           <div v-if="userStore.token" class="drawer-footer-item" @click="handleMobileLogout">
             <el-icon><SwitchButton /></el-icon>
             <span>退出登录</span>
@@ -149,6 +153,9 @@
         </div>
       </div>
     </el-drawer>
+
+    <!-- APP 下载弹窗 -->
+    <AppDownloadDialog v-model="appDownloadVisible" />
   </div>
 </template>
 
@@ -176,8 +183,9 @@ import {useMenuStore} from '@/stores/menu'      // 菜单状态管理
 import {useCartRefresh} from '@/stores/cart'    // 购物车刷新状态
 import {useRouter, useRoute} from 'vue-router'  // 路由实例
 import {ElMessage} from 'element-plus'          // 消息提示
-import {ArrowDown, ShoppingCart, User, ArrowRight, SwitchButton} from '@element-plus/icons-vue'
+import {ArrowDown, ShoppingCart, User, ArrowRight, SwitchButton, Download} from '@element-plus/icons-vue'
 import defaultAvatar from '@/assets/default_avatar.svg'
+import AppDownloadDialog from '@/components/AppDownloadDialog.vue'
 import {logoutApi} from "@/api/user.js"         // 退出登录 API
 import {getCart} from "@/api/shop.js"           // 获取购物车 API
 
@@ -193,6 +201,7 @@ const activeMenuIndex = ref('')       // 当前激活的菜单索引
 const currentMenuItems = ref([])      // 当前显示的菜单项列表
 const cartCount = ref(0)              // 购物车商品数量
 const mobileMenuVisible = ref(false)  // 移动端抽屉菜单显示状态
+const appDownloadVisible = ref(false)  // APP 下载弹窗显示状态
 
 /**
  * 深度路径前缀匹配函数

@@ -33,3 +33,17 @@ export function getBannersApi() {
     method: 'get'
   })
 }
+
+/**
+ * 获取 APP 最新版本信息
+ *
+ * 返回版本号、下载地址、更新说明等，用于前端展示 APP 下载入口。
+ *
+ * @returns {Promise<Object>} 返回统一封装的响应体 { code: 100, msg: "...", data: { version, download_url, ... } }
+ */
+export function getAppVersionApi() {
+  return request({
+    url: '/api/home/app/version/',
+    method: 'get'
+  })
+}

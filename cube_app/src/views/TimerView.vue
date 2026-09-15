@@ -31,6 +31,10 @@
           <span class="stat-value">{{ ao5 !== null ? formatTime(ao5) + 's' : '--' }}</span>
           <span class="stat-label">Ao5</span>
         </div>
+        <div class="stat-item">
+          <span class="stat-value">{{ ao12 !== null ? formatTime(ao12) + 's' : '--' }}</span>
+          <span class="stat-label">Ao12</span>
+        </div>
       </div>
 
       <!-- 本地历史记录 -->
@@ -88,10 +92,15 @@
         >
             <van-swipe-cell v-for="(record, index) in recordList" :key="record.id">
               <div class="record-item" @click="showDetail(record)">
-                <span class="record-time">{{ formatTime(record.time_ms) }}</span>
+                <span class="record-time" :class="{ 'dnf-time': record.is_dnf }">
+                  {{ record.is_dnf ? 'DNF' : formatTime(record.time_ms) }}
+                </span>
                 <div class="record-meta">
                   <van-tag type="primary" size="mini">{{ record.cube_type }}</van-tag>
+                  <van-tag v-if="record.timing_mode === 'smart'" type="success" size="mini">智能</van-tag>
+                  <van-tag v-else plain size="mini">手动</van-tag>
                   <span class="record-method">{{ methodLabel(record.method) }}</span>
+                  <span v-if="record.move_count" class="record-moves">{{ record.move_count }}步</span>
                   <span class="record-date">{{ formatDateTime(record.created_at) }}</span>
                 </div>
                 <van-icon name="arrow" size="12" color="#c8c9cc" />
@@ -116,14 +125,26 @@
     >
       <div v-if="detailRecord" class="detail-card">
         <div class="detail-header">
-          <span class="detail-time">{{ formatTime(detailRecord.time_ms) }}</span>
+          <span class="detail-time" :class="{ 'dnf-time': detailRecord.is_dnf }">
+            {{ detailRecord.is_dnf ? 'DNF' : formatTime(detailRecord.time_ms) }}
+          </span>
           <van-tag type="primary" size="medium">{{ detailRecord.cube_type }}</van-tag>
           <van-tag plain type="primary" size="medium">{{ methodLabel(detailRecord.method) }}</van-tag>
+          <van-tag v-if="detailRecord.timing_mode === 'smart'" type="success" size="medium">智能计时</van-tag>
         </div>
         <div class="detail-date">{{ formatDateTime(detailRecord.date || detailRecord.created_at) }}</div>
+        <div v-if="detailRecord.move_count || detailRecord.observation_time_ms" class="detail-stats">
+          <span v-if="detailRecord.move_count">步数: {{ detailRecord.move_count }}</span>
+          <span v-if="detailRecord.observation_time_ms">观察: {{ formatTime(detailRecord.observation_time_ms) }}</span>
+          <span v-if="detailRecord.move_count && detailRecord.time_ms">TPS: {{ (detailRecord.move_count / (detailRecord.time_ms / 1000)).toFixed(2) }}</span>
+        </div>
         <div class="detail-section">
           <div class="detail-label">打乱公式</div>
           <div class="detail-scramble">{{ detailRecord.scramble || '未记录' }}</div>
+        </div>
+        <div v-if="detailRecord.solve_sequence" class="detail-section">
+          <div class="detail-label">复原步骤</div>
+          <div class="detail-scramble">{{ detailRecord.solve_sequence }}</div>
         </div>
       </div>
     </van-popup>
@@ -303,6 +324,7 @@ function stopTimer() {
     scramble: scramble.value,
     cube_type: cubeType.value,
     method: method.value,
+    timing_mode: 'manual',
     date: new Date().toISOString(),
   }
 
@@ -316,6 +338,7 @@ function stopTimer() {
       method: record.method,
       time_ms: record.time_ms,
       scramble: record.scramble,
+      timing_mode: 'manual',
     }).then(() => {
       if (recordsLoaded) loadRecords(true)
     }).catch(() => {})
@@ -333,6 +356,7 @@ const bestTime = computed(() => {
 })
 
 const ao5 = computed(() => calculateAoN(5))
+const ao12 = computed(() => calculateAoN(12))
 
 function calculateAoN(n) {
   if (history.value.length < n) return null
@@ -747,5 +771,23 @@ onBeforeUnmount(() => {
   line-height: 1.6;
   color: var(--van-text-color);
   word-break: break-all;
+}
+
+.dnf-time {
+  color: var(--van-danger-color) !important;
+}
+
+.detail-stats {
+  display: flex;
+  gap: 16px;
+  padding: 8px 0;
+  font-size: 0.85rem;
+  color: var(--van-text-color-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.record-moves {
+  color: var(--van-primary-color);
+  font-weight: 500;
 }
 </style>
