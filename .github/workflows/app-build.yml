@@ -59,6 +59,9 @@ jobs:
           else
             echo "Warning: API_BASE_URL not set, using default from .env.production if exists"
           fi
+          # 同步更新 package.json 版本号（APP 内显示的版本号从 package.json 读取）
+          node -e "const p=require('./package.json');p.version='${{ steps.version.outputs.version }}';require('fs').writeFileSync('package.json',JSON.stringify(p,null,2)+'\n')"
+          echo "package.json version updated to ${{ steps.version.outputs.version }}"
           npm run build
 
       - name: Sync Capacitor
