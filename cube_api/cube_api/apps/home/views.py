@@ -80,7 +80,7 @@ class AppVersionView(APIView):
         download_url = data.get("download_url", "")
         if download_url and not download_url.startswith("http"):
             scheme = "https" if request.is_secure() else "http"
-            host = request.META.get("HTTP_HOST", "")
+            host = request.get_host()
             if host:
                 data["download_url"] = f"{scheme}://{host}{download_url}"
         return APIResponse(code=100, msg="获取成功", data=data)
