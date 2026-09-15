@@ -85,7 +85,9 @@ jobs:
 
       - name: Build release APK
         working-directory: ${{ env.ANDROID_DIR }}
-        run: ./gradlew assembleRelease -x lintVitalRelease --no-daemon
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease -x lintVitalRelease --no-daemon
 
       - name: Rename APK
         run: |
