@@ -48,7 +48,18 @@ jobs:
 
       - name: Build web assets
         working-directory: ${{ env.APP_DIR }}
-        run: npm run build
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+        run: |
+          # 生成 .env.production（因 .env.production 在 .gitignore 中，CI 需动态生成）
+          if [ -n "$API_BASE_URL" ]; then
+            echo "VITE_API_BASE_URL=$API_BASE_URL" > .env.production
+            echo "VITE_MEDIA_BASE_URL=$API_BASE_URL" >> .env.production
+            echo ".env.production generated with API_BASE_URL=$API_BASE_URL"
+          else
+            echo "Warning: API_BASE_URL not set, using default from .env.production if exists"
+          fi
+          npm run build
 
       - name: Sync Capacitor
         working-directory: ${{ env.APP_DIR }}
@@ -99,7 +110,7 @@ jobs:
 
       - name: Upload to server
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
         run: |
@@ -109,17 +120,20 @@ jobs:
           ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts 2>/dev/null
           scp -i ~/.ssh/deploy_key "icube-v${{ steps.version.outputs.version }}.apk" "$SERVER_USER@$SERVER_HOST:~/ICube/downloads/"
           ssh -i ~/.ssh/deploy_key "$SERVER_USER@$SERVER_HOST" "cd ~/ICube && python3 -c \"
-          import json
+          import json, os
           f = 'cube_api/cube_api/apps/home/app_version.json'
-          d = json.load(open(f))
+          os.makedirs(os.path.dirname(f), exist_ok=True)
+          d = json.load(open(f)) if os.path.exists(f) else {}
           d['version'] = '${{ steps.version.outputs.version }}'
           d['download_url'] = '/apk/icube-v${{ steps.version.outputs.version }}.apk'
           d['update_info'] = f'ICube v${{ steps.version.outputs.version }}'
+          d['force_update'] = d.get('force_update', False)
           json.dump(d, open(f, 'w'), ensure_ascii=False, indent=2)
           print('app_version.json updated')
           \""
 
       - name: Create GitHub Release
+        continue-on-error: true
         uses: softprops/action-gh-release@v2
         with:
           files: icube-v${{ steps.version.outputs.version }}.apk

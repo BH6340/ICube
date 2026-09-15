@@ -102,6 +102,9 @@ front_dist/
 # APK 构建产物（通过 build-apk.ps1 直接 SCP 上传服务器，不走 git）
 downloads/*.apk
 
+# APP 版本文件（服务器上由 CI 维护，不走 git）
+cube_api/cube_api/apps/home/app_version.json
+
 # CLAUDE.md（AI 辅助编码配置文件，不需要版本控制）
 CLAUDE.md
 cube_api/CLAUDE.md
