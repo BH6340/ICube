@@ -57,8 +57,10 @@
           <div class="post-main">
             <div class="post-header">
               <div class="post-title">
-                <span v-if="post.is_pinned" class="pin-badge">置顶</span>
-                <span v-if="post.is_essence" class="essence-badge">精华</span>
+                <div class="badges">
+                  <span v-if="post.is_pinned" class="pin-badge">置顶</span>
+                  <span v-if="post.is_essence" class="essence-badge">精华</span>
+                </div>
                 <h3>{{ post.title }}</h3>
               </div>
             </div>
@@ -84,10 +86,18 @@
               </el-tag>
             </div>
 
+            <div class="post-content-preview" v-if="post.content_preview">
+              {{ post.content_preview }}
+            </div>
+
             <div class="post-stats">
               <span><el-icon><View /></el-icon> {{ post.view_count }}</span>
               <span><el-icon><Star /></el-icon> {{ post.like_count }}</span>
               <span><el-icon><ChatLineRound /></el-icon> {{ post.comment_count }}</span>
+            </div>
+
+            <div class="post-comment-link" v-if="post.comment_count > 0" @click.stop="goToDetail(post.id)">
+              查看 {{ post.comment_count }} 条评论
             </div>
           </div>
 
@@ -319,13 +329,25 @@ onMounted(() => {
 .post-title {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+}
+
+.post-title .badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .post-title h3 {
   margin: 0;
   font-size: 18px;
   color: #303133;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pin-badge {
@@ -334,6 +356,8 @@ onMounted(() => {
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .essence-badge {
@@ -342,6 +366,8 @@ onMounted(() => {
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .post-info {
@@ -433,6 +459,33 @@ onMounted(() => {
   gap: 4px;
 }
 
+.post-content-preview {
+  color: #909399;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 8px 0 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.post-comment-link {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background-color: #f5f7fa;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #909399;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.post-comment-link:hover {
+  color: #409eff;
+}
+
 .pagination {
   margin-top: 20px;
   display: flex;
@@ -521,6 +574,16 @@ onMounted(() => {
     flex-wrap: wrap;
     gap: 12px;
     font-size: 12px;
+  }
+
+  .post-content-preview {
+    font-size: 13px;
+    margin: 6px 0 10px;
+  }
+
+  .post-comment-link {
+    font-size: 12px;
+    padding: 5px 8px;
   }
 
   .pagination :deep(.el-pagination) {

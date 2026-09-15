@@ -52,19 +52,101 @@
       </div>
     </div>
 
-    <!-- 主体：左右布局 -->
-    <el-row :gutter="16" class="main-layout">
-      <!-- 左列：统计 + 历史 -->
-      <el-col :xs="24" :sm="8" class="left-col">
+    <!-- 主体：单列布局 -->
+    <div class="main-layout">
+      <!-- 上方：主卡片（打乱 + 计时器/3D + 平面图） -->
+      <el-card shadow="never" class="main-card">
+        <!-- 智能模式：计时方法选择（放在计时器区域上方） -->
+        <div class="timing-method-bar" v-if="timingMode === 'smart' && connected">
+          <span class="timing-method-label">计时方法：</span>
+          <el-radio-group v-model="cubeTimerMode" size="small" @change="onCubeTimerModeChange">
+            <el-radio-button value="practice">标准</el-radio-button>
+            <el-radio-button value="unlimited">不限</el-radio-button>
+          </el-radio-group>
+          <el-tooltip placement="right" effect="light">
+            <template #content>
+              <div class="method-tooltip">
+                <p><strong>标准模式：</strong>15秒观察时间，超时自动 DNF</p>
+                <p><strong>不限模式：</strong>观察时间不限，可随时开始复原</p>
+              </div>
+            </template>
+            <el-icon class="method-help-icon"><QuestionFilled /></el-icon>
+          </el-tooltip>
+        </div>
+
+        <!-- 打乱序列 chip（两种模式共用） -->
+        <div class="scramble-chips" v-if="scrambleChips.length > 0">
+          <span
+            v-for="(move, i) in scrambleChips"
+            :key="i"
+            class="scramble-chip"
+            :class="scrambleChipClass(i)"
+          >{{ move }}</span>
+        </div>
+        <div class="scramble-empty" v-else>
+          <span v-if="timingMode === 'manual'">点击「刷新打乱」生成</span>
+          <span v-else>连接魔方后，来回拨动任意面开始打乱</span>
+        </div>
+
+        <!-- 中间区域：计时器/3D（居中） -->
+        <div class="center-area">
+          <div class="center-left" :class="{ 'manual-center': timingMode === 'manual' }">
+            <!-- 手动模式：大计时器 -->
+            <template v-if="timingMode === 'manual'">
+              <div class="status-hint" :class="{ 'ready': manualTimerState === 'ready', 'running': manualTimerState === 'running' }">
+                {{ manualStatusText }}
+              </div>
+              <div class="time-banner" :class="manualTimerState"
+                   @mousedown="handleManualTouchStart" @mouseup="handleManualTouchEnd"
+                   @mouseleave="handleManualTouchEnd" @touchstart.prevent="handleManualTouchStart" @touchend.prevent="handleManualTouchEnd">
+                {{ manualTimeDisplay }}
+              </div>
+              <div class="manual-hint">长按空格键开始 / 轻按停止</div>
+              <div class="manual-cancel-wrap" v-if="manualTimerState === 'running'">
+                <el-button type="danger" size="small" @click="cancelManualTimer">取消</el-button>
+              </div>
+            </template>
+            <!-- 智能模式：3D + 计时器 -->
+            <template v-else>
+              <div class="smart-center">
+                <div class="cube-mini" v-if="connected">
+                  <Cube3D ref="cube3dRef" :animation-speed="120" />
+                </div>
+                <div class="smart-timer-block" v-if="connected">
+                  <div class="timer-main" :style="{ color: smartTimerColor }">{{ smartTimerDisplay }}</div>
+                  <div class="timer-sub" :style="{ color: smartTimerColor }">{{ smartTimerStateText }} · {{ smartTimerSubText }}</div>
+                  <div class="smart-controls" v-if="cubeTimerState !== TimerStates.IDLE">
+                    <el-button type="danger" size="small" @click="handleStopTimer">停止</el-button>
+                  </div>
+                </div>
+                <div class="smart-placeholder" v-if="!connected">
+                  <span class="placeholder-text">请先连接智能魔方</span>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- 平面图：右下角绝对定位 -->
+        <div class="net-block">
+          <CubeNet :scramble="scrambleChips" :cell-size="10" />
+        </div>
+      </el-card>
+
+      <!-- 下方：数据统计 + 今日练习记录 -->
+      <div class="bottom-section">
         <el-card shadow="never" class="stats-card">
           <template #header>
             <div class="card-header">
-              <span>数据统计</span>
-              <el-button v-if="timingMode === 'manual'" type="danger" link size="small" @click="clearHistory">清空</el-button>
+              <span>数据统计（今日）</span>
+              <div class="card-header-actions">
+                <el-button v-if="timingMode === 'manual'" type="danger" link size="small" @click="clearHistory">清空</el-button>
+                <el-button type="primary" link size="small" @click="goToProfileData">查看全部</el-button>
+              </div>
             </div>
           </template>
           <div class="summary-stats">
-            <p>次数: <strong>{{ allHistory.length }}</strong></p>
+            <p>次数: <strong>{{ todayHistory.length }}</strong></p>
             <p>最佳: <span class="best-time">{{ bestTimeDisplay }}</span></p>
             <p>Ao5: <strong>{{ ao5Display }}</strong></p>
             <p>Ao12: <strong>{{ ao12Display }}</strong></p>
@@ -72,10 +154,10 @@
         </el-card>
 
         <el-card shadow="never" class="history-card">
-          <template #header><span>历史记录</span></template>
+          <template #header><span>今日练习记录</span></template>
           <div class="history-list">
-            <div v-for="(item, index) in allHistory" :key="item.id" class="history-item" :class="{ 'is-dnf': item.isDnf }">
-              <span class="hi-index">#{{ allHistory.length - index }}</span>
+            <div v-for="(item, index) in todayHistory" :key="item.id" class="history-item" :class="{ 'is-dnf': item.isDnf }">
+              <span class="hi-index">#{{ todayHistory.length - index }}</span>
               <span class="hi-time">{{ formatTime(item.time) }}</span>
               <template v-if="timingMode === 'smart'">
                 <span v-if="item.isDnf" class="hi-dnf">DNF</span>
@@ -84,77 +166,13 @@
                   <span class="hi-tps" v-if="item.tps">TPS {{ item.tps }}</span>
                 </template>
               </template>
-              <el-button type="danger" icon="Delete" circle size="small" link @click="deleteRecord(index)" />
+              <el-button type="danger" icon="Delete" circle size="small" link @click="deleteRecord(item.id)" />
             </div>
-            <div v-if="allHistory.length === 0" class="empty-tip">暂无成绩</div>
+            <div v-if="todayHistory.length === 0" class="empty-tip">今日暂无成绩</div>
           </div>
         </el-card>
-      </el-col>
-
-      <!-- 右列：打乱chip + 计时器/3D + 操作提示 + 平面图 -->
-      <el-col :xs="24" :sm="16" class="right-col">
-        <el-card shadow="never" class="main-card">
-          <!-- 打乱序列 chip（两种模式共用） -->
-          <div class="scramble-chips" v-if="scrambleChips.length > 0">
-            <span
-              v-for="(move, i) in scrambleChips"
-              :key="i"
-              class="scramble-chip"
-              :class="scrambleChipClass(i)"
-            >{{ move }}</span>
-          </div>
-          <div class="scramble-empty" v-else>
-            <span v-if="timingMode === 'manual'">点击「刷新打乱」生成</span>
-            <span v-else>连接魔方后，来回拨动任意面开始打乱</span>
-          </div>
-
-          <!-- 中间区域：计时器/3D（居中） -->
-          <div class="center-area">
-            <div class="center-left">
-              <!-- 手动模式：大计时器 -->
-              <template v-if="timingMode === 'manual'">
-                <div class="status-hint" :class="{ 'ready': manualTimerState === 'ready', 'running': manualTimerState === 'running' }">
-                  {{ manualStatusText }}
-                </div>
-                <div class="time-banner" :class="manualTimerState"
-                     @mousedown="handleManualTouchStart" @mouseup="handleManualTouchEnd"
-                     @mouseleave="handleManualTouchEnd" @touchstart.prevent="handleManualTouchStart" @touchend.prevent="handleManualTouchEnd">
-                  {{ manualTimeDisplay }}
-                </div>
-                <div class="manual-hint">长按空格键开始 / 轻按停止</div>
-              </template>
-              <!-- 智能模式：3D + 计时器 -->
-              <template v-else>
-                <div class="smart-center">
-                  <div class="cube-mini" v-if="connected">
-                    <Cube3D ref="cube3dRef" :animation-speed="120" />
-                  </div>
-                  <div class="smart-timer-block" v-if="connected">
-                    <div class="timer-main" :style="{ color: smartTimerColor }">{{ smartTimerDisplay }}</div>
-                    <div class="timer-sub" :style="{ color: smartTimerColor }">{{ smartTimerStateText }} · {{ smartTimerSubText }}</div>
-                    <div class="smart-controls" v-if="cubeTimerState !== TimerStates.IDLE || true">
-                      <el-radio-group v-model="cubeTimerMode" size="small" @change="onCubeTimerModeChange">
-                        <el-radio-button value="practice">标准</el-radio-button>
-                        <el-radio-button value="unlimited">不限</el-radio-button>
-                      </el-radio-group>
-                      <el-button v-if="cubeTimerState !== TimerStates.IDLE" type="danger" size="small" @click="handleStopTimer">停止</el-button>
-                    </div>
-                  </div>
-                  <div class="smart-placeholder" v-if="!connected">
-                    <span class="placeholder-text">请先连接智能魔方</span>
-                  </div>
-                </div>
-              </template>
-            </div>
-          </div>
-
-          <!-- 平面图：右下角绝对定位 -->
-          <div class="net-block">
-            <CubeNet :scramble="scrambleChips" :cell-size="10" />
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+      </div>
+    </div>
 
     <!-- MAC 地址输入对话框 -->
     <el-dialog v-model="macDialogVisible" title="输入 MAC 地址" width="400px" @close="onMacDialogClose">
@@ -195,9 +213,9 @@
  * TimerView.vue - 统一计时器页面（手动 + 智能）
  */
 import { ref, computed, reactive, watch, onMounted, onBeforeUnmount } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox, ElMessage } from 'element-plus'
-import { WarningFilled, ArrowDown } from '@element-plus/icons-vue'
+import { WarningFilled, ArrowDown, QuestionFilled } from '@element-plus/icons-vue'
 import { createTimerRecord, getSmartCubeDevices, registerSmartCubeDevice } from '@/api/timer'
 import CubeNet from '@/components/cube/CubeNet.vue'
 import Cube3D from '@/components/cube/Cube3D.vue'
@@ -214,10 +232,11 @@ import { CubeTimer, TimerStates } from '@/utils/cube-timer'
 
 // ===== 通用 =====
 const route = useRoute()
+const router = useRouter()
 const timerPage = ref(null)
 const timingMode = ref('manual')
 const cubeType = ref('3x3')
-const method = ref('layer')
+const method = ref('cfop')
 const currentScramble = ref('')
 
 if (route.query.mode === 'smart') timingMode.value = 'smart'
@@ -247,14 +266,30 @@ function calcTPS(moves, ms) {
   return (moves / (ms / 1000)).toFixed(2)
 }
 
+// ===== 今日记录过滤 =====
+function isToday(record) {
+  const today = new Date()
+  const todayStr = today.toLocaleDateString()
+  // 优先用 date 字段（手动模式），否则用 id（时间戳）
+  if (record.date) {
+    return record.date === todayStr
+  }
+  if (record.id) {
+    const recordDate = new Date(record.id)
+    return recordDate.toLocaleDateString() === todayStr
+  }
+  return true
+}
+const todayHistory = computed(() => allHistory.value.filter(r => isToday(r)))
+
 const bestTimeDisplay = computed(() => {
-  const valid = allHistory.value.filter(r => !r.isDnf)
+  const valid = todayHistory.value.filter(r => !r.isDnf)
   if (valid.length === 0) return '-'
   return formatTime(Math.min(...valid.map(r => r.time)))
 })
 
 function calcAoN(n) {
-  const valid = allHistory.value.filter(r => !r.isDnf)
+  const valid = todayHistory.value.filter(r => !r.isDnf)
   if (valid.length < n) return '-'
   const recent = valid.slice(0, n).map(r => r.time)
   recent.sort((a, b) => a - b)
@@ -264,13 +299,19 @@ function calcAoN(n) {
 const ao5Display = computed(() => calcAoN(5))
 const ao12Display = computed(() => calcAoN(12))
 
-function deleteRecord(index) {
-  allHistory.value.splice(index, 1)
+function deleteRecord(id) {
+  const idx = allHistory.value.findIndex(r => r.id === id)
+  if (idx !== -1) allHistory.value.splice(idx, 1)
   if (timingMode.value === 'manual') {
     localStorage.setItem('icube_timer_history', JSON.stringify(
       allHistory.value.map(({ timingMode, isDnf, ...rest }) => rest)
     ))
   }
+}
+
+// ===== 跳转个人数据页 =====
+function goToProfileData() {
+  router.push({ name: 'profileData' })
 }
 
 // ===== 打乱 chip 展示 =====
@@ -421,6 +462,12 @@ function stopManualTimer() {
   }).catch(() => {})
 
   generateScramble()
+}
+
+function cancelManualTimer() {
+  if (timerInterval.value) clearInterval(timerInterval.value)
+  manualTimerState.value = 'idle'
+  elapsedTime.value = 0
 }
 
 function clearHistory() {
@@ -872,8 +919,13 @@ onBeforeUnmount(() => {
   cursor: help;
 }
 
-/* 左列 */
-.left-col {
+/* 主体布局 */
+.main-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.bottom-section {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -883,6 +935,11 @@ onBeforeUnmount(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+.card-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .summary-stats p {
   margin: 6px 0;
@@ -931,6 +988,33 @@ onBeforeUnmount(() => {
   background: #f5f5f5;
   height: 100%;
   min-height: 500px;
+}
+
+/* 计时方法选择栏 */
+.timing-method-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: #606266;
+}
+.timing-method-label {
+  font-weight: 500;
+}
+.method-help-icon {
+  font-size: 14px;
+  color: #909399;
+  cursor: help;
+}
+.method-tooltip {
+  max-width: 260px;
+}
+.method-tooltip p {
+  margin: 4px 0;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 /* 打乱 chip */
@@ -1002,6 +1086,9 @@ onBeforeUnmount(() => {
   font-size: 13px;
   color: #909399;
   margin-top: 8px;
+}
+.manual-cancel-wrap {
+  margin-top: 12px;
 }
 
 /* 智能模式中间区域 */
@@ -1105,8 +1192,64 @@ onBeforeUnmount(() => {
 
 /* 响应式 */
 @media (max-width: 768px) {
-  .center-area { flex-direction: column; }
-  .cube-mini { width: 220px; height: 220px; }
+  /* 1. 打乱序列与魔方间距缩小 */
+  .scramble-chips { margin-bottom: 6px; gap: 2px; }
+  .scramble-chip { font-size: 11px; padding: 2px 6px; min-width: 24px; height: 20px; }
+  .scramble-empty { margin-bottom: 6px; }
+
+  /* 2. 中心区域紧凑，魔方整体上移 */
+  .center-area {
+    flex-direction: column;
+    min-height: auto;
+    padding: 8px 12px 8px;
+  }
+  .smart-center {
+    gap: 4px;
+    width: 100%;
+  }
+  .smart-timer-block {
+    width: 100%;
+    position: relative;
+    min-height: 64px;
+  }
+  .timer-main {
+    font-size: 32px;
+  }
+
+  /* 3. 魔方尺寸缩小，确保完整显示在容器内 */
+  .cube-mini {
+    width: 140px;
+    height: 150px;
+    overflow: hidden;
+  }
+  .cube-mini :deep(.cube-3d-container) {
+    min-height: auto;
+  }
+
+  /* 4. 停止按钮自然布局，居中显示在计时文字下方 */
+  .smart-controls {
+    justify-content: center;
+    margin-top: 6px;
+  }
+
+  /* 5. 平面图缩小，避免遮挡步数文字 */
+  .net-block {
+    bottom: 4px;
+    right: 4px;
+    transform: scale(0.5);
+    transform-origin: bottom right;
+  }
+
+  /* 6. 手动模式计时文字右侧留出空间，避开平面图 */
+  .center-left.manual-center {
+    padding-right: 70px;
+  }
+
+  /* 6. 整体紧凑 */
+  .main-card { min-height: auto; }
+  .main-card :deep(.el-card__body) { min-height: auto; }
+  .timing-method-bar { margin-bottom: 8px; }
+
   .time-banner { font-size: 48px; }
 }
 </style>

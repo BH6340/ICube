@@ -142,7 +142,7 @@ function initThree() {
 
   // 相机
   camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100)
-  camera.position.set(5.5, 5.5, 8)
+  camera.position.set(4.8, 4.8, 8)
 
   // 渲染器
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })

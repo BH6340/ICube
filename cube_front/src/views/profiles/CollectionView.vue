@@ -1,7 +1,16 @@
 <template>
   <div class="formula-library">
+    <!-- 移动端：顶部搜索筛选栏 -->
+    <div class="mobile-search-bar">
+      <el-input v-model="searchKeyword" placeholder="搜索公式" prefix-icon="Search" clearable
+        @keyup.enter="handleSearch" @clear="handleSearch" @input="handleSearch" />
+      <el-button type="primary" plain @click="mobileFilterVisible = true" icon="Filter">
+        筛选
+      </el-button>
+    </div>
+
     <el-row :gutter="20">
-      <el-col :xs="24" :sm="8" :md="6">
+      <el-col :xs="24" :sm="8" :md="6" class="sidebar-col">
         <div class="sidebar">
           <el-card shadow="never" class="category-card">
             <template #header>
@@ -127,13 +136,48 @@
           </div>
 
           <div v-if="total === 0" class="empty-state">
-            <el-empty description="暂无收藏的公式" :image-size="120">
-              <el-button type="primary" @click="$router.push('/formulas')">去收藏公式</el-button>
+            <el-empty :description="emptyDescription" :image-size="120">
+              <el-button type="primary" @click="handleEmptyAction">{{ emptyButtonText }}</el-button>
             </el-empty>
           </div>
         </div>
       </el-col>
     </el-row>
+
+    <!-- 移动端筛选抽屉 -->
+    <el-drawer
+      v-model="mobileFilterVisible"
+      title="筛选条件"
+      direction="ltr"
+      size="85%"
+      class="mobile-filter-drawer"
+    >
+      <div class="mobile-filter-content">
+        <el-card shadow="never" class="category-card">
+          <template #header>
+            <span>公式分类</span>
+          </template>
+          <el-tree :data="categoryTree" :props="{ label: 'name', children: 'children' }" :expand-on-click-node="false"
+            :highlight-current="true" @node-click="handleMobileCategoryClick" default-expand-all />
+        </el-card>
+
+        <el-card shadow="never" class="filter-card">
+          <template #header>
+            <span>难度筛选</span>
+          </template>
+          <el-checkbox-group v-model="selectedDifficulties" @change="handleFilterChange">
+            <el-checkbox value="基础" label="基础" border>基础</el-checkbox>
+            <el-checkbox value="进阶" label="进阶" border>进阶</el-checkbox>
+            <el-checkbox value="困难" label="困难" border>困难</el-checkbox>
+          </el-checkbox-group>
+        </el-card>
+
+        <div class="mobile-filter-actions">
+          <el-button @click="resetMobileFilters" plain>重置</el-button>
+          <el-button type="primary" @click="mobileFilterVisible = false">确定</el-button>
+        </div>
+      </div>
+    </el-drawer>
 
     <el-dialog v-model="showDetailDialog" :title="selectedFormula?.name" width="900px">
       <div v-if="selectedFormula" class="formula-detail">
@@ -212,9 +256,10 @@
  *   - 列表数据兼容分页格式（res.data.results）和数组格式
  */
 
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Picture, Star } from '@element-plus/icons-vue';
+import { Picture, Star, Filter } from '@element-plus/icons-vue';
 import { getFormulaCategories, getMyCollections, removeCollection, getMyCustomFormulas, deleteFormula } from '../../api/formula';
 import CubeDemo from '../../components/formula/CubeDemo.vue';
 import FormulaEditor from '../../components/formula/FormulaEditor.vue';
@@ -249,6 +294,8 @@ const activeTab = ref('collections');
 const showEditor = ref(false);
 /** 正在编辑的公式 */
 const editFormula = ref(null);
+/** 路由实例 */
+const router = useRouter();
 
 /**
  * 难度等级标签文本
@@ -392,6 +439,25 @@ const handleDeleteFormula = async (formula) => {
 const handleAddFormula = () => {
   editFormula.value = null;
   showEditor.value = true;
+};
+
+/** 空状态描述文本 */
+const emptyDescription = computed(() => {
+  return activeTab.value === 'collections' ? '暂无收藏的公式' : '暂无创建的公式';
+});
+
+/** 空状态按钮文字 */
+const emptyButtonText = computed(() => {
+  return activeTab.value === 'collections' ? '去收藏公式' : '去创建公式';
+});
+
+/** 空状态按钮点击处理 */
+const handleEmptyAction = () => {
+  if (activeTab.value === 'collections') {
+    router.push('/formulas');
+  } else {
+    handleAddFormula();
+  }
 };
 
 /** Tab 切换处理 */
@@ -562,6 +628,40 @@ const handleEditorClose = () => {
   editFormula.value = null;
 };
 
+/** 移动端筛选抽屉可见性 */
+const mobileFilterVisible = ref(false);
+
+/**
+ * 移动端分类点击处理
+ *
+ * @param {Object} data - 树节点数据
+ */
+const handleMobileCategoryClick = (data) => {
+  if (data.raw) {
+    selectedCategory.value = data.raw.id;
+  } else {
+    selectedCategory.value = null;
+  }
+  currentPage.value = 1;
+  if (activeTab.value === 'collections') {
+    loadCollections();
+  } else {
+    loadMyFormulas();
+  }
+};
+
+/** 重置移动端筛选条件 */
+const resetMobileFilters = () => {
+  selectedCategory.value = null;
+  selectedDifficulties.value = [];
+  currentPage.value = 1;
+  if (activeTab.value === 'collections') {
+    loadCollections();
+  } else {
+    loadMyFormulas();
+  }
+};
+
 onMounted(() => {
   loadCategories();
   loadCollections();
@@ -571,6 +671,39 @@ onMounted(() => {
 <style scoped>
 .formula-library {
   padding: 20px;
+}
+
+/* 移动端顶部搜索筛选栏 */
+.mobile-search-bar {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.mobile-search-bar .el-input {
+  flex: 1;
+}
+
+/* 移动端筛选抽屉 */
+.mobile-filter-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 4px 16px;
+}
+
+.mobile-filter-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 12px 0 0;
+  border-top: 1px solid #ebeef5;
+  margin-top: 8px;
+}
+
+.mobile-filter-actions .el-button {
+  flex: 1;
 }
 
 .sidebar {
@@ -815,9 +948,14 @@ onMounted(() => {
     padding: 12px 8px;
   }
 
-  .sidebar {
-    gap: 12px;
-    margin-bottom: 12px;
+  /* 显示移动端顶部搜索栏 */
+  .mobile-search-bar {
+    display: flex;
+  }
+
+  /* 隐藏桌面端侧边栏 */
+  .sidebar-col {
+    display: none;
   }
 
   .toolbar {

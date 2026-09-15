@@ -45,26 +45,26 @@
     </div>
 
     <div class="stats-section">
-      <el-row :gutter="20">
-        <el-col :xs="24" :sm="6">
+      <el-row :gutter="12">
+        <el-col :xs="12" :sm="6">
           <el-card shadow="never" class="stat-card">
             <div class="stat-num">{{ stats.total_count }}</div>
             <div class="stat-label">总还原次数</div>
           </el-card>
         </el-col>
-        <el-col :xs="24" :sm="6">
+        <el-col :xs="12" :sm="6">
           <el-card shadow="never" class="stat-card">
             <div class="stat-num best">{{ formatTime(stats.best_time) }}</div>
             <div class="stat-label">最快成绩</div>
           </el-card>
         </el-col>
-        <el-col :xs="24" :sm="6">
+        <el-col :xs="12" :sm="6">
           <el-card shadow="never" class="stat-card">
             <div class="stat-num">{{ formatTime(stats.avg_time) }}</div>
             <div class="stat-label">平均成绩</div>
           </el-card>
         </el-col>
-        <el-col :xs="24" :sm="6">
+        <el-col :xs="12" :sm="6">
           <el-card shadow="never" class="stat-card">
             <div class="stat-num">{{ stats.dnf_count || 0 }}</div>
             <div class="stat-label">DNF 次数</div>
@@ -87,27 +87,29 @@
         <template #header>
           <span>分组统计</span>
         </template>
-        <el-table :data="groupStats" border>
-          <el-table-column prop="cube_type_label" label="魔方类型" />
-          <el-table-column prop="method_label" label="还原方法" />
-          <el-table-column prop="timing_mode_label" label="计时方式">
-            <template #default="scope">
-              <el-tag v-if="scope.row.timing_mode === 'smart'" type="warning" size="small">智能</el-tag>
-              <el-tag v-else size="small">手动</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="total_count" label="次数" />
-          <el-table-column prop="best_time" label="最快(秒)">
-            <template #default="scope">
-              {{ formatTime(scope.row.best_time) }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="avg_time" label="平均(秒)">
-            <template #default="scope">
-              {{ formatTime(scope.row.avg_time) }}
-            </template>
-          </el-table-column>
-        </el-table>
+        <div class="table-scroll-wrapper">
+          <el-table :data="groupStats" border class="data-table">
+            <el-table-column prop="cube_type_label" label="魔方类型" />
+            <el-table-column prop="method_label" label="还原方法" />
+            <el-table-column prop="timing_mode_label" label="计时方式">
+              <template #default="scope">
+                <el-tag v-if="scope.row.timing_mode === 'smart'" type="warning" size="small">智能</el-tag>
+                <el-tag v-else size="small">手动</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="total_count" label="次数" />
+            <el-table-column prop="best_time" label="最快(秒)">
+              <template #default="scope">
+                {{ formatTime(scope.row.best_time) }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="avg_time" label="平均(秒)">
+              <template #default="scope">
+                {{ formatTime(scope.row.avg_time) }}
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
         <div v-if="groupStats.length === 0" class="empty-tip">暂无分组数据</div>
       </el-card>
     </div>
@@ -117,56 +119,58 @@
         <template #header>
           <span>成绩记录</span>
         </template>
-        <el-table :data="records" border>
-          <el-table-column prop="created_at" label="日期">
-            <template #default="scope">
-              {{ formatDate(scope.row.created_at) }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="cube_type" label="魔方类型">
-            <template #default="scope">
-              {{ getCubeTypeLabel(scope.row.cube_type) }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="method" label="还原方法">
-            <template #default="scope">
-              {{ getMethodLabel(scope.row.method) }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="time_ms" label="成绩(秒)">
-            <template #default="scope">
-              <span v-if="scope.row.is_dnf" style="color: #f56c6c; font-weight: bold;">DNF</span>
-              <span v-else>{{ formatTime(scope.row.time_ms) }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="timing_mode" label="计时方式" width="100">
-            <template #default="scope">
-              <el-tag v-if="scope.row.timing_mode === 'smart'" type="warning" size="small">智能</el-tag>
-              <el-tag v-else size="small">手动</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="move_count" label="步数" width="70">
-            <template #default="scope">
-              {{ scope.row.move_count || '-' }}
-            </template>
-          </el-table-column>
-          <el-table-column label="TPS" width="80">
-            <template #default="scope">
-              {{ calcTPS(scope.row) }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="scramble" label="打乱公式" show-overflow-tooltip />
-          <el-table-column prop="solve_sequence" label="复原步骤" show-overflow-tooltip>
-            <template #default="scope">
-              {{ scope.row.solve_sequence || '-' }}
-            </template>
-          </el-table-column>
-          <el-table-column label="操作">
-            <template #default="scope">
-              <el-button type="danger" size="small" link @click="deleteRecord(scope.row.id)">删除</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+        <div class="table-scroll-wrapper">
+          <el-table :data="records" border class="data-table">
+            <el-table-column prop="created_at" label="日期">
+              <template #default="scope">
+                {{ formatDate(scope.row.created_at) }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="cube_type" label="魔方类型">
+              <template #default="scope">
+                {{ getCubeTypeLabel(scope.row.cube_type) }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="method" label="还原方法">
+              <template #default="scope">
+                {{ getMethodLabel(scope.row.method) }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="time_ms" label="成绩(秒)">
+              <template #default="scope">
+                <span v-if="scope.row.is_dnf" style="color: #f56c6c; font-weight: bold;">DNF</span>
+                <span v-else>{{ formatTime(scope.row.time_ms) }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="timing_mode" label="计时方式" width="100">
+              <template #default="scope">
+                <el-tag v-if="scope.row.timing_mode === 'smart'" type="warning" size="small">智能</el-tag>
+                <el-tag v-else size="small">手动</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="move_count" label="步数" width="70">
+              <template #default="scope">
+                {{ scope.row.move_count || '-' }}
+              </template>
+            </el-table-column>
+            <el-table-column label="TPS" width="80">
+              <template #default="scope">
+                {{ calcTPS(scope.row) }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="scramble" label="打乱公式" show-overflow-tooltip />
+            <el-table-column prop="solve_sequence" label="复原步骤" show-overflow-tooltip>
+              <template #default="scope">
+                {{ scope.row.solve_sequence || '-' }}
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="80">
+              <template #default="scope">
+                <el-button type="danger" size="small" link @click="deleteRecord(scope.row.id)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
         <div v-if="records.length === 0" class="empty-tip">暂无成绩记录</div>
         <el-pagination
           v-if="pagination.total > 0"
@@ -534,20 +538,44 @@ watch([() => filterForm.cube_type, () => filterForm.method, () => filterForm.tim
   padding: 40px;
 }
 
+.table-scroll-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table-scroll-wrapper :deep(.el-table) {
+  min-width: 600px;
+}
+
+.table-scroll-wrapper :deep(.el-table th),
+.table-scroll-wrapper :deep(.el-table td) {
+  white-space: nowrap;
+}
+
 /* 移动端适配 */
 @media (max-width: 768px) {
   .my-data-container {
     padding: 12px 8px;
   }
 
+  .filter-section :deep(.el-card__body) {
+    padding: 8px 10px;
+  }
+
   .filter-section :deep(.el-form-item) {
     margin-right: 0;
-    margin-bottom: 10px;
+    margin-bottom: 6px;
     width: 100%;
   }
 
+  .filter-section :deep(.el-form-item__label) {
+    width: 70px !important;
+    font-size: 12px;
+  }
+
   .filter-section :deep(.el-form-item__content) {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
   }
 
   .filter-section :deep(.el-select),
@@ -555,8 +583,46 @@ watch([() => filterForm.cube_type, () => filterForm.method, () => filterForm.tim
     width: 100% !important;
   }
 
+  .filter-section :deep(.el-date-editor) {
+    height: 28px;
+  }
+
+  .filter-section :deep(.el-range-input) {
+    font-size: 11px;
+  }
+
+  .filter-section :deep(.el-range-separator) {
+    padding: 0 2px;
+    font-size: 11px;
+    width: auto;
+  }
+
+  .filter-section :deep(.el-input__wrapper) {
+    padding: 0 8px;
+  }
+
+  .filter-section :deep(.el-form-item:last-child) {
+    margin-bottom: 0;
+    margin-top: 2px;
+    justify-content: flex-end;
+  }
+
+  .filter-section :deep(.el-form-item:last-child .el-form-item__content) {
+    width: auto;
+  }
+
+  .filter-section :deep(.el-form-item:last-child .el-button) {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .stat-card :deep(.el-card__body) {
+    padding: 12px 8px;
+  }
+
   .stat-num {
-    font-size: 24px;
+    font-size: 22px;
+    margin-bottom: 4px;
   }
 
   .stat-label {
@@ -576,26 +642,29 @@ watch([() => filterForm.cube_type, () => filterForm.method, () => filterForm.tim
   .records-section :deep(.el-table th),
   .group-section :deep(.el-table td),
   .records-section :deep(.el-table td) {
-    padding: 8px 4px;
+    padding: 8px 10px;
   }
 }
 
 @media (max-width: 480px) {
   .stats-section :deep(.el-col) {
-    margin-bottom: 10px;
+    margin-bottom: 8px;
+  }
+
+  .stat-card :deep(.el-card__body) {
+    padding: 10px 6px;
   }
 
   .stat-num {
-    font-size: 20px;
+    font-size: 18px;
+  }
+
+  .stat-label {
+    font-size: 11px;
   }
 
   .chart-container {
     height: 220px;
-  }
-
-  .group-section :deep(.el-table__body-wrapper),
-  .records-section :deep(.el-table__body-wrapper) {
-    overflow-x: auto;
   }
 }
 </style>

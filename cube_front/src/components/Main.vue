@@ -118,7 +118,7 @@
       <el-col :span="24">
         <el-card class="section-card" shadow="hover">
           <template #header>
-            <div class="section-header">
+            <div class="section-header section-header-centered">
               <span class="section-icon">🎓</span>
               <span class="section-title">魔方教程</span>
             </div>
@@ -168,7 +168,7 @@
       <el-col :span="24">
         <el-card class="section-card" shadow="hover">
           <template #header>
-            <div class="section-header">
+            <div class="section-header section-header-centered">
               <span class="section-icon">🔥</span>
               <span class="section-title">公式分类</span>
             </div>
@@ -428,7 +428,7 @@ onUnmounted(() => {
 
 <style scoped>
 .main-content {
-  padding: 20px 0;
+  padding: 20px 20px;
 }
 
 .carousel-item-container {
@@ -549,6 +549,14 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.section-header-centered {
+  justify-content: center;
+}
+
+.section-header-centered .section-title {
+  text-align: center;
 }
 
 .section-icon {
@@ -692,7 +700,7 @@ onUnmounted(() => {
 /* 移动端适配 */
 @media (max-width: 768px) {
   .main-content {
-    padding: 12px 0;
+    padding: 12px 12px;
   }
 
   .formula-col {
