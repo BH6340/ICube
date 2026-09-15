@@ -56,6 +56,14 @@ service.interceptors.request.use(
         if (token) {
             config.headers['Authorization'] = `Token ${token}`
         }
+        // 统一补尾斜杠：Django APPEND_SLASH 对 POST 请求无法自动重定向，
+        // 缺少尾斜杠会直接 500。无 query 且不以 / 结尾的 /api/ 路径补 /
+        if (config.url && config.url.startsWith('/api/')) {
+            const [path, query] = config.url.split('?')
+            if (path && !path.endsWith('/')) {
+                config.url = query ? `${path}/?${query}` : `${path}/`
+            }
+        }
         return config
     },
     error => Promise.reject(error)
