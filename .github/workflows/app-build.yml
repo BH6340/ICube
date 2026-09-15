@@ -110,13 +110,16 @@ jobs:
 
       - name: Upload to server
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
         run: |
           mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          # 使用 printf 写入，避免 echo 丢失换行
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
+          # 验证 key 格式
+          ssh-keygen -y -f ~/.ssh/deploy_key > /dev/null 2>&1 && echo "SSH key is valid" || echo "WARNING: SSH key format may be invalid"
           ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts 2>/dev/null
           scp -i ~/.ssh/deploy_key "icube-v${{ steps.version.outputs.version }}.apk" "$SERVER_USER@$SERVER_HOST:~/ICube/downloads/"
           ssh -i ~/.ssh/deploy_key "$SERVER_USER@$SERVER_HOST" "cd ~/ICube && python3 -c \"
