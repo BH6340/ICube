@@ -349,7 +349,7 @@ CREATE TABLE `formula_cube_category` (
   PRIMARY KEY (`id`),
   KEY `formula_cube_category_created_by_id_f4fc7195_fk_accounts_user_id` (`created_by_id`),
   CONSTRAINT `formula_cube_category_created_by_id_f4fc7195_fk_accounts_user_id` FOREIGN KEY (`created_by_id`) REFERENCES `accounts_user` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -358,7 +358,7 @@ CREATE TABLE `formula_cube_category` (
 
 LOCK TABLES `formula_cube_category` WRITE;
 /*!40000 ALTER TABLE `formula_cube_category` DISABLE KEYS */;
-INSERT INTO `formula_cube_category` VALUES (4,3,'CFOP','F2L','F2L','三阶魔方 CFOP 方法的 F2L 阶段',1,'2026-07-07 11:06:37.916198',NULL,0),(5,3,'CFOP','OLL','OLL','三阶魔方 CFOP 方法的 OLL 阶段',2,'2026-07-07 11:06:38.954387',NULL,0),(6,3,'CFOP','PLL','PLL','三阶魔方 CFOP 方法的 PLL 阶段',3,'2026-07-07 11:06:40.360197',NULL,0),(7,3,'CFOP','F2L','四向F2L','',0,'2026-07-29 09:46:27.782964',10,1);
+INSERT INTO `formula_cube_category` VALUES (4,3,'CFOP','F2L','F2L','三阶魔方 CFOP 方法的 F2L 阶段',1,'2026-07-07 11:06:37.916198',NULL,0),(5,3,'CFOP','OLL','OLL','三阶魔方 CFOP 方法的 OLL 阶段',2,'2026-07-07 11:06:38.954387',NULL,0),(6,3,'CFOP','PLL','PLL','三阶魔方 CFOP 方法的 PLL 阶段',3,'2026-07-07 11:06:40.360197',NULL,0),(7,3,'CFOP','F2L','四向F2L','',0,'2026-07-29 09:46:27.782964',10,1),(9,3,'CFOP','F2L','四向F2L','',0,'2026-09-19 08:31:58.393554',6,1);
 /*!40000 ALTER TABLE `formula_cube_category` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1167,4 +1167,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-09-15 22:00:06
+-- Dump completed on 2026-09-19 22:00:06
