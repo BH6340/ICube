@@ -77,6 +77,7 @@
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="profiles">个人中心</el-dropdown-item>
+                <el-dropdown-item command="appDownload">下载 APP</el-dropdown-item>
                 <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -374,6 +375,8 @@ const handleDropdownCommand = async (command) => {
     }
   } else if (command === 'profiles') {
     await router.push('/profiles/info')
+  } else if (command === 'appDownload') {
+    appDownloadVisible.value = true
   }
 }
 

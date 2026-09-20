@@ -39,7 +39,10 @@ async function fetchVersion() {
     const res = await getAppVersionApi()
     const data = res.data || res
     version.value = data.version || '1.0.0'
-    downloadUrl.value = data.download_url || '/apk/icube-v1.0.0.apk'
+    const rawUrl = data.download_url || '/apk/icube-v1.0.0.apk'
+    downloadUrl.value = rawUrl.startsWith('http')
+      ? rawUrl
+      : window.location.origin + rawUrl
     updateInfo.value = data.update_info || ''
     await nextTick()
     if (canvasRef.value) {
@@ -50,7 +53,7 @@ async function fetchVersion() {
       })
     }
   } catch {
-    downloadUrl.value = '/apk/icube-v1.0.0.apk'
+    downloadUrl.value = window.location.origin + '/apk/icube-v1.0.0.apk'
     await nextTick()
     if (canvasRef.value) {
       await QRCode.toCanvas(canvasRef.value, downloadUrl.value, {
