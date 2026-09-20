@@ -114,9 +114,9 @@
     .toc-sidebar {
       position: fixed; top: 0; right: 0; bottom: 0; width: var(--toc-w);
       background: var(--bg-sidebar); border-left: 1px solid var(--border);
-      overflow-y: auto; transition: margin-right 0.2s ease; z-index: 100;
+      overflow-y: auto; transition: transform 0.2s ease; z-index: 100;
     }
-    body.toc-collapsed .toc-sidebar { margin-right: calc(-1 * var(--toc-w)); }
+    body.toc-collapsed .toc-sidebar { transform: translateX(100%); }
 
     .toc-toggle-btn {
       position: fixed; top: 14px; right: calc(var(--toc-w) - 38px); z-index: 200;
@@ -153,6 +153,7 @@
     }
     .toc-list .toc-h2 { padding-left: 1rem; }
     .toc-list .toc-h3 { padding-left: 1.75rem; font-size: 0.75rem; }
+    .toc-list .toc-h4 { padding-left: 2.5rem; font-size: 0.7rem; color: var(--text-faded); }
 
     /* ===== 内容区 — Typora 风格 ===== */
     .markdown-section h1 {
@@ -356,7 +357,7 @@
     @media (max-width: 900px) {
       /* 平板：TOC 默认折叠，可点击展开（浮层模式，不挤压内容） */
       :root { --toc-w: 220px; }
-      body.toc-collapsed .toc-sidebar { margin-right: calc(-1 * var(--toc-w)); }
+      body.toc-collapsed .toc-sidebar { transform: translateX(100%); }
       body:not(.toc-collapsed) .toc-sidebar {
         box-shadow: -2px 0 12px rgba(0,0,0,0.1);
       }
@@ -592,7 +593,7 @@
         '<div class="toc-header-title" title="' + docTitle + '">' + docTitle + '</div>';
       tocEl.appendChild(header);
 
-      var headings = document.querySelectorAll('.markdown-section h1, .markdown-section h2, .markdown-section h3');
+      var headings = document.querySelectorAll('.markdown-section h1, .markdown-section h2, .markdown-section h3, .markdown-section h4');
       if (headings.length < 2) { tocEl.style.display = 'none'; return; }
       tocEl.style.display = '';
 
@@ -635,7 +636,7 @@
         scrollTimer = setTimeout(highlightTOC, 80);
       });
 
-      var allHeadings = document.querySelectorAll('.markdown-section h2, .markdown-section h3');
+      var allHeadings = document.querySelectorAll('.markdown-section h2, .markdown-section h3, .markdown-section h4');
       function highlightTOC() {
         var scrollY = window.scrollY;
         var current = null;

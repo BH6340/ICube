@@ -34,10 +34,19 @@ try {
 
     # 检查工作区是否干净（忽略未跟踪文件）
     $dirty = git status --porcelain 2>&1 | Where-Object { $_ -match '^\s?[MADRC]' }
+    $stashed = $false
     if ($dirty) {
-        Write-Log "WARN: 工作区有未提交的改动，跳过拉取"
+        Write-Log "WARN: 工作区有未提交的改动，尝试 git stash 兜底"
         Write-Log ($dirty -join "`n")
-        exit 0
+        $stashOutput = git stash push -m "auto-pull-stash" 2>&1
+        if ($LASTEXITCODE -eq 0 -and $stashOutput -notmatch 'No local changes to save') {
+            Write-Log "git stash 成功，继续拉取"
+            $stashed = $true
+        } else {
+            Write-Log "WARN: git stash 失败或无变更，跳过拉取"
+            Write-Log ($stashOutput -join "`n")
+            exit 0
+        }
     }
 
     # 记录当前分支，拉取后切回
@@ -84,6 +93,17 @@ try {
     # ---- 切回原分支 ----
     $output = git checkout $currentBranch 2>&1
     Write-Log "切回分支: $currentBranch"
+
+    # ---- 恢复 stash 的改动 ----
+    if ($stashed) {
+        $output = git stash pop 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            Write-Log "git stash pop 成功，改动已恢复"
+        } else {
+            Write-Log "WARN: git stash pop 失败，改动保存在 stash 中"
+            Write-Log ($output -join "`n")
+        }
+    }
 
 } catch {
     Write-Log "ERROR: $_"

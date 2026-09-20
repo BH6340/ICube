@@ -2,10 +2,15 @@
 # ICube CI/CD 工作流
 # ============================================================================
 # 触发条件：
-#   - PR 到 main：CI 检查（不部署）
+#   - PR 到 main：CI 检查（不部署）— 由 web-deploy.yml 自动创建 PR 触发
 #   - push 到 dev：CI 检查（不部署）
-#   - push 到 main（合并后）：CI 检查 + 自动部署 + sync-dev + changelog
+#   - push 到 main（PR 合并后）：CI 检查 + 自动部署 + sync-dev + changelog
 #   - 纯文档变更：触发部署（CI 检查自动 skip），确保服务器 docs 同步
+#
+# 发版流程：
+#   1. 日常开发：push 到 dev → 本 workflow 跑 CI 检查
+#   2. Web 发版：打 web-v* tag → web-deploy.yml 创建 PR → CI 检查 → auto merge → 本 workflow 部署
+#   3. APP 发版：打 app-v* tag → app-build.yml 构建 APK
 #
 # 完整流程文档：docs/guides/Git分支策略与CICD流程.md
 # ============================================================================
@@ -38,6 +43,9 @@ on:
       - '.github/workflows/cicd.yml'
       - 'docs/**'                  # 文档（触发部署，CI 自动 skip）
       - 'README.md'
+  # 手动触发部署：用于不发版但需要更新服务器（如小修小补、文档更新、配置调整）
+  # 在 Actions 页面 → CI/CD → Run workflow 触发，部署 main 分支当前代码
+  workflow_dispatch:
 
 # ============================== 全局环境变量 ==============================
 env:
