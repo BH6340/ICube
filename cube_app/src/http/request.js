@@ -34,14 +34,28 @@ function showErrorMsg(message) {
 }
 
 /**
+ * 生产环境后端地址（APP WebView 中使用）
+ * 不依赖环境变量，直接硬编码，确保构建产物中一定有正确地址
+ */
+const PROD_API_BASE = 'https://bh6340.duckdns.org:8443'
+
+/**
+ * 运行时确定 baseURL：
+ *   - file:// 协议（APP WebView）：用 PROD_API_BASE 直接请求后端
+ *   - http/https 协议（浏览器开发/预览）：空字符串走相对路径 + Vite proxy
+ */
+function resolveBaseURL() {
+    if (typeof window !== 'undefined' && window.location?.protocol === 'file:') {
+        return PROD_API_BASE
+    }
+    return import.meta.env.VITE_API_BASE_URL || ''
+}
+
+/**
  * 创建 Axios 实例
- *
- * baseURL 由环境变量控制：
- *   - 开发环境（.env）：空字符串，/api 经 Vite proxy 转发到 127.0.0.1:8000
- *   - 生产环境（.env.production）：真实域名，WebView 中直接请求后端
  */
 const service = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL,
+    baseURL: resolveBaseURL(),
     timeout: 10000
 })
 
