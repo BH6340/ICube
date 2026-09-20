@@ -71,6 +71,7 @@
 - feat(shop): 完成支付宝集成安全优化与配置化改造 (#21) (3665e16)
 - feat(smart-cube): 新增智能魔方计时器功能 (#39) (4a4d884)
 - feat(cube-app): 全量更新APP功能与资源，新增用户社交与智能魔方支持  &  ci(github-actions): 为安卓构建步骤添加gradlew可执行权限  (#62) (3117735)
+- feat: 新增订单删除功能，完善多模块移动端适配与页面细节优化  (#68) (a57584f)
 
 
 ## fix - 修复
@@ -122,6 +123,7 @@
 - fix(cube_api): 修复生产环境Admin登录403与CORS白名单失效问题 (#47) (25f5c14)
 - fix(prod settings): 修复多域名CORS和CSRF配置解析问题  (#48) (b921000)
 - fix(settings): 清理prod配置文件中的merge冲突  (#50) (a9ef015)
+- fix(app): 修复API缺尾斜杠及CI构建配置多项问题 (#65) (2f5f125)
 
 
 ## docs - 文档
@@ -194,6 +196,7 @@
 - ci(cicd): 替换路径检测工具并优化条件判断 (#16) (0d57f9d)
 - ci(cicd): 重构CI工作流，拆分Docker构建Job并优化路径检测 (#46) (bfc3d8b)
 - ci(cloudflared): 调整隧道配置并添加时区环境变量  (#55) (07d1753)
+- ci(github-workflow): 修复服务器部署的SSH密钥配置问题  (#64) (51d634d)
 
 
 ## build - 构建
@@ -276,5 +279,6 @@
 - chore(ci): 为cloudflared添加两个环境变量 (#56) (707a037)
 - chore(deploy): 配置DuckDNS HTTPS反向代理服务 (#57) (94215d4)
 - chore(deploy): 优化后端更新逻辑，改为重建镜像而非仅重启 (#60) (659f619)
+- chore(cube_app): 新增Android应用图标生成脚本并更新图标  (#66) (72c73db)
 
 
