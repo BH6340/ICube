@@ -32,6 +32,8 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 拉取完整历史，用于比较 dev 和 main 差异
 
       # 从 tag 名提取版本号（web-v1.0.2 → 1.0.2）
       - name: Determine version
@@ -49,12 +51,26 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # 检查 dev 和 main 之间是否有差异
+          AHEAD=$(git rev-list --count origin/main..origin/dev)
+          if [ "$AHEAD" = "0" ]; then
+            echo "⚠️ dev 和 main 之间没有差异，无需创建 PR"
+            echo "如有代码改动未提交，请先 git push origin dev"
+            exit 1
+          fi
+          echo "dev 领先 main $AHEAD 个 commit，创建 PR..."
+          
           PR_URL=$(gh pr create \
             --head dev \
             --base main \
             --title "release: Web v${{ steps.version.outputs.version }}" \
-            --body "自动创建的发布 PR（由 tag \`web-v${{ steps.version.outputs.version }}\` 触发）" \
-            2>&1)
+            --body "自动创建的发布 PR（由 tag \`web-v${{ steps.version.outputs.version }}\` 触发）")
+          
+          if [ $? -ne 0 ]; then
+            echo "❌ 创建 PR 失败: $PR_URL"
+            exit 1
+          fi
+          
           echo "PR URL: $PR_URL"
           PR_NUMBER=$(echo "$PR_URL" | grep -oE '[0-9]+$')
           echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
