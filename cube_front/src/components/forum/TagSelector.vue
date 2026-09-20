@@ -180,4 +180,20 @@ onMounted(() => {
 .error-tip {
   margin-top: 10px;
 }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .selected-tags {
+    margin-top: 8px;
+    gap: 6px;
+  }
+
+  .selected-tags .label {
+    font-size: 12px;
+  }
+
+  .selected-tags :deep(.el-tag) {
+    --el-tag-font-size: 11px;
+  }
+}
 </style>

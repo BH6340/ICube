@@ -1,5 +1,11 @@
 name: APP Build & Release
 
+# ====================================================================
+# 触发条件
+# ====================================================================
+# 1. push tag v* → 正式发版，自动构建+签名+上传+Release
+# 2. workflow_dispatch → 手动触发（Actions 页面点 Run workflow），输入版本号
+#    注意：手动触发只在默认分支（main）上生效，tag 触发不限制分支
 on:
   push:
     tags:
@@ -11,19 +17,27 @@ on:
         required: true
         default: ''
 
+# 全局环境变量，所有步骤共享
 env:
-  APP_DIR: cube_app
-  ANDROID_DIR: cube_app/android
+  APP_DIR: cube_app          # APP 前端代码目录
+  ANDROID_DIR: cube_app/android  # Android 原生工程目录
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    # contents:write 权限：用于创建 GitHub Release
     permissions:
       contents: write
     steps:
+      # ================================================================
+      # 环境准备阶段
+      # ================================================================
+
+      # 拉取代码
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 安装 Node.js 22（与本地开发一致）
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -31,51 +45,32 @@ jobs:
           cache: 'npm'
           cache-dependency-path: ${{ env.APP_DIR }}/package-lock.json
 
+      # 安装 JDK 21（Android 编译需要）
       - name: Setup JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: 'microsoft'
           java-version: '21'
 
+      # 安装 Android SDK（API 36 + Build Tools 36.0.0）
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
           packages: 'platforms;android-36 build-tools;36.0.0'
 
+      # 安装 APP 前端依赖
       - name: Install dependencies
         working-directory: ${{ env.APP_DIR }}
         run: npm ci
 
-      - name: Build web assets
-        working-directory: ${{ env.APP_DIR }}
-        env:
-          API_BASE_URL: ${{ vars.API_BASE_URL }}
-        run: |
-          # 生成 .env.production（因 .env.production 在 .gitignore 中，CI 需动态生成）
-          if [ -n "$API_BASE_URL" ]; then
-            echo "VITE_API_BASE_URL=$API_BASE_URL" > .env.production
-            echo "VITE_MEDIA_BASE_URL=$API_BASE_URL" >> .env.production
-            echo ".env.production generated with API_BASE_URL=$API_BASE_URL"
-          else
-            echo "Warning: API_BASE_URL not set, using default from .env.production if exists"
-          fi
-          # 同步更新 package.json 版本号（APP 内显示的版本号从 package.json 读取）
-          node -e "const p=require('./package.json');p.version='${{ steps.version.outputs.version }}';require('fs').writeFileSync('package.json',JSON.stringify(p,null,2)+'\n')"
-          echo "package.json version updated to ${{ steps.version.outputs.version }}"
-          npm run build
+      # ================================================================
+      # 版本号确定阶段（必须在 Build web assets 之前，否则 version 输出为空）
+      # ================================================================
 
-      - name: Sync Capacitor
-        working-directory: ${{ env.APP_DIR }}
-        run: npx cap sync android
-
-      - name: Decode keystore
-        run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > ${{ env.ANDROID_DIR }}/icube.jks
-          echo "KEYSTORE_FILE=icube.jks" >> $GITHUB_ENV
-          echo "KEYSTORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}" >> $GITHUB_ENV
-          echo "KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> $GITHUB_ENV
-          echo "KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> $GITHUB_ENV
-
+      # 确定版本号和 versionCode
+      # - workflow_dispatch 触发：用输入的版本号
+      # - tag 触发：从 tag 名去掉 v 前缀（如 v1.0.1 → 1.0.1）
+      # - versionCode：major*10000 + minor*100 + patch（如 1.0.1 → 10001）
       - name: Determine version
         id: version
         run: |
@@ -85,7 +80,6 @@ jobs:
             VERSION="${GITHUB_REF_NAME#v}"
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          # versionCode: major*10000 + minor*100 + patch
           IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
           MAJOR=${MAJOR:-0}
           MINOR=${MINOR:-0}
@@ -93,24 +87,88 @@ jobs:
           CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))
           echo "version_code=$CODE" >> $GITHUB_OUTPUT
 
+      # ================================================================
+      # Web 资源构建阶段
+      # ================================================================
+
+      # 构建 Vue 前端资源 → dist/
+      # 关键：动态生成 .env.production（因该文件在 .gitignore 中不被提交）
+      # 从 GitHub Variables 的 API_BASE_URL 读取后端地址
+      # 同时更新 package.json 的 version 字段，APP 内通过 it 读取版本号
+      - name: Build web assets
+        working-directory: ${{ env.APP_DIR }}
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+        run: |
+          if [ -n "$API_BASE_URL" ]; then
+            echo "VITE_API_BASE_URL=$API_BASE_URL" > .env.production
+            echo "VITE_MEDIA_BASE_URL=$API_BASE_URL" >> .env.production
+            echo ".env.production generated with API_BASE_URL=$API_BASE_URL"
+          else
+            echo "Warning: API_BASE_URL not set, using default from .env.production if exists"
+          fi
+          node -e "const p=require('./package.json');p.version='${{ steps.version.outputs.version }}';require('fs').writeFileSync('package.json',JSON.stringify(p,null,2)+'\n')"
+          echo "package.json version updated to ${{ steps.version.outputs.version }}"
+          npm run build
+
+      # 将 dist/ 同步到 Android 原生工程
+      - name: Sync Capacitor
+        working-directory: ${{ env.APP_DIR }}
+        run: npx cap sync android
+
+      # ================================================================
+      # 签名配置阶段
+      # ================================================================
+
+      # 从 GitHub Secrets 解码 keystore 到 Android 工程根目录
+      # 同时设置环境变量供 Gradle 读取
+      # 必须配置的 Secrets：
+      #   KEYSTORE_BASE64    — keystore 文件的 base64 编码
+      #   KEYSTORE_PASSWORD  — keystore 密码
+      #   KEY_ALIAS          — key 别名
+      #   KEY_PASSWORD       — key 密码
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > ${{ env.ANDROID_DIR }}/icube.jks
+          echo "KEYSTORE_FILE=icube.jks" >> $GITHUB_ENV
+          echo "KEYSTORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}" >> $GITHUB_ENV
+          echo "KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> $GITHUB_ENV
+          echo "KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> $GITHUB_ENV
+
+      # ================================================================
+      # APK 构建阶段
+      # ================================================================
+
+      # 更新 build.gradle 中的 versionCode 和 versionName
       - name: Update version in build.gradle
         working-directory: ${{ env.ANDROID_DIR }}
         run: |
           sed -i "s/versionCode [0-9]*/versionCode ${{ steps.version.outputs.version_code }}/" app/build.gradle
           sed -i "s/versionName \"[^\"]*\"/versionName \"${{ steps.version.outputs.version }}\"/" app/build.gradle
 
+      # 构建 release APK（跳过 lint 加速）
       - name: Build release APK
         working-directory: ${{ env.ANDROID_DIR }}
         run: |
           chmod +x gradlew
           ./gradlew assembleRelease -x lintVitalRelease --no-daemon
 
+      # 重命名为带版本号的文件名
       - name: Rename APK
         run: |
           APK_PATH=$(find ${{ env.ANDROID_DIR }}/app/build/outputs/apk/release -name "*.apk" | head -1)
           cp "$APK_PATH" "icube-v${{ steps.version.outputs.version }}.apk"
           ls -lh icube-v*.apk
 
+      # ================================================================
+      # 部署阶段
+      # ================================================================
+
+      # 通过 SCP 上传 APK 到服务器，并更新 app_version.json
+      # 必须配置的 Secrets：
+      #   SSH_PRIVATE_KEY — 服务器 SSH 私钥（OpenSSH 格式，非 PPK）
+      #   SERVER_HOST     — 服务器 IP 或域名
+      #   SERVER_USER     — SSH 登录用户名
       - name: Upload to server
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -124,7 +182,9 @@ jobs:
           # 验证 key 格式
           ssh-keygen -y -f ~/.ssh/deploy_key > /dev/null 2>&1 && echo "SSH key is valid" || echo "WARNING: SSH key format may be invalid"
           ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          # 上传 APK 到服务器 downloads 目录
           scp -i ~/.ssh/deploy_key "icube-v${{ steps.version.outputs.version }}.apk" "$SERVER_USER@$SERVER_HOST:~/ICube/downloads/"
+          # 更新 app_version.json（版本号、下载路径、更新说明）
           ssh -i ~/.ssh/deploy_key "$SERVER_USER@$SERVER_HOST" "cd ~/ICube && python3 -c \"
           import json, os
           f = 'cube_api/cube_api/apps/home/app_version.json'
@@ -138,6 +198,13 @@ jobs:
           print('app_version.json updated')
           \""
 
+      # ================================================================
+      # GitHub Release 阶段（可选，失败不影响主流程）
+      # ================================================================
+
+      # 创建 GitHub Release，附带 APK 下载文件
+      # continue-on-error: true — 即使失败也不影响整体构建结果
+      # 因为 APK 已通过 SCP 上传到服务器，用户可通过网站下载
       - name: Create GitHub Release
         continue-on-error: true
         uses: softprops/action-gh-release@v2

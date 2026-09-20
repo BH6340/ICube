@@ -96,7 +96,7 @@
         </div>
 
         <div class="replies-list" v-if="comment.replies && comment.replies.length">
-          <div v-for="reply in comment.replies" :key="reply.id" class="reply-item">
+          <div v-for="reply in (comment._expanded ? comment.replies : comment.replies.slice(0, 1))" :key="reply.id" class="reply-item">
             <div class="reply-main">
               <el-avatar :size="28" :src="reply.author?.image || defaultAvatar" class="reply-avatar"/>
               <div class="reply-content">
@@ -166,12 +166,13 @@
             </div>
           </div>
 
-          <div v-if="comment.reply_count > 3 && comment.replies.length === 3" class="load-more-replies">
-            <el-button text @click="loadMoreReplies(comment)">
+          <div v-if="comment.replies.length > 1" class="load-more-replies">
+            <el-button text @click="toggleReplies(comment)">
               <el-icon>
-                <More/>
+                <More v-if="!comment._expanded" />
+                <ArrowUp v-else />
               </el-icon>
-              展开更多回复 ({{ comment.reply_count - 3 }})
+              {{ comment._expanded ? '收起回复' : `展开更多回复 (${comment.replies.length - 1})` }}
             </el-button>
           </div>
         </div>
@@ -212,7 +213,7 @@
 
 import {ref, computed, onMounted} from 'vue'
 import {ElMessage, ElMessageBox} from 'element-plus'
-import {CaretBottom, CaretTop, More} from '@element-plus/icons-vue'
+import {CaretBottom, CaretTop, More, ArrowUp} from '@element-plus/icons-vue'
 import {
   getComments,
   createComment,
@@ -499,6 +500,10 @@ const loadMoreReplies = async (comment) => {
   await loadComments()
 }
 
+const toggleReplies = (comment) => {
+  comment._expanded = !comment._expanded
+}
+
 onMounted(() => {
   loadComments()
 })
@@ -643,5 +648,132 @@ onMounted(() => {
 .load-more-replies {
   margin-top: 8px;
   text-align: center;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .comment-section {
+    margin-top: 12px;
+  }
+
+  .comment-form {
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 12px;
+    border-radius: 8px;
+  }
+
+  .comment-form :deep(.el-avatar) {
+    --el-avatar-size: 28px;
+  }
+
+  .form-actions {
+    margin-top: 10px;
+  }
+
+  .form-actions .el-button {
+    font-size: 13px;
+    padding: 7px 14px;
+  }
+
+  .comments-list {
+    gap: 14px;
+  }
+
+  .comment-item {
+    padding-bottom: 14px;
+  }
+
+  .comment-main {
+    gap: 10px;
+  }
+
+  .comment-avatar {
+    --el-avatar-size: 32px;
+  }
+
+  .comment-header {
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .author-name {
+    font-size: 14px;
+  }
+
+  .comment-time {
+    font-size: 11px;
+  }
+
+  .comment-body {
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+
+  .comment-actions {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .comment-actions .el-button {
+    font-size: 12px;
+    padding: 4px 6px;
+  }
+
+  .replies-list {
+    margin-top: 12px;
+    margin-left: 26px;
+    padding-left: 12px;
+  }
+
+  .reply-item {
+    margin-bottom: 12px;
+  }
+
+  .reply-main {
+    gap: 8px;
+  }
+
+  .reply-avatar {
+    --el-avatar-size: 24px;
+  }
+
+  .reply-header {
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+
+  .reply-body {
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+
+  .reply-actions {
+    gap: 8px;
+  }
+
+  .reply-actions .el-button {
+    font-size: 11px;
+    padding: 3px 5px;
+  }
+
+  .reply-form {
+    margin-top: 8px;
+    padding: 10px;
+    border-radius: 6px;
+  }
+
+  .reply-form :deep(.el-textarea__inner) {
+    font-size: 13px;
+  }
+
+  .pagination {
+    margin-top: 14px;
+  }
+
+  .empty-comments {
+    padding: 24px 0;
+  }
 }
 </style>

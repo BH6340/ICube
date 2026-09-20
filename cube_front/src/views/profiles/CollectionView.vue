@@ -92,14 +92,15 @@
               </div>
               <div class="formula-footer">
                 <div class="footer-left">
-                  <span class="category-tag">{{ formula.category?.name }}</span>
-                  <span v-if="formula.author" class="author-separator">&nbsp;&nbsp;by&nbsp;</span>
-                  <span v-if="formula.author" class="author-name">{{ formula.author.username }}</span>
+                  <span class="view-count">浏览：{{ formula.view_count || 0 }}次</span>
+                  <span class="category-tag">公式分类：{{ formula.category?.name }}</span>
+                  <span v-if="formula.author" class="author-name">作者：{{ formula.author.username }}</span>
                 </div>
                 <div class="footer-right">
                   <el-button
                       v-if="activeTab === 'my_formulas'"
                       type="primary"
+                      link
                       size="small"
                       @click.stop="handleEditFormula(formula)"
                       icon="Edit"
@@ -109,6 +110,7 @@
                   <el-button
                       v-if="activeTab === 'my_formulas'"
                       type="danger"
+                      link
                       size="small"
                       @click.stop="handleDeleteFormula(formula)"
                       icon="Delete"
@@ -117,7 +119,8 @@
                   </el-button>
                   <el-button
                       v-if="activeTab === 'collections'"
-                      type="link"
+                      type="primary"
+                      link
                       size="small"
                       @click.stop="removeCollectionItem(formula)"
                       class="collected"
@@ -179,7 +182,7 @@
       </div>
     </el-drawer>
 
-    <el-dialog v-model="showDetailDialog" :title="selectedFormula?.name" width="900px">
+    <el-dialog v-model="showDetailDialog" :title="selectedFormula?.name" :width="isMobile ? '95%' : '900px'" append-to-body class="formula-detail-dialog">
       <div v-if="selectedFormula" class="formula-detail">
         <el-row :gutter="20">
           <el-col :xs="24" :sm="8">
@@ -256,13 +259,18 @@
  *   - 列表数据兼容分页格式（res.data.results）和数组格式
  */
 
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Picture, Star, Filter } from '@element-plus/icons-vue';
 import { getFormulaCategories, getMyCollections, removeCollection, getMyCustomFormulas, deleteFormula } from '../../api/formula';
 import CubeDemo from '../../components/formula/CubeDemo.vue';
 import FormulaEditor from '../../components/formula/FormulaEditor.vue';
+
+/** 是否为移动端 */
+const isMobile = ref(false);
+const checkMobile = () => { isMobile.value = window.innerWidth < 768; };
+const handleResize = () => { checkMobile(); };
 
 /** 分类列表（原始数据） */
 const categoryList = ref([]);
@@ -663,8 +671,14 @@ const resetMobileFilters = () => {
 };
 
 onMounted(() => {
+  checkMobile();
+  window.addEventListener('resize', handleResize);
   loadCategories();
   loadCollections();
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize);
 });
 </script>
 
@@ -825,6 +839,17 @@ onMounted(() => {
   align-items: center;
 }
 
+.footer-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.view-count {
+  font-size: 12px;
+  color: #909399;
+}
+
 .category-tag {
   font-size: 12px;
   color: #909399;
@@ -945,7 +970,7 @@ onMounted(() => {
 /* 移动端适配 */
 @media (max-width: 768px) {
   .formula-library {
-    padding: 12px 8px;
+    padding: 12px;
   }
 
   /* 显示移动端顶部搜索栏 */
@@ -983,8 +1008,12 @@ onMounted(() => {
   }
 
   .formula-grid {
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+  }
+
+  .formula-card :deep(.el-card__body) {
+    padding: 10px;
   }
 
   .formula-name {
@@ -1004,21 +1033,43 @@ onMounted(() => {
   .formula-footer {
     flex-direction: column;
     align-items: flex-start;
+    gap: 6px;
+  }
+
+  .footer-left {
+    flex-wrap: wrap;
     gap: 8px;
+    width: 100%;
   }
 
   .footer-right {
     width: 100%;
     display: flex;
-    gap: 8px;
+    justify-content: flex-end;
+    gap: 2px;
   }
 
   .footer-right .el-button {
-    flex: 1;
+    font-size: 11px;
+    padding: 4px 6px;
+  }
+
+  .view-count, .category-tag, .author-name {
+    font-size: 11px;
   }
 
   .pagination-wrapper {
     margin-top: 20px;
+  }
+
+  /* 移动端 3D 演示在上，公式信息在下 */
+  .formula-detail :deep(.el-col:nth-child(1)) {
+    order: 1;
+  }
+
+  .formula-detail :deep(.el-col:nth-child(2)) {
+    order: -1;
+    margin-bottom: 12px;
   }
 }
 

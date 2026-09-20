@@ -549,4 +549,36 @@ onBeforeUnmount(() => {
 .action-buttons .el-button {
   min-width: 70px;
 }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .canvas-wrapper {
+    height: 220px;
+  }
+
+  .step-tag {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
+
+  .steps-display {
+    max-height: 50px;
+    gap: 4px;
+    padding: 6px;
+  }
+
+  .progress-info {
+    font-size: 12px;
+  }
+
+  .action-buttons {
+    gap: 4px;
+  }
+
+  .action-buttons .el-button {
+    min-width: 50px;
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+}
 </style>

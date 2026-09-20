@@ -52,7 +52,7 @@
             <div class="section-header">
               <span class="section-icon">📢</span>
               <span class="section-title">热门帖子</span>
-              <el-button type="link" size="small" @click="router.push('/forum')">查看更多 →</el-button>
+              <el-button type="primary" link size="small" @click="router.push('/forum')">查看更多 →</el-button>
             </div>
           </template>
           <!-- 加载骨架屏 -->
@@ -87,7 +87,7 @@
             <div class="section-header">
               <span class="section-icon">✨</span>
               <span class="section-title">精选公式</span>
-              <el-button type="link" size="small" @click="router.push('/formulas')">查看更多 →</el-button>
+              <el-button type="primary" link size="small" @click="router.push('/formulas')">查看更多 →</el-button>
             </div>
           </template>
           <!-- 加载骨架屏 -->
@@ -99,6 +99,12 @@
             </div>
             <!-- 公式列表 -->
             <div v-for="formula in hotFormulas" :key="formula.id" class="formula-item" @click="goToFormula(formula.id)">
+              <div class="formula-thumb" v-if="formula.thumbnail">
+                <img :src="formula.thumbnail" :alt="formula.name" />
+              </div>
+              <div class="formula-thumb placeholder" v-else>
+                <el-icon size="20"><Box /></el-icon>
+              </div>
               <div class="formula-content">
                 <h4 class="formula-name">{{ formula.name }}</h4>
                 <p class="formula-category">{{ formula.category?.name || '未分类' }}</p>
@@ -212,6 +218,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { Box } from '@element-plus/icons-vue'
 import { getPosts } from '@/api/posts'                    // 获取帖子 API
 import { getFormulaList, getFormulaCategories } from '@/api/formula'  // 公式相关 API
 import { getBannersApi } from '@/api/home'                // 获取轮播图 API
@@ -233,9 +240,9 @@ const carouselHeight = ref('360px')
 const updateCarouselHeight = () => {
   const width = window.innerWidth
   if (width < 480) {
-    carouselHeight.value = '200px'
+    carouselHeight.value = '130px'
   } else if (width < 768) {
-    carouselHeight.value = '240px'
+    carouselHeight.value = '160px'
   } else if (width < 1024) {
     carouselHeight.value = '300px'
   } else {
@@ -617,6 +624,35 @@ onUnmounted(() => {
   font-weight: 500;
   color: #303133;
   margin: 0 0 6px 0;
+}
+
+.formula-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f7fa;
+}
+
+.formula-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.formula-thumb.placeholder {
+  color: #c0c4cc;
+}
+
+.formula-content {
+  flex: 1;
+  text-align: left;
+  min-width: 0;
 }
 
 .formula-category {

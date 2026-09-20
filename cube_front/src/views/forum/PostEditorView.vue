@@ -334,21 +334,39 @@ onMounted(() => {
 /* 响应式调整 */
 @media (max-width: 768px) {
   .post-editor-container {
-    padding: 12px;
+    padding: 10px;
+  }
+
+  .editor-card {
+    border-radius: 8px;
+  }
+
+  .editor-card :deep(.el-card__body) {
+    padding: 14px;
   }
 
   .card-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
+    gap: 6px;
+  }
+
+  .card-header h2 {
+    font-size: 18px;
   }
 
   .form-actions {
-    flex-direction: column;
+    flex-direction: row;
+    gap: 12px;
+    padding-top: 14px;
+    margin-top: 14px;
   }
 
   .form-actions .el-button {
-    width: 100%;
+    flex: 1;
+    min-width: auto;
+    font-size: 14px;
+    padding: 10px 0;
   }
 
   .content-tip {

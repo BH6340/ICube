@@ -21,8 +21,8 @@
             <span class="item-spec" v-if="item.selected_spec && Object.keys(item.selected_spec).length">
               {{ formatSpec(item.selected_spec) }}
             </span>
-            <div class="item-price">¥{{ item.product_info.price }}</div>
           </div>
+          <div class="item-price">¥{{ item.product_info.price }}</div>
           <div class="item-quantity">
             <el-input-number
               v-model="item.quantity"
@@ -34,7 +34,7 @@
           </div>
           <div class="item-total">¥{{ (item.product_info.price * item.quantity).toFixed(2) }}</div>
           <div class="item-delete">
-            <el-button type="link" @click="handleDelete(item)">删除</el-button>
+            <el-button type="primary" link @click="handleDelete(item)">删除</el-button>
           </div>
         </div>
       </div>
@@ -293,19 +293,34 @@ onMounted(() => {
 /* 移动端适配 */
 @media (max-width: 768px) {
   .cart-view {
+    padding: 10px;
+  }
+
+  .cart-card :deep(.el-card__body) {
     padding: 12px;
+  }
+
+  .cart-card :deep(.el-card__header) {
+    padding: 10px 12px;
+    font-size: 15px;
+  }
+
+  .cart-list {
+    gap: 8px;
   }
 
   .cart-item {
     flex-wrap: wrap;
-    padding: 12px;
-    gap: 12px;
+    padding: 10px;
+    gap: 8px;
     align-items: flex-start;
+    border-radius: 6px;
   }
 
   .item-image {
-    width: 64px;
-    height: 64px;
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
   }
 
   .item-info {
@@ -315,70 +330,6 @@ onMounted(() => {
 
   .item-name {
     font-size: 13px;
-  }
-
-  .item-spec {
-    font-size: 11px;
-  }
-
-  .item-price {
-    font-size: 13px;
-  }
-
-  .item-quantity {
-    order: 10;
-    width: auto;
-    margin-left: auto;
-  }
-
-  .item-total {
-    order: 11;
-    width: auto;
-    font-size: 13px;
-    text-align: right;
-  }
-
-  .item-delete {
-    order: 12;
-    width: auto;
-  }
-
-  .cart-footer {
-    flex-direction: column;
-    gap: 12px;
-    align-items: stretch;
-  }
-
-  .select-all {
-    justify-content: space-between;
-  }
-
-  .total-section {
-    justify-content: space-between;
-  }
-
-  .total-price {
-    font-size: 18px;
-  }
-
-  .total-section .el-button {
-    margin-left: auto;
-  }
-}
-
-@media (max-width: 480px) {
-  .cart-item {
-    padding: 10px;
-    gap: 8px;
-  }
-
-  .item-image {
-    width: 56px;
-    height: 56px;
-  }
-
-  .item-name {
-    font-size: 12px;
     line-height: 1.3;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -386,8 +337,86 @@ onMounted(() => {
     overflow: hidden;
   }
 
-  .item-quantity .el-input-number {
-    width: 100px;
+  .item-spec {
+    font-size: 11px;
+  }
+
+  /* 移动端：价格、数量、小计、删除在第二行右对齐 */
+  .item-price {
+    order: 10;
+    width: 100%;
+    text-align: right;
+    font-size: 13px;
+    padding-top: 4px;
+    border-top: 1px dashed #ebeef5;
+  }
+
+  .item-quantity {
+    order: 11;
+    width: auto;
+    margin-left: auto;
+  }
+
+  .item-quantity :deep(.el-input-number) {
+    width: 90px;
+  }
+
+  .item-quantity :deep(.el-input-number .el-input__inner) {
+    height: 26px;
+    font-size: 12px;
+  }
+
+  .item-total {
+    order: 12;
+    width: auto;
+    font-size: 13px;
+    text-align: right;
+  }
+
+  .item-delete {
+    order: 13;
+    width: auto;
+  }
+
+  .item-delete .el-button {
+    font-size: 12px;
+    padding: 4px 6px;
+  }
+
+  .cart-footer {
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+    padding-top: 12px;
+    margin-top: 12px;
+  }
+
+  .select-all {
+    justify-content: space-between;
+    font-size: 13px;
+  }
+
+  .selected-count {
+    font-size: 12px;
+  }
+
+  .total-section {
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .total-label {
+    font-size: 13px;
+  }
+
+  .total-price {
+    font-size: 17px;
+  }
+
+  .total-section .el-button {
+    margin-left: auto;
+    font-size: 13px;
+    padding: 8px 16px;
   }
 }
 </style>

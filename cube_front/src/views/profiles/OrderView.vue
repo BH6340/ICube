@@ -52,6 +52,7 @@
               <el-button v-if="order.status === 'pending' || order.status === 'paid'" type="info" @click="handleCancel(order)">取消</el-button>
               <el-button v-if="order.status === 'shipped'" type="primary" @click="handleComplete(order)">确认收货</el-button>
               <el-button v-if="order.status === 'completed'" type="default" disabled>已完成</el-button>
+              <el-button v-if="order.status === 'cancelled' || order.status === 'completed'" type="danger" link @click="handleDelete(order)">删除</el-button>
             </div>
           </div>
         </div>
@@ -84,7 +85,7 @@ import { ref, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ShoppingBag } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
-import { getOrders, cancelOrder, completeOrder } from '@/api/shop'
+import { getOrders, cancelOrder, completeOrder, deleteOrder } from '@/api/shop'
 
 const router = useRouter()
 const activeTab = ref('all')
@@ -143,6 +144,26 @@ const handleComplete = async (order) => {
     }
   } catch (error) {
     ElMessage.error('操作失败')
+  }
+}
+
+const handleDelete = async (order) => {
+  try {
+    const { ElMessageBox } = await import('element-plus')
+    await ElMessageBox.confirm('确定要删除该订单吗？删除后不可恢复。', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    const res = await deleteOrder(order.id)
+    if (res.code === 100) {
+      ElMessage.success('删除成功')
+      loadOrders()
+    }
+  } catch (error) {
+    if (error !== 'cancel' && error?.code !== 'cancel') {
+      ElMessage.error('删除失败')
+    }
   }
 }
 
