@@ -96,7 +96,8 @@
                 <div class="footer-right">
                   <el-button
                       v-if="isFormulaAuthor(formula)"
-                      type="link"
+                      type="primary"
+                      link
                       size="small"
                       @click.stop="handleEditFormula(formula)"
                       icon="Edit"
@@ -105,16 +106,17 @@
                   </el-button>
                   <el-button
                       v-if="isFormulaAuthor(formula)"
-                      type="link"
+                      type="danger"
+                      link
                       size="small"
                       @click.stop="handleDeleteFormula(formula)"
                       icon="Delete"
-                      style="color: #f56c6c"
                   >
                     删除
                   </el-button>
                   <el-button
-                      type="link"
+                      type="primary"
+                      link
                       size="small"
                       @click.stop="toggleCollection(formula)"
                       :icon="isCollected(formula.id) ? 'Star' : 'Star'"
@@ -873,13 +875,53 @@ onUnmounted(() => {
     display: none;
   }
 
+  /* 工具栏浓缩为一行 */
+  .toolbar {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+
+  .result-count {
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .toolbar-right {
+    width: auto;
+    margin-left: auto;
+    gap: 6px;
+  }
+
+  .toolbar-right .el-button {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .toolbar-right .el-select {
+    width: 90px !important;
+    margin-left: 0 !important;
+  }
+
+  .toolbar-right .el-select :deep(.el-input__wrapper) {
+    padding: 0 8px;
+  }
+
+  /* 公式卡片 */
   .formula-grid {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 10px;
   }
 
+  .formula-card :deep(.el-card__body) {
+    padding: 10px;
+  }
+
   .formula-header {
     margin-bottom: 6px;
+    gap: 6px;
   }
 
   .formula-name {
@@ -905,7 +947,7 @@ onUnmounted(() => {
 
   .footer-left {
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
     width: 100%;
   }
 
@@ -913,27 +955,34 @@ onUnmounted(() => {
     width: 100%;
     display: flex;
     justify-content: flex-end;
-    gap: 4px;
+    gap: 2px;
+  }
+
+  .footer-right .el-button {
+    font-size: 11px;
+    padding: 4px 6px;
   }
 
   .view-count, .category-tag, .author-name {
     font-size: 11px;
   }
 
-  .toolbar {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-
-  .toolbar-right {
-    width: 100%;
-    justify-content: space-between;
-  }
-
+  /* 分页缩小 */
   .pagination-wrapper {
-    margin-top: 20px;
+    margin-top: 16px;
+  }
+
+  .pagination-wrapper :deep(.el-pagination) {
+    font-size: 12px;
+  }
+
+  .pagination-wrapper :deep(.el-pagination .btn-prev),
+  .pagination-wrapper :deep(.el-pagination .btn-next),
+  .pagination-wrapper :deep(.el-pagination .el-pager li) {
+    min-width: 28px;
+    height: 28px;
+    line-height: 26px;
+    font-size: 12px;
   }
 
   /* 详情弹窗移动端适配 */
@@ -947,6 +996,20 @@ onUnmounted(() => {
 
   .formula-detail :deep(.el-col:last-child) {
     margin-bottom: 0;
+  }
+
+  /* 移动端 3D 演示在上，公式信息在下 */
+  .formula-detail .detail-demo {
+    order: -1;
+  }
+
+  .formula-detail :deep(.el-col:nth-child(1)) {
+    order: 1;
+  }
+
+  .formula-detail :deep(.el-col:nth-child(2)) {
+    order: -1;
+    margin-bottom: 12px;
   }
 
   .detail-thumbnail {

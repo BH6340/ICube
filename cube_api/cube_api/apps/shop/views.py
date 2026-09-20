@@ -381,6 +381,14 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         return APIResponse(data=OrderSerializer(order).data, msg="确认收货成功")
 
+    def destroy(self, request, *args, **kwargs):
+        """删除订单（仅已取消或已完成的订单可删除）"""
+        order = self.get_object()
+        if order.status not in ("cancelled", "completed"):
+            return APIResponse(code=400, msg="仅已取消或已完成的订单可删除")
+        order.delete()
+        return APIResponse(msg="删除成功")
+
     @action(detail=False, methods=["post"], permission_classes=[AllowAny], url_path="notify")
     @transaction.atomic
     def alipay_notify(self, request):

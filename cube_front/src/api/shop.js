@@ -212,6 +212,21 @@ export const completeOrder = (id) => {
 }
 
 /**
+ * 删除订单
+ *
+ * 仅已取消或已完成的订单可删除。
+ *
+ * @param {number} id - 订单 ID
+ * @returns {Promise<Object>} 响应数据
+ */
+export const deleteOrder = (id) => {
+  return request({
+    url: `/api/shop/orders/${id}/`,
+    method: 'delete'
+  })
+}
+
+/**
  * 获取当前用户的收货地址列表
  *
  * @returns {Promise<Object>} 响应数据，包含地址列表

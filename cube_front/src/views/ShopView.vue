@@ -101,9 +101,12 @@
                 </div>
               </div>
               <div class="product-actions">
-                <el-button type="primary" size="small" @click.stop="handleAddToCart(product)">
+                <el-button type="primary" size="small" @click.stop="handleAddToCart(product)" title="加入购物车">
                   <el-icon><ShoppingCart /></el-icon>
-                  加入购物车
+                  <span style="margin-left: 2px;">+</span>
+                </el-button>
+                <el-button type="warning" size="small" @click.stop="handleBuyNow(product)">
+                  立即购买
                 </el-button>
               </div>
             </el-card>
@@ -230,6 +233,9 @@
           <el-icon><ShoppingCart /></el-icon>
           加入购物车
         </el-button>
+        <el-button type="warning" @click="handleBuyNow(selectedProduct)">
+          立即购买
+        </el-button>
       </template>
     </el-dialog>
   </div>
@@ -256,13 +262,15 @@
  *   - selectedSpec 用 reactive 存储规格选择，支持多规格商品
  */
 import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ShoppingBag, ShoppingCart, Filter } from '@element-plus/icons-vue'
-import { getCategories, getProducts, getProductDetail, addToCart } from '@/api/shop'
+import { getCategories, getProducts, getProductDetail, addToCart, getCart } from '@/api/shop'
 import { useUserStore } from '@/stores/user'
 import { useCartRefresh } from '@/stores/cart'
 
 const userStore = useUserStore()
+const router = useRouter()
 const { bumpCartVersion } = useCartRefresh()
 
 const categoryTree = ref([])
@@ -421,6 +429,39 @@ const handleAddToCart = async (product) => {
     }
   } catch (error) {
     ElMessage.error('添加购物车失败')
+  }
+}
+
+const handleBuyNow = async (product) => {
+  if (!product) return
+  if (!userStore.token) {
+    ElMessage.warning('请先登录')
+    return
+  }
+  try {
+    const data = {
+      product: product.id,
+      quantity: quantity.value,
+      selected_spec: { ...selectedSpec }
+    }
+    const res = await addToCart(data)
+    if (res.code === 100) {
+      bumpCartVersion()
+      showDetailDialog.value = false
+      const cartRes = await getCart()
+      if (cartRes.code === 100) {
+        const items = cartRes.data.results || cartRes.data
+        const cartItem = items.find(item => item.product_info?.id === product.id)
+        if (cartItem) {
+          router.push({
+            path: '/shop/checkout',
+            query: { cart_ids: cartItem.id }
+          })
+        }
+      }
+    }
+  } catch (error) {
+    ElMessage.error('操作失败')
   }
 }
 
@@ -821,11 +862,15 @@ onUnmounted(() => {
 
   .product-actions {
     padding: 0 8px 8px;
+    display: flex;
+    gap: 6px;
   }
 
   .product-actions .el-button {
-    width: 100%;
+    flex: 1;
     justify-content: center;
+    font-size: 12px;
+    padding: 6px 4px;
   }
 
   .toolbar {

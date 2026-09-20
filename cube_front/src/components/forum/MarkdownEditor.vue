@@ -111,6 +111,7 @@
       title="选择魔方公式"
       width="900px"
       :close-on-click-modal="false"
+      :fullscreen="isMobile"
     >
       <div class="formula-dialog-content">
         <el-input
@@ -218,7 +219,7 @@
  * - 上下布局：编辑区在上，预览区在下
  */
 
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { Upload, View, Picture, Search, Box } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { marked } from 'marked'           // Markdown 解析库
@@ -256,6 +257,19 @@ const formulas = ref([])
 const selectedCategory = ref(null)
 const selectedDifficulty = ref(null)
 const formulaCategories = ref([])
+
+// 移动端检测
+const isMobile = ref(false)
+const checkMobile = () => {
+  isMobile.value = window.innerWidth <= 768
+}
+onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', checkMobile)
+})
 
 // 配置 marked
 marked.setOptions({
@@ -566,16 +580,104 @@ watch(showFormulaDialog, (newVal) => {
 /* 响应式 */
 @media (max-width: 768px) {
   .editor-container {
-    height: 500px;
+    height: 400px;
+  }
+
+  .editor-pane, .preview-pane {
+    min-height: 200px;
   }
 
   .editor-toolbar {
     flex-direction: column;
     align-items: stretch;
+    padding: 6px 8px;
+    gap: 6px;
+  }
+
+  .editor-toolbar .el-button-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .editor-toolbar .el-button-group .el-button {
+    padding: 4px 6px;
+    font-size: 12px;
   }
 
   .toolbar-right {
     justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .toolbar-right .el-button {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
+  .pane-title {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .pane-tip {
+    font-size: 10px;
+  }
+
+  .editor-textarea {
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  .editor-footer {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+
+  .preview-content {
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  /* 公式弹窗移动端全屏 */
+  .formula-dialog-content {
+    max-height: 60vh;
+  }
+
+  .formula-filters {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .formula-filters .el-select {
+    width: 100% !important;
+    margin-right: 0 !important;
+  }
+
+  .formula-grid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 8px;
+  }
+
+  .formula-card {
+    padding: 6px;
+  }
+
+  .formula-name {
+    font-size: 12px;
+  }
+
+  .formula-notation {
+    font-size: 10px;
+  }
+
+  .formula-category {
+    font-size: 9px;
+  }
+
+  .formula-thumbnail.placeholder .el-icon {
+    font-size: 24px;
   }
 }
 

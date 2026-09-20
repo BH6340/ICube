@@ -502,68 +502,114 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .post-detail-container {
-    padding: 12px;
+    padding: 10px;
     max-width: 100%;
   }
 
   .post-card {
-    margin-bottom: 12px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+  }
+
+  .post-card :deep(.el-card__body) {
+    padding: 14px;
   }
 
   .post-header {
-    margin-bottom: 16px;
-    padding-bottom: 16px;
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+  }
+
+  .title-section {
+    margin-bottom: 14px;
+  }
+
+  .badges {
+    gap: 6px;
+    margin-bottom: 8px;
   }
 
   .post-title {
-    font-size: 22px;
+    font-size: 20px;
+    line-height: 1.35;
   }
 
   .author-section {
     flex-direction: column;
     align-items: flex-start;
-    gap: 12px;
+    gap: 10px;
+  }
+
+  .author-info {
+    gap: 10px;
+  }
+
+  .author-info :deep(.el-avatar) {
+    --el-avatar-size: 36px;
+  }
+
+  .author-name {
+    font-size: 15px;
+  }
+
+  .post-time {
+    font-size: 11px;
   }
 
   .post-actions {
     width: 100%;
     justify-content: flex-start;
-    gap: 8px;
+    gap: 6px;
   }
 
   .post-actions .el-button {
     flex: 1;
     justify-content: center;
-    font-size: 13px;
-    padding: 8px 10px;
+    font-size: 12px;
+    padding: 7px 8px;
+    margin-left: 0;
   }
 
   .post-stats {
     flex-wrap: wrap;
-    gap: 12px;
-    font-size: 13px;
+    gap: 10px;
+    font-size: 12px;
     margin-bottom: 12px;
     padding-bottom: 12px;
   }
 
   .post-tags {
-    margin-bottom: 16px;
-    gap: 8px;
+    margin-bottom: 14px;
+    gap: 6px;
   }
 
   .tags-label {
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .post-content {
-    padding: 12px 0;
-    font-size: 15px;
+    padding: 10px 0;
+    font-size: 14px;
     line-height: 1.7;
+    min-height: auto;
   }
 
   .post-content :deep(img) {
     max-width: 100%;
     height: auto;
+  }
+
+  .post-content :deep(pre) {
+    overflow-x: auto;
+    font-size: 13px;
+  }
+
+  .comments-card {
+    border-radius: 8px;
+  }
+
+  .comments-card :deep(.el-card__body) {
+    padding: 14px;
   }
 
   .comments-header h3 {
