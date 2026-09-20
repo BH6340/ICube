@@ -72,6 +72,7 @@
 - feat(smart-cube): 新增智能魔方计时器功能 (#39) (4a4d884)
 - feat(cube-app): 全量更新APP功能与资源，新增用户社交与智能魔方支持  &  ci(github-actions): 为安卓构建步骤添加gradlew可执行权限  (#62) (3117735)
 - feat: 新增订单删除功能，完善多模块移动端适配与页面细节优化  (#68) (a57584f)
+- feat(home,front): 添加APP下载入口并完善下载链接处理 (1e455b7)
 
 
 ## fix - 修复
@@ -124,6 +125,9 @@
 - fix(prod settings): 修复多域名CORS和CSRF配置解析问题  (#48) (b921000)
 - fix(settings): 清理prod配置文件中的merge冲突  (#50) (a9ef015)
 - fix(app): 修复API缺尾斜杠及CI构建配置多项问题 (#65) (2f5f125)
+- fix(ci): 修复web-deploy创建PR失败时错误信息被吞的问题 (9cf2503)
+- fix(ci): web-deploy merge冲突时采用dev版本 (76cfcbd)
+- fix(ci): web-deploy改用PAT触发cicd部署 (71d29e8)
 
 
 ## docs - 文档
@@ -167,6 +171,7 @@
 - docs(env): 添加 Cloudflare Tunnel 配置示例  (#41) (2ca4c3a)
 - fix(cube_api): 修复生产环境Admin登录403与CORS白名单失效问题 (#47) (25f5c14)
 - docs: 自动更新 CHANGELOG (#51) (354c306)
+- docs: 自动更新 CHANGELOG (53d83bf)
 
 
 ## refactor - 重构
@@ -189,6 +194,8 @@
 - refactor(3d-cube): 优化配色与渲染细节  &  feat(timer): 新增智能魔方功能模块 (#44) (c6731e2)
 - refactor: 迁移备份文件到data目录并优化备份推送流程 (#45) (5b69533)
 - refactor(frontend): 重构多个页面布局与功能，新增帖子预览功能 (#61) (8532554)
+- refactor: web-deploy改为直接merge方案 (3fa9956)
+- refactor(ci): web-deploy内置部署逻辑，不再依赖cicd触发 (9744835)
 
 
 ## ci - CI/CD
@@ -197,6 +204,7 @@
 - ci(cicd): 重构CI工作流，拆分Docker构建Job并优化路径检测 (#46) (bfc3d8b)
 - ci(cloudflared): 调整隧道配置并添加时区环境变量  (#55) (07d1753)
 - ci(github-workflow): 修复服务器部署的SSH密钥配置问题  (#64) (51d634d)
+- ci(cicd,app-build,docs): 完善CI/CD流程并新增Web发版工作流 (79c1a66)
 
 
 ## build - 构建
@@ -228,6 +236,7 @@
 - style: 优化文档页面UI风格与交互细节 (977e8fd)
 - style: 完成全站移动端适配第二轮优化 + 修复Element Plus弃用警告 (#49) (9335592)
 - style(docs): 简化侧边栏折叠的内容边距逻辑  (#69) (11791d7)
+- style(docs): 优化侧边栏TOC样式并支持h4目录项 (a96836f)
 
 
 ## chore - 杂务
