@@ -1,0 +1,112 @@
+# ====================================================================
+# Web 发版工作流
+# ====================================================================
+# 触发条件：push tag web-v*（如 web-v1.0.2）
+#
+# 完整流程：
+#   1. 从 tag 对应的 commit 创建 PR dev→main
+#   2. cicd.yml 的 PR 检查自动触发（lint/test/build）
+#   3. CI 通过后自动 squash merge PR 到 main
+#   4. merge 到 main 后 cicd.yml 的 deploy job 自动触发部署
+#   5. cicd.yml 的 sync-dev + changelog 自动执行
+#
+# 版本命名建议：
+#   - 新功能：minor+1（如 web-v1.1.0）
+#   - 修复补丁：patch+1（如 web-v1.0.2）
+#   - 大版本：major+1（如 web-v2.0.0）
+# ====================================================================
+
+name: Web Deploy
+
+on:
+  push:
+    tags:
+      - 'web-v*'
+
+jobs:
+  create-and-merge-pr:
+    name: 创建 PR 并自动合并
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # 从 tag 名提取版本号（web-v1.0.2 → 1.0.2）
+      - name: Determine version
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#web-v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      # 创建 PR dev→main
+      # --head dev：源分支
+      # --base main：目标分支
+      # 标题包含版本号，便于追踪
+      - name: Create PR
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_URL=$(gh pr create \
+            --head dev \
+            --base main \
+            --title "release: Web v${{ steps.version.outputs.version }}" \
+            --body "自动创建的发布 PR（由 tag \`web-v${{ steps.version.outputs.version }}\` 触发）" \
+            2>&1)
+          echo "PR URL: $PR_URL"
+          PR_NUMBER=$(echo "$PR_URL" | grep -oE '[0-9]+$')
+          echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "url=$PR_URL" >> $GITHUB_OUTPUT
+
+      # 等待 cicd.yml 的 PR 检查通过后自动 merge
+      # --auto：所有必需检查通过后自动合并
+      # --squash：squash merge，保持 main 历史线性
+      - name: Enable auto-merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr merge ${{ steps.pr.outputs.number }} --squash --auto
+          echo "PR #${{ steps.pr.outputs.number }} 已启用自动合并，等待 CI 检查通过后自动 merge"
+
+      # 轮询 PR 状态，等待 merge 完成
+      - name: Wait for merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER=${{ steps.pr.outputs.number }}
+          MAX_WAIT=600  # 最长等待 10 分钟
+          INTERVAL=15
+          ELAPSED=0
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            STATE=$(gh pr view $PR_NUMBER --json state --jq '.state' 2>/dev/null)
+            if [ "$STATE" = "MERGED" ]; then
+              echo "PR #$PR_NUMBER 已合并"
+              exit 0
+            elif [ "$STATE" = "CLOSED" ]; then
+              echo "ERROR: PR #$PR_NUMBER 被关闭但未合并"
+              exit 1
+            fi
+            echo "等待中... ($ELAPSED s, PR 状态: $STATE)"
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+          done
+          echo "ERROR: 等待合并超时（${MAX_WAIT}s）"
+          exit 1
+
+      # merge 成功后通知
+      - name: 通知 - Web 发版成功
+        if: success()
+        run: |
+          curl -s -X POST "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
+            -d "title=ICube Web 发版成功" \
+            -d "des=版本: v${{ steps.version.outputs.version }}%0APR: ${{ steps.pr.outputs.url }}%0A状态: ✅ 已合并并触发部署%0A时间: $(date -u -d '+8 hours' '+%Y-%m-%d %H:%M:%S')"
+
+      # merge 失败通知
+      - name: 通知 - Web 发版失败
+        if: failure()
+        run: |
+          curl -s -X POST "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
+            -d "title=ICube Web 发版失败" \
+            -d "des=版本: v${{ steps.version.outputs.version }}%0APR: ${{ steps.pr.outputs.url }}%0A状态: ❌ 合并失败或超时%0A时间: $(date -u -d '+8 hours' '+%Y-%m-%d %H:%M:%S')%0A[查看详情](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
