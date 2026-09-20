@@ -38,6 +38,7 @@ ALLOWED_HOSTS = [h.strip() for h in os.getenv("ALLOWED_HOSTS", "").split(",") if
     "127.0.0.1",
     "icube_api",
     "api",
+    "8.136.100.251",
 ]
 
 # Nginx 终止 SSL 后通过 HTTP 转发给 Django，需信任 X-Forwarded-Proto 头判断真实协议

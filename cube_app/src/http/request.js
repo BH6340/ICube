@@ -37,7 +37,7 @@ function showErrorMsg(message) {
  * 生产环境后端地址（APP WebView 中使用）
  * 不依赖环境变量，直接硬编码，确保构建产物中一定有正确地址
  */
-const PROD_API_BASE = 'https://bh6340.duckdns.org:8443'
+const PROD_API_BASE = 'http://8.136.100.251'
 
 /**
  * 运行时确定 baseURL：
@@ -69,6 +69,11 @@ service.interceptors.request.use(
         const token = localStorage.getItem('token')
         if (token) {
             config.headers['Authorization'] = `Token ${token}`
+        }
+        // APP WebView 的默认 User-Agent 可能被阿里云 WAF/DDoS 拦截
+        // 强制使用与手机浏览器一致的 UA，绕过检测
+        if (typeof navigator !== 'undefined' && navigator.userAgent) {
+            config.headers['User-Agent'] = navigator.userAgent
         }
         // 统一补尾斜杠：Django APPEND_SLASH 对 POST 请求无法自动重定向，
         // 缺少尾斜杠会直接 500。无 query 且不以 / 结尾的 /api/ 路径补 /
