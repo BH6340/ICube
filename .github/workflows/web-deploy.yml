@@ -34,7 +34,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.WEB_DEPLOY_TOKEN }}
 
       # 从 tag 名提取版本号（web-v1.0.2 → 1.0.2）
       - name: Determine version
@@ -68,7 +68,7 @@ jobs:
           git checkout main
           git pull origin main
           git merge origin/dev --no-edit -X theirs -m "release: Web v${{ steps.version.outputs.version }}"
-          git push origin main
+          git push https://${{ secrets.WEB_DEPLOY_TOKEN }}@github.com/${{ github.repository }}.git main
           echo "✅ 已合并 dev 到 main，cicd.yml 将自动触发部署"
 
       # 通知 - 发版成功
