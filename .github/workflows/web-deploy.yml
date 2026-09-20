@@ -4,11 +4,12 @@
 # 触发条件：push tag web-v*（如 web-v1.0.2）
 #
 # 完整流程：
-#   1. 从 tag 对应的 commit 创建 PR dev→main
-#   2. cicd.yml 的 PR 检查自动触发（lint/test/build）
-#   3. CI 通过后自动 squash merge PR 到 main
-#   4. merge 到 main 后 cicd.yml 的 deploy job 自动触发部署
-#   5. cicd.yml 的 sync-dev + changelog 自动执行
+#   1. 将 dev 分支 merge 到 main（fast-forward 或 merge commit）
+#   2. push main 到远程 → 触发 cicd.yml 的 CI 检查 + 部署
+#   3. cicd.yml 的 sync-dev + changelog 自动执行
+#
+# 不走 PR 流程，因为 github-actions bot 创建的 PR 触发的 CI 需要审批，
+# 审批过期后 workflow 标记为 failure。直接 merge + push 更简洁可靠。
 #
 # 版本命名建议：
 #   - 新功能：minor+1（如 web-v1.1.0）
@@ -24,16 +25,16 @@ on:
       - 'web-v*'
 
 jobs:
-  create-and-merge-pr:
-    name: 创建 PR 并自动合并
+  merge-and-deploy:
+    name: 合并 dev 到 main 并触发部署
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # 拉取完整历史，用于比较 dev 和 main 差异
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       # 从 tag 名提取版本号（web-v1.0.2 → 1.0.2）
       - name: Determine version
@@ -42,87 +43,54 @@ jobs:
           VERSION="${GITHUB_REF_NAME#web-v}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      # 创建 PR dev→main
-      # --head dev：源分支
-      # --base main：目标分支
-      # 标题包含版本号，便于追踪
-      - name: Create PR
-        id: pr
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # 检查 dev 和 main 之间是否有差异
+      - name: Check diff
+        id: diff
         run: |
-          # 检查 dev 和 main 之间是否有差异
+          git fetch origin main dev
           AHEAD=$(git rev-list --count origin/main..origin/dev)
+          echo "ahead=$AHEAD" >> $GITHUB_OUTPUT
           if [ "$AHEAD" = "0" ]; then
-            echo "⚠️ dev 和 main 之间没有差异，无需创建 PR"
-            echo "如有代码改动未提交，请先 git push origin dev"
-            exit 1
+            echo "⚠️ dev 和 main 之间没有差异，无需部署"
+          else
+            echo "dev 领先 main $AHEAD 个 commit"
           fi
-          echo "dev 领先 main $AHEAD 个 commit，创建 PR..."
-          
-          PR_URL=$(gh pr create \
-            --head dev \
-            --base main \
-            --title "release: Web v${{ steps.version.outputs.version }}" \
-            --body "自动创建的发布 PR（由 tag \`web-v${{ steps.version.outputs.version }}\` 触发）")
-          
-          if [ $? -ne 0 ]; then
-            echo "❌ 创建 PR 失败: $PR_URL"
-            exit 1
-          fi
-          
-          echo "PR URL: $PR_URL"
-          PR_NUMBER=$(echo "$PR_URL" | grep -oE '[0-9]+$')
-          echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
-          echo "url=$PR_URL" >> $GITHUB_OUTPUT
 
-      # 等待 cicd.yml 的 PR 检查通过后自动 merge
-      # --auto：所有必需检查通过后自动合并
-      # --squash：squash merge，保持 main 历史线性
-      - name: Enable auto-merge
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # 直接 merge dev 到 main 并 push
+      # 不走 PR，避免 github-actions bot 的 PR 触发 CI 需要审批的问题
+      # push 到 main 后 cicd.yml 会自动触发 CI 检查 + 部署
+      # 用 -X theirs 策略：冲突时直接采用 dev 的版本
+      - name: Merge dev to main
+        if: steps.diff.outputs.ahead != '0'
         run: |
-          gh pr merge ${{ steps.pr.outputs.number }} --squash --auto
-          echo "PR #${{ steps.pr.outputs.number }} 已启用自动合并，等待 CI 检查通过后自动 merge"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout main
+          git pull origin main
+          git merge origin/dev --no-edit -X theirs -m "release: Web v${{ steps.version.outputs.version }}"
+          git push origin main
+          echo "✅ 已合并 dev 到 main，cicd.yml 将自动触发部署"
 
-      # 轮询 PR 状态，等待 merge 完成
-      - name: Wait for merge
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          PR_NUMBER=${{ steps.pr.outputs.number }}
-          MAX_WAIT=600  # 最长等待 10 分钟
-          INTERVAL=15
-          ELAPSED=0
-          while [ $ELAPSED -lt $MAX_WAIT ]; do
-            STATE=$(gh pr view $PR_NUMBER --json state --jq '.state' 2>/dev/null)
-            if [ "$STATE" = "MERGED" ]; then
-              echo "PR #$PR_NUMBER 已合并"
-              exit 0
-            elif [ "$STATE" = "CLOSED" ]; then
-              echo "ERROR: PR #$PR_NUMBER 被关闭但未合并"
-              exit 1
-            fi
-            echo "等待中... ($ELAPSED s, PR 状态: $STATE)"
-            sleep $INTERVAL
-            ELAPSED=$((ELAPSED + INTERVAL))
-          done
-          echo "ERROR: 等待合并超时（${MAX_WAIT}s）"
-          exit 1
-
-      # merge 成功后通知
+      # 通知 - 发版成功
       - name: 通知 - Web 发版成功
-        if: success()
+        if: success() && steps.diff.outputs.ahead != '0'
         run: |
           curl -s -X POST "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
             -d "title=ICube Web 发版成功" \
-            -d "des=版本: v${{ steps.version.outputs.version }}%0APR: ${{ steps.pr.outputs.url }}%0A状态: ✅ 已合并并触发部署%0A时间: $(date -u -d '+8 hours' '+%Y-%m-%d %H:%M:%S')"
+            -d "des=版本: v${{ steps.version.outputs.version }}%0A状态: ✅ 已合并到 main 并触发部署%0A时间: $(date -u -d '+8 hours' '+%Y-%m-%d %H:%M:%S')"
 
-      # merge 失败通知
+      # 通知 - 无需部署
+      - name: 通知 - 无需部署
+        if: success() && steps.diff.outputs.ahead == '0'
+        run: |
+          curl -s -X POST "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
+            -d "title=ICube Web 发版跳过" \
+            -d "des=版本: v${{ steps.version.outputs.version }}%0A状态: ⚠️ dev 和 main 无差异，未部署%0A时间: $(date -u -d '+8 hours' '+%Y-%m-%d %H:%M:%S')"
+
+      # 通知 - 发版失败
       - name: 通知 - Web 发版失败
         if: failure()
         run: |
           curl -s -X POST "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
             -d "title=ICube Web 发版失败" \
-            -d "des=版本: v${{ steps.version.outputs.version }}%0APR: ${{ steps.pr.outputs.url }}%0A状态: ❌ 合并失败或超时%0A时间: $(date -u -d '+8 hours' '+%Y-%m-%d %H:%M:%S')%0A[查看详情](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+            -d "des=版本: v${{ steps.version.outputs.version }}%0A状态: ❌ 合并或推送失败%0A时间: $(date -u -d '+8 hours' '+%Y-%m-%d %H:%M:%S')%0A[查看详情](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"

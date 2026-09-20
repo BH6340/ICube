@@ -1,6 +1,6 @@
 {
-  "version": "1.0.1",
-  "download_url": "/apk/icube-v1.0.1.apk",
-  "update_info": "ICube v1.0.1 新增用户搜索、计时器优化、APP下载入口",
+  "version": "1.0.0",
+  "download_url": "/apk/icube-v1.0.0.apk",
+  "update_info": "ICube v1.0.0 首个正式版本",
   "force_update": false
 }
