@@ -59,6 +59,7 @@ jobs:
       # 直接 merge dev 到 main 并 push
       # 不走 PR，避免 github-actions bot 的 PR 触发 CI 需要审批的问题
       # push 到 main 后 cicd.yml 会自动触发 CI 检查 + 部署
+      # 用 -X theirs 策略：冲突时直接采用 dev 的版本
       - name: Merge dev to main
         if: steps.diff.outputs.ahead != '0'
         run: |
@@ -66,7 +67,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout main
           git pull origin main
-          git merge origin/dev --no-edit -m "release: Web v${{ steps.version.outputs.version }}"
+          git merge origin/dev --no-edit -X theirs -m "release: Web v${{ steps.version.outputs.version }}"
           git push origin main
           echo "✅ 已合并 dev 到 main，cicd.yml 将自动触发部署"
 
