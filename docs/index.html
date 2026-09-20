@@ -28,9 +28,7 @@
     }
 
     /* ===== 布局 ===== */
-    .content { margin-left: var(--sidebar-w); margin-right: var(--toc-w); transition: margin-left 0.2s ease, margin-right 0.2s ease; }
-    body.nav-collapsed .content { margin-left: 0 !important; }
-    body.toc-collapsed .content { margin-right: 0 !important; }
+    .content { margin-left: var(--sidebar-w); margin-right: var(--toc-w); }
     .markdown-section { max-width: 820px; margin: 0 auto; padding: 2.5rem 2rem 5rem; }
 
     /* ===== 左侧边栏 ===== */
@@ -359,7 +357,6 @@
       /* 平板：TOC 默认折叠，可点击展开（浮层模式，不挤压内容） */
       :root { --toc-w: 220px; }
       body.toc-collapsed .toc-sidebar { margin-right: calc(-1 * var(--toc-w)); }
-      body.toc-collapsed .content { margin-right: 0; }
       body:not(.toc-collapsed) .toc-sidebar {
         box-shadow: -2px 0 12px rgba(0,0,0,0.1);
       }
