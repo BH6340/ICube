@@ -177,6 +177,7 @@
 - docs: 自动更新 CHANGELOG (53d83bf)
 - docs: 自动生成 CHANGELOG (fa7650a)
 - docs: 全量同步更新CI/CD与部署相关文档 (#71) (14b8969)
+- docs: 自动更新 CHANGELOG (6774213)
 
 
 ## refactor - 重构
@@ -210,6 +211,7 @@
 - ci(cloudflared): 调整隧道配置并添加时区环境变量  (#55) (07d1753)
 - ci(github-workflow): 修复服务器部署的SSH密钥配置问题  (#64) (51d634d)
 - ci(cicd,app-build,docs): 完善CI/CD流程并新增Web发版工作流 (79c1a66)
+- ci(web-deploy): 重构Web部署工作流，新增CI检查与快速部署支持 (d7d17a2)
 
 
 ## build - 构建
