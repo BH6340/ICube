@@ -3,7 +3,7 @@
 # ============================================================================
 # 触发条件：
 #   - PR 到 main：CI 检查（不部署）— 由 web-deploy.yml 自动创建 PR 触发
-#   - push 到 dev：CI 检查（不部署）
+#   - push 到 dev：CI 检查（不部署）；含 [deploy] 时跳过（由 web-deploy.yml 接管）
 #   - push 到 main（PR 合并后）：CI 检查 + 自动部署 + sync-dev + changelog
 #   - 纯文档变更：触发部署（CI 检查自动 skip），确保服务器 docs 同步
 #
@@ -62,6 +62,11 @@ jobs:
   # ===========================================================================
   backend-check:
     name: 后端 Lint + Test
+    # push 到 dev 含 [deploy] 时跳过——由 web-deploy.yml 的 ci-check 负责
+    if: |
+      github.event_name != 'push' ||
+      github.ref != 'refs/heads/dev' ||
+      !contains(toJSON(github.event.commits), '[deploy]')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -146,6 +151,11 @@ jobs:
   # ===========================================================================
   frontend-check:
     name: 前端 Build 验证
+    # push 到 dev 含 [deploy] 时跳过——由 web-deploy.yml 的 ci-check 负责
+    if: |
+      github.event_name != 'push' ||
+      github.ref != 'refs/heads/dev' ||
+      !contains(toJSON(github.event.commits), '[deploy]')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -198,6 +208,11 @@ jobs:
   # ===========================================================================
   docker-build-api:
     name: 后端 Docker 构建验证
+    # push 到 dev 含 [deploy] 时跳过——由 web-deploy.yml 的 ci-check 负责
+    if: |
+      github.event_name != 'push' ||
+      github.ref != 'refs/heads/dev' ||
+      !contains(toJSON(github.event.commits), '[deploy]')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -248,6 +263,11 @@ jobs:
   # ===========================================================================
   docker-build-front:
     name: 前端 Docker 构建验证
+    # push 到 dev 含 [deploy] 时跳过——由 web-deploy.yml 的 ci-check 负责
+    if: |
+      github.event_name != 'push' ||
+      github.ref != 'refs/heads/dev' ||
+      !contains(toJSON(github.event.commits), '[deploy]')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
