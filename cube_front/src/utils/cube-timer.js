@@ -253,7 +253,18 @@ export class CubeTimer {
   // ===== SOLVING：复原计时 =====
 
   _handleSolvingMove(move, isSolved) {
-    this._solveMoves.push(move)
+    const moves = this._solveMoves
+    if (moves.length > 0) {
+      const last = moves[moves.length - 1]
+      if (last === move && !last.includes("2")) {
+        moves[moves.length - 1] = last.replace("'", "") + "2"
+        if (isSolved) {
+          this._onSolved()
+        }
+        return
+      }
+    }
+    moves.push(move)
     if (isSolved) {
       this._onSolved()
     }
