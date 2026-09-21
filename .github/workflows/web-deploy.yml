@@ -121,23 +121,23 @@ jobs:
           git add CHANGELOG.md
           git diff --staged --quiet || (git commit -m "docs: 自动生成 CHANGELOG" && git push https://${{ secrets.WEB_DEPLOY_TOKEN }}@github.com/${{ github.repository }}.git dev)
 
-      # 通知 - 发版成功
-      - name: 通知 - Web 发版成功
-        if: success() && steps.diff.outputs.ahead != '0'
-        run: |
-          curl -s -X POST "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
-            -d "title=ICube Web 发版成功" \
-            -d "des=版本: v${{ steps.version.outputs.version }}%0A状态: ✅ 已合并+部署+同步%0A时间: $(date -u -d '+8 hours' '+%Y-%m-%d %H:%M:%S')"
+      # - name: 通知 - Web 发版成功
+      #   if: success() && steps.diff.outputs.ahead != '0'
+      #   run: |
+      #     curl -s -X POST "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
+      #       -d "title=ICube Web 发版成功" \
+      #       -d "des=版本: v${{ steps.version.outputs.version }}%0A状态: ✅ 已合并+部署+同步%0A时间: $(date -u -d '+8 hours' '+%Y-%m-%d %H:%M:%S')"
 
-      # 通知 - 无需部署
-      - name: 通知 - 无需部署
-        if: success() && steps.diff.outputs.ahead == '0'
-        run: |
-          curl -s -X POST "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
-            -d "title=ICube Web 发版跳过" \
-            -d "des=版本: v${{ steps.version.outputs.version }}%0A状态: ⚠️ dev 和 main 无差异，未部署%0A时间: $(date -u -d '+8 hours' '+%Y-%m-%d %H:%M:%S')"
+      # # 通知 - 无需部署
+      # - name: 通知 - 无需部署
+      #   if: success() && steps.diff.outputs.ahead == '0'
+      #   run: |
+      #     curl -s -X POST "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
+      #       -d "title=ICube Web 发版跳过" \
+      #       -d "des=版本: v${{ steps.version.outputs.version }}%0A状态: ⚠️ dev 和 main 无差异，未部署%0A时间: $(date -u -d '+8 hours' '+%Y-%m-%d %H:%M:%S')"
 
-      # 通知 - 发版失败
+
+      # 通知 - 发版失败（仅在失败时通知）
       - name: 通知 - Web 发版失败
         if: failure()
         run: |

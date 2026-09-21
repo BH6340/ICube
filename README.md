@@ -183,7 +183,14 @@ EMAIL_DISPLAY_NAME=ICube魔方平台
 
 ## CI/CD
 
-项目通过 GitHub Actions 实现持续集成与持续部署，配置文件位于 `.github/workflows/cicd.yml`。
+项目通过 GitHub Actions 实现持续集成与持续部署。Web 上线演进过两套方案，**两套工作流文件目前都保存在仓库**：
+
+| 方案 | 工作流 | 触发上线方式 | 状态 |
+|------|--------|-------------|------|
+| 现方案：Tag 发版 | `.github/workflows/web-deploy.yml` | 打 `web-v*` tag，自动 merge dev→main 并部署 | 当前主力 |
+| 原方案：PR 流程 | `.github/workflows/cicd.yml` | 发 PR 合并到 main 后自动部署 | 历史路径保留 |
+
+CI 检查部分两套共用同一套 Job（后端测试、前端构建、Docker 构建），差异只在"如何触发上线"。
 
 > 完整 CI/CD 流程说明见 [Git 分支策略与 CI/CD 流程](docs/guides/Git分支策略与CICD流程.md)。
 
@@ -194,12 +201,23 @@ EMAIL_DISPLAY_NAME=ICube魔方平台
 | `main` | 生产环境 | 禁止直接 push，只接受 PR | ✅ | ✅ |
 | `dev` | 日常开发 | 不保护 | ✅ | - |
 
-### 工作流触发
+### 现方案：Tag 发版（主推）
+
+```bash
+git push origin dev          # 开发推送到 dev
+git tag web-v1.1.0           # CI 全绿后打版本 tag
+git push origin web-v1.1.0   # 推送 tag → 自动 merge + 部署
+```
+
+推送 `web-v*` tag 后，`web-deploy.yml` 自动：合并 dev 到 main → SSH 部署 → 同步 dev 到 main → 生成 CHANGELOG → 微信通知。
+
+### 原方案：PR 流程（历史保留）
 
 - **push 到 dev**：触发 CI 检查（不部署）
 - **PR: dev → main**：触发 CI 检查（不部署）
 - **push 到 main**（合并后）：触发 CI 检查 + 自动部署 + sync-dev + changelog
 - **纯文档变更**（`docs/**`、`*.md`）：不触发任何 Job
+- **手动触发**：Actions 页面 `workflow_dispatch`，部署 main 当前代码（不发版但需更新服务器时用）
 
 ### Path Filter 智能跳过
 
@@ -222,13 +240,14 @@ EMAIL_DISPLAY_NAME=ICube魔方平台
 ### CD 自动部署
 
 ```
-push to main → CI 全绿 → SSH 到服务器
+触发上线（打 web-v* tag / PR 合并 main / 手动触发）
+  → 自动部署流水线（deploy_update.sh）
   → 强制同步代码（git reset --hard origin/main）
   → 数据库迁移检查（有迁移则 mysqldump 备份 + migrate）
   → 健康检查（前端 + API，5 次重试）
   → 失败自动回滚（代码 + 数据库）
   → 部署日志 artifact（保留 90 天）
-  → 微信通知（成功/失败）
+  → 微信通知（仅失败时）
   → sync-dev（dev 同步到 main）
   → changelog（自动生成 CHANGELOG.md → 推到 dev）
 ```
@@ -242,6 +261,7 @@ push to main → CI 全绿 → SSH 到服务器
 | `SSH_PRIVATE_KEY` | 部署专用 SSH 私钥 |
 | `DEPLOY_PATH` | 服务器项目路径 |
 | `SERVERCHAN_KEY` | Server酱微信通知密钥 |
+| `WEB_DEPLOY_TOKEN` | 个人访问令牌 PAT，供 Tag 发版推送受保护 main（现方案必需） |
 
 > 详细的测试环境配置、测试方法见 [测试文档](docs/guides/测试文档.md)。
 

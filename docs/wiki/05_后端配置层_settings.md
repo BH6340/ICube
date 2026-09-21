@@ -272,9 +272,10 @@ CORS_ALLOW_ALL_ORIGINS = True   # 仅开发联调
 | ------------------------ | ---------------------------------------------------------- |
 | DEBUG                    | False                                                      |
 | SECRET\_KEY              | `os.getenv('SECRET_KEY', SECRET_KEY)`                      |
-| ALLOWED\_HOSTS           | 环境变量 + `localhost,127.0.0.1,icube_api,api`                 |
-| CORS\_ALLOWED\_ORIGINS   | `http://` + `https://` + `ALLOWED_ORIGIN` 环境变量 + localhost |
+| ALLOWED\_HOSTS           | 环境变量（逗号分隔） + `localhost,127.0.0.1,icube_api,api,8.136.100.251` |
+| CORS\_ALLOWED\_ORIGINS   | `http://` + `https://` + `ALLOWED_ORIGIN`（逗号分隔） + localhost |
 | CORS\_ALLOW\_CREDENTIALS | True                                                       |
+| SECURE\_PROXY\_SSL_HEADER | `("HTTP_X_FORWARDED_PROTO", "https")`，`USE_X_FORWARDED_HOST=True`（Nginx 终止 SSL 后以 HTTP 转发，凭此头判断真实协议） |
 | DATABASES HOST           | `db`（Docker 服务名）                                           |
 | CACHES LOCATION          | `redis://redis:6379/1`，KEY\_PREFIX=`icube_prod`            |
 | STATIC\_ROOT             | `BASE_DIR/collected_static`                                |

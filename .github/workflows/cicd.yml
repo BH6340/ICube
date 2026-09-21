@@ -336,15 +336,7 @@ jobs:
             cd ${{ secrets.DEPLOY_PATH }}
             bash ./scripts/deploy/deploy_update.sh --non-interactive --force-sync --backup-db --post-backup
 
-      # ==================== 部署通知（Server酱 → 微信）====================
-      # 部署成功通知
-      - name: 微信通知 - 部署成功
-        if: success()
-        run: |
-          curl -s -X POST "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
-            -d "title=ICube 部署成功" \
-            -d "des=Commit: ${{ github.event.head_commit.message }}%0A时间: $(date -u -d '+8 hours' '+%Y-%m-%d %H:%M:%S')%0A状态: ✅ 部署成功%0A[查看详情](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
-
+      # ==================== 部署通知（Server酱 → 微信，仅失败时通知）====================
       # 部署失败通知（可能已自动回滚）
       - name: 微信通知 - 部署失败
         if: failure()

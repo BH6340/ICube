@@ -7,9 +7,12 @@
 - [CI/CD 是什么（小白必读）](#cicd-是什么小白必读)
 - [GitHub Actions 工作原理](#github-actions-工作原理)
 - [Docker 构建缓存原理](#docker-构建缓存原理)
+- [两套发版方案：一句话看懂](#两套发版方案一句话看懂)
 - [分支模型](#分支模型)
-- [日常开发流程](#日常开发流程)
+- [现方案：Tag 发版流程](#现方案tag-发版流程)
+- [原方案：PR 合并流程](#原方案pr-合并流程)
 - [紧急修复流程](#紧急修复流程)
+- [两套方案对比](#两套方案对比)
 - [GitHub 仓库配置](#github-仓库配置)
 - [CI/CD 总览](#cicd-总览)
 - [CI 触发规则与路径过滤](#ci-触发规则与路径过滤)
@@ -215,6 +218,21 @@ RUN pip install -r requirements.txt  # 每次都要重新装，白瞎了缓存
 
 ---
 
+## 两套发版方案：一句话看懂
+
+ICube 的 Web 上线演进过两套方案，**两套工作流文件目前都保留在仓库**，随时可切换：
+
+| 方案 | 工作流文件 | 怎么触发上线 | 一句话描述 |
+|------|-----------|------------|-----------|
+| **现方案（Tag 发版）** | `web-deploy.yml` | 打一个 `web-v*` 的 tag | "打个版本号标签，自动合并 dev 到 main 并部署" |
+| **原方案（PR 流程）** | `cicd.yml` | 发一个 PR 合并到 main | "提交代码 → 手动发 PR 合并 → 合并后自动部署" |
+
+**当前主力是现方案（Tag 发版）**，日常发版走打 tag 一条命令即可；原方案（PR 流程）作为历史路径保留，遇到需要走代码评审、或想精确控制合并时机的场景仍可用。
+
+> **CI（检查）部分两套共用同一套 Job**：`backend-check`、`frontend-check`、`docker-build-api`、`docker-build-front`。差异只在"如何触发上线（CD）"。本文后续会分开讲两套 CD 流程，并在 [两套方案对比](#两套方案对比) 给出详细对照表。
+
+---
+
 ## 分支模型
 
 ```
@@ -222,9 +240,9 @@ feature/xxx（可选）     dev               main
     │                   │                  │
     └── 合并到 dev ────→│                  │
                         │                  │
-                        └── PR 到 main ───→│ → 自动部署 → sync-dev → changelog
-                                           │
-                        hotfix/xxx ───────→│ → 自动部署
+   【现方案】Tag 发版    │  打 web-v* tag ─→│ → 自动 merge + 部署 → sync-dev → changelog
+   【原方案】PR 发版     └── PR 到 main ───→│ → 自动部署 → sync-dev → changelog
+                        hotfix/xxx ───────→│ → 合并到 main
                               │             │
                               └── 反合并 → dev
 ```
@@ -238,7 +256,68 @@ feature/xxx（可选）     dev               main
 
 ---
 
-## 日常开发流程
+## 现方案：Tag 发版流程
+
+> 工作流文件：`.github/workflows/web-deploy.yml`。**当前主力发版方式**，一条命令发版。
+
+### 1. 切换到 dev 分支开发
+
+```bash
+git checkout dev
+git pull origin dev
+
+# 写代码...
+git add .
+git commit -m "feat: xxx"
+git push origin dev
+```
+
+push 到 dev 后，CI 自动触发检查（后端测试 + 前端构建 + Docker 构建），**不会部署**。
+
+### 2. 打 tag 发版
+
+确认 dev 上功能开发完成、CI 全绿后，**只需打一个 tag 并推送**：
+
+```bash
+# 本地打 tag（先拉最新 dev）
+git pull origin dev
+
+# 版本号命名建议：
+#   新功能：minor+1 → web-v1.1.0
+#   修复补丁：patch+1 → web-v1.0.2
+#   大版本：major+1 → web-v2.0.0
+git tag web-v1.1.0
+git push origin web-v1.1.0
+```
+
+### 3. 自动发版流水线
+
+推送 tag 后，`web-deploy.yml` 自动执行（全自动，无需人工介入）：
+
+```
+push tag web-v1.1.0
+  │
+  ├─ 提取版本号（web-v1.1.0 → 1.1.0）
+  ├─ 检查 dev 与 main 是否有差异
+  │    └─ 无差异 → 直接跳过（不通知）
+  ├─ 合并 dev 到 main（冲突自动采用 dev 版本）→ push main
+  ├─ SSH 部署到服务器（deploy_update.sh）
+  ├─ 同步 dev 到 main（git reset --hard + force push）
+  ├─ 生成 CHANGELOG → 推到 dev
+  └─ 微信通知（失败时通知）
+```
+
+> **为什么用 PAT 而非默认 Token？** `web-deploy.yml` 需要把代码 push 到 `main`（受保护分支），默认的 `GITHUB_TOKEN` 可能无法触发其他 workflow，因此需要配置 `WEB_DEPLOY_TOKEN`（个人访问令牌 PAT）来鉴权推送。
+
+### 4. 日常/文档部署（不发版但需更新服务器）
+
+不打 tag、但希望把 main 最新代码同步到服务器（如小修小补、文档更新）时，可在 Actions 页面手动运行 `cicd.yml` 的 `workflow_dispatch`（手动触发），部署 main 当前代码。
+
+---
+
+## 原方案：PR 合并流程
+
+> 工作流文件：`.github/workflows/cicd.yml`。作为**历史路径保留**，适用于需要人工代码评审、精确控制合并时机的场景。
 
 ### 1. 切换到 dev 分支开发
 
@@ -309,6 +388,43 @@ git push origin --delete hotfix/fix-xxx
 
 ---
 
+## 两套方案对比
+
+| 维度 | 现方案：Tag 发版（`web-deploy.yml`） | 原方案：PR 合并（`cicd.yml`） |
+|------|-----------------------------------|------------------------------|
+| **工作流文件** | `.github/workflows/web-deploy.yml` | `.github/workflows/cicd.yml` |
+| **触发方式** | 打 `web-v*` tag | 发 PR 合并到 main / push 到 main |
+| **发版命令** | `git tag web-v1.1.0 && git push origin web-v1.1.0` | 手动创建 PR → 网页上点 Merge |
+| **合并 main 的方式** | 自动 merge（冲突自动采用 dev 版本） | 手动在 GitHub 上合并 |
+| **代码评审** | 无需评审，一条命令发版 | 可走评审（Require review） |
+| **通知** | ✅（仅失败时通知） | ✅（仅失败时通知） |
+| **部署脚本** | `deploy_update.sh`（同一样式） | `deploy_update.sh`（同一样式） |
+| **同步 dev 到 main** | ✅ 内置于 workflow | ✅ sync-dev Job |
+| **自动 CHANGELOG** | ✅ 内置于 workflow | ✅ changelog Job |
+| **适合场景** | 个人开发、快速迭代、一条命令上线 | 需要人工把控合并、团队评审 |
+
+### 发版命令对比（最常用到的差异）
+
+```bash
+# 现方案：Tag 发版（主推）
+git pull origin dev
+git tag web-v1.1.0
+git push origin web-v1.1.0
+
+# 原方案：PR 合并（历史）
+git push origin dev
+# → 打开 GitHub → 手动发 PR dev→main → 点 Merge
+```
+
+### 什么情况选哪套
+
+- **日常功能迭代** → 用现方案，打 tag 一条命令搞定
+- **需要代码评审 / 精确控制合并时机** → 用原方案发 PR
+- **紧急修 bug** → 走 [紧急修复流程](#紧急修复流程)（从 main 拉分支 → PR → 合并）
+- **只更新文档 / 小配置，不发版** → 手动触发 `cicd.yml` 的 `workflow_dispatch`
+
+---
+
 ## GitHub 仓库配置
 
 ### 分支保护规则
@@ -350,6 +466,7 @@ Squash merge 把 PR 的所有 commit 压成一个，main 历史干净整洁。
 | `SSH_PRIVATE_KEY` | SSH 私钥 |
 | `DEPLOY_PATH` | 服务器项目路径 |
 | `SERVERCHAN_KEY` | Server酱微信通知密钥 |
+| `WEB_DEPLOY_TOKEN` | 个人访问令牌 PAT，供 `web-deploy.yml` 推送受保护的 main 分支（现方案 Tag 发版必需） |
 
 > Secrets 是什么？就是存密码的地方。你不想把服务器密码写进代码里吧？那就存在 GitHub 的 Secrets 里，CI 运行时才能读取到，代码里看不到明文。
 
@@ -357,29 +474,27 @@ Squash merge 把 PR 的所有 commit 压成一个，main 历史干净整洁。
 
 ## CI/CD 总览
 
+**CI 检查部分两套方案共用**，差异在"如何触发上线"：
+
 ```
-push 到 dev / PR 到 main
-  │
-  ├─ backend-check（pytest + 覆盖率）     ← 并行
-  ├─ frontend-check（npm build）          ← 并行
-  ├─ docker-build-api（后端 Docker 构建） ← 并行
-  └─ docker-build-front（前端 Docker 构建 + compose 校验）← 并行
-         │
-         │  仅 push 到 main 时继续
-         ▼
-       deploy
-         │
-         ├─ SSH 部署脚本
-         ├─ 数据库迁移检查 + 备份
-         ├─ 健康检查 + 自动回滚
-         ├─ 部署日志 artifact
-         ├─ 微信通知（成功/失败）
-         │
-         ▼
-       sync-dev（dev 同步到 main）
-         │
-         ▼
-       changelog（生成 CHANGELOG.md → 推到 dev）
+                            ┌─ 打 web-v* tag（现方案：web-deploy.yml）
+开发完成 → push dev → CI 检查┤              │自动 merge + 部署
+                            └─ 发 PR 合并 main（原方案：cicd.yml）
+                                              │
+                                              ▼
+                             自动部署流水线（公共）
+                                        │
+                                        ├─ SSH 部署脚本（deploy_update.sh）
+                                        ├─ 数据库迁移检查 + 备份
+                                        ├─ 健康检查 + 自动回滚
+                                        ├─ 部署日志 artifact
+                                        ├─ 微信通知（仅失败时）
+                                        │
+                                        ▼
+                                      sync-dev（dev 同步到 main）
+                                        │
+                                        ▼
+                                      changelog（生成 CHANGELOG.md → 推到 dev）
 ```
 
 ### CI/CD 产物
@@ -412,14 +527,21 @@ README.md
 
 ### 触发矩阵
 
+**原方案（`cicd.yml`）触发**：
+
 | 事件 | 后端检查 | 前端构建 | Docker 构建 | 部署 |
 |------|:-------:|:-------:|:----------:|:----:|
 | push 到 `dev` | ✅ | ✅ | ✅ | - |
 | PR: `dev` → `main` | ✅ | ✅ | ✅ | - |
 | push 到 `main`（合并） | ✅ | ✅ | ✅ | ✅ |
-| PR: `hotfix/*` → `main` | ✅ | ✅ | ✅ | - |
-| push 到 `main`（hotfix 合并） | ✅ | ✅ | ✅ | ✅ |
+| 手动触发 `workflow_dispatch` | ✅ | ✅ | ✅ | ✅ |
 | 纯文档变更 | ⏭ | ⏭ | ⏭ | ✅ |
+
+**现方案（`web-deploy.yml`）触发**：
+
+| 事件 | 动作 |
+|------|------|
+| 打 `web-v*` tag | 自动 merge dev → main + 部署 + sync-dev + changelog |
 
 ### Job 内部路径过滤
 
@@ -489,10 +611,17 @@ README.md
 
 ### 触发条件
 
+两套方案的 CD 部署最终调用同一个部署脚本 `deploy_update.sh`，只是"谁去触发它"不同：
+
+- **现方案（Tag 发版）**：`web-deploy.yml` 在打 `web-v*` tag 后先自动合并 dev→main，再在其 job 内部直接 SSH 部署
+- **原方案（PR 合并）**：`cicd.yml` 在 push 到 `main` 时触发，条件为：
+
 ```
 github.event_name == 'push' && github.ref == 'refs/heads/main'
 && 所有 CI Job 全部通过（或被跳过）
 ```
+
+无论哪套触发，落地到服务器上的部署步骤完全一致（都由 `deploy_update.sh` 执行）：
 
 ### 部署流程（5 步）
 
@@ -588,7 +717,7 @@ github.event_name == 'push' && github.ref == 'refs/heads/main'
 
 ## 自动 CHANGELOG
 
-部署成功且 sync-dev 完成后，自动从 git log 生成 `CHANGELOG.md`：
+部署成功且 sync-dev 完成后，自动从 git log 生成 `CHANGELOG.md`。现方案（`web-deploy.yml`）将其内置于 workflow，原方案（`cicd.yml`）作为独立 `changelog` Job，两者逻辑一致：
 
 ```bash
 # 按 conventional commit 类型分组
@@ -612,18 +741,9 @@ for entry in "feat:新功能" "fix:修复" "docs:文档" "refactor:重构" ...
 
 ## 部署通知
 
-通过 Server酱（微信推送）通知部署结果：
+通过 Server酱（微信推送）**仅在部署失败时**通知。成功部署不发送通知，避免打扰（Server酱免费版每天仅 5 条配额）。两套方案一致。
 
-**部署成功**：
-```
-title: ICube 部署成功
-des:   Commit: <commit message>
-       时间: 2026-08-31 18:00:00
-       状态: ✅ 部署成功
-       [查看详情](Actions 链接)
-```
-
-**部署失败**：
+**部署失败**（可能已自动回滚）：
 ```
 title: ICube 部署失败
 des:   Commit: <commit message>
@@ -693,7 +813,7 @@ git checkout dev
 ## 注意事项
 
 1. **部署脚本**：`deploy_update.sh` 支持 `--non-interactive`、`--backup-db`、`--post-backup`、`--rollback-to=<commit>` 等参数
-2. **Secrets**：共 5 个 GitHub Secret（`SERVER_HOST`、`SERVER_USER`、`SSH_PRIVATE_KEY`、`DEPLOY_PATH`、`SERVERCHAN_KEY`）
+2. **Secrets**：共 6 个 GitHub Secret（`SERVER_HOST`、`SERVER_USER`、`SSH_PRIVATE_KEY`、`DEPLOY_PATH`、`SERVERCHAN_KEY`、`WEB_DEPLOY_TOKEN`）
 3. **dev 上 CI 失败不阻塞**：只是通知测试挂了，不影响任何环境
 4. **PR 可以自己合并**：个人开发时，自己发 PR 自己合并，GitHub 允许这样做
 5. **Squash merge 后 dev 的处理**：合并后 GitHub 会提示 "Delete branch"，**不要删 dev**，只删 feature/hotfix 分支
@@ -704,3 +824,6 @@ git checkout dev
 10. **覆盖率报告不阻塞 CI**：Ruff 检查设为 `continue-on-error: true`，不阻塞测试和部署
 11. **Docker 缓存用 GitHub Cache 存储**：有 10GB 空间限制和 7 天过期，不用担心占满，缓存失效了大不了下次重新构建
 12. **路径过滤用 git diff 实现**：不依赖第三方 action，避免 Node.js 版本弃用警告
+13. **现方案打 tag 发版（web-deploy.yml）**：push 的 tag 名必须匹配 `web-v*`（如 `web-v1.1.0`），否则不触发；版本号向后递增，不要覆盖旧 tag
+14. **`WEB_DEPLOY_TOKEN` 权限**：该 PAT 需具备 repo 内容写权限；若换 PAT，需同时更新这边与 GitHub 的 Secret 值
+15. **两套方案共用 CI 检查**：CI Job（backend/frontend/docker）由 `cicd.yml` 维护，改了 CI 逻辑只需改这一份，两套 CD 都继承检查结果

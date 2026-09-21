@@ -128,6 +128,9 @@
 - fix(ci): 修复web-deploy创建PR失败时错误信息被吞的问题 (9cf2503)
 - fix(ci): web-deploy merge冲突时采用dev版本 (76cfcbd)
 - fix(ci): web-deploy改用PAT触发cicd部署 (71d29e8)
+- fix(app): .env.production加入版本控制，确保CI构建时API地址正确 (f0e242c)
+- fix(app): baseURL改为运行时检测file协议，硬编码生产域名确保APK可用 (0e54dd4)
+- fix(app): APP改用HTTP+IP连接后端，绕过TLS连接重置问题 (09ee7d5)
 
 
 ## docs - 文档
@@ -172,6 +175,7 @@
 - fix(cube_api): 修复生产环境Admin登录403与CORS白名单失效问题 (#47) (25f5c14)
 - docs: 自动更新 CHANGELOG (#51) (354c306)
 - docs: 自动更新 CHANGELOG (53d83bf)
+- docs: 自动生成 CHANGELOG (fa7650a)
 
 
 ## refactor - 重构
