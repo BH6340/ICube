@@ -179,6 +179,7 @@
 - docs: 全量同步更新CI/CD与部署相关文档 (#71) (14b8969)
 - docs: 自动更新 CHANGELOG (6774213)
 - docs: 自动生成 CHANGELOG (c3ab447)
+- docs: 自动更新 CHANGELOG (6a2110a)
 
 
 ## refactor - 重构
@@ -214,6 +215,7 @@
 - ci(github-workflow): 修复服务器部署的SSH密钥配置问题  (#64) (51d634d)
 - ci(cicd,app-build,docs): 完善CI/CD流程并新增Web发版工作流 (79c1a66)
 - ci(web-deploy): 重构Web部署工作流，新增CI检查与快速部署支持 (d7d17a2)
+- ci(cicd): 为dev分支添加[deploy]标记跳过CI检查的逻辑 (292da47)
 
 
 ## build - 构建
