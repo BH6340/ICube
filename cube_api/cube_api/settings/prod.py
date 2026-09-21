@@ -73,7 +73,15 @@ CORS_ALLOW_CREDENTIALS = True
 # 通过 HTTPS_PORT 环境变量配置，不填则不追加带端口的来源
 _https_port = os.getenv("HTTPS_PORT", "").strip()
 _csrf_base = [f"{scheme}://{host}" for host in _allowed_origins for scheme in ["https", "http"]]
-_csrf_with_port = [f"{scheme}://{host}:{_https_port}" for host in _allowed_origins for scheme in ["https", "http"]] if _https_port else []
+_csrf_with_port = (
+    [
+        f"{scheme}://{host}:{_https_port}"
+        for host in _allowed_origins
+        for scheme in ["https", "http"]
+    ]
+    if _https_port
+    else []
+)
 CSRF_TRUSTED_ORIGINS = _csrf_base + _csrf_with_port + [
     "http://localhost",
     "https://localhost",
