@@ -176,6 +176,7 @@
 - docs: 自动更新 CHANGELOG (#51) (354c306)
 - docs: 自动更新 CHANGELOG (53d83bf)
 - docs: 自动生成 CHANGELOG (fa7650a)
+- docs: 全量同步更新CI/CD与部署相关文档 (#71) (14b8969)
 
 
 ## refactor - 重构
