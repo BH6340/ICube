@@ -178,6 +178,7 @@
 - docs: 自动生成 CHANGELOG (fa7650a)
 - docs: 全量同步更新CI/CD与部署相关文档 (#71) (14b8969)
 - docs: 自动更新 CHANGELOG (6774213)
+- docs: 自动生成 CHANGELOG (c3ab447)
 
 
 ## refactor - 重构
@@ -202,6 +203,7 @@
 - refactor(frontend): 重构多个页面布局与功能，新增帖子预览功能 (#61) (8532554)
 - refactor: web-deploy改为直接merge方案 (3fa9956)
 - refactor(ci): web-deploy内置部署逻辑，不再依赖cicd触发 (9744835)
+- refactor(shop,settings): 调整代码格式与配置写法[deploy] (ee14a38)
 
 
 ## ci - CI/CD
