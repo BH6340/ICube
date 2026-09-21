@@ -1,18 +1,27 @@
 # ====================================================================
-# Web 发版工作流
+# Web 发版与快速部署工作流
 # ====================================================================
-# 触发条件：push tag web-v*（如 web-v1.0.2）
+# 触发条件：
+#   1. push tag web-v*（如 web-v1.0.2）→ CI 检查 → 发版部署
+#   2. push 到 dev 且 commit message 含 [deploy] → CI 检查 → 快速部署（不发版）
 #
 # 完整流程：
-#   1. 将 dev 分支 merge 到 main 并 push
-#   2. SSH 到服务器执行部署（deploy_update.sh）
-#   3. 同步 dev 到 main
-#   4. 生成 CHANGELOG
+#   1. CI 检查（后端 pytest + 前端 vite build）—— 必须通过才继续
+#   2. 将 dev 分支 merge 到 main 并 push
+#   3. SSH 到服务器执行部署（deploy_update.sh）
+#   4. 同步 dev 到 main
+#   5. 生成 CHANGELOG
 #
 # 不依赖 cicd.yml 的 push 触发，因为 GITHUB_TOKEN/PAT push 到 main
 # 可能不触发其他 workflow。部署逻辑直接内置于此 workflow。
 #
-# 版本命名建议：
+# 快速部署用法：
+#   git commit -m "feat: 修复登录问题 [deploy]"
+#   git push origin dev
+#
+# 注意：多 commit push 时检查所有 commit message，任意一条含 [deploy] 即触发
+#
+# 版本命名建议（仅 tag 触发）：
 #   - 新功能：minor+1（如 web-v1.1.0）
 #   - 修复补丁：patch+1（如 web-v1.0.2）
 #   - 大版本：major+1（如 web-v2.0.0）
@@ -24,10 +33,87 @@ on:
   push:
     tags:
       - 'web-v*'
+    branches:
+      - dev
+
+# ============================== 全局环境变量 ==============================
+env:
+  PYTHON_VERSION: '3.13'
+  NODE_VERSION: '22'
 
 jobs:
+  # ===========================================================================
+  # CI 检查（部署前置）：后端 pytest + 前端 vite build
+  # ===========================================================================
+  # 职责：部署前全量检查，确保代码无问题才执行 merge + deploy
+  # 触发：tag 或 dev push 含 [deploy]（与 merge-and-deploy 条件一致）
+  # 全量执行不做路径过滤——tag 触发时包含多 commit 差异，路径检测不可靠
+  # ===========================================================================
+  ci-check:
+    name: CI 检查（部署前置）
+    # 检查所有 commit message 是否含 [deploy]，不限于最后一条
+    if: |
+      github.ref_type == 'tag' ||
+      (github.ref == 'refs/heads/dev' && contains(toJSON(github.event.commits), '[deploy]'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # ---- 后端测试 ----
+      - name: 安装系统依赖（mysqlclient 编译需要）
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-libmysqlclient-dev pkg-config
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: cube_api/requirements.txt
+
+      - name: 安装 Python 依赖
+        working-directory: cube_api
+        run: |
+          pip install -r requirements.txt
+          pip install ruff
+
+      - name: Ruff 代码检查
+        working-directory: cube_api
+        run: ruff check cube_api/
+        continue-on-error: true
+
+      - name: 后端全量测试
+        working-directory: cube_api
+        run: pytest --cov=cube_api/apps --cov=cube_api/utils --cov-report=term-missing
+
+      # ---- 前端构建验证 ----
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: cube_front/package-lock.json
+
+      - name: 安装前端依赖
+        working-directory: cube_front
+        run: npm ci
+
+      - name: 前端构建验证
+        working-directory: cube_front
+        run: npm run build
+
+  # ===========================================================================
+  # 合并 dev 到 main 并部署
+  # ===========================================================================
+  # 依赖：ci-check 必须通过
+  # ===========================================================================
   merge-and-deploy:
     name: 合并 dev 到 main 并部署
+    needs: [ci-check]
+    # tag 触发：发版部署；dev push 含 [deploy]：快速部署（不发版）
+    # 检查所有 commit message 是否含 [deploy]，不限于最后一条
+    if: |
+      github.ref_type == 'tag' ||
+      (github.ref == 'refs/heads/dev' && contains(toJSON(github.event.commits), '[deploy]'))
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -37,12 +123,20 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.WEB_DEPLOY_TOKEN }}
 
-      # 从 tag 名提取版本号（web-v1.0.2 → 1.0.2）
-      - name: Determine version
+      # 判断触发方式：tag=发版（有版本号），dev push=[deploy] 快速部署（无版本号）
+      - name: Determine trigger mode
         id: version
         run: |
-          VERSION="${GITHUB_REF_NAME#web-v}"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            VERSION="${GITHUB_REF_NAME#web-v}"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "is_release=true" >> $GITHUB_OUTPUT
+            echo "触发方式：发版（tag ${{ github.ref_name }}，版本 $VERSION）"
+          else
+            echo "version=" >> $GITHUB_OUTPUT
+            echo "is_release=false" >> $GITHUB_OUTPUT
+            echo "触发方式：快速部署（dev push 含 [deploy]）"
+          fi
 
       # 检查 dev 和 main 之间是否有差异
       - name: Check diff
@@ -59,6 +153,7 @@ jobs:
 
       # 直接 merge dev 到 main 并 push
       # 用 -X theirs 策略：冲突时直接采用 dev 的版本
+      # tag 触发用 release 前缀+版本号，[deploy] 触发用 deploy 前缀+时间戳
       - name: Merge dev to main
         if: steps.diff.outputs.ahead != '0'
         run: |
@@ -66,7 +161,11 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout main
           git pull origin main
-          git merge origin/dev --no-edit -X theirs -m "release: Web v${{ steps.version.outputs.version }}"
+          if [[ "${{ steps.version.outputs.is_release }}" == "true" ]]; then
+            git merge origin/dev --no-edit -X theirs -m "release: Web v${{ steps.version.outputs.version }}"
+          else
+            git merge origin/dev --no-edit -X theirs -m "deploy: 快速部署 $(date -u -d '+8 hours' '+%Y-%m-%d %H:%M:%S')"
+          fi
           git push https://${{ secrets.WEB_DEPLOY_TOKEN }}@github.com/${{ github.repository }}.git main
           echo "✅ 已合并 dev 到 main"
 
@@ -137,10 +236,10 @@ jobs:
       #       -d "des=版本: v${{ steps.version.outputs.version }}%0A状态: ⚠️ dev 和 main 无差异，未部署%0A时间: $(date -u -d '+8 hours' '+%Y-%m-%d %H:%M:%S')"
 
 
-      # 通知 - 发版失败（仅在失败时通知）
-      - name: 通知 - Web 发版失败
+      # 通知 - 部署失败（仅在失败时通知）
+      - name: 通知 - Web 部署失败
         if: failure()
         run: |
           curl -s -X POST "https://sctapi.ftqq.com/${{ secrets.SERVERCHAN_KEY }}.send" \
-            -d "title=ICube Web 发版失败" \
+            -d "title=ICube Web 部署失败" \
             -d "des=版本: v${{ steps.version.outputs.version }}%0A状态: ❌ 合并或部署失败%0A时间: $(date -u -d '+8 hours' '+%Y-%m-%d %H:%M:%S')%0A[查看详情](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
