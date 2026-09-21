@@ -119,22 +119,22 @@ function moveR(state) {
   // B 面左列，反向
   const bCol = [state[B][6], state[B][3], state[B][0]]
 
-  // U → F → D → B(反向) → U
-  state[F][2] = uCol[0]
-  state[F][5] = uCol[1]
-  state[F][8] = uCol[2]
+  // U → B(反向) → D → F → U
+  state[B][6] = uCol[0]
+  state[B][3] = uCol[1]
+  state[B][0] = uCol[2]
 
-  state[D][2] = fCol[0]
-  state[D][5] = fCol[1]
-  state[D][8] = fCol[2]
+  state[D][2] = bCol[0]
+  state[D][5] = bCol[1]
+  state[D][8] = bCol[2]
 
-  state[B][6] = dCol[0]
-  state[B][3] = dCol[1]
-  state[B][0] = dCol[2]
+  state[F][2] = dCol[0]
+  state[F][5] = dCol[1]
+  state[F][8] = dCol[2]
 
-  state[U][2] = bCol[0]
-  state[U][5] = bCol[1]
-  state[U][8] = bCol[2]
+  state[U][2] = fCol[0]
+  state[U][5] = fCol[1]
+  state[U][8] = fCol[2]
 }
 
 /**
@@ -150,22 +150,22 @@ function moveL(state) {
   // B 面右列，反向
   const bCol = [state[B][8], state[B][5], state[B][2]]
 
-  // U → B(反向) → D → F → U
-  state[B][8] = uCol[0]
-  state[B][5] = uCol[1]
-  state[B][2] = uCol[2]
+  // U → F → D → B(反向) → U
+  state[F][0] = uCol[0]
+  state[F][3] = uCol[1]
+  state[F][6] = uCol[2]
 
-  state[D][0] = bCol[0]
-  state[D][3] = bCol[1]
-  state[D][6] = bCol[2]
+  state[D][0] = fCol[0]
+  state[D][3] = fCol[1]
+  state[D][6] = fCol[2]
 
-  state[F][0] = dCol[0]
-  state[F][3] = dCol[1]
-  state[F][6] = dCol[2]
+  state[B][8] = dCol[0]
+  state[B][5] = dCol[1]
+  state[B][2] = dCol[2]
 
-  state[U][0] = fCol[0]
-  state[U][3] = fCol[1]
-  state[U][6] = fCol[2]
+  state[U][0] = bCol[0]
+  state[U][3] = bCol[1]
+  state[U][6] = bCol[2]
 }
 
 /**
@@ -180,22 +180,22 @@ function moveU(state) {
   const bRow = [state[B][0], state[B][1], state[B][2]]
   const lRow = [state[L][0], state[L][1], state[L][2]]
 
-  // F → L → B → R → F
-  state[L][0] = fRow[0]
-  state[L][1] = fRow[1]
-  state[L][2] = fRow[2]
+  // F → R → B → L → F
+  state[R][0] = fRow[0]
+  state[R][1] = fRow[1]
+  state[R][2] = fRow[2]
 
-  state[B][0] = lRow[0]
-  state[B][1] = lRow[1]
-  state[B][2] = lRow[2]
+  state[B][0] = rRow[0]
+  state[B][1] = rRow[1]
+  state[B][2] = rRow[2]
 
-  state[R][0] = bRow[0]
-  state[R][1] = bRow[1]
-  state[R][2] = bRow[2]
+  state[L][0] = bRow[0]
+  state[L][1] = bRow[1]
+  state[L][2] = bRow[2]
 
-  state[F][0] = rRow[0]
-  state[F][1] = rRow[1]
-  state[F][2] = rRow[2]
+  state[F][0] = lRow[0]
+  state[F][1] = lRow[1]
+  state[F][2] = lRow[2]
 }
 
 /**
@@ -210,22 +210,22 @@ function moveD(state) {
   const bRow = [state[B][6], state[B][7], state[B][8]]
   const lRow = [state[L][6], state[L][7], state[L][8]]
 
-  // F → R → B → L → F
-  state[R][6] = fRow[0]
-  state[R][7] = fRow[1]
-  state[R][8] = fRow[2]
+  // F → L → B → R → F
+  state[L][6] = fRow[0]
+  state[L][7] = fRow[1]
+  state[L][8] = fRow[2]
 
-  state[B][6] = rRow[0]
-  state[B][7] = rRow[1]
-  state[B][8] = rRow[2]
+  state[B][6] = lRow[0]
+  state[B][7] = lRow[1]
+  state[B][8] = lRow[2]
 
-  state[L][6] = bRow[0]
-  state[L][7] = bRow[1]
-  state[L][8] = bRow[2]
+  state[R][6] = bRow[0]
+  state[R][7] = bRow[1]
+  state[R][8] = bRow[2]
 
-  state[F][6] = lRow[0]
-  state[F][7] = lRow[1]
-  state[F][8] = lRow[2]
+  state[F][6] = rRow[0]
+  state[F][7] = rRow[1]
+  state[F][8] = rRow[2]
 }
 
 /**

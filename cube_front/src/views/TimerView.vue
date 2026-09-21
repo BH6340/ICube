@@ -334,7 +334,7 @@ function onTimingModeChange(val) {
   if (val === 'manual') {
     if (cubeTimer) cubeTimer.stop()
     allHistory.value = loadManualHistory()
-    if (timerPage.value) timerPage.value.focus()
+    if (timerPage.value) timerPage.value.focus({ preventScroll: true })
   } else {
     stopManualTimer()
     manualTimerState.value = 'idle'
@@ -869,7 +869,7 @@ function beforeUnloadHandler() {
 }
 onMounted(() => {
   generateScramble()
-  if (timerPage.value) timerPage.value.focus()
+  if (timerPage.value) timerPage.value.focus({ preventScroll: true })
   window.addEventListener('beforeunload', beforeUnloadHandler)
   if (timingMode.value === 'smart') loadSavedDevices()
 })
