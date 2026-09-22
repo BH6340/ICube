@@ -325,8 +325,11 @@ jobs:
     name: 部署到生产服务器
     needs: [backend-check, frontend-check, docker-build-api, docker-build-front]
     # 仅 push 到 main 时部署；CI Job 可以是 success 或 skipped（路径过滤跳过）
+    # 跳过 web-deploy.yml 的 merge commit（release: Web 或 deploy: 快速部署），避免重复部署
     if: |
       github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+      !contains(github.event.head_commit.message, 'release: Web') &&
+      !contains(github.event.head_commit.message, 'deploy: 快速部署') &&
       !cancelled() &&
       (needs.backend-check.result == 'success' || needs.backend-check.result == 'skipped') &&
       (needs.frontend-check.result == 'success' || needs.frontend-check.result == 'skipped') &&
