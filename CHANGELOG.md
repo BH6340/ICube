@@ -133,6 +133,7 @@
 - fix(app): baseURL改为运行时检测file协议，硬编码生产域名确保APK可用 (0e54dd4)
 - fix(app): APP改用HTTP+IP连接后端，绕过TLS连接重置问题 (09ee7d5)
 - fix(timer): 修复 dblclick 多行表达式缺少分号导致构建失败 (c5d92f8)
+- fix(nginx,uptime-kuma): 修复子路径部署监控面板的路径问题[deploy] (066cd9d)
 
 
 ## docs - 文档
@@ -185,6 +186,7 @@
 - docs: 自动更新 CHANGELOG (416c2ca)
 - docs(formula): 新增魔方公式教程相关示例图片 (3712ad1)
 - docs: 自动更新 CHANGELOG (29d86e9)
+- docs: 自动生成 CHANGELOG (5f43132)
 
 
 ## refactor - 重构
