@@ -268,8 +268,8 @@
           ]"
           @click="frontFaceInput = face"
           @dblclick="
-            frontFaceInput = face
-            submitFrontFace()
+            frontFaceInput = face;
+            submitFrontFace();
           "
         >
           <span class="face-block-color">{{ faceColorName(face) }}</span>
