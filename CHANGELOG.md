@@ -184,6 +184,7 @@
 - docs: 自动更新 CHANGELOG (6a2110a)
 - docs: 自动更新 CHANGELOG (416c2ca)
 - docs(formula): 新增魔方公式教程相关示例图片 (3712ad1)
+- docs: 自动更新 CHANGELOG (29d86e9)
 
 
 ## refactor - 重构
@@ -222,6 +223,7 @@
 - ci(cicd,app-build,docs): 完善CI/CD流程并新增Web发版工作流 (79c1a66)
 - ci(web-deploy): 重构Web部署工作流，新增CI检查与快速部署支持 (d7d17a2)
 - ci(cicd): 为dev分支添加[deploy]标记跳过CI检查的逻辑 (292da47)
+- ci(cicd): 避免重复执行生产部署 (2ce11f7)
 
 
 ## build - 构建
@@ -309,5 +311,6 @@
 - chore(cube_app): 新增Android应用图标生成脚本并更新图标  (#66) (72c73db)
 - chore: 初始化 pre-commit 代码检查 (585c05b)
 - chore: 添加.editorconfig配置统一代码格式 (640b3ce)
+- chore(docker): 为 uptime-kuma 配置 base path[deploy] (65a663a)
 
 
