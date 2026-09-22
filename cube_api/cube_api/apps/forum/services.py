@@ -324,9 +324,7 @@ class PostInteractionService:
         is_disliked = not user_reaction.is_like if user_reaction else False
 
         # 计算返回给前端的动作标识
-        current_reaction = (
-            "none" if action_type == "canceled" else "liked" if is_like else "disliked"
-        )
+        current_reaction = "none" if action_type == "canceled" else "liked" if is_like else "disliked"
 
         return {
             "code": 100,

@@ -17,15 +17,15 @@ export default defineConfig({
     // 2. 配置自动导入
     AutoImport({
       resolvers: [ElementPlusResolver()],
-      imports: ['vue', 'vue-router', 'pinia']
+      imports: ['vue', 'vue-router', 'pinia'],
     }),
     Components({
-      resolvers: [ElementPlusResolver()]
+      resolvers: [ElementPlusResolver()],
     }),
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
   server: {
@@ -39,8 +39,8 @@ export default defineConfig({
       '/media': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
-      }
-    }
+      },
+    },
   },
   preview: {
     host: '0.0.0.0',
@@ -53,7 +53,7 @@ export default defineConfig({
       '/media': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
-      }
-    }
-  }
+      },
+    },
+  },
 })

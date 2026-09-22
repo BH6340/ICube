@@ -35,12 +35,7 @@
             <h1>{{ profile.username }}</h1>
             <p>{{ profile.bio || '暂无简介' }}</p>
           </div>
-          <el-button
-            v-if="isSelf"
-            type="primary"
-            plain
-            @click="router.push('/profiles/info')"
-          >
+          <el-button v-if="isSelf" type="primary" plain @click="router.push('/profiles/info')">
             进入个人中心
           </el-button>
           <el-button
@@ -101,10 +96,7 @@
             <el-button type="primary" plain @click="retryActiveTab">重试</el-button>
           </div>
 
-          <div
-            v-else-if="activeTab === 'posts' && activeState.items.length"
-            class="post-list"
-          >
+          <div v-else-if="activeTab === 'posts' && activeState.items.length" class="post-list">
             <article
               v-for="post in activeState.items"
               :key="post.id"
@@ -129,12 +121,7 @@
                   <time>{{ formatDate(post.created_at) }}</time>
                 </div>
                 <div v-if="post.tags?.length" class="post-tags">
-                  <el-tag
-                    v-for="tag in post.tags"
-                    :key="tag.id"
-                    size="small"
-                    effect="plain"
-                  >
+                  <el-tag v-for="tag in post.tags" :key="tag.id" size="small" effect="plain">
                     {{ tag.name }}
                   </el-tag>
                 </div>
@@ -145,30 +132,16 @@
                 </div>
               </div>
               <div v-if="post.images?.length" class="post-image">
-                <img
-                  :src="post.images[0].image_url"
-                  :alt="post.images[0].alt || post.title"
-                />
+                <img :src="post.images[0].image_url" :alt="post.images[0].alt || post.title" />
               </div>
             </article>
           </div>
 
-          <div
-            v-else-if="isFormulaTab && activeState.items.length"
-            class="formula-grid"
-          >
-            <article
-              v-for="formula in activeState.items"
-              :key="formula.id"
-              class="formula-card"
-            >
+          <div v-else-if="isFormulaTab && activeState.items.length" class="formula-grid">
+            <article v-for="formula in activeState.items" :key="formula.id" class="formula-card">
               <div class="formula-header">
                 <h2>{{ formula.name }}</h2>
-                <el-tag
-                  :type="difficultyTagType(formula.difficulty)"
-                  size="small"
-                  effect="plain"
-                >
+                <el-tag :type="difficultyTagType(formula.difficulty)" size="small" effect="plain">
                   {{ difficultyLabel(formula.difficulty) }}
                 </el-tag>
               </div>
@@ -182,15 +155,14 @@
                 <span v-else>暂无缩略图</span>
               </div>
               <footer>
-                {{ formula.category?.name || '未分类' }}&nbsp;&nbsp;by&nbsp;&nbsp;{{ formula.author?.username || '官方' }}
+                {{ formula.category?.name || '未分类' }}&nbsp;&nbsp;by&nbsp;&nbsp;{{
+                  formula.author?.username || '官方'
+                }}
               </footer>
             </article>
           </div>
 
-          <div
-            v-else-if="isRelationTab && activeState.items.length"
-            class="relation-grid"
-          >
+          <div v-else-if="isRelationTab && activeState.items.length" class="relation-grid">
             <UserCard
               v-for="user in activeState.items"
               :key="user.username"
@@ -232,13 +204,10 @@ import {
   getFollowersListApi,
   getFollowingListApi,
   getProfileApi,
-  unfollowUserApi
+  unfollowUserApi,
 } from '@/api/user'
 import { getUserPosts } from '@/api/posts'
-import {
-  getUserCustomFormulas,
-  getUserFormulaCollections
-} from '@/api/formula'
+import { getUserCustomFormulas, getUserFormulaCollections } from '@/api/formula'
 import UserCard from '@/components/user/UserCard.vue'
 import { useUserStore } from '@/stores/user'
 import defaultAvatar from '@/assets/default_avatar.svg'
@@ -255,7 +224,7 @@ const createTabState = (pageSize) => ({
   pageSize,
   total: 0,
   items: [],
-  requestVersion: 0
+  requestVersion: 0,
 })
 
 const tabStates = reactive({
@@ -263,7 +232,7 @@ const tabStates = reactive({
   collections: createTabState(12),
   customFormulas: createTabState(12),
   following: createTabState(20),
-  followers: createTabState(20)
+  followers: createTabState(20),
 })
 
 const profile = ref(null)
@@ -283,20 +252,20 @@ const isFormulaTab = computed(
 const isRelationTab = computed(
   () => activeTab.value === 'following' || activeTab.value === 'followers'
 )
-const isSelf = computed(
-  () => Boolean(
-    userStore.token &&
-    profile.value?.username === userStore.username
-  )
+const isSelf = computed(() =>
+  Boolean(userStore.token && profile.value?.username === userStore.username)
 )
 
-const emptyDescription = computed(() => ({
-  posts: '还没有发布文章',
-  collections: '还没有收藏公式',
-  customFormulas: '还没有发布自创公式',
-  following: '还没有关注其他魔友',
-  followers: '还没有粉丝'
-}[activeTab.value]))
+const emptyDescription = computed(
+  () =>
+    ({
+      posts: '还没有发布文章',
+      collections: '还没有收藏公式',
+      customFormulas: '还没有发布自创公式',
+      following: '还没有关注其他魔友',
+      followers: '还没有粉丝',
+    })[activeTab.value]
+)
 
 const resetTabs = () => {
   tabStates.posts = createTabState(10)
@@ -348,18 +317,19 @@ const loadTab = async (name, force = false) => {
 
   const params = {
     page: state.page,
-    page_size: state.pageSize
+    page_size: state.pageSize,
   }
   const username = profile.value.username
   const requests = {
-    posts: () => getUserPosts(username, {
-      ...params,
-      ordering: '-created_at'
-    }),
+    posts: () =>
+      getUserPosts(username, {
+        ...params,
+        ordering: '-created_at',
+      }),
     collections: () => getUserFormulaCollections(username, params),
     customFormulas: () => getUserCustomFormulas(username, params),
     following: () => getFollowingListApi(username, params),
-    followers: () => getFollowersListApi(username, params)
+    followers: () => getFollowersListApi(username, params),
   }
 
   try {
@@ -368,16 +338,14 @@ const loadTab = async (name, force = false) => {
       requestVersion !== state.requestVersion ||
       currentProfileVersion !== profileVersion ||
       profile.value?.username !== username
-    ) return
+    )
+      return
 
     state.items = response.data?.results || []
     state.total = response.data?.count || 0
     state.loaded = true
   } catch {
-    if (
-      requestVersion !== state.requestVersion ||
-      currentProfileVersion !== profileVersion
-    ) return
+    if (requestVersion !== state.requestVersion || currentProfileVersion !== profileVersion) return
     state.error = '该内容加载失败，请重试'
   } finally {
     if (requestVersion === state.requestVersion) {
@@ -404,7 +372,7 @@ const requireLogin = () => {
   if (userStore.token) return true
   router.push({
     name: 'login',
-    query: { redirect: route.fullPath }
+    query: { redirect: route.fullPath },
   })
   return false
 }
@@ -430,14 +398,12 @@ const toggleProfileFollow = async () => {
       actionVersion !== profileFollowVersion ||
       currentProfileVersion !== profileVersion ||
       profile.value !== targetProfile
-    ) return
+    )
+      return
 
     if (wasFollowing) {
       targetProfile.following = false
-      targetProfile.followers_count = Math.max(
-        0,
-        targetProfile.followers_count - 1
-      )
+      targetProfile.followers_count = Math.max(0, targetProfile.followers_count - 1)
       ElMessage.success('已取消关注')
     } else {
       targetProfile.following = true
@@ -498,11 +464,7 @@ const difficultyTagType = (level) => {
   return 'danger'
 }
 
-watch(
-  () => route.params.username,
-  loadProfile,
-  { immediate: true }
-)
+watch(() => route.params.username, loadProfile, { immediate: true })
 </script>
 
 <style scoped>
@@ -706,7 +668,9 @@ watch(
   border: 1px solid #ebeef5;
   border-radius: 10px;
   cursor: pointer;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .post-card:hover {

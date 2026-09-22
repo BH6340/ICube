@@ -27,7 +27,12 @@
         </el-col>
 
         <el-col :xs="12" :sm="6" :md="4">
-          <el-select v-model="searchParams.ordering" placeholder="排序" clearable @change="loadPosts">
+          <el-select
+            v-model="searchParams.ordering"
+            placeholder="排序"
+            clearable
+            @change="loadPosts"
+          >
             <el-option label="最新发布" value="-created_at" />
             <el-option label="最热" value="hot" />
             <el-option label="最多点赞" value="-like_count" />
@@ -91,12 +96,22 @@
             </div>
 
             <div class="post-stats">
-              <span><el-icon><View /></el-icon> {{ post.view_count }}</span>
-              <span><el-icon><Star /></el-icon> {{ post.like_count }}</span>
-              <span><el-icon><ChatLineRound /></el-icon> {{ post.comment_count }}</span>
+              <span
+                ><el-icon><View /></el-icon> {{ post.view_count }}</span
+              >
+              <span
+                ><el-icon><Star /></el-icon> {{ post.like_count }}</span
+              >
+              <span
+                ><el-icon><ChatLineRound /></el-icon> {{ post.comment_count }}</span
+              >
             </div>
 
-            <div class="post-comment-link" v-if="post.comment_count > 0" @click.stop="goToDetail(post.id)">
+            <div
+              class="post-comment-link"
+              v-if="post.comment_count > 0"
+              @click.stop="goToDetail(post.id)"
+            >
               查看 {{ post.comment_count }} 条评论
             </div>
           </div>
@@ -107,7 +122,7 @@
                 v-for="(image, index) in post.images.slice(0, 4)"
                 :key="image.id"
                 class="image-item"
-                :class="{ 'single': post.images.length === 1 }"
+                :class="{ single: post.images.length === 1 }"
               >
                 <img :src="image.image_url" :alt="image.alt || '图片'" />
                 <div v-if="index === 3 && post.images.length > 4" class="image-overlay">
@@ -180,10 +195,10 @@ const total = ref(0)
 
 /** 搜索与筛选参数 */
 const searchParams = reactive({
-  search: '',          // 搜索关键词
-  ordering: '-created_at',  // 排序方式
-  is_pinned: false,    // 是否仅看置顶
-  is_essence: false    // 是否仅看精华
+  search: '', // 搜索关键词
+  ordering: '-created_at', // 排序方式
+  is_pinned: false, // 是否仅看置顶
+  is_essence: false, // 是否仅看精华
 })
 
 /**
@@ -231,7 +246,7 @@ const loadPosts = async () => {
       page_size: pageSize.value,
       search: searchParams.search || undefined,
       is_pinned: searchParams.is_pinned || undefined,
-      is_essence: searchParams.is_essence || undefined
+      is_essence: searchParams.is_essence || undefined,
     }
 
     if (searchParams.ordering === 'hot') {
@@ -319,7 +334,7 @@ onMounted(() => {
 
 .post-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .post-header {

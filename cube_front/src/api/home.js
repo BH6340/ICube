@@ -16,7 +16,7 @@ import request from '@/http/request'
 export function getMenusApi() {
   return request({
     url: '/api/home/navigation/menus/',
-    method: 'get'
+    method: 'get',
   })
 }
 
@@ -30,7 +30,7 @@ export function getMenusApi() {
 export function getBannersApi() {
   return request({
     url: '/api/home/banners/',
-    method: 'get'
+    method: 'get',
   })
 }
 
@@ -44,6 +44,6 @@ export function getBannersApi() {
 export function getAppVersionApi() {
   return request({
     url: '/api/home/app/version/',
-    method: 'get'
+    method: 'get',
   })
 }

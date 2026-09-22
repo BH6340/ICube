@@ -1,5 +1,5 @@
 import { createApp } from 'vue'
-import { createPinia } from 'pinia'// 2.1 导入
+import { createPinia } from 'pinia' // 2.1 导入
 import App from './App.vue'
 import router from './router' // 1.1 导入路由配置
 import ElementPlus from 'element-plus'

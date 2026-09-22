@@ -18,12 +18,7 @@ import ErrorBoundary from '@/components/common/ErrorBoundary.vue'
 import RouteLoadingMask from '@/components/common/RouteLoadingMask.vue'
 import { useRouteLoading } from '@/stores/routeLoading'
 
-const {
-  status,
-  progressVisible,
-  overlayVisible,
-  layoutMounted
-} = useRouteLoading()
+const { status, progressVisible, overlayVisible, layoutMounted } = useRouteLoading()
 </script>
 
 <style>

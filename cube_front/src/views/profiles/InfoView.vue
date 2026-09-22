@@ -1,20 +1,34 @@
 <template>
   <div class="profile-info-container">
     <div class="profile-layout-wrapper">
-
       <el-card class="profile-card" shadow="never">
         <el-skeleton :loading="loading" animated :rows="3">
           <template #default>
             <div class="profile-header">
-              <el-avatar :size="85" :src="profileData.image || defaultAvatar" class="profile-avatar" />
+              <el-avatar
+                :size="85"
+                :src="profileData.image || defaultAvatar"
+                class="profile-avatar"
+              />
 
               <div class="profile-meta">
                 <div class="name-row">
                   <h2 class="username">{{ profileData.username || '未登录' }}</h2>
-                  <el-tag v-if="isMe" size="small" type="success" effect="plain" class="identity-tag">本用户</el-tag>
-                  <el-tag v-else size="small" type="warning" effect="plain" class="identity-tag">魔方达人</el-tag>
+                  <el-tag
+                    v-if="isMe"
+                    size="small"
+                    type="success"
+                    effect="plain"
+                    class="identity-tag"
+                    >本用户</el-tag
+                  >
+                  <el-tag v-else size="small" type="warning" effect="plain" class="identity-tag"
+                    >魔方达人</el-tag
+                  >
                 </div>
-                <p class="bio-text">{{ profileData.bio || '这个魔方大神很懒，还没有填写个人简介~' }}</p>
+                <p class="bio-text">
+                  {{ profileData.bio || '这个魔方大神很懒，还没有填写个人简介~' }}
+                </p>
               </div>
 
               <div class="action-btn">
@@ -47,7 +61,7 @@
           </template>
         </el-skeleton>
 
-        <el-divider style="margin: 20px 0 15px 0;" />
+        <el-divider style="margin: 20px 0 15px 0" />
 
         <div class="stats-row">
           <div class="stats-item" @click="activeTab = 'following'">
@@ -140,7 +154,12 @@
           <el-tab-pane :label="isMe ? '我的关注' : '他的关注'" name="following">
             <el-scrollbar max-height="320px">
               <div v-if="followingList.length > 0" class="user-list">
-                <div v-for="user in followingList" :key="user.username" class="user-item" @click="viewOtherProfile(user.username)">
+                <div
+                  v-for="user in followingList"
+                  :key="user.username"
+                  class="user-item"
+                  @click="viewOtherProfile(user.username)"
+                >
                   <el-avatar :size="40" :src="user.image || defaultAvatar" />
                   <div class="user-info-mini">
                     <span class="user-name-mini">{{ user.username }}</span>
@@ -148,7 +167,9 @@
                   </div>
 
                   <div class="list-action-btn" @click.stop>
-                    <el-tag size="small" v-if="user.username === userStore.username" type="success">我</el-tag>
+                    <el-tag size="small" v-if="user.username === userStore.username" type="success"
+                      >我</el-tag
+                    >
                     <template v-else>
                       <el-button
                         v-if="user.following"
@@ -179,7 +200,12 @@
           <el-tab-pane :label="isMe ? '我的粉丝' : '他的粉丝'" name="followers">
             <el-scrollbar max-height="320px">
               <div v-if="followersList.length > 0" class="user-list">
-                <div v-for="user in followersList" :key="user.username" class="user-item" @click="viewOtherProfile(user.username)">
+                <div
+                  v-for="user in followersList"
+                  :key="user.username"
+                  class="user-item"
+                  @click="viewOtherProfile(user.username)"
+                >
                   <el-avatar :size="40" :src="user.image || defaultAvatar" />
                   <div class="user-info-mini">
                     <span class="user-name-mini">{{ user.username }}</span>
@@ -187,7 +213,9 @@
                   </div>
 
                   <div class="list-action-btn" @click.stop>
-                    <el-tag size="small" v-if="user.username === userStore.username" type="success">我</el-tag>
+                    <el-tag size="small" v-if="user.username === userStore.username" type="success"
+                      >我</el-tag
+                    >
                     <template v-else>
                       <el-button
                         v-if="user.following"
@@ -236,7 +264,12 @@
         </el-form-item>
 
         <el-form-item label="个性昵称">
-          <el-input v-model="editForm.username" placeholder="修改您的昵称" maxlength="20" show-word-limit />
+          <el-input
+            v-model="editForm.username"
+            placeholder="修改您的昵称"
+            maxlength="20"
+            show-word-limit
+          />
         </el-form-item>
 
         <el-form-item label="个人简介">
@@ -252,7 +285,9 @@
       </el-form>
       <template #footer>
         <el-button @click="editDialogVisible = false" :disabled="saveLoading">取消</el-button>
-        <el-button type="primary" :loading="saveLoading" @click="submitEditProfile">保存修改</el-button>
+        <el-button type="primary" :loading="saveLoading" @click="submitEditProfile"
+          >保存修改</el-button
+        >
       </template>
     </el-dialog>
 
@@ -290,17 +325,25 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { useRoute, useRouter } from 'vue-router'
 // 💡 一举打包引入你前期做好的全部业务关联接口（含修改、看别人、看自己、关注、取关）
-import { getProfileApi,
+import {
+  getProfileApi,
   getFollowingListApi,
   getFollowersListApi,
   followUserApi,
   unfollowUserApi,
-  updateProfileApi
+  updateProfileApi,
 } from '@/api/user'
 import { getOrders, getAddresses } from '@/api/shop'
 
 import { ElMessage } from 'element-plus'
-import { ShoppingCart, MapLocation, Star, Document, TrendCharts, User } from '@element-plus/icons-vue'
+import {
+  ShoppingCart,
+  MapLocation,
+  Star,
+  Document,
+  TrendCharts,
+  User,
+} from '@element-plus/icons-vue'
 import defaultAvatar from '@/assets/default_avatar.svg'
 import ImageCropper from '@/components/ImageCropper.vue'
 
@@ -322,7 +365,7 @@ const profileData = ref({
   image: null,
   following: false,
   followers_count: 0,
-  following_count: 0
+  following_count: 0,
 })
 const orderCount = ref(0)
 const addressCount = ref(0)
@@ -366,13 +409,12 @@ const fetchUserProfileChain = async () => {
     const [profileRes, followingRes, followersRes] = await Promise.all([
       getProfileApi(targetUser),
       getFollowingListApi(targetUser).catch(() => ({ profiles: [] })),
-      getFollowersListApi(targetUser).catch(() => ({ profiles: [] }))
+      getFollowersListApi(targetUser).catch(() => ({ profiles: [] })),
     ])
 
     if (profileRes && profileRes.profiles) profileData.value = profileRes.profiles
     if (followingRes && followingRes.profiles) followingList.value = followingRes.profiles
     if (followersRes && followersRes.profiles) followersList.value = followersRes.profiles
-
   } catch (err) {
     console.error('拉取社交链数据故障:', err)
   } finally {
@@ -497,7 +539,7 @@ const submitEditProfile = async () => {
       userStore.updateInfo({
         username: updatedUser.username || editForm.value.username,
         bio: updatedUser.bio || editForm.value.bio,
-        image: updatedUser.image || profileData.value.image // 拿到后端返回的最新图片 URL
+        image: updatedUser.image || profileData.value.image, // 拿到后端返回的最新图片 URL
       })
 
       // ③ 成功后关闭弹窗，重置清理预览缓存
@@ -520,7 +562,7 @@ const submitEditProfile = async () => {
 const viewOtherProfile = (username) => {
   router.push({
     name: 'userProfile',
-    params: { username }
+    params: { username },
   })
 }
 
@@ -575,11 +617,15 @@ const loadAddressCount = async () => {
 
 // 💡 侦听器关键：由于是同一个组件内切路由（比如从看自己切到看别人的列表），组件不会重新销毁挂载。
 // 必须通过监听 query.username 的变化，来重新触发数据抓取。
-watch(() => route.query.username, () => {
-  fetchUserProfileChain()
-  loadOrderCount()
-  loadAddressCount()
-}, { deep: true })
+watch(
+  () => route.query.username,
+  () => {
+    fetchUserProfileChain()
+    loadOrderCount()
+    loadAddressCount()
+  },
+  { deep: true }
+)
 
 onMounted(() => {
   fetchUserProfileChain()
@@ -601,7 +647,8 @@ onMounted(() => {
   flex-direction: column;
   gap: 20px;
 }
-.profile-card, .relation-card {
+.profile-card,
+.relation-card {
   border-radius: 12px;
   border: 1px solid #e4e7ed;
   background-color: #fff;
@@ -660,7 +707,8 @@ onMounted(() => {
   font-family: 'Arial Black', sans-serif;
   transition: all 0.2s ease;
 }
-.stats-num.active-num, .stats-item:hover .stats-num {
+.stats-num.active-num,
+.stats-item:hover .stats-num {
   color: #409eff;
   transform: scale(1.08);
 }
@@ -850,7 +898,7 @@ onMounted(() => {
     border-right: none;
   }
 
-  .stats-item:nth-last-child(-n+2) {
+  .stats-item:nth-last-child(-n + 2) {
     border-bottom: none;
   }
 

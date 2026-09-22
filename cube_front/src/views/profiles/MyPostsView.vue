@@ -43,18 +43,32 @@
         </div>
 
         <div class="post-stats">
-          <span><el-icon><View /></el-icon> {{ post.view_count }}</span>
-          <span><el-icon><Star /></el-icon> {{ post.like_count }}</span>
-          <span><el-icon><ChatLineRound /></el-icon> {{ post.comment_count }}</span>
+          <span
+            ><el-icon><View /></el-icon> {{ post.view_count }}</span
+          >
+          <span
+            ><el-icon><Star /></el-icon> {{ post.like_count }}</span
+          >
+          <span
+            ><el-icon><ChatLineRound /></el-icon> {{ post.comment_count }}</span
+          >
           <span class="time">{{ formatTime(post.created_at) }}</span>
         </div>
 
-        <div class="post-comment-link" v-if="post.comment_count > 0" @click.stop="goToDetail(post.id)">
+        <div
+          class="post-comment-link"
+          v-if="post.comment_count > 0"
+          @click.stop="goToDetail(post.id)"
+        >
           查看 {{ post.comment_count }} 条评论
         </div>
       </el-card>
 
-      <el-empty v-if="!loading && posts.length === 0" description="还没有发布过帖子" :image-size="80">
+      <el-empty
+        v-if="!loading && posts.length === 0"
+        description="还没有发布过帖子"
+        :image-size="80"
+      >
         <el-button type="primary" @click="goToCreate">去发布</el-button>
       </el-empty>
     </div>
@@ -129,7 +143,7 @@ const loadPosts = async () => {
   try {
     const params = {
       page: currentPage.value,
-      page_size: pageSize.value
+      page_size: pageSize.value,
     }
 
     const res = await getMyPosts(params)
@@ -185,7 +199,7 @@ onMounted(() => {
 
 .post-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .post-header {

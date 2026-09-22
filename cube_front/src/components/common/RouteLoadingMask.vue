@@ -19,12 +19,12 @@
 defineProps({
   visible: {
     type: Boolean,
-    required: true
+    required: true,
   },
   fullPage: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 })
 </script>
 

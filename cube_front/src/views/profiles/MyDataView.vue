@@ -93,7 +93,9 @@
             <el-table-column prop="method_label" label="还原方法" />
             <el-table-column prop="timing_mode_label" label="计时方式">
               <template #default="scope">
-                <el-tag v-if="scope.row.timing_mode === 'smart'" type="warning" size="small">智能</el-tag>
+                <el-tag v-if="scope.row.timing_mode === 'smart'" type="warning" size="small"
+                  >智能</el-tag
+                >
                 <el-tag v-else size="small">手动</el-tag>
               </template>
             </el-table-column>
@@ -138,13 +140,15 @@
             </el-table-column>
             <el-table-column prop="time_ms" label="成绩(秒)">
               <template #default="scope">
-                <span v-if="scope.row.is_dnf" style="color: #f56c6c; font-weight: bold;">DNF</span>
+                <span v-if="scope.row.is_dnf" style="color: #f56c6c; font-weight: bold">DNF</span>
                 <span v-else>{{ formatTime(scope.row.time_ms) }}</span>
               </template>
             </el-table-column>
             <el-table-column prop="timing_mode" label="计时方式" width="100">
               <template #default="scope">
-                <el-tag v-if="scope.row.timing_mode === 'smart'" type="warning" size="small">智能</el-tag>
+                <el-tag v-if="scope.row.timing_mode === 'smart'" type="warning" size="small"
+                  >智能</el-tag
+                >
                 <el-tag v-else size="small">手动</el-tag>
               </template>
             </el-table-column>
@@ -166,7 +170,9 @@
             </el-table-column>
             <el-table-column label="操作" width="80">
               <template #default="scope">
-                <el-button type="danger" size="small" link @click="deleteRecord(scope.row.id)">删除</el-button>
+                <el-button type="danger" size="small" link @click="deleteRecord(scope.row.id)"
+                  >删除</el-button
+                >
               </template>
             </el-table-column>
           </el-table>
@@ -215,7 +221,7 @@ let chartInstance = null
 const filterForm = reactive({
   cube_type: '',
   method: '',
-  timing_mode: ''
+  timing_mode: '',
 })
 
 const dateRange = ref([])
@@ -224,7 +230,7 @@ const stats = reactive({
   total_count: 0,
   best_time: 0,
   avg_time: 0,
-  dnf_count: 0
+  dnf_count: 0,
 })
 
 const groupStats = ref([])
@@ -232,7 +238,7 @@ const records = ref([])
 const pagination = reactive({
   page: 1,
   page_size: 20,
-  total: 0
+  total: 0,
 })
 
 const CUBE_TYPE_MAP = {
@@ -240,15 +246,15 @@ const CUBE_TYPE_MAP = {
   '3x3': '三阶魔方',
   '4x4': '四阶魔方',
   '5x5': '五阶魔方',
-  'other': '其他'
+  other: '其他',
 }
 
 const METHOD_MAP = {
-  'layer': '层先法',
-  'cfop': 'CFOP',
-  'roux': '桥式',
-  'zbll': 'ZBLL',
-  'other': '其他'
+  layer: '层先法',
+  cfop: 'CFOP',
+  roux: '桥式',
+  zbll: 'ZBLL',
+  other: '其他',
 }
 
 const formatTime = (ms) => {
@@ -304,7 +310,7 @@ const loadRecords = async () => {
   const params = {
     ...filterForm,
     page: pagination.page,
-    page_size: pagination.page_size
+    page_size: pagination.page_size,
   }
   if (dateRange.value.length === 2) {
     params.start_date = dateRange.value[0]
@@ -338,50 +344,50 @@ const renderChart = (data) => {
     chartInstance = echarts.init(chartRef.value)
   }
 
-  const xAxisData = data.map(item => {
+  const xAxisData = data.map((item) => {
     const date = new Date(item.date)
     return `${date.getMonth() + 1}/${date.getDate()}`
   })
 
-  const bestTimes = data.map(item => (item.best_time / 1000).toFixed(2))
-  const avgTimes = data.map(item => (item.avg_time / 1000).toFixed(2))
+  const bestTimes = data.map((item) => (item.best_time / 1000).toFixed(2))
+  const avgTimes = data.map((item) => (item.avg_time / 1000).toFixed(2))
 
   const option = {
     tooltip: {
       trigger: 'axis',
       formatter: (params) => {
         let result = `<div style="font-weight:bold;margin-bottom:8px;">${params[0].axisValue}</div>`
-        params.forEach(param => {
+        params.forEach((param) => {
           result += `<div>${param.marker} ${param.seriesName}: ${param.value}秒</div>`
         })
         return result
-      }
+      },
     },
     legend: {
       data: ['最快成绩', '平均成绩'],
-      bottom: 0
+      bottom: 0,
     },
     grid: {
       left: '3%',
       right: '4%',
       bottom: '15%',
       top: '10%',
-      containLabel: true
+      containLabel: true,
     },
     xAxis: {
       type: 'category',
       data: xAxisData,
       axisLabel: {
         rotate: 45,
-        fontSize: 11
-      }
+        fontSize: 11,
+      },
     },
     yAxis: {
       type: 'value',
       name: '时间(秒)',
       axisLabel: {
-        formatter: '{value}'
-      }
+        formatter: '{value}',
+      },
     },
     series: [
       {
@@ -391,17 +397,17 @@ const renderChart = (data) => {
         smooth: true,
         lineStyle: {
           color: '#67c23a',
-          width: 2
+          width: 2,
         },
         itemStyle: {
-          color: '#67c23a'
+          color: '#67c23a',
         },
         areaStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
             { offset: 0, color: 'rgba(103, 194, 58, 0.3)' },
-            { offset: 1, color: 'rgba(103, 194, 58, 0.05)' }
-          ])
-        }
+            { offset: 1, color: 'rgba(103, 194, 58, 0.05)' },
+          ]),
+        },
       },
       {
         name: '平均成绩',
@@ -410,19 +416,19 @@ const renderChart = (data) => {
         smooth: true,
         lineStyle: {
           color: '#409eff',
-          width: 2
+          width: 2,
         },
         itemStyle: {
-          color: '#409eff'
+          color: '#409eff',
         },
         areaStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
             { offset: 0, color: 'rgba(64, 158, 255, 0.3)' },
-            { offset: 1, color: 'rgba(64, 158, 255, 0.05)' }
-          ])
-        }
-      }
-    ]
+            { offset: 1, color: 'rgba(64, 158, 255, 0.05)' },
+          ]),
+        },
+      },
+    ],
   }
 
   chartInstance.setOption(option)
@@ -437,16 +443,18 @@ const deleteRecord = (id) => {
   ElMessageBox.confirm('确定要删除这条记录吗？', '警告', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
-    type: 'warning'
-  }).then(async () => {
-    try {
-      await deleteTimerRecord(id)
-      ElMessage.success('删除成功')
-      loadData()
-    } catch (error) {
-      ElMessage.error('删除失败')
-    }
-  }).catch(() => {})
+    type: 'warning',
+  })
+    .then(async () => {
+      try {
+        await deleteTimerRecord(id)
+        ElMessage.success('删除成功')
+        loadData()
+      } catch (error) {
+        ElMessage.error('删除失败')
+      }
+    })
+    .catch(() => {})
 }
 
 const resetFilter = () => {
@@ -476,9 +484,12 @@ onBeforeUnmount(() => {
   }
 })
 
-watch([() => filterForm.cube_type, () => filterForm.method, () => filterForm.timing_mode, dateRange], () => {
-  pagination.page = 1
-})
+watch(
+  [() => filterForm.cube_type, () => filterForm.method, () => filterForm.timing_mode, dateRange],
+  () => {
+    pagination.page = 1
+  }
+)
 </script>
 
 <style scoped>

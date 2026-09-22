@@ -17,14 +17,16 @@
         <el-button size="small" @click="insertMarkdown('1. ', '')" title="有序列表">1.</el-button>
         <el-button size="small" @click="insertMarkdown('[', '](url)')" title="链接">链接</el-button>
         <el-button size="small" @click="triggerImageUpload" title="上传图片">
-            <el-icon><Picture /></el-icon>
-            图片
-          </el-button>
+          <el-icon><Picture /></el-icon>
+          图片
+        </el-button>
         <el-button size="small" @click="showFormulaDialog = true" title="插入公式">
-            <el-icon><Box /></el-icon>
-            公式
-          </el-button>
-        <el-button size="small" @click="insertMarkdown('```\n', '\n```')" title="代码块">&lt;/&gt;</el-button>
+          <el-icon><Box /></el-icon>
+          公式
+        </el-button>
+        <el-button size="small" @click="insertMarkdown('```\n', '\n```')" title="代码块"
+          >&lt;/&gt;</el-button
+        >
         <el-button size="small" @click="insertMarkdown('> ', '')" title="引用">引用</el-button>
         <el-button size="small" @click="insertMarkdown('---', '')" title="分隔线">—</el-button>
       </el-button-group>
@@ -47,7 +49,7 @@
           type="file"
           accept="image/*"
           multiple
-          style="display: none;"
+          style="display: none"
           @change="handleImageSelect"
         />
 
@@ -87,7 +89,7 @@
             text
             size="small"
             @click="togglePreview"
-            style="font-size: 12px;"
+            style="font-size: 12px"
           >
             返回编辑
           </el-button>
@@ -120,7 +122,7 @@
           clearable
           @keyup.enter="loadFormulas"
           @clear="loadFormulas"
-          style="margin-bottom: 12px;"
+          style="margin-bottom: 12px"
         >
           <template #append>
             <el-button @click="loadFormulas">
@@ -134,7 +136,7 @@
             v-model="selectedCategory"
             placeholder="选择分类"
             clearable
-            style="width: 180px; margin-right: 12px;"
+            style="width: 180px; margin-right: 12px"
             @change="loadFormulas"
           >
             <el-option
@@ -149,7 +151,7 @@
             v-model="selectedDifficulty"
             placeholder="选择难度"
             clearable
-            style="width: 120px;"
+            style="width: 120px"
             @change="loadFormulas"
           >
             <el-option label="入门" :value="1" />
@@ -189,7 +191,7 @@
           layout="total, sizes, prev, pager, next, jumper"
           @size-change="loadFormulas"
           @current-change="loadFormulas"
-          style="margin-top: 16px; justify-content: center;"
+          style="margin-top: 16px; justify-content: center"
         />
       </div>
     </el-dialog>
@@ -199,7 +201,7 @@
 <script setup>
 /**
  * MarkdownEditor.vue - Markdown 编辑器组件
- * 
+ *
  * 核心职责：
  * 1. 提供 Markdown 语法编辑功能（工具栏快捷插入）
  * 2. 实时预览 Markdown 渲染效果
@@ -207,11 +209,11 @@
  * 4. 支持图片上传并自动插入 Markdown 格式
  * 5. 支持 .md 文件导入
  * 6. 编辑/预览模式切换
- * 
+ *
  * 技术栈：
  * - marked：Markdown 解析库
  * - highlight.js：代码高亮库
- * 
+ *
  * 设计要点：
  * - 使用 v-model 双向绑定实现数据同步
  * - 工具栏按钮通过 insertMarkdown 函数插入语法标记
@@ -222,9 +224,9 @@
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { Upload, View, Picture, Search, Box } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { marked } from 'marked'           // Markdown 解析库
-import hljs from 'highlight.js'           // 代码高亮库
-import 'highlight.js/styles/github.css'   // GitHub 风格代码高亮样式
+import { marked } from 'marked' // Markdown 解析库
+import hljs from 'highlight.js' // 代码高亮库
+import 'highlight.js/styles/github.css' // GitHub 风格代码高亮样式
 import request from '@/http/request'
 import { uploadImage, getFormulasForPost } from '@/api/posts' // 图片上传 API
 import ImageCropper from '@/components/ImageCropper.vue'
@@ -232,8 +234,8 @@ import ImageCropper from '@/components/ImageCropper.vue'
 const props = defineProps({
   modelValue: {
     type: String,
-    default: ''
-  }
+    default: '',
+  },
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -273,7 +275,7 @@ onBeforeUnmount(() => {
 
 // 配置 marked
 marked.setOptions({
-  highlight: function(code, lang) {
+  highlight: function (code, lang) {
     if (lang && hljs.getLanguage(lang)) {
       return hljs.highlight(code, { language: lang }).value
     }
@@ -281,7 +283,7 @@ marked.setOptions({
   },
   breaks: true,
   gfm: true,
-  tables: true
+  tables: true,
 })
 
 const renderedHtml = computed(() => {
@@ -295,11 +297,14 @@ watch(content, (newVal) => {
   emit('update:modelValue', newVal)
 })
 
-watch(() => props.modelValue, (newVal) => {
-  if (newVal !== content.value) {
-    content.value = newVal
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    if (newVal !== content.value) {
+      content.value = newVal
+    }
   }
-})
+)
 
 const insertMarkdown = (before, after) => {
   const textarea = textareaRef.value
@@ -309,9 +314,8 @@ const insertMarkdown = (before, after) => {
   const end = textarea.selectionEnd
   const selectedText = content.value.substring(start, end)
 
-  const newText = content.value.substring(0, start) +
-                  before + selectedText + after +
-                  content.value.substring(end)
+  const newText =
+    content.value.substring(0, start) + before + selectedText + after + content.value.substring(end)
 
   content.value = newText
 
@@ -357,7 +361,7 @@ const handleImageSelect = async (event) => {
   const files = Array.from(event.target.files || [])
   if (files.length === 0) return
 
-  const validFiles = files.filter(file => {
+  const validFiles = files.filter((file) => {
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
     if (!validTypes.includes(file.type)) {
       ElMessage.warning(`文件 ${file.name} 不是有效图片格式`)
@@ -419,7 +423,7 @@ const loadFormulas = async () => {
       page_size: formulaPageSize.value,
       search: formulaSearch.value || undefined,
       category: selectedCategory.value || undefined,
-      difficulty: selectedDifficulty.value || undefined
+      difficulty: selectedDifficulty.value || undefined,
     }
     const res = await getFormulasForPost(params)
     if (res.code === 100) {
@@ -438,12 +442,12 @@ const loadFormulaCategories = async () => {
   try {
     const res = await request({
       url: '/api/formula/categories/',
-      method: 'get'
+      method: 'get',
     })
     if (res.code === 100) {
-      formulaCategories.value = res.data.map(cat => ({
+      formulaCategories.value = res.data.map((cat) => ({
         id: cat.id,
-        name: `${cat.order}阶 ${cat.method} ${cat.phase}`
+        name: `${cat.order}阶 ${cat.method} ${cat.phase}`,
       }))
     }
   } catch (error) {
@@ -504,7 +508,8 @@ watch(showFormulaDialog, (newVal) => {
   height: 1080px;
 }
 
-.editor-pane, .preview-pane {
+.editor-pane,
+.preview-pane {
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -583,7 +588,8 @@ watch(showFormulaDialog, (newVal) => {
     height: 400px;
   }
 
-  .editor-pane, .preview-pane {
+  .editor-pane,
+  .preview-pane {
     min-height: 200px;
   }
 

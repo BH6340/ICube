@@ -11,13 +11,8 @@
       :loading="loading"
       clearable
     >
-      <el-option
-        v-for="tag in tags"
-        :key="tag.id"
-        :label="tag.name"
-        :value="tag.id"
-      >
-        <el-tag :color="tag.color" size="small" effect="dark" style="color: white; border: none;">
+      <el-option v-for="tag in tags" :key="tag.id" :label="tag.name" :value="tag.id">
+        <el-tag :color="tag.color" size="small" effect="dark" style="color: white; border: none">
           {{ tag.name }}
         </el-tag>
       </el-option>
@@ -33,7 +28,7 @@
         @close="removeTag(id)"
         size="small"
         effect="dark"
-        style="color: white; border: none;"
+        style="color: white; border: none"
       >
         {{ getTagName(id) }}
       </el-tag>
@@ -76,8 +71,8 @@ import { getTags } from '@/api/tags'
 const props = defineProps({
   modelValue: {
     type: Array,
-    default: () => []
-  }
+    default: () => [],
+  },
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -131,12 +126,12 @@ const loadTags = async () => {
 }
 
 const getTagName = (id) => {
-  const tag = tags.value.find(t => t.id === id)
+  const tag = tags.value.find((t) => t.id === id)
   return tag?.name || ''
 }
 
 const getTagColor = (id) => {
-  const tag = tags.value.find(t => t.id === id)
+  const tag = tags.value.find((t) => t.id === id)
   return tag?.color || '#409EFF'
 }
 

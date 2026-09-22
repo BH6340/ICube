@@ -90,13 +90,13 @@ const props = defineProps({
   // 打乱序列，如 ['R', "U'", 'F2']
   scramble: {
     type: Array,
-    default: () => []
+    default: () => [],
   },
   // 单格尺寸（px）
   cellSize: {
     type: Number,
-    default: 18
-  }
+    default: 18,
+  },
 })
 
 const colorMap = {

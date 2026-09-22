@@ -6,7 +6,7 @@
     <!-- 使用 el-carousel 组件展示首页横幅图片，支持动态数据和点击跳转 -->
     <el-row :gutter="20">
       <el-col :span="24">
-        <el-carousel 
+        <el-carousel
           :height="carouselHeight"
           border-radius="12px"
           :interval="5000"
@@ -16,13 +16,13 @@
         >
           <el-carousel-item v-for="(banner, index) in banners" :key="banner.title || index">
             <div class="carousel-item-container" @click="handleBannerClick(banner)">
-              <img 
-                :src="banner.image" 
-                class="carousel-image" 
+              <img
+                :src="banner.image"
+                class="carousel-image"
                 :alt="banner.title"
                 :class="{ 'carousel-image-loading': !banner.loaded }"
                 @load="banner.loaded = true"
-              >
+              />
               <div class="carousel-placeholder" v-if="!banner.loaded">
                 <el-skeleton :rows="1" animated class="carousel-skeleton"></el-skeleton>
               </div>
@@ -44,7 +44,7 @@
 
     <!-- 热门帖子和精选公式区域 -->
     <!-- 左右两列布局，分别展示热门帖子和精选公式 -->
-    <el-row :gutter="20" style="margin-top: 30px;">
+    <el-row :gutter="20" style="margin-top: 30px">
       <!-- 热门帖子列 -->
       <el-col :xs="24" :sm="24" :md="12" :span="12">
         <el-card class="section-card" shadow="hover">
@@ -52,7 +52,9 @@
             <div class="section-header">
               <span class="section-icon">📢</span>
               <span class="section-title">热门帖子</span>
-              <el-button type="primary" link size="small" @click="router.push('/forum')">查看更多 →</el-button>
+              <el-button type="primary" link size="small" @click="router.push('/forum')"
+                >查看更多 →</el-button
+              >
             </div>
           </template>
           <!-- 加载骨架屏 -->
@@ -63,17 +65,24 @@
               <p>暂无帖子</p>
             </div>
             <!-- 帖子列表 -->
-            <div v-for="post in hotPosts" :key="post.id" class="post-item" @click="goToPost(post.id)">
+            <div
+              v-for="post in hotPosts"
+              :key="post.id"
+              class="post-item"
+              @click="goToPost(post.id)"
+            >
               <div class="post-content">
                 <h4 class="post-title">{{ post.title }}</h4>
                 <p class="post-meta">
                   <span class="post-author">{{ post.author?.username || '未知用户' }}</span>
-                  <span class="post-time">{{ new Date(post.created_at).toLocaleDateString() }}</span>
+                  <span class="post-time">{{
+                    new Date(post.created_at).toLocaleDateString()
+                  }}</span>
                 </p>
               </div>
               <div class="post-stats">
                 <span class="stat-item">👍 {{ post.like_count || 0 }}</span>
-              <span class="stat-item">💬 {{ post.comment_count || 0 }}</span>
+                <span class="stat-item">💬 {{ post.comment_count || 0 }}</span>
               </div>
             </div>
           </div>
@@ -87,7 +96,9 @@
             <div class="section-header">
               <span class="section-icon">✨</span>
               <span class="section-title">精选公式</span>
-              <el-button type="primary" link size="small" @click="router.push('/formulas')">查看更多 →</el-button>
+              <el-button type="primary" link size="small" @click="router.push('/formulas')"
+                >查看更多 →</el-button
+              >
             </div>
           </template>
           <!-- 加载骨架屏 -->
@@ -98,7 +109,12 @@
               <p>暂无公式</p>
             </div>
             <!-- 公式列表 -->
-            <div v-for="formula in hotFormulas" :key="formula.id" class="formula-item" @click="goToFormula(formula.id)">
+            <div
+              v-for="formula in hotFormulas"
+              :key="formula.id"
+              class="formula-item"
+              @click="goToFormula(formula.id)"
+            >
               <div class="formula-thumb" v-if="formula.thumbnail">
                 <img :src="formula.thumbnail" :alt="formula.name" />
               </div>
@@ -120,7 +136,7 @@
 
     <!-- 魔方教程区域 -->
     <!-- 三列布局，展示层先法、CFOP、桥式三种教程入口 -->
-    <el-row :gutter="20" style="margin-top: 30px;">
+    <el-row :gutter="20" style="margin-top: 30px">
       <el-col :span="24">
         <el-card class="section-card" shadow="hover">
           <template #header>
@@ -170,7 +186,7 @@
 
     <!-- 公式分类区域 -->
     <!-- 展示公式库的分类标签，点击可跳转 -->
-    <el-row :gutter="20" style="margin-top: 30px;">
+    <el-row :gutter="20" style="margin-top: 30px">
       <el-col :span="24">
         <el-card class="section-card" shadow="hover">
           <template #header>
@@ -200,14 +216,14 @@
 <script setup>
 /**
  * Main.vue - 首页主内容组件
- * 
+ *
  * 核心职责：
  * 1. 展示轮播图（自动扫描 assets/banners 目录下的图片）
  * 2. 展示热门帖子（按浏览量排序，最近30天的数据）
  * 3. 展示精选公式（按浏览量排序）
  * 4. 展示魔方教程入口（层先法、CFOP、桥式）
  * 5. 展示公式分类标签（可点击跳转）
- * 
+ *
  * 设计要点：
  * - 使用 import.meta.glob 动态导入轮播图，支持自动扫描
  * - 多个数据接口并行加载，提升首屏渲染速度
@@ -219,19 +235,19 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Box } from '@element-plus/icons-vue'
-import { getPosts } from '@/api/posts'                    // 获取帖子 API
-import { getFormulaList, getFormulaCategories } from '@/api/formula'  // 公式相关 API
-import { getBannersApi } from '@/api/home'                // 获取轮播图 API
+import { getPosts } from '@/api/posts' // 获取帖子 API
+import { getFormulaList, getFormulaCategories } from '@/api/formula' // 公式相关 API
+import { getBannersApi } from '@/api/home' // 获取轮播图 API
 
 const router = useRouter()
 
 // 响应式状态
-const banners = ref([])              // 轮播图数据
-const hotPosts = ref([])             // 热门帖子列表
-const hotFormulas = ref([])          // 精选公式列表
-const formulaCategories = ref([])    // 公式分类列表
-const loadingPosts = ref(false)      // 帖子加载状态
-const loadingFormulas = ref(false)   // 公式加载状态
+const banners = ref([]) // 轮播图数据
+const hotPosts = ref([]) // 热门帖子列表
+const hotFormulas = ref([]) // 精选公式列表
+const formulaCategories = ref([]) // 公式分类列表
+const loadingPosts = ref(false) // 帖子加载状态
+const loadingFormulas = ref(false) // 公式加载状态
 const loadingCategories = ref(false) // 分类加载状态
 
 // 响应式轮播图高度
@@ -263,9 +279,9 @@ const loadBanners = async () => {
   try {
     const res = await getBannersApi()
     if (res.code === 100) {
-      banners.value = (res.data || []).map(banner => ({
+      banners.value = (res.data || []).map((banner) => ({
         ...banner,
-        loaded: false
+        loaded: false,
       }))
     }
   } catch (error) {
@@ -275,7 +291,7 @@ const loadBanners = async () => {
 
 /**
  * 处理轮播图点击事件
- * 
+ *
  * @param {Object} banner - 轮播图数据对象
  */
 const handleBannerClick = (banner) => {
@@ -290,7 +306,7 @@ const handleBannerClick = (banner) => {
 
 /**
  * 加载热门帖子
- * 
+ *
  * 逻辑：
  * 1. 查询最近30天的帖子
  * 2. 按浏览量降序排序
@@ -315,7 +331,7 @@ const loadHotPosts = async () => {
 
 /**
  * 加载精选公式
- * 
+ *
  * 逻辑：
  * 1. 查询公式列表
  * 2. 按浏览量降序排序
@@ -337,7 +353,7 @@ const loadHotFormulas = async () => {
 
 /**
  * 加载公式分类
- * 
+ *
  * 逻辑：
  * 1. 查询所有公式分类
  * 2. 返回分类列表供标签展示
@@ -358,7 +374,7 @@ const loadFormulaCategories = async () => {
 
 /**
  * 跳转到帖子详情页
- * 
+ *
  * @param {number} id - 帖子 ID
  */
 const goToPost = (id) => {
@@ -367,9 +383,9 @@ const goToPost = (id) => {
 
 /**
  * 跳转到公式详情页
- * 
+ *
  * @param {number} id - 公式 ID
- * 
+ *
  * 设计说明：通过 URL query 参数传递公式 ID，在公式列表页解析并打开详情弹窗
  */
 const goToFormula = (id) => {
@@ -385,9 +401,9 @@ const goToBeginnerTutorial = () => {
 
 /**
  * 跳转到指定教程页
- * 
+ *
  * @param {string} type - 教程类型（cfop/roux）
- * 
+ *
  * 逻辑：
  * 1. cfop：跳转到 CFOP 教程页
  * 2. roux：显示提示信息（桥式教程尚未推出）
@@ -402,9 +418,9 @@ const goToTutorial = (type) => {
 
 /**
  * 跳转到公式列表页（按分类筛选）
- * 
+ *
  * @param {string} categoryName - 分类名称
- * 
+ *
  * 设计说明：通过 URL query 参数传递分类名称，在公式列表页解析并筛选
  */
 const goToFormulaList = (categoryName) => {
@@ -413,7 +429,7 @@ const goToFormulaList = (categoryName) => {
 
 /**
  * 组件挂载时执行初始化
- * 
+ *
  * 初始化流程：
  * 1. 并行加载热门帖子、精选公式和公式分类
  * 2. 各模块独立加载，互不阻塞
@@ -480,7 +496,12 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   padding: 40px 30px;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.4) 50%, transparent 100%);
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.7) 0%,
+    rgba(0, 0, 0, 0.4) 50%,
+    transparent 100%
+  );
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -577,11 +598,13 @@ onUnmounted(() => {
   color: #303133;
 }
 
-.post-list, .formula-list {
+.post-list,
+.formula-list {
   padding-top: 10px;
 }
 
-.post-item, .formula-item {
+.post-item,
+.formula-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -591,11 +614,13 @@ onUnmounted(() => {
   transition: background-color 0.2s;
 }
 
-.post-item:last-child, .formula-item:last-child {
+.post-item:last-child,
+.formula-item:last-child {
   border-bottom: none;
 }
 
-.post-item:hover, .formula-item:hover {
+.post-item:hover,
+.formula-item:hover {
   background-color: #fafafa;
 }
 
@@ -661,7 +686,8 @@ onUnmounted(() => {
   margin: 0;
 }
 
-.post-stats, .formula-stats {
+.post-stats,
+.formula-stats {
   display: flex;
   gap: 12px;
 }
@@ -774,15 +800,18 @@ onUnmounted(() => {
     margin-right: 6px;
   }
 
-  .post-title, .formula-name {
+  .post-title,
+  .formula-name {
     font-size: 13px;
   }
 
-  .post-meta, .formula-category {
+  .post-meta,
+  .formula-category {
     font-size: 11px;
   }
 
-  .post-stats, .formula-stats {
+  .post-stats,
+  .formula-stats {
     gap: 8px;
   }
 
@@ -849,7 +878,8 @@ onUnmounted(() => {
     width: 16px;
   }
 
-  .post-item, .formula-item {
+  .post-item,
+  .formula-item {
     padding: 10px 0;
   }
 

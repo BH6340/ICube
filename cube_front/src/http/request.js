@@ -28,15 +28,15 @@ const ERROR_DEBOUNCE_MS = 3000
  * 统一弹错误提示，带防抖和 Element Plus grouping 合并
  */
 function showErrorMsg(message) {
-    const now = Date.now()
-    const lastAt = lastErrorMap.get(message)
-    if (lastAt && now - lastAt < ERROR_DEBOUNCE_MS) return
-    lastErrorMap.set(message, now)
-    ElMessage({
-        type: 'error',
-        message,
-        grouping: true
-    })
+  const now = Date.now()
+  const lastAt = lastErrorMap.get(message)
+  if (lastAt && now - lastAt < ERROR_DEBOUNCE_MS) return
+  lastErrorMap.set(message, now)
+  ElMessage({
+    type: 'error',
+    message,
+    grouping: true,
+  })
 }
 
 /**
@@ -47,8 +47,8 @@ function showErrorMsg(message) {
  *   - timeout: 请求超时时间 10000ms（原 5000ms 在网速稍慢时容易误报超时）
  */
 const service = axios.create({
-    baseURL: '',
-    timeout: 10000
+  baseURL: '',
+  timeout: 10000,
 })
 
 /**
@@ -58,14 +58,14 @@ const service = axios.create({
  * Token 格式：`Token ${token}`（与后端 CachedJWTAuthentication 兼容）
  */
 service.interceptors.request.use(
-    config => {
-        const token = localStorage.getItem('token')
-        if (token) {
-            config.headers['Authorization'] = `Token ${token}`
-        }
-        return config
-    },
-    error => Promise.reject(error)
+  (config) => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers['Authorization'] = `Token ${token}`
+    }
+    return config
+  },
+  (error) => Promise.reject(error)
 )
 
 /**
@@ -77,35 +77,38 @@ service.interceptors.request.use(
  *   - HTTP 错误：4xx/5xx，提取后端错误信息并显示
  */
 service.interceptors.response.use(
-    response => {
-        const res = response.data
+  (response) => {
+    const res = response.data
 
-        // 业务逻辑错误判断
-        if (res.code !== 100) {
-            showErrorMsg(!res.msg ? '请求服务器异常,请联系管理员' : res.msg)
-            return Promise.reject(new Error(res.msg || 'Error'))
-        } else {
-            return res
-        }
-    },
-    error => {
-        const status = error.response?.status
-        const responseData = error.response?.data
-        const hadToken = Boolean(localStorage.getItem('token'))
-
-        if (status === 401 && hadToken) {
-            useUserStore().clearInfo()
-        }
-
-        const errorMsg = responseData?.msg
-            || (status === 401
-                ? (hadToken ? '登录已失效，请重新登录' : '请先登录')
-                : responseData?.detail)
-            || '请求服务器异常,请联系管理员'
-
-        showErrorMsg(errorMsg)
-        return Promise.reject(error)
+    // 业务逻辑错误判断
+    if (res.code !== 100) {
+      showErrorMsg(!res.msg ? '请求服务器异常,请联系管理员' : res.msg)
+      return Promise.reject(new Error(res.msg || 'Error'))
+    } else {
+      return res
     }
+  },
+  (error) => {
+    const status = error.response?.status
+    const responseData = error.response?.data
+    const hadToken = Boolean(localStorage.getItem('token'))
+
+    if (status === 401 && hadToken) {
+      useUserStore().clearInfo()
+    }
+
+    const errorMsg =
+      responseData?.msg ||
+      (status === 401
+        ? hadToken
+          ? '登录已失效，请重新登录'
+          : '请先登录'
+        : responseData?.detail) ||
+      '请求服务器异常,请联系管理员'
+
+    showErrorMsg(errorMsg)
+    return Promise.reject(error)
+  }
 )
 
 export default service

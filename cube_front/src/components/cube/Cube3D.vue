@@ -28,12 +28,12 @@ import { Tween, Group, Easing } from '@tweenjs/tween.js'
 const props = defineProps({
   animationSpeed: {
     type: Number,
-    default: 120
+    default: 120,
   },
   background: {
     type: String,
-    default: null
-  }
+    default: null,
+  },
 })
 
 const emit = defineEmits(['moveCompleted'])
@@ -72,48 +72,122 @@ const COLOR_MAP = {
   blue: 0x1c5ed4,
   red: 0xc40824,
   orange: 0xe67400,
-  INTERNAL: 0x101010
+  INTERNAL: 0x101010,
 }
 
 // GAN 面字母 → 颜色名
 const FACE_TO_COLOR = {
-  U: 'white', D: 'yellow', F: 'green', B: 'blue', R: 'red', L: 'orange'
+  U: 'white',
+  D: 'yellow',
+  F: 'green',
+  B: 'blue',
+  R: 'red',
+  L: 'orange',
 }
 
 // 当前配色方案（面字母 → 颜色名）
 let currentColorScheme = {
-  U: 'white', D: 'yellow', F: 'green', B: 'blue', R: 'red', L: 'orange'
+  U: 'white',
+  D: 'yellow',
+  F: 'green',
+  B: 'blue',
+  R: 'red',
+  L: 'orange',
 }
 
 // ===== 记号 → 旋转参数 =====
 // 坐标系：x=R/L, y=U/D, z=F/B
 function parseNotation(notation) {
-  const base = notation.replace("'", "").replace("2", "")
+  const base = notation.replace("'", '').replace('2', '')
   let axis = 'x'
   let conditions = []
   let angle = -Math.PI / 2
   let isWholeCube = false
 
   switch (base) {
-    case 'R': axis = 'x'; conditions = [{ op: '>', value: 0.5 }]; break
-    case 'L': axis = 'x'; conditions = [{ op: '<', value: -0.5 }]; angle = Math.PI / 2; break
-    case 'U': axis = 'y'; conditions = [{ op: '>', value: 0.5 }]; break
-    case 'D': axis = 'y'; conditions = [{ op: '<', value: -0.5 }]; angle = Math.PI / 2; break
-    case 'F': axis = 'z'; conditions = [{ op: '>', value: 0.5 }]; break
-    case 'B': axis = 'z'; conditions = [{ op: '<', value: -0.5 }]; angle = Math.PI / 2; break
-    case 'r': axis = 'x'; conditions = [{ op: '>', value: -0.5 }]; break
-    case 'l': axis = 'x'; conditions = [{ op: '<', value: 0.5 }]; angle = Math.PI / 2; break
-    case 'u': axis = 'y'; conditions = [{ op: '>', value: -0.5 }]; break
-    case 'd': axis = 'y'; conditions = [{ op: '<', value: 0.5 }]; angle = Math.PI / 2; break
-    case 'f': axis = 'z'; conditions = [{ op: '>', value: -0.5 }]; break
-    case 'b': axis = 'z'; conditions = [{ op: '<', value: 0.5 }]; angle = Math.PI / 2; break
-    case 'M': axis = 'x'; conditions = [{ op: '==', value: 0 }]; break
-    case 'E': axis = 'y'; conditions = [{ op: '==', value: 0 }]; break
-    case 'S': axis = 'z'; conditions = [{ op: '==', value: 0 }]; break
-    case 'x': axis = 'x'; conditions = []; isWholeCube = true; break
-    case 'y': axis = 'y'; conditions = []; isWholeCube = true; break
-    case 'z': axis = 'z'; conditions = []; isWholeCube = true; break
-    default: return null
+    case 'R':
+      axis = 'x'
+      conditions = [{ op: '>', value: 0.5 }]
+      break
+    case 'L':
+      axis = 'x'
+      conditions = [{ op: '<', value: -0.5 }]
+      angle = Math.PI / 2
+      break
+    case 'U':
+      axis = 'y'
+      conditions = [{ op: '>', value: 0.5 }]
+      break
+    case 'D':
+      axis = 'y'
+      conditions = [{ op: '<', value: -0.5 }]
+      angle = Math.PI / 2
+      break
+    case 'F':
+      axis = 'z'
+      conditions = [{ op: '>', value: 0.5 }]
+      break
+    case 'B':
+      axis = 'z'
+      conditions = [{ op: '<', value: -0.5 }]
+      angle = Math.PI / 2
+      break
+    case 'r':
+      axis = 'x'
+      conditions = [{ op: '>', value: -0.5 }]
+      break
+    case 'l':
+      axis = 'x'
+      conditions = [{ op: '<', value: 0.5 }]
+      angle = Math.PI / 2
+      break
+    case 'u':
+      axis = 'y'
+      conditions = [{ op: '>', value: -0.5 }]
+      break
+    case 'd':
+      axis = 'y'
+      conditions = [{ op: '<', value: 0.5 }]
+      angle = Math.PI / 2
+      break
+    case 'f':
+      axis = 'z'
+      conditions = [{ op: '>', value: -0.5 }]
+      break
+    case 'b':
+      axis = 'z'
+      conditions = [{ op: '<', value: 0.5 }]
+      angle = Math.PI / 2
+      break
+    case 'M':
+      axis = 'x'
+      conditions = [{ op: '==', value: 0 }]
+      break
+    case 'E':
+      axis = 'y'
+      conditions = [{ op: '==', value: 0 }]
+      break
+    case 'S':
+      axis = 'z'
+      conditions = [{ op: '==', value: 0 }]
+      break
+    case 'x':
+      axis = 'x'
+      conditions = []
+      isWholeCube = true
+      break
+    case 'y':
+      axis = 'y'
+      conditions = []
+      isWholeCube = true
+      break
+    case 'z':
+      axis = 'z'
+      conditions = []
+      isWholeCube = true
+      break
+    default:
+      return null
   }
 
   // 逆 / 180°
@@ -156,7 +230,9 @@ function initThree() {
   controls.dampingFactor = 0.05
   controls.minDistance = 4
   controls.maxDistance = 15
-  controls.addEventListener('change', () => { needsRender = true })
+  controls.addEventListener('change', () => {
+    needsRender = true
+  })
 
   // 构建魔方
   buildCube()
@@ -200,7 +276,7 @@ function buildCube() {
   if (sharedEdgesGeometry) sharedEdgesGeometry.dispose()
   if (sharedEdgeMaterial) sharedEdgeMaterial.dispose()
   if (sharedMaterials) {
-    Object.values(sharedMaterials).forEach(m => m.dispose())
+    Object.values(sharedMaterials).forEach((m) => m.dispose())
   }
 
   // 创建共享资源（1 份 geometry + 1 份 edges + 7 个 material）
@@ -208,12 +284,24 @@ function buildCube() {
   sharedEdgesGeometry = new THREE.EdgesGeometry(sharedGeometry)
   sharedEdgeMaterial = new THREE.LineBasicMaterial({ color: 0x222222 })
   sharedMaterials = {
-    U: new THREE.MeshBasicMaterial({ color: COLOR_MAP[currentColorScheme.U] || COLOR_MAP.INTERNAL }),
-    D: new THREE.MeshBasicMaterial({ color: COLOR_MAP[currentColorScheme.D] || COLOR_MAP.INTERNAL }),
-    R: new THREE.MeshBasicMaterial({ color: COLOR_MAP[currentColorScheme.R] || COLOR_MAP.INTERNAL }),
-    L: new THREE.MeshBasicMaterial({ color: COLOR_MAP[currentColorScheme.L] || COLOR_MAP.INTERNAL }),
-    F: new THREE.MeshBasicMaterial({ color: COLOR_MAP[currentColorScheme.F] || COLOR_MAP.INTERNAL }),
-    B: new THREE.MeshBasicMaterial({ color: COLOR_MAP[currentColorScheme.B] || COLOR_MAP.INTERNAL }),
+    U: new THREE.MeshBasicMaterial({
+      color: COLOR_MAP[currentColorScheme.U] || COLOR_MAP.INTERNAL,
+    }),
+    D: new THREE.MeshBasicMaterial({
+      color: COLOR_MAP[currentColorScheme.D] || COLOR_MAP.INTERNAL,
+    }),
+    R: new THREE.MeshBasicMaterial({
+      color: COLOR_MAP[currentColorScheme.R] || COLOR_MAP.INTERNAL,
+    }),
+    L: new THREE.MeshBasicMaterial({
+      color: COLOR_MAP[currentColorScheme.L] || COLOR_MAP.INTERNAL,
+    }),
+    F: new THREE.MeshBasicMaterial({
+      color: COLOR_MAP[currentColorScheme.F] || COLOR_MAP.INTERNAL,
+    }),
+    B: new THREE.MeshBasicMaterial({
+      color: COLOR_MAP[currentColorScheme.B] || COLOR_MAP.INTERNAL,
+    }),
     INTERNAL: new THREE.MeshBasicMaterial({ color: COLOR_MAP.INTERNAL }),
   }
 
@@ -257,23 +345,29 @@ function executeRotation(stepStr, duration) {
     const EPSILON = 0.05
 
     // 筛选参与旋转的小方块（用 cubeGroup 局部坐标，不受 outerGroup 旋转影响）
-    const movingCubes = isWholeCube ? cubes : cubes.filter(mesh => {
-      const pos = mesh.position[axis]
-      return conditions.every(cond => {
-        switch (cond.op) {
-          case '>': return pos > (cond.value - EPSILON)
-          case '<': return pos < (cond.value + EPSILON)
-          case '==': return Math.abs(pos) < 0.5
-          default: return true
-        }
-      })
-    })
+    const movingCubes = isWholeCube
+      ? cubes
+      : cubes.filter((mesh) => {
+          const pos = mesh.position[axis]
+          return conditions.every((cond) => {
+            switch (cond.op) {
+              case '>':
+                return pos > cond.value - EPSILON
+              case '<':
+                return pos < cond.value + EPSILON
+              case '==':
+                return Math.abs(pos) < 0.5
+              default:
+                return true
+            }
+          })
+        })
 
     if (movingCubes.length === 0) return resolve()
 
     // 0 时长 = 瞬切
     if (duration === 0) {
-      movingCubes.forEach(mesh => {
+      movingCubes.forEach((mesh) => {
         rotateMeshAroundLocalAxis(mesh, axis, angle)
       })
       needsRender = true
@@ -290,7 +384,7 @@ function executeRotation(stepStr, duration) {
       .onUpdate(() => {
         const delta = animState.currentAngle - lastAngle
         lastAngle = animState.currentAngle
-        movingCubes.forEach(mesh => {
+        movingCubes.forEach((mesh) => {
           rotateMeshAroundLocalAxis(mesh, axis, delta)
         })
       })
@@ -304,11 +398,7 @@ function executeRotation(stepStr, duration) {
 // ===== cubeGroup 局部坐标系旋转（不受 outerGroup 姿态影响）=====
 // 使用预分配对象，避免热路径中反复 new 导致 GC 压力
 function rotateMeshAroundLocalAxis(mesh, axisStr, radians) {
-  _rotAxis.set(
-    axisStr === 'x' ? 1 : 0,
-    axisStr === 'y' ? 1 : 0,
-    axisStr === 'z' ? 1 : 0
-  )
+  _rotAxis.set(axisStr === 'x' ? 1 : 0, axisStr === 'y' ? 1 : 0, axisStr === 'z' ? 1 : 0)
   _rotMatrix.makeRotationAxis(_rotAxis, radians)
   mesh.position.applyMatrix4(_rotMatrix)
   _rotQuat.setFromRotationMatrix(_rotMatrix)
@@ -351,7 +441,7 @@ defineExpose({
   reset() {
     moveQueue.length = 0
     isAnimating = false
-    tweenGroup.getAll().forEach(t => t.stop())
+    tweenGroup.getAll().forEach((t) => t.stop())
     buildCube()
   },
 
@@ -375,22 +465,27 @@ defineExpose({
     const bottomFace = OPPOSITE[topFace]
     const backFace = OPPOSITE[frontFace]
     const FACE_NORMALS_VEC = {
-      U: [0, 1, 0], D: [0, -1, 0],
-      R: [1, 0, 0], L: [-1, 0, 0],
-      F: [0, 0, 1], B: [0, 0, -1]
+      U: [0, 1, 0],
+      D: [0, -1, 0],
+      R: [1, 0, 0],
+      L: [-1, 0, 0],
+      F: [0, 0, 1],
+      B: [0, 0, -1],
     }
     const tv = FACE_NORMALS_VEC[topFace]
     const fv = FACE_NORMALS_VEC[frontFace]
     const rightVec = [
       tv[1] * fv[2] - tv[2] * fv[1],
       tv[2] * fv[0] - tv[0] * fv[2],
-      tv[0] * fv[1] - tv[1] * fv[0]
+      tv[0] * fv[1] - tv[1] * fv[0],
     ]
     let rightFace = null
     for (const [face, normal] of Object.entries(FACE_NORMALS_VEC)) {
-      if (Math.abs(normal[0] - rightVec[0]) < 0.01 &&
-          Math.abs(normal[1] - rightVec[1]) < 0.01 &&
-          Math.abs(normal[2] - rightVec[2]) < 0.01) {
+      if (
+        Math.abs(normal[0] - rightVec[0]) < 0.01 &&
+        Math.abs(normal[1] - rightVec[1]) < 0.01 &&
+        Math.abs(normal[2] - rightVec[2]) < 0.01
+      ) {
         rightFace = face
         break
       }
@@ -403,7 +498,7 @@ defineExpose({
       F: FACE_TO_COLOR[frontFace],
       B: FACE_TO_COLOR[backFace],
       R: FACE_TO_COLOR[rightFace] || 'red',
-      L: FACE_TO_COLOR[leftFace]
+      L: FACE_TO_COLOR[leftFace],
     }
 
     buildCube()
@@ -431,23 +526,38 @@ defineExpose({
   setInitialPose(topFace, frontFace) {
     if (!outerGroup) return
     const FACE_NORMALS = {
-      U: [0, 1, 0], D: [0, -1, 0],
-      R: [1, 0, 0], L: [-1, 0, 0],
-      F: [0, 0, 1], B: [0, 0, -1]
+      U: [0, 1, 0],
+      D: [0, -1, 0],
+      R: [1, 0, 0],
+      L: [-1, 0, 0],
+      F: [0, 0, 1],
+      B: [0, 0, -1],
     }
     const topV = FACE_NORMALS[topFace]
     const frontV = FACE_NORMALS[frontFace]
     const rightV = [
       topV[1] * frontV[2] - topV[2] * frontV[1],
       topV[2] * frontV[0] - topV[0] * frontV[2],
-      topV[0] * frontV[1] - topV[1] * frontV[0]
+      topV[0] * frontV[1] - topV[1] * frontV[0],
     ]
     const m = new THREE.Matrix4()
     m.set(
-      rightV[0], topV[0], frontV[0], 0,
-      rightV[1], topV[1], frontV[1], 0,
-      rightV[2], topV[2], frontV[2], 0,
-      0, 0, 0, 1
+      rightV[0],
+      topV[0],
+      frontV[0],
+      0,
+      rightV[1],
+      topV[1],
+      frontV[1],
+      0,
+      rightV[2],
+      topV[2],
+      frontV[2],
+      0,
+      0,
+      0,
+      0,
+      1
     )
     outerGroup.quaternion.setFromRotationMatrix(m)
     needsRender = true
@@ -459,7 +569,7 @@ defineExpose({
       outerGroup.quaternion.identity()
       needsRender = true
     }
-  }
+  },
 })
 
 // ===== 窗口尺寸变化 =====
@@ -486,16 +596,25 @@ onBeforeUnmount(() => {
     animationFrameId = null
   }
 
-  tweenGroup.getAll().forEach(t => t.stop())
+  tweenGroup.getAll().forEach((t) => t.stop())
   moveQueue.length = 0
   isAnimating = false
 
   // 释放共享资源
-  if (sharedGeometry) { sharedGeometry.dispose(); sharedGeometry = null }
-  if (sharedEdgesGeometry) { sharedEdgesGeometry.dispose(); sharedEdgesGeometry = null }
-  if (sharedEdgeMaterial) { sharedEdgeMaterial.dispose(); sharedEdgeMaterial = null }
+  if (sharedGeometry) {
+    sharedGeometry.dispose()
+    sharedGeometry = null
+  }
+  if (sharedEdgesGeometry) {
+    sharedEdgesGeometry.dispose()
+    sharedEdgesGeometry = null
+  }
+  if (sharedEdgeMaterial) {
+    sharedEdgeMaterial.dispose()
+    sharedEdgeMaterial = null
+  }
   if (sharedMaterials) {
-    Object.values(sharedMaterials).forEach(m => m.dispose())
+    Object.values(sharedMaterials).forEach((m) => m.dispose())
     sharedMaterials = null
   }
 

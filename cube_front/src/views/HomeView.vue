@@ -47,11 +47,7 @@ import RouteLoadingMask from '@/components/common/RouteLoadingMask.vue'
 import { onBeforeUnmount, onMounted } from 'vue'
 import { useRouteLoading } from '@/stores/routeLoading'
 
-const {
-  status,
-  overlayVisible,
-  setLayoutMounted
-} = useRouteLoading()
+const { status, overlayVisible, setLayoutMounted } = useRouteLoading()
 
 onMounted(() => setLayoutMounted(true))
 onBeforeUnmount(() => setLayoutMounted(false))
@@ -73,7 +69,10 @@ onBeforeUnmount(() => setLayoutMounted(false))
 .route-content {
   min-height: inherit;
   opacity: 1;
-  transition: opacity 0.2s ease, transform 0.2s ease, filter 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    filter 0.2s ease;
 }
 
 .route-content-loading {

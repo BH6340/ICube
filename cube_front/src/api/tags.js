@@ -5,6 +5,6 @@ export const getTags = (params) => {
   return request({
     url: '/api/forum/tags/',
     method: 'get',
-    params
+    params,
   })
 }

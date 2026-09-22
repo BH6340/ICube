@@ -31,7 +31,7 @@ const FACE_NORMALS = {
   R: [1, 0, 0],
   L: [-1, 0, 0],
   F: [0, -1, 0],
-  B: [0, 1, 0]
+  B: [0, 1, 0],
 }
 
 const FACES = ['U', 'D', 'R', 'L', 'F', 'B']
@@ -44,13 +44,13 @@ const PRESET_ORIENTATIONS = [
   { key: 'white-top-red-front', label: '白顶红前', top: 'U', front: 'R' },
   { key: 'white-bottom-red-front', label: '白底红前', top: 'D', front: 'R' },
   { key: 'white-top-blue-front', label: '白顶蓝前', top: 'U', front: 'B' },
-  { key: 'white-top-orange-front', label: '白顶橙前', top: 'U', front: 'L' }
+  { key: 'white-top-orange-front', label: '白顶橙前', top: 'U', front: 'L' },
 ]
 
 // 转体检测参数（稳定检测状态机）
-const ROTATION_THRESHOLD = 40   // 度，累积角度超过此值才判定为有效转体
-const MOTION_THRESHOLD = 5      // 度，帧间增量超过此值认为"还在动"
-const SETTLE_TIME = 250         // ms，持续无大动作多久才判定为"停下来了"
+const ROTATION_THRESHOLD = 40 // 度，累积角度超过此值才判定为有效转体
+const MOTION_THRESHOLD = 5 // 度，帧间增量超过此值认为"还在动"
+const SETTLE_TIME = 250 // ms，持续无大动作多久才判定为"停下来了"
 
 // ===== 四元数运算 =====
 
@@ -69,7 +69,7 @@ function quatMultiply(a, b) {
     w: a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z,
     x: a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,
     y: a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x,
-    z: a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w
+    z: a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w,
   }
 }
 
@@ -88,7 +88,7 @@ function quatDelta(q1, q2) {
 /** 四元数转轴角（角度单位：度） */
 function quatToAxisAngle(q) {
   const w = Math.max(-1, Math.min(1, q.w))
-  const angle = 2 * Math.acos(w) * 180 / Math.PI
+  const angle = (2 * Math.acos(w) * 180) / Math.PI
   const s = Math.sqrt(1 - w * w)
   if (s < 1e-6) return { axis: [0, 0, 0], angle: 0 }
   return { axis: [q.x / s, q.y / s, q.z / s], angle }
@@ -99,11 +99,7 @@ function dot(a, b) {
 }
 
 function cross(a, b) {
-  return [
-    a[1] * b[2] - a[2] * b[1],
-    a[2] * b[0] - a[0] * b[2],
-    a[0] * b[1] - a[1] * b[0]
-  ]
+  return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
 }
 
 // ===== 静态映射 =====
@@ -122,11 +118,11 @@ function buildStaticMap(topFace, frontFace) {
 
   const userAxes = {
     up: topVec,
-    down: topVec.map(c => -c),
+    down: topVec.map((c) => -c),
     front: frontVec,
-    back: frontVec.map(c => -c),
+    back: frontVec.map((c) => -c),
     right: rightVec,
-    left: rightVec.map(c => -c)
+    left: rightVec.map((c) => -c),
   }
 
   const userFaceNames = { up: 'U', down: 'D', front: 'F', back: 'B', right: 'R', left: 'L' }
@@ -184,12 +180,12 @@ export function remapMove(move, ctx) {
 export class CubeOrientationTracker {
   constructor() {
     this._currentQuat = null
-    this._stableQuat = null        // 上次稳定位置的参考四元数（累积角度的基准）
-    this._lastQuat = null          // 上一帧四元数（帧间增量角度的基准）
-    this._moving = false           // 是否正在转动中
-    this._lastMoveTime = 0         // 最后一次检测到大幅度移动的时间
-    this._settlingSince = 0        // 开始接近稳定的时间戳
-    this._currentMap = null        // 初始映射，设置后不变
+    this._stableQuat = null // 上次稳定位置的参考四元数（累积角度的基准）
+    this._lastQuat = null // 上一帧四元数（帧间增量角度的基准）
+    this._moving = false // 是否正在转动中
+    this._lastMoveTime = 0 // 最后一次检测到大幅度移动的时间
+    this._settlingSince = 0 // 开始接近稳定的时间戳
+    this._currentMap = null // 初始映射，设置后不变
     this._currentOrientation = null // 当前朝向（供 3D 展示）
     this._onRotation = null
     this._onOrientationChange = null
@@ -197,15 +193,27 @@ export class CubeOrientationTracker {
   }
 
   /** 注册回调：转体检测到时调用 */
-  onRotation(callback) { this._onRotation = callback }
+  onRotation(callback) {
+    this._onRotation = callback
+  }
   /** 注册回调：当前朝向变化时调用（仅展示，不影响映射） */
-  onOrientationChange(callback) { this._onOrientationChange = callback }
+  onOrientationChange(callback) {
+    this._onOrientationChange = callback
+  }
   /** 注册回调：陀螺仪识别到顶面时调用 */
-  onTopFaceDetected(callback) { this._onTopFaceDetected = callback }
+  onTopFaceDetected(callback) {
+    this._onTopFaceDetected = callback
+  }
 
-  get currentMap() { return this._currentMap }
-  get currentOrientation() { return this._currentOrientation }
-  get currentQuaternion() { return this._currentQuat ? { ...this._currentQuat } : null }
+  get currentMap() {
+    return this._currentMap
+  }
+  get currentOrientation() {
+    return this._currentOrientation
+  }
+  get currentQuaternion() {
+    return this._currentQuat ? { ...this._currentQuat } : null
+  }
 
   /** 重置状态（重连/复位时调用） */
   reset() {
@@ -317,7 +325,8 @@ export class CubeOrientationTracker {
       rotatedNormals[face] = rotateVector(q, FACE_NORMALS[face])
     }
 
-    let topFace = null, topDot = -2
+    let topFace = null,
+      topDot = -2
     for (const face of FACES) {
       if (rotatedNormals[face][2] > topDot) {
         topDot = rotatedNormals[face][2]
@@ -325,10 +334,13 @@ export class CubeOrientationTracker {
       }
     }
 
-    const topOpposite = FACES.find(f => Math.abs(dot(FACE_NORMALS[f], FACE_NORMALS[topFace]) + 1) < 0.01)
+    const topOpposite = FACES.find(
+      (f) => Math.abs(dot(FACE_NORMALS[f], FACE_NORMALS[topFace]) + 1) < 0.01
+    )
     // GAN 坐标系 +Y = B（后），-Y = F（前），世界坐标系 +Y 朝前
     // 所以朝前的面 = 旋转后 y 分量最大的那个面
-    let frontFace = null, frontDot = -2
+    let frontFace = null,
+      frontDot = -2
     for (const face of FACES) {
       if (face === topFace || face === topOpposite) continue
       if (rotatedNormals[face][1] > frontDot) {
@@ -370,9 +382,7 @@ export class CubeOrientationTracker {
     const quarters = Math.round(angle / 90)
     if (quarters === 0) return
 
-    const isPrime = axisName === 'z'
-      ? (direction * quarters) < 0
-      : (direction * quarters) > 0
+    const isPrime = axisName === 'z' ? direction * quarters < 0 : direction * quarters > 0
     const rotation = axisName + (isPrime ? "'" : '')
 
     this._onRotation?.({ rotation, axisName, quarters, angle, timestamp })
@@ -386,7 +396,9 @@ export class StaticOrientation {
     this._map = presetKey ? PRESET_MAPS[presetKey] : null
   }
 
-  get currentMap() { return this._map }
+  get currentMap() {
+    return this._map
+  }
 
   setPreset(key) {
     this._map = PRESET_MAPS[key] || null

@@ -8,7 +8,7 @@
           <div class="header-actions">
             <el-button v-if="isEdit" type="info" link @click="goBack">
               <el-icon>
-                <Back/>
+                <Back />
               </el-icon>
               返回
             </el-button>
@@ -16,41 +16,35 @@
         </div>
       </template>
 
-      <el-form
-          ref="formRef"
-          :model="form"
-          :rules="rules"
-          label-width="80px"
-          label-position="top"
-      >
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="80px" label-position="top">
         <!-- 标题 -->
         <el-form-item label="标题" prop="title">
           <el-input
-              v-model="form.title"
-              placeholder="请输入标题（至少5个字符，最多200个字符）"
-              maxlength="200"
-              show-word-limit
-              clearable
-              size="large"
+            v-model="form.title"
+            placeholder="请输入标题（至少5个字符，最多200个字符）"
+            maxlength="200"
+            show-word-limit
+            clearable
+            size="large"
           />
         </el-form-item>
 
         <!-- 标签 -->
         <el-form-item label="标签" prop="tag_ids">
-          <TagSelector v-model="form.tag_ids"/>
+          <TagSelector v-model="form.tag_ids" />
         </el-form-item>
 
         <!-- 内容 -->
         <el-form-item label="内容" prop="content">
           <div class="content-tip">
             <el-icon>
-              <InfoFilled/>
+              <InfoFilled />
             </el-icon>
             支持 Markdown 格式，可上传 .md 文件
           </div>
           <!-- 包裹一层容器，打破 el-form-item 默认的 Flex 限制，防止提示横向并列 -->
-          <div style="width: 100%;">
-            <MarkdownEditor v-model="form.content"/>
+          <div style="width: 100%">
+            <MarkdownEditor v-model="form.content" />
           </div>
         </el-form-item>
 
@@ -59,13 +53,13 @@
           <div class="form-actions">
             <el-button type="primary" @click="handleSubmit" :loading="submitting" size="large">
               <el-icon>
-                <Promotion/>
+                <Promotion />
               </el-icon>
               {{ isEdit ? '保存修改' : '发布帖子' }}
             </el-button>
             <el-button @click="goBack" size="large">
               <el-icon>
-                <Close/>
+                <Close />
               </el-icon>
               取消
             </el-button>
@@ -98,11 +92,11 @@
  *   - 响应式设计：移动端表单操作区纵向排列
  */
 
-import {ref, reactive, computed, onMounted} from 'vue'
-import {useRouter, useRoute} from 'vue-router'
-import {ElMessage, ElMessageBox} from 'element-plus'
-import {Back, Promotion, Close, InfoFilled} from '@element-plus/icons-vue'
-import {getPost, createPost, updatePost} from '@/api/posts'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Back, Promotion, Close, InfoFilled } from '@element-plus/icons-vue'
+import { getPost, createPost, updatePost } from '@/api/posts'
 import MarkdownEditor from '@/components/forum/MarkdownEditor.vue'
 import TagSelector from '@/components/forum/TagSelector.vue'
 
@@ -119,22 +113,22 @@ const isEdit = computed(() => !!route.params.id)
 
 /** 表单数据 */
 const form = reactive({
-  title: '',       // 帖子标题
-  content: '',     // Markdown 内容
-  tag_ids: []      // 标签 ID 列表
+  title: '', // 帖子标题
+  content: '', // Markdown 内容
+  tag_ids: [], // 标签 ID 列表
 })
 
 /** 表单校验规则 */
 const rules = {
   title: [
-    {required: true, message: '请输入标题', trigger: 'blur'},
-    {min: 5, message: '标题至少5个字符', trigger: 'blur'},
-    {max: 200, message: '标题不能超过200个字符', trigger: 'blur'}
+    { required: true, message: '请输入标题', trigger: 'blur' },
+    { min: 5, message: '标题至少5个字符', trigger: 'blur' },
+    { max: 200, message: '标题不能超过200个字符', trigger: 'blur' },
   ],
   content: [
-    {required: true, message: '请输入内容', trigger: 'blur'},
-    {min: 10, message: '内容至少10个字符', trigger: 'blur'}
-  ]
+    { required: true, message: '请输入内容', trigger: 'blur' },
+    { min: 10, message: '内容至少10个字符', trigger: 'blur' },
+  ],
 }
 
 /**
@@ -163,7 +157,7 @@ const loadPost = async () => {
       form.title = postData.title || ''
       form.content = postData.content || postData.content_md || ''
       if (postData.tags && postData.tags.length > 0) {
-        form.tag_ids = postData.tags.map(tag => Number(tag.id))
+        form.tag_ids = postData.tags.map((tag) => Number(tag.id))
       } else {
         form.tag_ids = []
       }
@@ -199,7 +193,7 @@ const handleSubmit = async () => {
       await ElMessageBox.confirm('确定要保存修改吗？', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
-        type: 'info'
+        type: 'info',
       })
     } catch {
       return
@@ -214,7 +208,7 @@ const handleSubmit = async () => {
     formData.append('content', form.content)
 
     if (form.tag_ids && form.tag_ids.length) {
-      form.tag_ids.forEach(id => {
+      form.tag_ids.forEach((id) => {
         formData.append('tag_ids', id)
       })
     }

@@ -1,0 +1,43 @@
+# Pre-commit hooks for ICube
+# 首次使用：pip install pre-commit && pre-commit install && pre-commit install --hook-type commit-msg
+
+repos:
+  # ==================== 通用检查 ====================
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      # - id: end-of-file-fixer
+      - id: check-yaml
+      # - id: check-added-large-files
+        # args: ['--maxkb=500']
+      - id: check-merge-conflict
+
+  # ==================== Python 后端 ====================
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.8
+    hooks:
+      - id: ruff-check
+        args: [--fix, --ignore, E402]
+        files: ^cube_api/
+      - id: ruff-format
+        files: ^cube_api/
+
+  # # ==================== 前端格式化 ====================
+  # - repo: local
+  #   hooks:
+  #     - id: prettier
+  #       name: Prettier (前端格式检查)
+  #       entry: node cube_front/node_modules/prettier/bin/prettier.cjs --check --config cube_front/.prettierrc --ignore-path cube_front/.prettierignore
+  #       language: system
+  #       pass_filenames: true
+  #       files: ^cube_front/.*\.(vue|js|ts|css|scss|html|json)$
+
+  # ==================== Commit Message 校验 ====================
+  - repo: local
+    hooks:
+      - id: commit-msg-check
+        name: Commit Message 规范检查
+        entry: python scripts/check_commit_msg.py
+        language: system
+        stages: [commit-msg]

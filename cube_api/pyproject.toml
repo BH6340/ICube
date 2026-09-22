@@ -1,0 +1,25 @@
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+extend-exclude = ["**/migrations/**", "**/__pycache__/**"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes (unused imports, undefined names)
+    "I",   # isort (import ordering)
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+]
+ignore = [
+    "E501",  # line too long (formatter handles this)
+    "B008",  # function call in default argument (Django model fields)
+    "E402",  # module level import not at top (Django scripts: django.setup() 前置)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "utils"]
+
+[tool.ruff.format]
+quote-style = "single"

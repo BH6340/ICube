@@ -14,9 +14,9 @@
       <div class="editor-body">
         <div class="form-group">
           <label>公式名称 *</label>
-          <input 
-            v-model="form.name" 
-            type="text" 
+          <input
+            v-model="form.name"
+            type="text"
             placeholder="请输入公式名称"
             class="form-input"
           />
@@ -58,9 +58,9 @@
         <div class="form-group">
           <label>公式记号 *</label>
           <div class="notation-display">
-            <input 
-              v-model="form.notation" 
-              type="text" 
+            <input
+              v-model="form.notation"
+              type="text"
               class="notation-input"
               placeholder="点击下方按钮输入公式，或直接输入公式字符串"
             />
@@ -102,11 +102,11 @@
                 <span>上传图片</span>
               </div>
             </div>
-            <input 
-              ref="fileInput" 
-              type="file" 
-              accept="image/*" 
-              class="file-input" 
+            <input
+              ref="fileInput"
+              type="file"
+              accept="image/*"
+              class="file-input"
               @change="handleFileSelect"
             />
           </div>
@@ -114,9 +114,9 @@
 
         <div class="form-group">
           <label>描述</label>
-          <textarea 
-            v-model="form.description" 
-            rows="3" 
+          <textarea
+            v-model="form.description"
+            rows="3"
             placeholder="请输入公式描述（可选）"
             class="form-textarea"
           ></textarea>
@@ -130,9 +130,9 @@
         </div>
       </div>
 
-      <ImageCropper 
-        v-if="showCropper" 
-        :image-file="cropperFile" 
+      <ImageCropper
+        v-if="showCropper"
+        :image-file="cropperFile"
         @close="showCropper = false"
         @crop="handleCrop"
       />
@@ -147,9 +147,9 @@
           <div class="dialog-body">
             <div class="form-group">
               <label>分类名称 *</label>
-              <input 
-                v-model="newCategory.name" 
-                type="text" 
+              <input
+                v-model="newCategory.name"
+                type="text"
                 placeholder="如：我的OLL变体"
                 class="form-input"
                 maxlength="50"
@@ -264,7 +264,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import ImageCropper from '../ImageCropper.vue'
-import { 
+import {
   getFormulaCategories, getFormulaList, createFormula, updateFormula,
   createCategory, METHOD_OPTIONS, PHASE_OPTIONS
 } from '@/api/formula'
@@ -585,7 +585,7 @@ const submitFormula = async () => {
   const formData = new FormData()
   formData.append('name', form.value.name.trim())
   formData.append('notation', form.value.notation.trim())
-  
+
   if (form.value.category) {
     formData.append('category_id', form.value.category)
   }
@@ -595,7 +595,7 @@ const submitFormula = async () => {
   if (form.value.description) {
     formData.append('description', form.value.description.trim())
   }
-  
+
   if (form.value.thumbnail) {
     if (typeof form.value.thumbnail === 'string') {
       formData.append('thumbnail_path', form.value.thumbnail)

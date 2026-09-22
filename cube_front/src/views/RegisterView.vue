@@ -5,13 +5,13 @@
       <el-form :model="registerForm" :rules="rules" ref="registerRef" label-position="top">
         <!-- 邮箱 -->
         <el-form-item label="邮箱" prop="email">
-          <el-input v-model="registerForm.email" placeholder="请输入常用邮箱"/>
+          <el-input v-model="registerForm.email" placeholder="请输入常用邮箱" />
         </el-form-item>
 
         <!-- 验证码 -->
         <el-form-item label="验证码" prop="code">
           <div class="code-row">
-            <el-input v-model="registerForm.code" placeholder="请输入6位验证码" maxlength="6"/>
+            <el-input v-model="registerForm.code" placeholder="请输入6位验证码" maxlength="6" />
             <el-button type="primary" plain :disabled="codeCountdown > 0" @click="handleSendCode">
               {{ codeCountdown > 0 ? `${codeCountdown}s` : '发送验证码' }}
             </el-button>
@@ -20,19 +20,36 @@
 
         <!-- 密码 -->
         <el-form-item label="密码" prop="password">
-          <el-input v-model="registerForm.password" type="password" show-password placeholder="设置密码"/>
+          <el-input
+            v-model="registerForm.password"
+            type="password"
+            show-password
+            placeholder="设置密码"
+          />
         </el-form-item>
 
         <!-- 确认密码 -->
         <el-form-item label="确认密码" prop="confirmPassword">
-          <el-input v-model="registerForm.confirmPassword" type="password" show-password placeholder="再次输入密码"/>
+          <el-input
+            v-model="registerForm.confirmPassword"
+            type="password"
+            show-password
+            placeholder="再次输入密码"
+          />
         </el-form-item>
 
-        <el-button type="primary" class="full-width" @click="handleRegister(registerRef)">立即注册</el-button>
+        <el-button type="primary" class="full-width" @click="handleRegister(registerRef)"
+          >立即注册</el-button
+        >
 
         <div class="auth-footer">
           <span>已有账号？</span>
-          <el-link type="primary" underline="never" style="font-size: 14px;" @click="$router.push('/login')">
+          <el-link
+            type="primary"
+            underline="never"
+            style="font-size: 14px"
+            @click="$router.push('/login')"
+          >
             去登录
           </el-link>
         </div>
@@ -42,10 +59,10 @@
 </template>
 
 <script setup>
-import {ref, reactive, onBeforeUnmount} from 'vue'
-import {ElMessage} from 'element-plus'
-import {registerWithCodeApi, sendCodeApi} from '@/api/user'
-import {useRouter} from "vue-router";
+import { ref, reactive, onBeforeUnmount } from 'vue'
+import { ElMessage } from 'element-plus'
+import { registerWithCodeApi, sendCodeApi } from '@/api/user'
+import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const registerRef = ref()
@@ -53,7 +70,7 @@ const registerForm = reactive({
   email: '',
   code: '',
   password: '',
-  confirmPassword: ''
+  confirmPassword: '',
 })
 
 const validatePass2 = (rule, value, callback) => {
@@ -66,18 +83,18 @@ const validatePass2 = (rule, value, callback) => {
 
 const rules = {
   email: [
-    {required: true, message: '请输入邮箱', trigger: 'blur'},
-    {type: 'email', message: '请输入正确的邮箱格式', trigger: ['blur', 'change']}
+    { required: true, message: '请输入邮箱', trigger: 'blur' },
+    { type: 'email', message: '请输入正确的邮箱格式', trigger: ['blur', 'change'] },
   ],
-  code: [{required: true, message: '请输入验证码', trigger: 'blur'}],
+  code: [{ required: true, message: '请输入验证码', trigger: 'blur' }],
   password: [
-    {required: true, message: '请输入密码', trigger: 'blur'},
-    {min: 6, message: '密码长度不能少于 6 位', trigger: 'blur'}
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 6, message: '密码长度不能少于 6 位', trigger: 'blur' },
   ],
   confirmPassword: [
-    {required: true, message: '请再次输入密码', trigger: 'blur'},
-    {validator: validatePass2, trigger: 'blur'}
-  ]
+    { required: true, message: '请再次输入密码', trigger: 'blur' },
+    { validator: validatePass2, trigger: 'blur' },
+  ],
 }
 
 // 验证码倒计时
@@ -105,7 +122,7 @@ const handleSendCode = async () => {
     return
   }
   try {
-    const res = await sendCodeApi({email: registerForm.email, action: 'register'})
+    const res = await sendCodeApi({ email: registerForm.email, action: 'register' })
     if (res.code === 100) {
       ElMessage.success(res.msg || '验证码已发送')
       startCountdown()
@@ -125,7 +142,7 @@ const handleRegister = async (formEl) => {
         const res = await registerWithCodeApi({
           email: registerForm.email,
           code: registerForm.code,
-          password: registerForm.password
+          password: registerForm.password,
         })
         if (res.code === 100) {
           ElMessage.success('注册成功，请登录')
@@ -178,7 +195,7 @@ const handleRegister = async (formEl) => {
 h2 {
   text-align: center;
   margin-bottom: 30px;
-  color: #409EFF;
+  color: #409eff;
 }
 
 /* 移动端适配 */

@@ -64,16 +64,29 @@
             <p class="polling-hint">
               <el-icon><Loading /></el-icon>
               等待支付结果...
-              <el-button size="small" text type="primary" @click="checkOrderStatus">手动刷新状态</el-button>
+              <el-button size="small" text type="primary" @click="checkOrderStatus"
+                >手动刷新状态</el-button
+              >
             </p>
           </div>
 
           <div v-else class="no-alipay">
-            <el-alert title="支付接口异常" description="支付宝支付接口暂时不可用，请稍后重试" type="error" show-icon />
+            <el-alert
+              title="支付接口异常"
+              description="支付宝支付接口暂时不可用，请稍后重试"
+              type="error"
+              show-icon
+            />
           </div>
 
           <div class="pay-actions">
-            <el-button type="primary" size="large" :loading="payLoading" @click="handlePay" :disabled="!!payUrl">
+            <el-button
+              type="primary"
+              size="large"
+              :loading="payLoading"
+              @click="handlePay"
+              :disabled="!!payUrl"
+            >
               {{ payLoading ? '支付中...' : '立即支付' }}
             </el-button>
           </div>
@@ -117,7 +130,13 @@ const selectedMethod = ref('alipay')
 const pollingTimer = ref(null)
 
 const getStatusText = (status) => {
-  const statusMap = { pending: '待付款', paid: '已付款', shipped: '已发货', completed: '已完成', cancelled: '已取消' }
+  const statusMap = {
+    pending: '待付款',
+    paid: '已付款',
+    shipped: '已发货',
+    completed: '已完成',
+    cancelled: '已取消',
+  }
   return statusMap[status] || status
 }
 
@@ -226,28 +245,117 @@ onUnmounted(() => stopPolling())
 </script>
 
 <style scoped>
-.pay-view { padding: 20px; max-width: 600px; margin: 0 auto; }
-.pay-card { border-radius: 8px; }
-.loading { display: flex; justify-content: center; padding: 40px; }
-.pay-content { padding: 20px 0; }
-.order-info { background: #fafafa; padding: 16px; border-radius: 8px; }
-.info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.info-row:last-child { margin-bottom: 0; }
-.info-row .label { font-size: 14px; color: #606266; }
-.info-row .value { font-size: 14px; color: #303133; }
-.info-row .value.amount { font-size: 24px; font-weight: 700; color: #f56c6c; }
-.info-row .value.status { color: #e6a23c; }
-.paid-success, .cancelled { display: flex; flex-direction: column; align-items: center; padding: 40px 0; }
-.paid-success h3, .cancelled h3 { margin: 16px 0 8px; font-size: 20px; }
-.paid-success p { color: #909399; margin: 0 0 24px; }
-.pay-methods { padding: 20px 0; }
-.pay-methods h4 { font-size: 16px; margin: 0 0 16px; color: #303133; }
-.method-item { margin-bottom: 16px; }
-.method-icon { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; background: #f0f5ff; border-radius: 6px; margin-right: 12px; }
-.payment-section { text-align: center; }
-.pay-redirect { padding: 20px; background: #f0f5ff; border: 1px dashed #1677ff; border-radius: 8px; margin-bottom: 20px; }
-.redirect-tip { color: #1677ff; font-size: 14px; margin: 0 0 16px; }
-.polling-hint { display: flex; align-items: center; justify-content: center; gap: 8px; color: #909399; font-size: 14px; margin: 16px 0 0; }
-.no-alipay { margin-bottom: 20px; }
-.pay-actions { text-align: center; }
+.pay-view {
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+.pay-card {
+  border-radius: 8px;
+}
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 40px;
+}
+.pay-content {
+  padding: 20px 0;
+}
+.order-info {
+  background: #fafafa;
+  padding: 16px;
+  border-radius: 8px;
+}
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.info-row:last-child {
+  margin-bottom: 0;
+}
+.info-row .label {
+  font-size: 14px;
+  color: #606266;
+}
+.info-row .value {
+  font-size: 14px;
+  color: #303133;
+}
+.info-row .value.amount {
+  font-size: 24px;
+  font-weight: 700;
+  color: #f56c6c;
+}
+.info-row .value.status {
+  color: #e6a23c;
+}
+.paid-success,
+.cancelled {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 0;
+}
+.paid-success h3,
+.cancelled h3 {
+  margin: 16px 0 8px;
+  font-size: 20px;
+}
+.paid-success p {
+  color: #909399;
+  margin: 0 0 24px;
+}
+.pay-methods {
+  padding: 20px 0;
+}
+.pay-methods h4 {
+  font-size: 16px;
+  margin: 0 0 16px;
+  color: #303133;
+}
+.method-item {
+  margin-bottom: 16px;
+}
+.method-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #f0f5ff;
+  border-radius: 6px;
+  margin-right: 12px;
+}
+.payment-section {
+  text-align: center;
+}
+.pay-redirect {
+  padding: 20px;
+  background: #f0f5ff;
+  border: 1px dashed #1677ff;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+.redirect-tip {
+  color: #1677ff;
+  font-size: 14px;
+  margin: 0 0 16px;
+}
+.polling-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #909399;
+  font-size: 14px;
+  margin: 16px 0 0;
+}
+.no-alipay {
+  margin-bottom: 20px;
+}
+.pay-actions {
+  text-align: center;
+}
 </style>

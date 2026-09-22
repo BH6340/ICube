@@ -17,7 +17,7 @@ import { ModeOfOperation } from 'aes-js'
 const SERVICES = {
   GEN2: '6e400001-b5a3-f393-e0a9-e50e24dc4179',
   GEN3: '8653000a-43e6-47b7-9cb0-5fc21d4ae340',
-  GEN4: '00000010-0000-fff7-fff6-fff5fff4fff0'
+  GEN4: '00000010-0000-fff7-fff6-fff5fff4fff0',
 }
 
 const CHARACTERISTICS = {
@@ -26,15 +26,17 @@ const CHARACTERISTICS = {
   GEN3_CMD: '8653000c-43e6-47b7-9cb0-5fc21d4ae340',
   GEN3_STATE: '8653000b-43e6-47b7-9cb0-5fc21d4ae340',
   GEN4_CMD: '0000fff5-0000-1000-8000-00805f9b34fb',
-  GEN4_STATE: '0000fff6-0000-1000-8000-00805f9b34fb'
+  GEN4_STATE: '0000fff6-0000-1000-8000-00805f9b34fb',
 }
 
 // AES-128-CBC 固定密钥（Gen2/Gen3/Gen4 通用）
 const ENCRYPTION_KEY = {
-  key: [0x01, 0x02, 0x42, 0x28, 0x31, 0x91, 0x16, 0x07,
-        0x20, 0x05, 0x18, 0x54, 0x42, 0x11, 0x12, 0x53],
-  iv: [0x11, 0x03, 0x32, 0x28, 0x21, 0x01, 0x76, 0x27,
-       0x20, 0x95, 0x78, 0x14, 0x32, 0x12, 0x02, 0x43]
+  key: [
+    0x01, 0x02, 0x42, 0x28, 0x31, 0x91, 0x16, 0x07, 0x20, 0x05, 0x18, 0x54, 0x42, 0x11, 0x12, 0x53,
+  ],
+  iv: [
+    0x11, 0x03, 0x32, 0x28, 0x21, 0x01, 0x76, 0x27, 0x20, 0x95, 0x78, 0x14, 0x32, 0x12, 0x02, 0x43,
+  ],
 }
 
 // GAN 厂商 CIC 列表（用于 manufacturer data 过滤）
@@ -48,15 +50,15 @@ const FACE_NAMES = 'URFDLB'
 
 const EventType = {
   MOVE: 0x01,
-  GYRO: 0xEC,
-  FACELETS: 0xED,
-  DISCONNECT: 0xEA,
-  BATTERY: 0xEF,
-  MOVE_HISTORY: 0xD1,
-  PRODUCT_DATE: 0xFA,
-  HARDWARE_NAME: 0xFC,
-  SOFTWARE_VERSION: 0xFD,
-  HARDWARE_VERSION: 0xFE
+  GYRO: 0xec,
+  FACELETS: 0xed,
+  DISCONNECT: 0xea,
+  BATTERY: 0xef,
+  MOVE_HISTORY: 0xd1,
+  PRODUCT_DATE: 0xfa,
+  HARDWARE_NAME: 0xfc,
+  SOFTWARE_VERSION: 0xfd,
+  HARDWARE_VERSION: 0xfe,
 }
 
 // ===== 协议消息视图：按位读取二进制数据 =====
@@ -64,7 +66,7 @@ const EventType = {
 class ProtocolMessageView {
   constructor(message) {
     this.bits = Array.from(message)
-      .map(byte => (byte + 0x100).toString(2).slice(1))
+      .map((byte) => (byte + 0x100).toString(2).slice(1))
       .join('')
   }
 
@@ -84,9 +86,7 @@ class ProtocolMessageView {
         buf[i] = parseInt(this.bits.slice(8 * i + startBit, 8 * i + startBit + 8), 2)
       }
       const dv = new DataView(buf.buffer)
-      return bitLength === 16
-        ? dv.getUint16(0, littleEndian)
-        : dv.getUint32(0, littleEndian)
+      return bitLength === 16 ? dv.getUint16(0, littleEndian) : dv.getUint32(0, littleEndian)
     }
     throw new Error(`不支持的位长度: ${bitLength}`)
   }
@@ -105,8 +105,8 @@ class CubeEncrypter {
     this._iv = new Uint8Array(iv)
     // 用 salt 修正前 6 字节
     for (let i = 0; i < 6; i++) {
-      this._key[i] = (key[i] + salt[i]) % 0xFF
-      this._iv[i] = (iv[i] + salt[i]) % 0xFF
+      this._key[i] = (key[i] + salt[i]) % 0xff
+      this._iv[i] = (iv[i] + salt[i]) % 0xff
     }
   }
 
@@ -147,17 +147,19 @@ class Gen4ProtocolDriver {
     const msg = new Uint8Array(20).fill(0)
     switch (command) {
       case 'REQUEST_FACELETS':
-        msg.set([0xDD, 0x04, 0x00, 0xED, 0x00, 0x00])
+        msg.set([0xdd, 0x04, 0x00, 0xed, 0x00, 0x00])
         break
       case 'REQUEST_HARDWARE':
-        msg.set([0xDF, 0x03, 0x00, 0x00, 0x00])
+        msg.set([0xdf, 0x03, 0x00, 0x00, 0x00])
         break
       case 'REQUEST_BATTERY':
-        msg.set([0xDD, 0x04, 0x00, 0xEF, 0x00, 0x00])
+        msg.set([0xdd, 0x04, 0x00, 0xef, 0x00, 0x00])
         break
       case 'REQUEST_RESET':
-        msg.set([0xD2, 0x0D, 0x05, 0x39, 0x77, 0x00, 0x00,
-          0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0x00, 0x00, 0x00])
+        msg.set([
+          0xd2, 0x0d, 0x05, 0x39, 0x77, 0x00, 0x00, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0x00, 0x00,
+          0x00,
+        ])
         break
       default:
         return undefined
@@ -251,15 +253,24 @@ class Gen4ProtocolDriver {
   /** 各事件类型的固定字节长度（用于多事件解析时推算偏移） */
   _eventFixedLength(eventType) {
     switch (eventType) {
-      case EventType.MOVE: return 9
-      case EventType.GYRO: return 12
-      case EventType.FACELETS: return 16
-      case EventType.BATTERY: return 4
-      case EventType.DISCONNECT: return 2
-      case EventType.HARDWARE_NAME: return 10
-      case EventType.SOFTWARE_VERSION: return 10
-      case EventType.HARDWARE_VERSION: return 10
-      default: return 0
+      case EventType.MOVE:
+        return 9
+      case EventType.GYRO:
+        return 12
+      case EventType.FACELETS:
+        return 16
+      case EventType.BATTERY:
+        return 4
+      case EventType.DISCONNECT:
+        return 2
+      case EventType.HARDWARE_NAME:
+        return 10
+      case EventType.SOFTWARE_VERSION:
+        return 10
+      case EventType.HARDWARE_VERSION:
+        return 10
+      default:
+        return 0
     }
   }
 
@@ -270,16 +281,25 @@ class Gen4ProtocolDriver {
     const faceBitmask = msg.getBitWord(66, 6)
     const face = FACE_BITMASKS.indexOf(faceBitmask)
     if (face === -1) return null
-    const move = (FACE_NAMES.charAt(face) + ' \''.charAt(direction)).trim()
+    const move = (FACE_NAMES.charAt(face) + " '".charAt(direction)).trim()
     return {
-      type: 'MOVE', timestamp, serial, face, direction, move,
-      cubeTimestamp, localTimestamp: timestamp
+      type: 'MOVE',
+      timestamp,
+      serial,
+      face,
+      direction,
+      move,
+      cubeTimestamp,
+      localTimestamp: timestamp,
     }
   }
 
   _parseFacelets(msg, timestamp) {
     const serial = msg.getBitWord(16, 16, true)
-    const cp = [], co = [], ep = [], eo = []
+    const cp = [],
+      co = [],
+      ep = [],
+      eo = []
 
     for (let i = 0; i < 7; i++) {
       cp.push(msg.getBitWord(32 + i * 3, 3))
@@ -295,10 +315,11 @@ class Gen4ProtocolDriver {
     ep.push(66 - ep.reduce((a, v) => a + v, 0))
     eo.push((2 - (eo.reduce((a, v) => a + v, 0) % 2)) % 2)
 
-    const isSolved = cp.every((v, i) => v === i) &&
-      co.every(v => v === 0) &&
+    const isSolved =
+      cp.every((v, i) => v === i) &&
+      co.every((v) => v === 0) &&
       ep.every((v, i) => v === i) &&
-      eo.every(v => v === 0)
+      eo.every((v) => v === 0)
 
     return { type: 'FACELETS', timestamp, serial, state: { cp, co, ep, eo }, isSolved }
   }
@@ -314,7 +335,7 @@ class Gen4ProtocolDriver {
   }
 
   _parseGyro(msg, timestamp) {
-    const toFloat = (raw) => (1 - (raw >> 15) * 2) * (raw & 0x7FFF) / 0x7FFF
+    const toFloat = (raw) => ((1 - (raw >> 15) * 2) * (raw & 0x7fff)) / 0x7fff
     const qw = msg.getBitWord(16, 16)
     const qx = msg.getBitWord(32, 16)
     const qy = msg.getBitWord(48, 16)
@@ -323,13 +344,14 @@ class Gen4ProtocolDriver {
     const vy = msg.getBitWord(84, 4)
     const vz = msg.getBitWord(88, 4)
     return {
-      type: 'GYRO', timestamp,
+      type: 'GYRO',
+      timestamp,
       quaternion: { w: toFloat(qw), x: toFloat(qx), y: toFloat(qy), z: toFloat(qz) },
       velocity: {
         x: (1 - (vx >> 3) * 2) * (vx & 0x7),
         y: (1 - (vy >> 3) * 2) * (vy & 0x7),
-        z: (1 - (vz >> 3) * 2) * (vz & 0x7)
-      }
+        z: (1 - (vz >> 3) * 2) * (vz & 0x7),
+      },
     }
   }
 }
@@ -358,20 +380,28 @@ export class GanCubeClient {
   _withTimeout(promise, ms = 8000) {
     return Promise.race([
       promise,
-      new Promise((_, reject) => setTimeout(() => reject(new Error('操作超时')), ms))
+      new Promise((_, reject) => setTimeout(() => reject(new Error('操作超时')), ms)),
     ])
   }
 
-  get deviceName() { return this._name || 'GAN-XXXX' }
-  get deviceMAC() { return this._mac || '00:00:00:00:00:00' }
-  get connected() { return this._connected }
+  get deviceName() {
+    return this._name || 'GAN-XXXX'
+  }
+  get deviceMAC() {
+    return this._mac || '00:00:00:00:00:00'
+  }
+  get connected() {
+    return this._connected
+  }
 
   static get isSupported() {
     return typeof navigator !== 'undefined' && !!navigator.bluetooth
   }
 
   /** 注册事件回调 */
-  onEvent(callback) { this._eventCallback = callback }
+  onEvent(callback) {
+    this._eventCallback = callback
+  }
 
   /**
    * 连接 GAN 智能魔方
@@ -408,13 +438,9 @@ export class GanCubeClient {
   async _firstConnect({ onMacAddressRequired }) {
     // 1. 弹出设备选择器
     this._device = await navigator.bluetooth.requestDevice({
-      filters: [
-        { namePrefix: 'GAN' },
-        { namePrefix: 'MG' },
-        { namePrefix: 'AiCube' }
-      ],
+      filters: [{ namePrefix: 'GAN' }, { namePrefix: 'MG' }, { namePrefix: 'AiCube' }],
       optionalServices: [SERVICES.GEN4, SERVICES.GEN3, SERVICES.GEN2],
-      optionalManufacturerData: CIC_LIST
+      optionalManufacturerData: CIC_LIST,
     })
     this._name = this._device.name || 'GAN-XXXX'
 
@@ -438,8 +464,10 @@ export class GanCubeClient {
   async _reconnect() {
     // 如果 GATT 还显示已连接但实际已失效，先断开再重连
     if (this._device?.gatt?.connected) {
-      try { this._device.gatt.disconnect() } catch {}
-      await new Promise(r => setTimeout(r, 500))
+      try {
+        this._device.gatt.disconnect()
+      } catch {}
+      await new Promise((r) => setTimeout(r, 500))
     }
     await this._connectAndSetupWithRetry()
     this._connected = true
@@ -451,7 +479,10 @@ export class GanCubeClient {
    */
   async _connectAndSetupWithRetry() {
     const salt = new Uint8Array(
-      this._mac.split(/[:-\s]+/).map(c => parseInt(c, 16)).reverse()
+      this._mac
+        .split(/[:-\s]+/)
+        .map((c) => parseInt(c, 16))
+        .reverse()
     )
     const delays = [500, 1000, 1500]
     let lastErr = null
@@ -460,8 +491,10 @@ export class GanCubeClient {
       try {
         // 每次重试前确保彻底断开
         if (this._device?.gatt?.connected) {
-          try { this._device.gatt.disconnect() } catch {}
-          await new Promise(r => setTimeout(r, 300))
+          try {
+            this._device.gatt.disconnect()
+          } catch {}
+          await new Promise((r) => setTimeout(r, 300))
         }
 
         // gatt.connect() 加超时防止 hang
@@ -473,7 +506,7 @@ export class GanCubeClient {
       } catch (err) {
         lastErr = err
         if (i < delays.length) {
-          await new Promise(r => setTimeout(r, delays[i]))
+          await new Promise((r) => setTimeout(r, delays[i]))
         }
       }
     }
@@ -488,8 +521,14 @@ export class GanCubeClient {
     for (const service of services) {
       const uuid = service.uuid.toLowerCase()
       if (uuid === SERVICES.GEN4) {
-        this._commandChar = await this._withTimeout(service.getCharacteristic(CHARACTERISTICS.GEN4_CMD), 5000)
-        this._stateChar = await this._withTimeout(service.getCharacteristic(CHARACTERISTICS.GEN4_STATE), 5000)
+        this._commandChar = await this._withTimeout(
+          service.getCharacteristic(CHARACTERISTICS.GEN4_CMD),
+          5000
+        )
+        this._stateChar = await this._withTimeout(
+          service.getCharacteristic(CHARACTERISTICS.GEN4_STATE),
+          5000
+        )
         this._encrypter = new CubeEncrypter(ENCRYPTION_KEY.key, ENCRYPTION_KEY.iv, salt)
         break
       }
@@ -624,7 +663,7 @@ export class GanCubeClient {
   /** 通过 watchAdvertisements 自动获取 MAC 地址 */
   async _autoRetrieveMac() {
     if (typeof this._device?.watchAdvertisements !== 'function') return null
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       const controller = new AbortController()
       let settled = false
       let timer = null
@@ -634,7 +673,9 @@ export class GanCubeClient {
         settled = true
         if (timer) clearTimeout(timer)
         this._device.removeEventListener('advertisementreceived', onAdv)
-        try { controller.abort() } catch {}
+        try {
+          controller.abort()
+        } catch {}
         this._watchAdvCleanup = null
         resolve(mac)
       }
@@ -646,8 +687,7 @@ export class GanCubeClient {
 
       this._watchAdvCleanup = () => finish(null)
       this._device.addEventListener('advertisementreceived', onAdv)
-      this._device.watchAdvertisements({ signal: controller.signal })
-        .catch(() => finish(null))
+      this._device.watchAdvertisements({ signal: controller.signal }).catch(() => finish(null))
       timer = setTimeout(() => finish(null), 10000)
     })
   }
@@ -668,7 +708,13 @@ export class GanCubeClient {
     if (!dataView || dataView.byteLength < 6) return null
     const mac = []
     for (let i = 1; i <= 6; i++) {
-      mac.push(dataView.getUint8(dataView.byteLength - i).toString(16).toUpperCase().padStart(2, '0'))
+      mac.push(
+        dataView
+          .getUint8(dataView.byteLength - i)
+          .toString(16)
+          .toUpperCase()
+          .padStart(2, '0')
+      )
     }
     return mac.join(':')
   }
@@ -705,7 +751,7 @@ export async function tryAutoReconnect() {
 
   try {
     const devices = await navigator.bluetooth.getDevices()
-    const match = devices.find(d => d.name === saved.name)
+    const match = devices.find((d) => d.name === saved.name)
     if (!match) return false
 
     client._device = match
@@ -740,4 +786,3 @@ function _loadSavedDevice() {
     return null
   }
 }
-
