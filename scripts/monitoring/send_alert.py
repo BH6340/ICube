@@ -32,14 +32,22 @@ def load_config():
     auth_code = os.environ.get("MONITOR_MAIL_AUTH_CODE", "")
 
     if not auth_code:
-        env_path = Path(__file__).parent.parent.parent / ".env"
-        if env_path.exists():
-            for line in env_path.read_text().splitlines():
-                if line.strip().startswith("MONITOR_MAIL_AUTH_CODE="):
-                    val = line.split("=", 1)[1].strip()
-                    if val and not val.startswith("${"):
-                        auth_code = val.strip('"').strip("'")
-                        break
+        candidates = [
+            Path("/home/bh/ICube/.env"),
+            Path("/root/ICube/.env"),
+            Path.cwd() / ".env",
+            Path(__file__).parent.parent.parent / ".env",
+        ]
+        for env_path in candidates:
+            if env_path.exists():
+                for line in env_path.read_text().splitlines():
+                    if line.strip().startswith("MONITOR_MAIL_AUTH_CODE="):
+                        val = line.split("=", 1)[1].strip()
+                        if val and not val.startswith("${"):
+                            auth_code = val.strip('"').strip("'")
+                            break
+                if auth_code:
+                    break
 
     if not auth_code and CONFIG_PATH.exists():
         for line in CONFIG_PATH.read_text().splitlines():
