@@ -134,6 +134,10 @@
 - fix(app): APP改用HTTP+IP连接后端，绕过TLS连接重置问题 (09ee7d5)
 - fix(timer): 修复 dblclick 多行表达式缺少分号导致构建失败 (c5d92f8)
 - fix(nginx,uptime-kuma): 修复子路径部署监控面板的路径问题[deploy] (066cd9d)
+- fix(nginx): 移除多余的text/html类型的sub_filter配置 (373bf9c)
+- fix(nginx): 移除多余的text/html类型的sub_filter配置  (#73) (1298db9)
+- fix(nginx): 简化代理重写规则统一跳转至monitor前缀 (a3d2b0f)
+- fix(nginx): 简化代理重写规则统一跳转至monitor前缀 (#74) (29017a7)
 
 
 ## docs - 文档
@@ -187,6 +191,7 @@
 - docs(formula): 新增魔方公式教程相关示例图片 (3712ad1)
 - docs: 自动更新 CHANGELOG (29d86e9)
 - docs: 自动生成 CHANGELOG (5f43132)
+- docs: 自动更新 CHANGELOG (9d5f7c5)
 
 
 ## refactor - 重构
@@ -226,6 +231,7 @@
 - ci(web-deploy): 重构Web部署工作流，新增CI检查与快速部署支持 (d7d17a2)
 - ci(cicd): 为dev分支添加[deploy]标记跳过CI检查的逻辑 (292da47)
 - ci(cicd): 避免重复执行生产部署 (2ce11f7)
+- ci(monitor): Kuma 改为独立端口访问[deploy] (7d45e48)
 
 
 ## build - 构建
@@ -314,5 +320,7 @@
 - chore: 初始化 pre-commit 代码检查 (585c05b)
 - chore: 添加.editorconfig配置统一代码格式 (640b3ce)
 - chore(docker): 为 uptime-kuma 配置 base path[deploy] (65a663a)
+- chore(nginx): 新增 uptime-kuma 的 socket.io 代理配置 (6b06f33)
+- chore(nginx): 新增 uptime-kuma 的 socket.io 代理配置  (#75) (6ab6e53)
 
 
