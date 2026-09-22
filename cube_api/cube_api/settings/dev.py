@@ -125,6 +125,8 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     # 点击劫持防护中间件
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # API 请求监控：记录 /api/ 请求的耗时和状态码
+    "utils.monitoring_middleware.MonitoringMiddleware",
 ]
 
 # 路由配置：指定项目的根 URL 配置文件

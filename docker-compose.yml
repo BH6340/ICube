@@ -166,12 +166,28 @@ services:
     networks:
       - icube_network
 
+  uptime-kuma:
+    # 轻量级可用性监控：HTTP 探测 + 容器状态 + 邮件通知
+    # Web UI 通过 Nginx /monitor/ 反代访问
+    image: louislam/uptime-kuma:1
+    container_name: icube_kuma
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - kuma_data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - icube_network
+
 volumes:
   # 数据持久化卷
   mysql_data:
   redis_data:
   # API 与 Nginx 共享 Django collectstatic 产物
   collected_static:
+  # Uptime Kuma 监控数据
+  kuma_data:
 
 networks:
   # 所有服务通过服务名在同一桥接网络内通信
