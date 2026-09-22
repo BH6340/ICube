@@ -89,7 +89,7 @@
         sub_filter '"/assets/' '"/monitor/assets/';
         sub_filter '"/icon.svg' '"/monitor/icon.svg';
         sub_filter_once off;
-        sub_filter_types text/html application/javascript text/css;
+        sub_filter_types application/javascript text/css;
 
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
