@@ -79,7 +79,7 @@
         proxy_set_header X-Forwarded-Proto $scheme;
 
         # 重写 Location 头：/dashboard → /monitor/dashboard
-        proxy_redirect ~^/(?!monitor)(.*)$ /monitor/$1;
+        proxy_redirect / /monitor/;
 
         # 重写页面内路径
         sub_filter 'href="/' 'href="/monitor/';
