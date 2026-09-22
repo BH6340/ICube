@@ -73,6 +73,7 @@
 - feat(cube-app): 全量更新APP功能与资源，新增用户社交与智能魔方支持  &  ci(github-actions): 为安卓构建步骤添加gradlew可执行权限  (#62) (3117735)
 - feat: 新增订单删除功能，完善多模块移动端适配与页面细节优化  (#68) (a57584f)
 - feat(home,front): 添加APP下载入口并完善下载链接处理 (1e455b7)
+- feat(monitor): 新增完整的轻量级项目监控告警系统[deploy] (0a6dab3)
 
 
 ## fix - 修复
@@ -131,6 +132,7 @@
 - fix(app): .env.production加入版本控制，确保CI构建时API地址正确 (f0e242c)
 - fix(app): baseURL改为运行时检测file协议，硬编码生产域名确保APK可用 (0e54dd4)
 - fix(app): APP改用HTTP+IP连接后端，绕过TLS连接重置问题 (09ee7d5)
+- fix(timer): 修复 dblclick 多行表达式缺少分号导致构建失败 (c5d92f8)
 
 
 ## docs - 文档
@@ -180,6 +182,8 @@
 - docs: 自动更新 CHANGELOG (6774213)
 - docs: 自动生成 CHANGELOG (c3ab447)
 - docs: 自动更新 CHANGELOG (6a2110a)
+- docs: 自动更新 CHANGELOG (416c2ca)
+- docs(formula): 新增魔方公式教程相关示例图片 (3712ad1)
 
 
 ## refactor - 重构
@@ -205,6 +209,8 @@
 - refactor: web-deploy改为直接merge方案 (3fa9956)
 - refactor(ci): web-deploy内置部署逻辑，不再依赖cicd触发 (9744835)
 - refactor(shop,settings): 调整代码格式与配置写法[deploy] (ee14a38)
+- refactor(frontend): 修复魔方转动逻辑与焦点滚动问题 (aca997b)
+- refactor(frontend): 修复魔方转动逻辑与焦点滚动问题 (#72) (c764cb1)
 
 
 ## ci - CI/CD
@@ -301,5 +307,7 @@
 - chore(deploy): 配置DuckDNS HTTPS反向代理服务 (#57) (94215d4)
 - chore(deploy): 优化后端更新逻辑，改为重建镜像而非仅重启 (#60) (659f619)
 - chore(cube_app): 新增Android应用图标生成脚本并更新图标  (#66) (72c73db)
+- chore: 初始化 pre-commit 代码检查 (585c05b)
+- chore: 添加.editorconfig配置统一代码格式 (640b3ce)
 
 
