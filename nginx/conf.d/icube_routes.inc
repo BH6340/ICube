@@ -99,6 +99,22 @@
         proxy_read_timeout 120s;
     }
 
+    # Kuma Socket.io WebSocket 连接（子路径模式）
+    location /monitor/socket.io/ {
+        proxy_pass http://uptime-kuma:3001/socket.io/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        proxy_connect_timeout 10s;
+        proxy_read_timeout 120s;
+    }
+
     # APK 下载目录
     location /apk/ {
         alias /usr/share/nginx/html/apk/;
