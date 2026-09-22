@@ -168,12 +168,15 @@ services:
 
   uptime-kuma:
     # 轻量级可用性监控：HTTP 探测 + 容器状态 + 邮件通知
-    # Web UI 通过 Nginx /monitor/ 反代访问
+    # Kuma 不支持子路径反代，直接通过 3001 端口访问
     image: louislam/uptime-kuma:1
     container_name: icube_kuma
     restart: always
     environment:
       - TZ=Asia/Shanghai
+    ports:
+      # 直接暴露 3001 端口（Kuma 不支持子路径反代）
+      - "3001:3001"
     volumes:
       - kuma_data:/app/data
       - /var/run/docker.sock:/var/run/docker.sock
