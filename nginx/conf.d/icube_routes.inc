@@ -70,13 +70,26 @@
         add_header Access-Control-Allow-Origin *;
     }
 
-    # Uptime Kuma 监控面板（WebSocket 支持）
+    # Uptime Kuma 监控面板（WebSocket + 子路径重写）
     location /monitor/ {
         proxy_pass http://uptime-kuma:3001/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+
+        # 重写 Location 头：/dashboard → /monitor/dashboard
+        proxy_redirect ~^/(?!monitor)(.*)$ /monitor/$1;
+
+        # 重写页面内路径
+        sub_filter 'href="/' 'href="/monitor/';
+        sub_filter 'src="/' 'src="/monitor/';
+        sub_filter 'action="/' 'action="/monitor/';
+        sub_filter '"/socket' '"/monitor/socket';
+        sub_filter '"/assets/' '"/monitor/assets/';
+        sub_filter '"/icon.svg' '"/monitor/icon.svg';
+        sub_filter_once off;
+        sub_filter_types text/html application/javascript text/css;
 
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
