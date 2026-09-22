@@ -192,6 +192,7 @@
 - docs: 自动更新 CHANGELOG (29d86e9)
 - docs: 自动生成 CHANGELOG (5f43132)
 - docs: 自动更新 CHANGELOG (9d5f7c5)
+- docs: 自动生成 CHANGELOG (341ba54)
 
 
 ## refactor - 重构
@@ -322,5 +323,6 @@
 - chore(docker): 为 uptime-kuma 配置 base path[deploy] (65a663a)
 - chore(nginx): 新增 uptime-kuma 的 socket.io 代理配置 (6b06f33)
 - chore(nginx): 新增 uptime-kuma 的 socket.io 代理配置  (#75) (6ab6e53)
+- chore(monitoring): 优化告警脚本配置读取逻辑[deploy] (5609212)
 
 
