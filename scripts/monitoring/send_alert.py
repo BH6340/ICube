@@ -28,8 +28,19 @@ CONFIG_PATH = Path(__file__).parent / "config.sh"
 
 
 def load_config():
-    """从 config.sh 读取 SMTP_AUTH_CODE"""
+    """从 .env 或 config.sh 读取 SMTP_AUTH_CODE"""
     auth_code = os.environ.get("MONITOR_MAIL_AUTH_CODE", "")
+
+    if not auth_code:
+        env_path = Path(__file__).parent.parent.parent / ".env"
+        if env_path.exists():
+            for line in env_path.read_text().splitlines():
+                if line.strip().startswith("MONITOR_MAIL_AUTH_CODE="):
+                    val = line.split("=", 1)[1].strip()
+                    if val and not val.startswith("${"):
+                        auth_code = val.strip('"').strip("'")
+                        break
+
     if not auth_code and CONFIG_PATH.exists():
         for line in CONFIG_PATH.read_text().splitlines():
             if "MONITOR_MAIL_AUTH_CODE" in line and "=" in line:
