@@ -480,11 +480,7 @@ class FormulaSerializer(serializers.ModelSerializer):
 
         # 如果是引用其他图片路径，需要重新设置
         if thumbnail_path:
-            relative_path = (
-                thumbnail_path.split("/media/")[1]
-                if "/media/" in thumbnail_path
-                else thumbnail_path
-            )
+            relative_path = thumbnail_path.split("/media/")[1] if "/media/" in thumbnail_path else thumbnail_path
             formula.thumbnail.name = relative_path
             formula.save()
 
@@ -572,11 +568,7 @@ class FormulaSerializer(serializers.ModelSerializer):
 
         # 如果是引用其他图片路径，需要重新设置
         if thumbnail_path:
-            relative_path = (
-                thumbnail_path.split("/media/")[1]
-                if "/media/" in thumbnail_path
-                else thumbnail_path
-            )
+            relative_path = thumbnail_path.split("/media/")[1] if "/media/" in thumbnail_path else thumbnail_path
             formula.thumbnail.name = relative_path
             formula.save()
 

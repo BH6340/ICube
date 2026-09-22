@@ -20,7 +20,7 @@ import request from '@/http/request'
 export const getCategories = () => {
   return request({
     url: '/api/shop/categories/',
-    method: 'get'
+    method: 'get',
   })
 }
 
@@ -41,7 +41,7 @@ export const getProducts = (params = {}) => {
   return request({
     url: '/api/shop/products/',
     method: 'get',
-    params
+    params,
   })
 }
 
@@ -54,7 +54,7 @@ export const getProducts = (params = {}) => {
 export const getProductDetail = (id) => {
   return request({
     url: `/api/shop/products/${id}/`,
-    method: 'get'
+    method: 'get',
   })
 }
 
@@ -66,7 +66,7 @@ export const getProductDetail = (id) => {
 export const getCart = () => {
   return request({
     url: '/api/shop/cart/',
-    method: 'get'
+    method: 'get',
   })
 }
 
@@ -85,7 +85,7 @@ export const addToCart = (data) => {
   return request({
     url: '/api/shop/cart/',
     method: 'post',
-    data
+    data,
   })
 }
 
@@ -103,7 +103,7 @@ export const updateCart = (id, data) => {
   return request({
     url: `/api/shop/cart/${id}/`,
     method: 'put',
-    data
+    data,
   })
 }
 
@@ -116,7 +116,7 @@ export const updateCart = (id, data) => {
 export const deleteCartItem = (id) => {
   return request({
     url: `/api/shop/cart/${id}/`,
-    method: 'delete'
+    method: 'delete',
   })
 }
 
@@ -134,7 +134,7 @@ export const createOrder = (data) => {
   return request({
     url: '/api/shop/orders/',
     method: 'post',
-    data
+    data,
   })
 }
 
@@ -151,7 +151,7 @@ export const getOrders = (params = {}) => {
   return request({
     url: '/api/shop/orders/',
     method: 'get',
-    params
+    params,
   })
 }
 
@@ -164,7 +164,7 @@ export const getOrders = (params = {}) => {
 export const getOrderDetail = (id) => {
   return request({
     url: `/api/shop/orders/${id}/`,
-    method: 'get'
+    method: 'get',
   })
 }
 
@@ -177,7 +177,7 @@ export const getOrderDetail = (id) => {
 export const payOrder = (id) => {
   return request({
     url: `/api/shop/orders/${id}/pay/`,
-    method: 'put'
+    method: 'put',
   })
 }
 
@@ -192,7 +192,7 @@ export const payOrder = (id) => {
 export const cancelOrder = (id) => {
   return request({
     url: `/api/shop/orders/${id}/cancel/`,
-    method: 'put'
+    method: 'put',
   })
 }
 
@@ -207,7 +207,7 @@ export const cancelOrder = (id) => {
 export const completeOrder = (id) => {
   return request({
     url: `/api/shop/orders/${id}/complete/`,
-    method: 'put'
+    method: 'put',
   })
 }
 
@@ -222,7 +222,7 @@ export const completeOrder = (id) => {
 export const deleteOrder = (id) => {
   return request({
     url: `/api/shop/orders/${id}/`,
-    method: 'delete'
+    method: 'delete',
   })
 }
 
@@ -234,7 +234,7 @@ export const deleteOrder = (id) => {
 export const getAddresses = () => {
   return request({
     url: '/api/shop/addresses/',
-    method: 'get'
+    method: 'get',
   })
 }
 
@@ -256,7 +256,7 @@ export const createAddress = (data) => {
   return request({
     url: '/api/shop/addresses/',
     method: 'post',
-    data
+    data,
   })
 }
 
@@ -279,7 +279,7 @@ export const updateAddress = (id, data) => {
   return request({
     url: `/api/shop/addresses/${id}/`,
     method: 'put',
-    data
+    data,
   })
 }
 
@@ -292,7 +292,7 @@ export const updateAddress = (id, data) => {
 export const deleteAddress = (id) => {
   return request({
     url: `/api/shop/addresses/${id}/`,
-    method: 'delete'
+    method: 'delete',
   })
 }
 
@@ -305,6 +305,6 @@ export const deleteAddress = (id) => {
 export const setDefaultAddress = (id) => {
   return request({
     url: `/api/shop/addresses/${id}/set_default/`,
-    method: 'post'
+    method: 'post',
   })
 }

@@ -13,11 +13,7 @@
     </div>
 
     <div class="user-main">
-      <el-avatar
-        :size="56"
-        :src="user.image || defaultAvatar"
-        :alt="`${user.username} 的头像`"
-      />
+      <el-avatar :size="56" :src="user.image || defaultAvatar" :alt="`${user.username} 的头像`" />
       <div class="user-copy">
         <div class="name-row">
           <h2>{{ user.username }}</h2>
@@ -28,9 +24,7 @@
     </div>
 
     <div class="user-actions">
-      <el-button plain @click.stop="emit('view', user.username)">
-        查看主页
-      </el-button>
+      <el-button plain @click.stop="emit('view', user.username)"> 查看主页 </el-button>
       <el-button
         v-if="!isCurrentUser"
         :type="user.following ? 'default' : 'primary'"
@@ -50,14 +44,12 @@ import defaultAvatar from '@/assets/default_avatar.svg'
 const props = defineProps({
   user: { type: Object, required: true },
   currentUsername: { type: String, default: '' },
-  actionLoading: { type: Boolean, default: false }
+  actionLoading: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['view', 'toggle-follow'])
 
-const isCurrentUser = computed(
-  () => props.currentUsername === props.user.username
-)
+const isCurrentUser = computed(() => props.currentUsername === props.user.username)
 </script>
 
 <style scoped>
@@ -73,7 +65,10 @@ const isCurrentUser = computed(
   border: 1px solid #e4e7ed;
   border-radius: 12px;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .user-card:hover {

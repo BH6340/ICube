@@ -366,7 +366,7 @@ def async_process_user_avatar(user_id: int, image_path: str):
         user = User.objects.get(id=user_id)
         # 执行耗时的图像处理与存储
         processed_url = process_avatar_image(image_path)
-        
+
         # 更新用户头像路径
         user.image = processed_url
         user.save(update_fields=['image'])
@@ -388,10 +388,10 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         if image:
             # 1. 先保存原始文件到临时目录
             temp_path = save_temp_file(image)
-            
+
             # 2. 触发 Celery 异步任务（主线程直接返回，不卡顿）
             async_process_user_avatar.delay(instance.id, temp_path)
-            
+
         # 更新其他基础字段（如 bio, username）
         return super().update(instance, validated_data)
 ```

@@ -610,15 +610,15 @@ const goToPLL = () => {
   .step-flow {
     flex-direction: column;
   }
-  
+
   .flow-arrow {
     transform: rotate(90deg);
   }
-  
+
   .cases-container {
     grid-template-columns: 1fr;
   }
-  
+
   .bottom-nav {
     flex-direction: column;
     gap: 10px;

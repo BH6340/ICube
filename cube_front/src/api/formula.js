@@ -21,7 +21,7 @@ import request from '@/http/request'
 export const getFormulaCategories = () => {
   return request({
     url: '/api/formula/categories/',
-    method: 'get'
+    method: 'get',
   })
 }
 
@@ -35,7 +35,7 @@ export const getFormulaCategories = () => {
 export const getMyCustomCategories = () => {
   return request({
     url: '/api/formula/categories/my_custom/',
-    method: 'get'
+    method: 'get',
   })
 }
 
@@ -53,7 +53,7 @@ export const createCategory = (data) => {
   return request({
     url: '/api/formula/categories/',
     method: 'post',
-    data
+    data,
   })
 }
 
@@ -66,7 +66,7 @@ export const createCategory = (data) => {
 export const deleteCategory = (id) => {
   return request({
     url: `/api/formula/categories/${id}/`,
-    method: 'delete'
+    method: 'delete',
   })
 }
 
@@ -76,9 +76,18 @@ export const deleteCategory = (id) => {
  * 包含魔方各求解方法的常见阶段
  */
 export const PHASE_OPTIONS = [
-  'Cross', 'F2L', 'OLL', 'PLL', 'Full PLL',
-  'Edge Control', 'EOLine', 'EOCross', 'F2L+OLL',
-  'Block Building', 'Layer-by-Layer', '其他'
+  'Cross',
+  'F2L',
+  'OLL',
+  'PLL',
+  'Full PLL',
+  'Edge Control',
+  'EOLine',
+  'EOCross',
+  'F2L+OLL',
+  'Block Building',
+  'Layer-by-Layer',
+  '其他',
 ]
 
 /**
@@ -96,7 +105,7 @@ export const METHOD_OPTIONS = ['层先法', 'CFOP', '桥式法', 'ZZ法', 'Heise
 export const getFormulaAuthors = () => {
   return request({
     url: '/api/formula/formulas/authors/',
-    method: 'get'
+    method: 'get',
   })
 }
 
@@ -117,7 +126,7 @@ export const getFormulaList = (params = {}) => {
   return request({
     url: '/api/formula/formulas/',
     method: 'get',
-    params
+    params,
   })
 }
 
@@ -128,7 +137,7 @@ export const getUserCustomFormulas = (username, params = {}) =>
   getFormulaList({
     ...params,
     author_username: username,
-    is_custom: true
+    is_custom: true,
   })
 
 /**
@@ -138,7 +147,7 @@ export const getUserFormulaCollections = (username, params = {}) => {
   return request({
     url: `/api/formula/collections/users/${encodeURIComponent(username)}/`,
     method: 'get',
-    params
+    params,
   })
 }
 
@@ -151,7 +160,7 @@ export const getUserFormulaCollections = (username, params = {}) => {
 export const getFormulaDetail = (id) => {
   return request({
     url: `/api/formula/formulas/${id}/`,
-    method: 'get'
+    method: 'get',
   })
 }
 
@@ -170,7 +179,7 @@ export const createFormula = (data) => {
   return request({
     url: '/api/formula/formulas/',
     method: 'post',
-    data
+    data,
   })
 }
 
@@ -185,7 +194,7 @@ export const updateFormula = (id, data) => {
   return request({
     url: `/api/formula/formulas/${id}/`,
     method: 'put',
-    data
+    data,
   })
 }
 
@@ -198,7 +207,7 @@ export const updateFormula = (id, data) => {
 export const deleteFormula = (id) => {
   return request({
     url: `/api/formula/formulas/${id}/`,
-    method: 'delete'
+    method: 'delete',
   })
 }
 
@@ -215,7 +224,7 @@ export const matchFormula = (data) => {
   return request({
     url: '/api/formula/formulas/match/',
     method: 'post',
-    data
+    data,
   })
 }
 
@@ -231,7 +240,7 @@ export const getMyCollections = (params = {}) => {
   return request({
     url: '/api/formula/collections/',
     method: 'get',
-    params
+    params,
   })
 }
 
@@ -247,7 +256,7 @@ export const getMyCustomFormulas = (params = {}) => {
   return request({
     url: '/api/formula/formulas/my_custom/',
     method: 'get',
-    params
+    params,
   })
 }
 
@@ -261,7 +270,7 @@ export const addCollection = (formulaId) => {
   return request({
     url: '/api/formula/collections/',
     method: 'post',
-    data: { formula: formulaId }
+    data: { formula: formulaId },
   })
 }
 
@@ -274,6 +283,6 @@ export const addCollection = (formulaId) => {
 export const removeCollection = (collectionId) => {
   return request({
     url: `/api/formula/collections/${collectionId}/`,
-    method: 'delete'
+    method: 'delete',
   })
 }

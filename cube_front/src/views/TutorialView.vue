@@ -118,9 +118,9 @@
                 <span class="meta-item">{{ cube.difficulty }}</span>
                 <span class="meta-item">{{ cube.formulas }}</span>
               </div>
-              <el-button 
-                type="primary" 
-                plain 
+              <el-button
+                type="primary"
+                plain
                 @click="goToDetail(cube.path)"
                 :disabled="!cube.available"
               >
@@ -169,9 +169,9 @@
                   ✓ {{ f }}
                 </span>
               </div>
-              <el-button 
-                type="success" 
-                class="full-width" 
+              <el-button
+                type="success"
+                class="full-width"
                 @click="goToDetail(method.path)"
                 :disabled="!method.available"
               >
@@ -336,45 +336,45 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 const orderCubes = ref([
-  { 
-    id: 1, 
-    name: '二阶魔方 (Pocket Cube)', 
-    tag: '2x2', 
-    desc: '结构简单，纯角块组成。适合作为魔方入门或给低龄爱好者的试水之作。', 
-    color: '#409EFF', 
+  {
+    id: 1,
+    name: '二阶魔方 (Pocket Cube)',
+    tag: '2x2',
+    desc: '结构简单，纯角块组成。适合作为魔方入门或给低龄爱好者的试水之作。',
+    color: '#409EFF',
     path: '/tutorial/beginner',
     available: false,
     difficulty: '简单',
     formulas: '0个公式'
   },
-  { 
-    id: 2, 
-    name: '三阶魔方 (Rubik\'s Cube)', 
-    tag: '3x3', 
-    desc: '最经典的传统魔方！所有高级玩法和高阶魔方的基石，必学经典。', 
-    color: '#67C23A', 
+  {
+    id: 2,
+    name: '三阶魔方 (Rubik\'s Cube)',
+    tag: '3x3',
+    desc: '最经典的传统魔方！所有高级玩法和高阶魔方的基石，必学经典。',
+    color: '#67C23A',
     path: '/tutorial/beginner',
     available: true,
     difficulty: '入门',
     formulas: '5个公式'
   },
-  { 
-    id: 3, 
-    name: '四阶魔方 (Rubik\'s Revenge)', 
-    tag: '4x4', 
-    desc: '高阶入门。由于没有固定中心块，会产生独特的"特殊情况"降阶降速。', 
-    color: '#E6A23C', 
+  {
+    id: 3,
+    name: '四阶魔方 (Rubik\'s Revenge)',
+    tag: '4x4',
+    desc: '高阶入门。由于没有固定中心块，会产生独特的"特殊情况"降阶降速。',
+    color: '#E6A23C',
     path: '/tutorials/4x4',
     available: false,
     difficulty: '中等',
     formulas: '3个特殊公式'
   },
-  { 
-    id: 4, 
-    name: '五阶魔方 (Professor\'s Cube)', 
-    tag: '5x5', 
-    desc: '结构更为复杂。更考验观察力和降阶法的熟练度，极具挑战性。', 
-    color: '#F56C6C', 
+  {
+    id: 4,
+    name: '五阶魔方 (Professor\'s Cube)',
+    tag: '5x5',
+    desc: '结构更为复杂。更考验观察力和降阶法的熟练度，极具挑战性。',
+    color: '#F56C6C',
     path: '/tutorials/5x5',
     available: false,
     difficulty: '较难',
@@ -846,16 +846,16 @@ const goToDetail = (path) => {
     flex-direction: column;
     padding: 20px;
   }
-  
+
   .flow-arrow {
     transform: rotate(90deg);
   }
-  
+
   .method-stats {
     flex-direction: column;
     gap: 10px;
   }
-  
+
   .cfop-stats {
     flex-direction: column;
   }

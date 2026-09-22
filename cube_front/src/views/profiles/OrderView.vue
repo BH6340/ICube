@@ -19,9 +19,11 @@
         <div v-for="order in orderList" :key="order.id" class="order-item">
           <div class="order-header">
             <span class="order-no">订单号: {{ order.order_no }}</span>
-            <el-tag :type="getStatusType(order.status)" size="small">{{ getStatusLabel(order.status) }}</el-tag>
+            <el-tag :type="getStatusType(order.status)" size="small">{{
+              getStatusLabel(order.status)
+            }}</el-tag>
           </div>
-          
+
           <div class="order-items">
             <div v-for="item in order.items" :key="item.id" class="order-item-row">
               <div class="item-image">
@@ -34,7 +36,10 @@
               </div>
               <div class="item-info">
                 <h4 class="item-name">{{ item.product_name }}</h4>
-                <span class="item-spec" v-if="item.selected_spec && Object.keys(item.selected_spec).length">
+                <span
+                  class="item-spec"
+                  v-if="item.selected_spec && Object.keys(item.selected_spec).length"
+                >
                   {{ formatSpec(item.selected_spec) }}
                 </span>
                 <div class="item-price-row">
@@ -46,13 +51,35 @@
           </div>
 
           <div class="order-footer">
-            <span class="total">合计: <span class="total-price">¥{{ order.total_amount }}</span></span>
+            <span class="total"
+              >合计: <span class="total-price">¥{{ order.total_amount }}</span></span
+            >
             <div class="order-actions">
-              <el-button v-if="order.status === 'pending'" type="primary" @click="handlePay(order)">支付</el-button>
-              <el-button v-if="order.status === 'pending' || order.status === 'paid'" type="info" @click="handleCancel(order)">取消</el-button>
-              <el-button v-if="order.status === 'shipped'" type="primary" @click="handleComplete(order)">确认收货</el-button>
-              <el-button v-if="order.status === 'completed'" type="default" disabled>已完成</el-button>
-              <el-button v-if="order.status === 'cancelled' || order.status === 'completed'" type="danger" link @click="handleDelete(order)">删除</el-button>
+              <el-button v-if="order.status === 'pending'" type="primary" @click="handlePay(order)"
+                >支付</el-button
+              >
+              <el-button
+                v-if="order.status === 'pending' || order.status === 'paid'"
+                type="info"
+                @click="handleCancel(order)"
+                >取消</el-button
+              >
+              <el-button
+                v-if="order.status === 'shipped'"
+                type="primary"
+                @click="handleComplete(order)"
+                >确认收货</el-button
+              >
+              <el-button v-if="order.status === 'completed'" type="default" disabled
+                >已完成</el-button
+              >
+              <el-button
+                v-if="order.status === 'cancelled' || order.status === 'completed'"
+                type="danger"
+                link
+                @click="handleDelete(order)"
+                >删除</el-button
+              >
             </div>
           </div>
         </div>
@@ -96,7 +123,7 @@ const statusLabels = {
   paid: '已付款',
   shipped: '已发货',
   completed: '已完成',
-  cancelled: '已取消'
+  cancelled: '已取消',
 }
 
 const statusTypes = {
@@ -104,7 +131,7 @@ const statusTypes = {
   paid: 'primary',
   shipped: 'info',
   completed: 'success',
-  cancelled: 'danger'
+  cancelled: 'danger',
 }
 
 const getStatusLabel = (status) => {
@@ -116,7 +143,9 @@ const getStatusType = (status) => {
 }
 
 const formatSpec = (spec) => {
-  return Object.entries(spec).map(([k, v]) => `${k}: ${v}`).join(' / ')
+  return Object.entries(spec)
+    .map(([k, v]) => `${k}: ${v}`)
+    .join(' / ')
 }
 
 const handlePay = (order) => {
@@ -153,7 +182,7 @@ const handleDelete = async (order) => {
     await ElMessageBox.confirm('确定要删除该订单吗？删除后不可恢复。', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
-      type: 'warning'
+      type: 'warning',
     })
     const res = await deleteOrder(order.id)
     if (res.code === 100) {

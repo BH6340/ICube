@@ -8,8 +8,8 @@
 
       <div class="cropper-body">
         <div class="crop-area" ref="cropAreaRef" @wheel.prevent="onWheel">
-          <canvas 
-            ref="canvasRef" 
+          <canvas
+            ref="canvasRef"
             @mousedown="startDrag"
           />
           <div class="crop-mask"></div>
@@ -106,13 +106,13 @@ function preprocessImage(file) {
       img.onload = () => {
         const maxSize = 2048
         let { width, height } = img
-        
+
         // 如果图片超过最大尺寸，进行预压缩
         if (width > maxSize || height > maxSize) {
           const ratio = Math.min(maxSize / width, maxSize / height)
           width = Math.round(width * ratio)
           height = Math.round(height * ratio)
-          
+
           // 创建临时 Canvas 进行缩放
           const canvas = document.createElement('canvas')
           canvas.width = width
@@ -140,13 +140,13 @@ function preprocessImage(file) {
 onMounted(async () => {
   // 预压缩图片
   originalImage.value = await preprocessImage(props.imageFile)
-  
+
   // 等待 DOM 更新
   await nextTick()
-  
+
   // 初始化 Canvas
   initCanvas()
-  
+
   // 添加全局鼠标事件监听，实现流畅拖拽
   document.addEventListener('mousemove', onDrag)
   document.addEventListener('mouseup', endDrag)
@@ -170,13 +170,13 @@ onUnmounted(() => {
  */
 function initCanvas() {
   if (!canvasRef.value || !originalImage.value) return
-  
+
   const canvas = canvasRef.value
   canvas.width = CANVAS_SIZE
   canvas.height = CANVAS_SIZE
-  
+
   const img = originalImage.value
-  
+
   // 计算初始缩放比例：使图片适应 Canvas
   if (img.naturalWidth <= CANVAS_SIZE && img.naturalHeight <= CANVAS_SIZE) {
     scale.value = 1
@@ -184,11 +184,11 @@ function initCanvas() {
     const ratio = Math.min(CANVAS_SIZE / img.naturalWidth, CANVAS_SIZE / img.naturalHeight)
     scale.value = ratio
   }
-  
+
   // 计算居中偏移
   offsetX.value = (CANVAS_SIZE - img.naturalWidth * scale.value) / 2
   offsetY.value = (CANVAS_SIZE - img.naturalHeight * scale.value) / 2
-  
+
   drawCanvas()
 }
 
@@ -199,13 +199,13 @@ function initCanvas() {
  */
 function drawCanvas() {
   if (!canvasRef.value || !originalImage.value) return
-  
+
   const canvas = canvasRef.value
   const ctx = canvas.getContext('2d')
-  
+
   // 清空画布
   ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE)
-  
+
   // 保存状态并绘制图片
   ctx.save()
   ctx.drawImage(
@@ -241,18 +241,18 @@ function startDrag(e) {
  */
 function onDrag(e) {
   if (!isDragging.value) return
-  
+
   // 计算偏移量
   const deltaX = e.clientX - startX.value
   const deltaY = e.clientY - startY.value
-  
+
   offsetX.value += deltaX
   offsetY.value += deltaY
-  
+
   // 更新起始位置
   startX.value = e.clientX
   startY.value = e.clientY
-  
+
   drawCanvas()
 }
 
@@ -315,23 +315,23 @@ function onWheel(e) {
  */
 function confirmCrop() {
   if (!originalImage.value) return
-  
+
   const img = originalImage.value
-  
+
   // 计算原图中裁剪区域的位置和大小
   const sourceX = (FRAME_OFFSET - offsetX.value) / scale.value
   const sourceY = (FRAME_OFFSET - offsetY.value) / scale.value
   const sourceSize = FRAME_SIZE / scale.value
-  
+
   // 创建输出 Canvas
   const canvas = document.createElement('canvas')
   canvas.width = 512
   canvas.height = 512
-  
+
   const ctx = canvas.getContext('2d')
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = 'high'
-  
+
   // 从原图裁剪区域绘制到输出 Canvas
   ctx.drawImage(
     img,
@@ -344,7 +344,7 @@ function confirmCrop() {
     512,               // 目标宽度
     512                // 目标高度
   )
-  
+
   // 导出为 WebP 格式
   canvas.toBlob((blob) => {
     if (!blob) {

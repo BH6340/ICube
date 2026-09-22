@@ -162,7 +162,7 @@ class CubeStateServiceTest(TestCase):
                     for j in [-1, 0, 1]
                     for k in [-1, 0, 1]
                 ][:27],
-            ]
+            ],
         }
         # 调整 blocks 数量为 27
         state["blocks"] = state["blocks"][:27]
@@ -181,7 +181,7 @@ class CubeStateServiceTest(TestCase):
                     for j in [-1, 0, 1]
                     for k in [-1, 0, 1]
                 ][:27],
-            ]
+            ],
         }
         state["blocks"] = state["blocks"][:27]
         errors = CubeStateService.validate_state_definition(state)
@@ -199,7 +199,7 @@ class CubeStateServiceTest(TestCase):
                     for j in [-1, 0, 1]
                     for k in [-1, 0, 1]
                 ][:27],
-            ]
+            ],
         }
         state["blocks"] = state["blocks"][:27]
         errors = CubeStateService.validate_state_definition(state)

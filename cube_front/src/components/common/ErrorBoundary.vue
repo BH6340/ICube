@@ -24,8 +24,8 @@ import { useRouter } from 'vue-router'
 defineProps({
   fullPage: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 })
 
 const emit = defineEmits(['error'])

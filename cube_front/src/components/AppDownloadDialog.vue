@@ -22,12 +22,15 @@ const updateInfo = ref('')
 const loading = ref(false)
 const canvasRef = ref(null)
 
-watch(() => props.modelValue, async (val) => {
-  visible.value = val
-  if (val) {
-    await fetchVersion()
+watch(
+  () => props.modelValue,
+  async (val) => {
+    visible.value = val
+    if (val) {
+      await fetchVersion()
+    }
   }
-})
+)
 
 watch(visible, (val) => {
   emit('update:modelValue', val)
@@ -40,9 +43,7 @@ async function fetchVersion() {
     const data = res.data || res
     version.value = data.version || '1.0.0'
     const rawUrl = data.download_url || '/apk/icube-v1.0.0.apk'
-    downloadUrl.value = rawUrl.startsWith('http')
-      ? rawUrl
-      : window.location.origin + rawUrl
+    downloadUrl.value = rawUrl.startsWith('http') ? rawUrl : window.location.origin + rawUrl
     updateInfo.value = data.update_info || ''
     await nextTick()
     if (canvasRef.value) {
@@ -92,9 +93,7 @@ function directDownload() {
       <div class="direct-section">
         <el-icon :size="32" color="#409eff"><Download /></el-icon>
         <p class="direct-tip">电脑端直接下载</p>
-        <el-button type="primary" :loading="loading" @click="directDownload">
-          下载 APK
-        </el-button>
+        <el-button type="primary" :loading="loading" @click="directDownload"> 下载 APK </el-button>
         <p v-if="version" class="version-text">当前版本 v{{ version }}</p>
         <p v-if="updateInfo" class="update-info">{{ updateInfo }}</p>
       </div>

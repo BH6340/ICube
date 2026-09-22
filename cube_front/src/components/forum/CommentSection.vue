@@ -1,15 +1,15 @@
 <template>
   <div class="comment-section">
     <div class="comment-form" v-if="isLoggedIn">
-      <el-avatar :size="32" :src="userAvatar || defaultAvatar"/>
+      <el-avatar :size="32" :src="userAvatar || defaultAvatar" />
       <div class="form-content">
         <el-input
-            v-model="newComment"
-            type="textarea"
-            :rows="3"
-            placeholder="写下你的评论..."
-            maxlength="500"
-            show-word-limit
+          v-model="newComment"
+          type="textarea"
+          :rows="3"
+          placeholder="写下你的评论..."
+          maxlength="500"
+          show-word-limit
         />
         <div class="form-actions">
           <el-button type="primary" @click="submitComment" :loading="submitting" size="default">
@@ -20,17 +20,21 @@
     </div>
 
     <div v-else class="login-tip">
-      <el-alert title="请先登录后再发表评论" type="info" :closable="false" show-icon/>
+      <el-alert title="请先登录后再发表评论" type="info" :closable="false" show-icon />
     </div>
 
     <div class="comments-list" v-loading="loading">
       <div v-if="!comments || comments.length === 0" class="empty-comments">
-        <el-empty description="暂无评论，快来抢沙发吧！" :image-size="80"/>
+        <el-empty description="暂无评论，快来抢沙发吧！" :image-size="80" />
       </div>
 
       <div v-for="comment in comments" :key="comment.id" class="comment-item">
         <div class="comment-main">
-          <el-avatar :size="36" :src="comment.author?.image || defaultAvatar" class="comment-avatar"/>
+          <el-avatar
+            :size="36"
+            :src="comment.author?.image || defaultAvatar"
+            class="comment-avatar"
+          />
           <div class="comment-content">
             <div class="comment-header">
               <span class="author-name">{{ comment.author?.username }}</span>
@@ -39,12 +43,12 @@
             <div class="comment-body">{{ comment.content }}</div>
             <div class="comment-actions">
               <el-button
-                  text
-                  size="small"
-                  :type="comment.liked ? 'primary' : 'info'"
-                  @click="clickLike(comment)"
-                  :disabled="comment._reactionLoading"
-                  class="action-btn"
+                text
+                size="small"
+                :type="comment.liked ? 'primary' : 'info'"
+                @click="clickLike(comment)"
+                :disabled="comment._reactionLoading"
+                class="action-btn"
               >
                 <span v-if="comment.liked">👍</span>
                 <span v-else>👍🏻</span>
@@ -52,26 +56,24 @@
               </el-button>
 
               <el-button
-                  text
-                  size="small"
-                  :type="comment.disliked ? 'danger' : 'info'"
-                  @click="clickDislike(comment)"
-                  :disabled="comment._reactionLoading"
-                  class="action-btn"
+                text
+                size="small"
+                :type="comment.disliked ? 'danger' : 'info'"
+                @click="clickDislike(comment)"
+                :disabled="comment._reactionLoading"
+                class="action-btn"
               >
                 <span v-if="comment.disliked">👎</span>
                 <span v-else>👎🏻</span>
                 <span class="count-num">{{ comment.dislike_count || 0 }}</span>
               </el-button>
-              <el-button text size="small" @click="replyTo(comment)">
-                💬 回复
-              </el-button>
+              <el-button text size="small" @click="replyTo(comment)"> 💬 回复 </el-button>
               <el-button
-                  v-if="comment.author?.username === currentUsername || isAdmin"
-                  text
-                  size="small"
-                  type="danger"
-                  @click="handleDelete(comment)"
+                v-if="comment.author?.username === currentUsername || isAdmin"
+                text
+                size="small"
+                type="danger"
+                @click="handleDelete(comment)"
               >
                 🗑️ 删除
               </el-button>
@@ -79,15 +81,20 @@
 
             <div class="reply-form" v-if="replyTarget === comment.id">
               <el-input
-                  v-model="replyContent"
-                  type="textarea"
-                  :rows="2"
-                  :placeholder="`回复 @${comment.author?.username}`"
-                  maxlength="500"
+                v-model="replyContent"
+                type="textarea"
+                :rows="2"
+                :placeholder="`回复 @${comment.author?.username}`"
+                maxlength="500"
               />
               <div class="reply-actions">
                 <el-button size="small" @click="cancelReply">取消</el-button>
-                <el-button size="small" type="primary" @click="submitReply" :loading="replySubmitting">
+                <el-button
+                  size="small"
+                  type="primary"
+                  @click="submitReply"
+                  :loading="replySubmitting"
+                >
                   回复
                 </el-button>
               </div>
@@ -96,9 +103,17 @@
         </div>
 
         <div class="replies-list" v-if="comment.replies && comment.replies.length">
-          <div v-for="reply in (comment._expanded ? comment.replies : comment.replies.slice(0, 1))" :key="reply.id" class="reply-item">
+          <div
+            v-for="reply in comment._expanded ? comment.replies : comment.replies.slice(0, 1)"
+            :key="reply.id"
+            class="reply-item"
+          >
             <div class="reply-main">
-              <el-avatar :size="28" :src="reply.author?.image || defaultAvatar" class="reply-avatar"/>
+              <el-avatar
+                :size="28"
+                :src="reply.author?.image || defaultAvatar"
+                class="reply-avatar"
+              />
               <div class="reply-content">
                 <div class="reply-header">
                   <span class="author-name">{{ reply.author?.username }}</span>
@@ -110,11 +125,11 @@
                 <div class="reply-body">{{ reply.content }}</div>
                 <div class="reply-actions">
                   <el-button
-                      text
-                      size="small"
-                      :type="reply.liked ? 'primary' : 'info'"
-                      @click="clickLike(reply)"
-                      :disabled="reply._reactionLoading"
+                    text
+                    size="small"
+                    :type="reply.liked ? 'primary' : 'info'"
+                    @click="clickLike(reply)"
+                    :disabled="reply._reactionLoading"
                   >
                     <span v-if="reply.liked">👍</span>
                     <span v-else>👍🏻</span>
@@ -122,25 +137,23 @@
                   </el-button>
 
                   <el-button
-                      text
-                      size="small"
-                      :type="reply.disliked ? 'danger' : 'info'"
-                      @click="clickDislike(reply)"
-                      :disabled="reply._reactionLoading"
+                    text
+                    size="small"
+                    :type="reply.disliked ? 'danger' : 'info'"
+                    @click="clickDislike(reply)"
+                    :disabled="reply._reactionLoading"
                   >
                     <span v-if="reply.disliked">👎</span>
                     <span v-else>👎🏻</span>
                     <span class="count-num">{{ reply.dislike_count || 0 }}</span>
                   </el-button>
-                  <el-button text size="small" @click="replyToReply(reply)">
-                    💬 回复
-                  </el-button>
+                  <el-button text size="small" @click="replyToReply(reply)"> 💬 回复 </el-button>
                   <el-button
-                      v-if="reply.author?.username === currentUsername || isAdmin"
-                      text
-                      size="small"
-                      type="danger"
-                      @click="handleDelete(reply)"
+                    v-if="reply.author?.username === currentUsername || isAdmin"
+                    text
+                    size="small"
+                    type="danger"
+                    @click="handleDelete(reply)"
                   >
                     🗑️ 删除
                   </el-button>
@@ -148,20 +161,24 @@
 
                 <div class="reply-form" v-if="replyTarget === reply.id">
                   <el-input
-                      v-model="replyContent"
-                      type="textarea"
-                      :rows="2"
-                      :placeholder="`回复 @${reply.author?.username}`"
-                      maxlength="500"
+                    v-model="replyContent"
+                    type="textarea"
+                    :rows="2"
+                    :placeholder="`回复 @${reply.author?.username}`"
+                    maxlength="500"
                   />
                   <div class="reply-actions">
                     <el-button size="small" @click="cancelReply">取消</el-button>
-                    <el-button size="small" type="primary" @click="submitReply" :loading="replySubmitting">
+                    <el-button
+                      size="small"
+                      type="primary"
+                      @click="submitReply"
+                      :loading="replySubmitting"
+                    >
                       回复
                     </el-button>
                   </div>
                 </div>
-
               </div>
             </div>
           </div>
@@ -180,12 +197,12 @@
 
       <div class="pagination" v-if="total > pageSize">
         <el-pagination
-            v-model:current-page="currentPage"
-            :page-size="pageSize"
-            :total="total"
-            layout="prev, pager, next"
-            @current-change="loadComments"
-            small
+          v-model:current-page="currentPage"
+          :page-size="pageSize"
+          :total="total"
+          layout="prev, pager, next"
+          @current-change="loadComments"
+          small
         />
       </div>
     </div>
@@ -195,7 +212,7 @@
 <script setup>
 /**
  * CommentSection.vue - 评论区组件
- * 
+ *
  * 核心职责：
  * 1. 展示帖子的评论列表（支持嵌套回复）
  * 2. 支持发表评论和回复功能
@@ -203,7 +220,7 @@
  * 4. 支持删除评论（作者和管理员）
  * 5. 分页加载评论数据
  * 6. 展开更多回复功能
- * 
+ *
  * 设计要点：
  * - 使用 flattenReplies 递归打平深层嵌套回复，简化渲染逻辑
  * - 使用 replyUserMap 缓存用户名，解决多级回复中"回复谁"的显示问题
@@ -211,23 +228,23 @@
  * - 支持多级回复（评论 → 回复 → 回复的回复）
  */
 
-import {ref, computed, onMounted} from 'vue'
-import {ElMessage, ElMessageBox} from 'element-plus'
-import {CaretBottom, CaretTop, More, ArrowUp} from '@element-plus/icons-vue'
+import { ref, computed, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { CaretBottom, CaretTop, More, ArrowUp } from '@element-plus/icons-vue'
 import {
   getComments,
   createComment,
   deleteComment,
   likeComment as apiLikeComment,
-  dislikeComment as apiDislikeComment
+  dislikeComment as apiDislikeComment,
 } from '@/api/comments'
 import defaultAvatar from '@/assets/default_avatar.svg'
 
 const props = defineProps({
   postId: {
     type: Number,
-    required: true
-  }
+    required: true,
+  },
 })
 
 const emit = defineEmits(['comment-added', 'comment-count-updated'])
@@ -293,7 +310,7 @@ const flattenReplies = (replyList, parentUsername = '') => {
   let result = []
   if (!replyList || replyList.length === 0) return result
 
-  replyList.forEach(reply => {
+  replyList.forEach((reply) => {
     // 缓存当前评论的用户，供深层追查使用
     if (reply.id && reply.author?.username) {
       replyUserMap.value[reply.id] = reply.author.username
@@ -321,7 +338,7 @@ const loadComments = async () => {
   try {
     const res = await getComments(props.postId, {
       page: currentPage.value,
-      page_size: pageSize.value
+      page_size: pageSize.value,
     })
 
     if (res.code === 100) {
@@ -329,7 +346,7 @@ const loadComments = async () => {
 
       // 💡 标注修改：在赋值给页面渲染前，清洗并扁平化子级链条
       replyUserMap.value = {} // 重置缓存
-      comments.value = rawComments.map(comment => {
+      comments.value = rawComments.map((comment) => {
         // 先把一级主评论的作者丢进缓存
         if (comment.id && comment.author?.username) {
           replyUserMap.value[comment.id] = comment.author.username
@@ -369,7 +386,7 @@ const submitComment = async () => {
   try {
     const res = await createComment({
       post: props.postId,
-      content: newComment.value
+      content: newComment.value,
     })
     if (res.code === 100) {
       ElMessage.success('评论成功')
@@ -400,7 +417,7 @@ const submitReply = async () => {
     const res = await createComment({
       post: props.postId,
       parent: parentId,
-      content: replyContent.value
+      content: replyContent.value,
     })
 
     if (res.code === 100) {
@@ -480,20 +497,21 @@ const handleDelete = async (comment) => {
   ElMessageBox.confirm('确定要删除这条评论吗？', '警告', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
-    type: 'warning'
-  }).then(async () => {
-    try {
-      const res = await deleteComment(comment.id)
-      if (res.code === 100) {
-        ElMessage.success('删除成功')
-        await loadComments()
-        emit('comment-count-updated')
-      }
-    } catch (error) {
-      ElMessage.error('删除失败')
-    }
-  }).catch(() => {
+    type: 'warning',
   })
+    .then(async () => {
+      try {
+        const res = await deleteComment(comment.id)
+        if (res.code === 100) {
+          ElMessage.success('删除成功')
+          await loadComments()
+          emit('comment-count-updated')
+        }
+      } catch (error) {
+        ElMessage.error('删除失败')
+      }
+    })
+    .catch(() => {})
 }
 
 const loadMoreReplies = async (comment) => {

@@ -17,8 +17,8 @@ import { useRouteLoading } from '@/stores/routeLoading'
 defineProps({
   fullPage: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 })
 
 const route = useRoute()

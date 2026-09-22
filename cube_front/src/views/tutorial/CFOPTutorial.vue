@@ -87,25 +87,25 @@
         </transition>
 
         <div class="step-nav">
-          <el-button 
-            @click="prevStep" 
-            :disabled="currentStep === 0" 
+          <el-button
+            @click="prevStep"
+            :disabled="currentStep === 0"
             icon="el-icon-arrow-left"
           >
             上一步
           </el-button>
-          <el-button 
+          <el-button
             v-if="currentStep < steps.length - 1"
-            @click="nextStep" 
-            type="primary" 
+            @click="nextStep"
+            type="primary"
             icon="el-icon-arrow-right"
           >
             下一步
           </el-button>
-          <el-button 
+          <el-button
             v-else
             @click="goBack"
-            type="success" 
+            type="success"
             icon="el-icon-check"
           >
             完成学习

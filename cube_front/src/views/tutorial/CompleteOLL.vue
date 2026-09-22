@@ -480,7 +480,7 @@ const goToCompletePLL = () => {
   .cases-container {
     grid-template-columns: 1fr;
   }
-  
+
   .bottom-nav {
     flex-direction: column;
     gap: 10px;

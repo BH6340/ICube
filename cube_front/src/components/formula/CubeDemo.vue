@@ -1,53 +1,49 @@
 <template>
   <div class="cube-demo-container">
     <div ref="canvasContainer" class="canvas-wrapper"></div>
-    
+
     <div class="demo-controls">
       <div class="steps-display">
         <span
-            v-for="(step, idx) in parsedSteps"
-            :key="idx"
-            class="step-tag"
-            :class="{
-            'active': idx === currentStepIdx - 1,
-            'pending': idx >= currentStepIdx
+          v-for="(step, idx) in parsedSteps"
+          :key="idx"
+          class="step-tag"
+          :class="{
+            active: idx === currentStepIdx - 1,
+            pending: idx >= currentStepIdx,
           }"
         >
           {{ step }}
         </span>
       </div>
-      
-      <div class="progress-info">
-        {{ currentStepIdx }} / {{ parsedSteps.length }}
-      </div>
-      
+
+      <div class="progress-info">{{ currentStepIdx }} / {{ parsedSteps.length }}</div>
+
       <div class="action-buttons">
         <el-button
-            :disabled="isAnimating || currentStepIdx === 0"
-            @click="stepBackward"
-            size="small"
+          :disabled="isAnimating || currentStepIdx === 0"
+          @click="stepBackward"
+          size="small"
         >
           上一步
         </el-button>
         <el-button
-            type="primary"
-            :disabled="isAnimating || currentStepIdx >= parsedSteps.length"
-            @click="stepForward"
-            size="small"
+          type="primary"
+          :disabled="isAnimating || currentStepIdx >= parsedSteps.length"
+          @click="stepForward"
+          size="small"
         >
           下一步
         </el-button>
         <el-button
-            :type="isAutoPlaying ? 'warning' : 'success'"
-            :disabled="parsedSteps.length === 0"
-            @click="toggleAutoPlay"
-            size="small"
+          :type="isAutoPlaying ? 'warning' : 'success'"
+          :disabled="parsedSteps.length === 0"
+          @click="toggleAutoPlay"
+          size="small"
         >
           {{ isAutoPlaying ? '暂停' : '播放' }}
         </el-button>
-        <el-button @click="resetToFormulaState" size="small">
-          重置
-        </el-button>
+        <el-button @click="resetToFormulaState" size="small"> 重置 </el-button>
       </div>
     </div>
   </div>
@@ -56,19 +52,19 @@
 <script setup>
 /**
  * CubeDemo.vue - 魔方 3D 动画演示组件
- * 
+ *
  * 核心职责：
  * 1. 使用 Three.js 渲染三阶魔方的 3D 模型
  * 2. 根据公式记号（notation）逐步骤播放魔方转动动画
  * 3. 支持手动单步播放（上一步/下一步）和自动播放
  * 4. 根据公式的 target_state 初始化魔方状态
  * 5. 支持鼠标拖拽旋转视角和滚轮缩放
- * 
+ *
  * 技术栈：
  * - Three.js：3D 渲染引擎
  * - OrbitControls：相机轨道控制
  * - Tween.js：动画缓动库
- * 
+ *
  * 设计要点：
  * - 将魔方拆分为 27 个小方块（3x3x3），每个方块独立渲染
  * - 使用世界坐标系旋转，而非局部坐标系，确保旋转正确性
@@ -77,31 +73,31 @@
  */
 
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
-import * as THREE from 'three'                                          // Three.js 3D 渲染引擎
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'  // 相机轨道控制
-import { Tween, Group, Easing } from '@tweenjs/tween.js'               // 动画缓动库
+import * as THREE from 'three' // Three.js 3D 渲染引擎
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js' // 相机轨道控制
+import { Tween, Group, Easing } from '@tweenjs/tween.js' // 动画缓动库
 
 // 组件属性定义
 const props = defineProps({
   formula: {
     type: Object,
     required: true,
-    description: '公式对象，包含 notation（公式记号）和 target_state（目标状态）'
-  }
+    description: '公式对象，包含 notation（公式记号）和 target_state（目标状态）',
+  },
 })
 
 // 响应式状态
-const canvasContainer = ref(null)    // 3D 画布容器引用
-const currentStepIdx = ref(0)        // 当前播放步骤索引（0 表示初始状态）
-const isAnimating = ref(false)       // 是否正在播放动画（防止重复触发）
-const isAutoPlaying = ref(false)     // 是否自动播放模式
-let autoPlayTimer = null             // 自动播放定时器
+const canvasContainer = ref(null) // 3D 画布容器引用
+const currentStepIdx = ref(0) // 当前播放步骤索引（0 表示初始状态）
+const isAnimating = ref(false) // 是否正在播放动画（防止重复触发）
+const isAutoPlaying = ref(false) // 是否自动播放模式
+let autoPlayTimer = null // 自动播放定时器
 
 /**
  * 解析公式记号为步骤数组
- * 
+ *
  * @returns {Array} - 步骤字符串数组
- * 
+ *
  * 逻辑：
  * 1. 将公式记号按空格分割
  * 2. 过滤空字符串
@@ -120,7 +116,7 @@ const COLOR_MAP = {
   orange: 0xe67400,
   red: 0xc40824,
   gray: 0x808080,
-  INTERNAL: 0x101010
+  INTERNAL: 0x101010,
 }
 
 let scene, camera, renderer, controls
@@ -215,7 +211,12 @@ const buildCubeGeometry = (stateDefinition = null) => {
   cubes = []
 
   const defaultColors = {
-    U: 'yellow', D: 'white', F: 'blue', B: 'green', L: 'orange', R: 'red'
+    U: 'yellow',
+    D: 'white',
+    F: 'blue',
+    B: 'green',
+    L: 'orange',
+    R: 'red',
   }
 
   const edgeMaterial = new THREE.LineBasicMaterial({ color: 0x000000 })
@@ -225,12 +226,18 @@ const buildCubeGeometry = (stateDefinition = null) => {
       for (let z = -1; z <= 1; z++) {
         const geometry = new THREE.BoxGeometry(0.984, 0.984, 0.984)
 
-        const rColor = x === 1 ? getFaceColor('R', x, y, z, stateDefinition, defaultColors) : 'INTERNAL'
-        const lColor = x === -1 ? getFaceColor('L', x, y, z, stateDefinition, defaultColors) : 'INTERNAL'
-        const uColor = y === 1 ? getFaceColor('U', x, y, z, stateDefinition, defaultColors) : 'INTERNAL'
-        const dColor = y === -1 ? getFaceColor('D', x, y, z, stateDefinition, defaultColors) : 'INTERNAL'
-        const fColor = z === 1 ? getFaceColor('F', x, y, z, stateDefinition, defaultColors) : 'INTERNAL'
-        const bColor = z === -1 ? getFaceColor('B', x, y, z, stateDefinition, defaultColors) : 'INTERNAL'
+        const rColor =
+          x === 1 ? getFaceColor('R', x, y, z, stateDefinition, defaultColors) : 'INTERNAL'
+        const lColor =
+          x === -1 ? getFaceColor('L', x, y, z, stateDefinition, defaultColors) : 'INTERNAL'
+        const uColor =
+          y === 1 ? getFaceColor('U', x, y, z, stateDefinition, defaultColors) : 'INTERNAL'
+        const dColor =
+          y === -1 ? getFaceColor('D', x, y, z, stateDefinition, defaultColors) : 'INTERNAL'
+        const fColor =
+          z === 1 ? getFaceColor('F', x, y, z, stateDefinition, defaultColors) : 'INTERNAL'
+        const bColor =
+          z === -1 ? getFaceColor('B', x, y, z, stateDefinition, defaultColors) : 'INTERNAL'
 
         const materials = [
           new THREE.MeshBasicMaterial({ color: COLOR_MAP[rColor] || COLOR_MAP.INTERNAL }),
@@ -238,7 +245,7 @@ const buildCubeGeometry = (stateDefinition = null) => {
           new THREE.MeshBasicMaterial({ color: COLOR_MAP[uColor] || COLOR_MAP.INTERNAL }),
           new THREE.MeshBasicMaterial({ color: COLOR_MAP[dColor] || COLOR_MAP.INTERNAL }),
           new THREE.MeshBasicMaterial({ color: COLOR_MAP[fColor] || COLOR_MAP.INTERNAL }),
-          new THREE.MeshBasicMaterial({ color: COLOR_MAP[bColor] || COLOR_MAP.INTERNAL })
+          new THREE.MeshBasicMaterial({ color: COLOR_MAP[bColor] || COLOR_MAP.INTERNAL }),
         ]
 
         const mesh = new THREE.Mesh(geometry, materials)
@@ -256,41 +263,132 @@ const buildCubeGeometry = (stateDefinition = null) => {
 }
 
 const parseNotationToAxis = (notation) => {
-  const base = notation.replace("'", "").replace("2", "")
+  const base = notation.replace("'", '').replace('2', '')
   let axis = 'x'
   let conditions = []
   let angle = -Math.PI / 2
   let isWholeCube = false
 
   switch (base) {
-    case 'R': axis = 'x'; conditions = [{ op: '>', value: 0.5 }]; angle = -Math.PI / 2; break
-    case 'L': axis = 'x'; conditions = [{ op: '<', value: -0.5 }]; angle = Math.PI / 2; break
-    case 'U': axis = 'y'; conditions = [{ op: '>', value: 0.5 }]; angle = -Math.PI / 2; break
-    case 'D': axis = 'y'; conditions = [{ op: '<', value: -0.5 }]; angle = Math.PI / 2; break
-    case 'F': axis = 'z'; conditions = [{ op: '>', value: 0.5 }]; angle = -Math.PI / 2; break
-    case 'B': axis = 'z'; conditions = [{ op: '<', value: -0.5 }]; angle = Math.PI / 2; break
-    case 'r': axis = 'x'; conditions = [{ op: '>', value: -0.5 }]; angle = -Math.PI / 2; break
-    case 'l': axis = 'x'; conditions = [{ op: '<', value: 0.5 }]; angle = Math.PI / 2; break
-    case 'u': axis = 'y'; conditions = [{ op: '>', value: -0.5 }]; angle = -Math.PI / 2; break
-    case 'd': axis = 'y'; conditions = [{ op: '<', value: 0.5 }]; angle = Math.PI / 2; break
-    case 'f': axis = 'z'; conditions = [{ op: '>', value: -0.5 }]; angle = -Math.PI / 2; break
-    case 'b': axis = 'z'; conditions = [{ op: '<', value: 0.5 }]; angle = Math.PI / 2; break
-    case 'M': axis = 'x'; conditions = [{ op: '==', value: 0 }]; angle = -Math.PI / 2; break
-    case 'E': axis = 'y'; conditions = [{ op: '==', value: 0 }]; angle = -Math.PI / 2; break
-    case 'S': axis = 'z'; conditions = [{ op: '==', value: 0 }]; angle = -Math.PI / 2; break
-    case 'x': axis = 'x'; conditions = []; angle = -Math.PI / 2; isWholeCube = true; break
-    case 'y': axis = 'y'; conditions = []; angle = -Math.PI / 2; isWholeCube = true; break
-    case 'z': axis = 'z'; conditions = []; angle = -Math.PI / 2; isWholeCube = true; break
-    case "x'": axis = 'x'; conditions = []; angle = Math.PI / 2; isWholeCube = true; break
-    case "y'": axis = 'y'; conditions = []; angle = Math.PI / 2; isWholeCube = true; break
-    case "z'": axis = 'z'; conditions = []; angle = Math.PI / 2; isWholeCube = true; break
-    default: return null
+    case 'R':
+      axis = 'x'
+      conditions = [{ op: '>', value: 0.5 }]
+      angle = -Math.PI / 2
+      break
+    case 'L':
+      axis = 'x'
+      conditions = [{ op: '<', value: -0.5 }]
+      angle = Math.PI / 2
+      break
+    case 'U':
+      axis = 'y'
+      conditions = [{ op: '>', value: 0.5 }]
+      angle = -Math.PI / 2
+      break
+    case 'D':
+      axis = 'y'
+      conditions = [{ op: '<', value: -0.5 }]
+      angle = Math.PI / 2
+      break
+    case 'F':
+      axis = 'z'
+      conditions = [{ op: '>', value: 0.5 }]
+      angle = -Math.PI / 2
+      break
+    case 'B':
+      axis = 'z'
+      conditions = [{ op: '<', value: -0.5 }]
+      angle = Math.PI / 2
+      break
+    case 'r':
+      axis = 'x'
+      conditions = [{ op: '>', value: -0.5 }]
+      angle = -Math.PI / 2
+      break
+    case 'l':
+      axis = 'x'
+      conditions = [{ op: '<', value: 0.5 }]
+      angle = Math.PI / 2
+      break
+    case 'u':
+      axis = 'y'
+      conditions = [{ op: '>', value: -0.5 }]
+      angle = -Math.PI / 2
+      break
+    case 'd':
+      axis = 'y'
+      conditions = [{ op: '<', value: 0.5 }]
+      angle = Math.PI / 2
+      break
+    case 'f':
+      axis = 'z'
+      conditions = [{ op: '>', value: -0.5 }]
+      angle = -Math.PI / 2
+      break
+    case 'b':
+      axis = 'z'
+      conditions = [{ op: '<', value: 0.5 }]
+      angle = Math.PI / 2
+      break
+    case 'M':
+      axis = 'x'
+      conditions = [{ op: '==', value: 0 }]
+      angle = -Math.PI / 2
+      break
+    case 'E':
+      axis = 'y'
+      conditions = [{ op: '==', value: 0 }]
+      angle = -Math.PI / 2
+      break
+    case 'S':
+      axis = 'z'
+      conditions = [{ op: '==', value: 0 }]
+      angle = -Math.PI / 2
+      break
+    case 'x':
+      axis = 'x'
+      conditions = []
+      angle = -Math.PI / 2
+      isWholeCube = true
+      break
+    case 'y':
+      axis = 'y'
+      conditions = []
+      angle = -Math.PI / 2
+      isWholeCube = true
+      break
+    case 'z':
+      axis = 'z'
+      conditions = []
+      angle = -Math.PI / 2
+      isWholeCube = true
+      break
+    case "x'":
+      axis = 'x'
+      conditions = []
+      angle = Math.PI / 2
+      isWholeCube = true
+      break
+    case "y'":
+      axis = 'y'
+      conditions = []
+      angle = Math.PI / 2
+      isWholeCube = true
+      break
+    case "z'":
+      axis = 'z'
+      conditions = []
+      angle = Math.PI / 2
+      isWholeCube = true
+      break
+    default:
+      return null
   }
 
   if (notation.includes("'") && !base.includes("'")) {
     angle = -angle
   }
-  if (notation.includes("2")) {
+  if (notation.includes('2')) {
     angle = angle * 2
   }
 
@@ -307,25 +405,31 @@ const executeLayerRotation = (stepStr, duration = 180) => {
     const { axis, conditions, angle, isWholeCube } = result
     const EPSILON = 0.05
 
-    const movingCubes = isWholeCube ? cubes : cubes.filter(mesh => {
-      const worldPos = new THREE.Vector3()
-      mesh.getWorldPosition(worldPos)
+    const movingCubes = isWholeCube
+      ? cubes
+      : cubes.filter((mesh) => {
+          const worldPos = new THREE.Vector3()
+          mesh.getWorldPosition(worldPos)
 
-      return conditions.every(cond => {
-        const pos = worldPos[axis]
-        switch (cond.op) {
-          case '>': return pos > (cond.value - EPSILON)
-          case '<': return pos < (cond.value + EPSILON)
-          case '==': return Math.abs(pos) < 0.5
-          default: return true
-        }
-      })
-    })
+          return conditions.every((cond) => {
+            const pos = worldPos[axis]
+            switch (cond.op) {
+              case '>':
+                return pos > cond.value - EPSILON
+              case '<':
+                return pos < cond.value + EPSILON
+              case '==':
+                return Math.abs(pos) < 0.5
+              default:
+                return true
+            }
+          })
+        })
 
     if (movingCubes.length === 0) return resolve()
 
     if (duration === 0) {
-      movingCubes.forEach(mesh => {
+      movingCubes.forEach((mesh) => {
         rotateMeshAroundWorldAxis(mesh, axis, angle)
       })
       return resolve()
@@ -336,21 +440,21 @@ const executeLayerRotation = (stepStr, duration = 180) => {
     let lastAngle = 0
 
     new Tween(animState, tweenGroup)
-        .to({ currentAngle: angle }, duration)
-        .easing(Easing.Quadratic.Out)
-        .onUpdate(() => {
-          const delta = animState.currentAngle - lastAngle
-          lastAngle = animState.currentAngle
+      .to({ currentAngle: angle }, duration)
+      .easing(Easing.Quadratic.Out)
+      .onUpdate(() => {
+        const delta = animState.currentAngle - lastAngle
+        lastAngle = animState.currentAngle
 
-          movingCubes.forEach(mesh => {
-            rotateMeshAroundWorldAxis(mesh, axis, delta)
-          })
+        movingCubes.forEach((mesh) => {
+          rotateMeshAroundWorldAxis(mesh, axis, delta)
         })
-        .onComplete(() => {
-          isAnimating.value = false
-          resolve()
-        })
-        .start()
+      })
+      .onComplete(() => {
+        isAnimating.value = false
+        resolve()
+      })
+      .start()
   })
 }
 
@@ -460,14 +564,18 @@ const stopAutoPlay = () => {
   }
 }
 
-watch(() => props.formula, () => {
-  nextTick(() => {
-    initThree()
-    setTimeout(() => {
-      resetToFormulaState()
-    }, 100)
-  })
-}, { immediate: true })
+watch(
+  () => props.formula,
+  () => {
+    nextTick(() => {
+      initThree()
+      setTimeout(() => {
+        resetToFormulaState()
+      }, 100)
+    })
+  },
+  { immediate: true }
+)
 
 onMounted(() => {
   initThree()

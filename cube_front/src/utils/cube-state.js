@@ -30,7 +30,7 @@ const FACE_COLORS = {
   F: 'green',
   D: 'yellow',
   L: 'orange',
-  B: 'blue'
+  B: 'blue',
 }
 
 /**
@@ -290,24 +290,66 @@ function moveB(state) {
 
 // 转动映射表
 const MOVE_MAP = {
-  'R': moveR,
-  "R'": (s) => { moveR(s); moveR(s); moveR(s) },
-  'R2': (s) => { moveR(s); moveR(s) },
-  'L': moveL,
-  "L'": (s) => { moveL(s); moveL(s); moveL(s) },
-  'L2': (s) => { moveL(s); moveL(s) },
-  'U': moveU,
-  "U'": (s) => { moveU(s); moveU(s); moveU(s) },
-  'U2': (s) => { moveU(s); moveU(s) },
-  'D': moveD,
-  "D'": (s) => { moveD(s); moveD(s); moveD(s) },
-  'D2': (s) => { moveD(s); moveD(s) },
-  'F': moveF,
-  "F'": (s) => { moveF(s); moveF(s); moveF(s) },
-  'F2': (s) => { moveF(s); moveF(s) },
-  'B': moveB,
-  "B'": (s) => { moveB(s); moveB(s); moveB(s) },
-  'B2': (s) => { moveB(s); moveB(s) },
+  R: moveR,
+  "R'": (s) => {
+    moveR(s)
+    moveR(s)
+    moveR(s)
+  },
+  R2: (s) => {
+    moveR(s)
+    moveR(s)
+  },
+  L: moveL,
+  "L'": (s) => {
+    moveL(s)
+    moveL(s)
+    moveL(s)
+  },
+  L2: (s) => {
+    moveL(s)
+    moveL(s)
+  },
+  U: moveU,
+  "U'": (s) => {
+    moveU(s)
+    moveU(s)
+    moveU(s)
+  },
+  U2: (s) => {
+    moveU(s)
+    moveU(s)
+  },
+  D: moveD,
+  "D'": (s) => {
+    moveD(s)
+    moveD(s)
+    moveD(s)
+  },
+  D2: (s) => {
+    moveD(s)
+    moveD(s)
+  },
+  F: moveF,
+  "F'": (s) => {
+    moveF(s)
+    moveF(s)
+    moveF(s)
+  },
+  F2: (s) => {
+    moveF(s)
+    moveF(s)
+  },
+  B: moveB,
+  "B'": (s) => {
+    moveB(s)
+    moveB(s)
+    moveB(s)
+  },
+  B2: (s) => {
+    moveB(s)
+    moveB(s)
+  },
 }
 
 /**
@@ -317,7 +359,7 @@ const MOVE_MAP = {
  * @returns {string[][]} 应用后的状态
  */
 function applyScramble(moves, initialState) {
-  const state = initialState ? state.map(face => [...face]) : createSolvedState()
+  const state = initialState ? state.map((face) => [...face]) : createSolvedState()
   for (const move of moves) {
     const fn = MOVE_MAP[move]
     if (fn) fn(state)
@@ -331,7 +373,7 @@ function applyScramble(moves, initialState) {
  * @returns {string}
  */
 function stateToString(state) {
-  return state.map(face => face.join('')).join('')
+  return state.map((face) => face.join('')).join('')
 }
 
 /**
@@ -345,11 +387,4 @@ function getFace(state, faceName) {
   return idx >= 0 ? state[idx] : null
 }
 
-export {
-  FACES,
-  FACE_COLORS,
-  createSolvedState,
-  applyScramble,
-  stateToString,
-  getFace,
-}
+export { FACES, FACE_COLORS, createSolvedState, applyScramble, stateToString, getFace }

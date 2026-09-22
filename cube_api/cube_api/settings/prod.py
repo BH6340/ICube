@@ -48,14 +48,8 @@ USE_X_FORWARDED_HOST = True
 # ==================== CORS 配置 ====================
 
 # ALLOWED_ORIGIN 使用逗号分隔的主机名（不含协议），与 ALLOWED_HOSTS 格式一致
-_allowed_origins = [
-    host.strip() for host in os.getenv('ALLOWED_ORIGIN', '').split(',') if host.strip()
-]
-CORS_ALLOWED_ORIGINS = [
-    f"{scheme}://{host}"
-    for host in _allowed_origins
-    for scheme in ['http', 'https']
-] + [
+_allowed_origins = [host.strip() for host in os.getenv("ALLOWED_ORIGIN", "").split(",") if host.strip()]
+CORS_ALLOWED_ORIGINS = [f"{scheme}://{host}" for host in _allowed_origins for scheme in ["http", "https"]] + [
     "http://localhost",
     "https://localhost",
 ]
@@ -74,18 +68,18 @@ CORS_ALLOW_CREDENTIALS = True
 _https_port = os.getenv("HTTPS_PORT", "").strip()
 _csrf_base = [f"{scheme}://{host}" for host in _allowed_origins for scheme in ["https", "http"]]
 _csrf_with_port = (
-    [
-        f"{scheme}://{host}:{_https_port}"
-        for host in _allowed_origins
-        for scheme in ["https", "http"]
-    ]
+    [f"{scheme}://{host}:{_https_port}" for host in _allowed_origins for scheme in ["https", "http"]]
     if _https_port
     else []
 )
-CSRF_TRUSTED_ORIGINS = _csrf_base + _csrf_with_port + [
-    "http://localhost",
-    "https://localhost",
-]
+CSRF_TRUSTED_ORIGINS = (
+    _csrf_base
+    + _csrf_with_port
+    + [
+        "http://localhost",
+        "https://localhost",
+    ]
+)
 
 # ==================== 数据库配置 ====================
 

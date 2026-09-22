@@ -27,17 +27,18 @@ export const getPosts = (params) => {
   return request({
     url: '/api/forum/posts/',
     method: 'get',
-    params
+    params,
   })
 }
 
 /**
  * 获取指定用户发布的公开帖子
  */
-export const getUserPosts = (username, params = {}) => getPosts({
-  ...params,
-  author_username: username
-})
+export const getUserPosts = (username, params = {}) =>
+  getPosts({
+    ...params,
+    author_username: username,
+  })
 
 /**
  * 获取帖子详情
@@ -48,7 +49,7 @@ export const getUserPosts = (username, params = {}) => getPosts({
 export const getPost = (id) => {
   return request({
     url: `/api/forum/posts/${id}/`,
-    method: 'get'
+    method: 'get',
   })
 }
 
@@ -70,8 +71,8 @@ export const createPost = (data) => {
     method: 'post',
     data,
     headers: {
-      'Content-Type': 'multipart/form-data'
-    }
+      'Content-Type': 'multipart/form-data',
+    },
   })
 }
 
@@ -89,7 +90,7 @@ export const updatePost = (id, data) => {
   return request({
     url: `/api/forum/posts/${id}/`,
     method: 'put',
-    data
+    data,
   })
 }
 
@@ -102,7 +103,7 @@ export const updatePost = (id, data) => {
 export const deletePost = (id) => {
   return request({
     url: `/api/forum/posts/${id}/`,
-    method: 'delete'
+    method: 'delete',
   })
 }
 
@@ -116,7 +117,7 @@ export const likePost = (id) => {
   return request({
     url: `/api/forum/posts/${id}/like/`,
     method: 'post',
-    data: {}
+    data: {},
   })
 }
 
@@ -130,7 +131,7 @@ export const collectPost = (id) => {
   return request({
     url: `/api/forum/posts/${id}/collect/`,
     method: 'post',
-    data: {}
+    data: {},
   })
 }
 
@@ -146,7 +147,7 @@ export const getMyPosts = (params) => {
   return request({
     url: '/api/forum/posts/my_posts/',
     method: 'get',
-    params
+    params,
   })
 }
 
@@ -162,7 +163,7 @@ export const getCollectedPosts = (params) => {
   return request({
     url: '/api/forum/posts/collected/',
     method: 'get',
-    params
+    params,
   })
 }
 
@@ -180,8 +181,8 @@ export const uploadImage = (file) => {
     method: 'post',
     data: formData,
     headers: {
-      'Content-Type': 'multipart/form-data'
-    }
+      'Content-Type': 'multipart/form-data',
+    },
   })
 }
 
@@ -202,6 +203,6 @@ export const getFormulasForPost = (params) => {
   return request({
     url: '/api/formula/formulas/simple_list/',
     method: 'get',
-    params
+    params,
   })
 }

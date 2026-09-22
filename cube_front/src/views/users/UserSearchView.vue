@@ -24,11 +24,7 @@
       </el-input>
     </el-card>
 
-    <section
-      v-loading="loading"
-      class="results-section"
-      aria-live="polite"
-    >
+    <section v-loading="loading" class="results-section" aria-live="polite">
       <div v-if="errorMessage && !loading" class="state-card error-state">
         <h2>搜索没有完成</h2>
         <p>{{ errorMessage }}</p>
@@ -76,11 +72,7 @@
 import { reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import {
-  followUserApi,
-  searchUsersApi,
-  unfollowUserApi
-} from '@/api/user'
+import { followUserApi, searchUsersApi, unfollowUserApi } from '@/api/user'
 import UserCard from '@/components/user/UserCard.vue'
 import { useUserStore } from '@/stores/user'
 
@@ -110,7 +102,7 @@ const loadUsers = async () => {
     const response = await searchUsersApi({
       search: keyword.value,
       page: currentPage.value,
-      page_size: pageSize
+      page_size: pageSize,
     })
     if (version !== requestVersion) return
 
@@ -128,9 +120,7 @@ const loadUsers = async () => {
 
 const submitSearch = () => {
   const query = searchInput.value.trim()
-  const routeQuery = Array.isArray(route.query.q)
-    ? route.query.q[0]
-    : route.query.q
+  const routeQuery = Array.isArray(route.query.q) ? route.query.q[0] : route.query.q
 
   if (query === (routeQuery || '').trim()) {
     currentPage.value = 1
@@ -140,7 +130,7 @@ const submitSearch = () => {
 
   router.push({
     name: 'userSearch',
-    query: query ? { q: query } : {}
+    query: query ? { q: query } : {},
   })
 }
 
@@ -151,7 +141,7 @@ const changePage = () => {
 const viewProfile = (username) => {
   router.push({
     name: 'userProfile',
-    params: { username }
+    params: { username },
   })
 }
 
@@ -159,7 +149,7 @@ const toggleFollow = async (user) => {
   if (!userStore.token) {
     router.push({
       name: 'login',
-      query: { redirect: route.fullPath }
+      query: { redirect: route.fullPath },
     })
     return
   }

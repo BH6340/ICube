@@ -2,8 +2,15 @@
   <div class="formula-library">
     <!-- 移动端：顶部搜索筛选栏 -->
     <div class="mobile-search-bar">
-      <el-input v-model="searchKeyword" placeholder="搜索公式" prefix-icon="Search" clearable
-        @keyup.enter="handleSearch" @clear="handleSearch" @input="handleSearch" />
+      <el-input
+        v-model="searchKeyword"
+        placeholder="搜索公式"
+        prefix-icon="Search"
+        clearable
+        @keyup.enter="handleSearch"
+        @clear="handleSearch"
+        @input="handleSearch"
+      />
       <el-button type="primary" plain @click="mobileFilterVisible = true" icon="Filter">
         筛选
       </el-button>
@@ -16,8 +23,14 @@
             <template #header>
               <span>公式分类</span>
             </template>
-            <el-tree :data="categoryTree" :props="{ label: 'name', children: 'children' }" :expand-on-click-node="false"
-              :highlight-current="true" @node-click="handleCategoryClick" default-expand-all />
+            <el-tree
+              :data="categoryTree"
+              :props="{ label: 'name', children: 'children' }"
+              :expand-on-click-node="false"
+              :highlight-current="true"
+              @node-click="handleCategoryClick"
+              default-expand-all
+            />
           </el-card>
 
           <el-card shadow="never" class="filter-card">
@@ -35,8 +48,15 @@
             <template #header>
               <span>搜索公式</span>
             </template>
-            <el-input v-model="searchKeyword" placeholder="输入公式名称或记号" prefix-icon="Search" clearable
-              @keyup.enter="handleSearch" @clear="handleSearch" @input="handleSearch" />
+            <el-input
+              v-model="searchKeyword"
+              placeholder="输入公式名称或记号"
+              prefix-icon="Search"
+              clearable
+              @keyup.enter="handleSearch"
+              @clear="handleSearch"
+              @input="handleSearch"
+            />
           </el-card>
         </div>
       </el-col>
@@ -56,15 +76,19 @@
             </div>
             <div class="toolbar-right">
               <el-button
-                  v-if="activeTab === 'my_formulas'"
-                  type="primary"
-                  size="small"
-                  @click="handleAddFormula"
-                  icon="Plus"
+                v-if="activeTab === 'my_formulas'"
+                type="primary"
+                size="small"
+                @click="handleAddFormula"
+                icon="Plus"
               >
                 添加新公式
               </el-button>
-              <el-select v-model="sortBy" @change="handleSortChange" style="width: 120px; margin-left: 10px">
+              <el-select
+                v-model="sortBy"
+                @change="handleSortChange"
+                style="width: 120px; margin-left: 10px"
+              >
                 <el-option label="默认排序" value="default" />
                 <el-option label="难度升序" value="difficulty_asc" />
                 <el-option label="难度降序" value="difficulty_desc" />
@@ -73,8 +97,13 @@
           </div>
 
           <div class="formula-grid">
-            <el-card v-for="formula in formulaList" :key="formula.id" class="formula-card"
-              @click="handleFormulaClick(formula)" hover>
+            <el-card
+              v-for="formula in formulaList"
+              :key="formula.id"
+              class="formula-card"
+              @click="handleFormulaClick(formula)"
+              hover
+            >
               <div class="formula-header">
                 <span class="formula-name">{{ formula.name }}</span>
                 <el-tag :type="difficultyTagType(formula.difficulty)" size="small" effect="plain">
@@ -94,36 +123,38 @@
                 <div class="footer-left">
                   <span class="view-count">浏览：{{ formula.view_count || 0 }}次</span>
                   <span class="category-tag">公式分类：{{ formula.category?.name }}</span>
-                  <span v-if="formula.author" class="author-name">作者：{{ formula.author.username }}</span>
+                  <span v-if="formula.author" class="author-name"
+                    >作者：{{ formula.author.username }}</span
+                  >
                 </div>
                 <div class="footer-right">
                   <el-button
-                      v-if="activeTab === 'my_formulas'"
-                      type="primary"
-                      link
-                      size="small"
-                      @click.stop="handleEditFormula(formula)"
-                      icon="Edit"
+                    v-if="activeTab === 'my_formulas'"
+                    type="primary"
+                    link
+                    size="small"
+                    @click.stop="handleEditFormula(formula)"
+                    icon="Edit"
                   >
                     编辑
                   </el-button>
                   <el-button
-                      v-if="activeTab === 'my_formulas'"
-                      type="danger"
-                      link
-                      size="small"
-                      @click.stop="handleDeleteFormula(formula)"
-                      icon="Delete"
+                    v-if="activeTab === 'my_formulas'"
+                    type="danger"
+                    link
+                    size="small"
+                    @click.stop="handleDeleteFormula(formula)"
+                    icon="Delete"
                   >
                     删除
                   </el-button>
                   <el-button
-                      v-if="activeTab === 'collections'"
-                      type="primary"
-                      link
-                      size="small"
-                      @click.stop="removeCollectionItem(formula)"
-                      class="collected"
+                    v-if="activeTab === 'collections'"
+                    type="primary"
+                    link
+                    size="small"
+                    @click.stop="removeCollectionItem(formula)"
+                    class="collected"
                   >
                     <el-icon><Star /></el-icon>
                     取消收藏
@@ -134,8 +165,13 @@
           </div>
 
           <div v-if="total > pageSize" class="pagination-wrapper">
-            <el-pagination v-model:current-page="currentPage" :page-size="pageSize" :total="total"
-              layout="total, prev, pager, next" @current-change="handlePageChange" />
+            <el-pagination
+              v-model:current-page="currentPage"
+              :page-size="pageSize"
+              :total="total"
+              layout="total, prev, pager, next"
+              @current-change="handlePageChange"
+            />
           </div>
 
           <div v-if="total === 0" class="empty-state">
@@ -160,8 +196,14 @@
           <template #header>
             <span>公式分类</span>
           </template>
-          <el-tree :data="categoryTree" :props="{ label: 'name', children: 'children' }" :expand-on-click-node="false"
-            :highlight-current="true" @node-click="handleMobileCategoryClick" default-expand-all />
+          <el-tree
+            :data="categoryTree"
+            :props="{ label: 'name', children: 'children' }"
+            :expand-on-click-node="false"
+            :highlight-current="true"
+            @node-click="handleMobileCategoryClick"
+            default-expand-all
+          />
         </el-card>
 
         <el-card shadow="never" class="filter-card">
@@ -182,7 +224,13 @@
       </div>
     </el-drawer>
 
-    <el-dialog v-model="showDetailDialog" :title="selectedFormula?.name" :width="isMobile ? '95%' : '900px'" append-to-body class="formula-detail-dialog">
+    <el-dialog
+      v-model="showDetailDialog"
+      :title="selectedFormula?.name"
+      :width="isMobile ? '95%' : '900px'"
+      append-to-body
+      class="formula-detail-dialog"
+    >
       <div v-if="selectedFormula" class="formula-detail">
         <el-row :gutter="20">
           <el-col :xs="24" :sm="8">
@@ -227,8 +275,8 @@
       </template>
     </el-dialog>
 
-    <FormulaEditor 
-      :visible="showEditor" 
+    <FormulaEditor
+      :visible="showEditor"
       :edit-formula="editFormula"
       @close="handleEditorClose"
       @success="handleFormulaSuccess"
@@ -259,51 +307,61 @@
  *   - 列表数据兼容分页格式（res.data.results）和数组格式
  */
 
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
-import { useRouter } from 'vue-router';
-import { ElMessage, ElMessageBox } from 'element-plus';
-import { Picture, Star, Filter } from '@element-plus/icons-vue';
-import { getFormulaCategories, getMyCollections, removeCollection, getMyCustomFormulas, deleteFormula } from '../../api/formula';
-import CubeDemo from '../../components/formula/CubeDemo.vue';
-import FormulaEditor from '../../components/formula/FormulaEditor.vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Picture, Star, Filter } from '@element-plus/icons-vue'
+import {
+  getFormulaCategories,
+  getMyCollections,
+  removeCollection,
+  getMyCustomFormulas,
+  deleteFormula,
+} from '../../api/formula'
+import CubeDemo from '../../components/formula/CubeDemo.vue'
+import FormulaEditor from '../../components/formula/FormulaEditor.vue'
 
 /** 是否为移动端 */
-const isMobile = ref(false);
-const checkMobile = () => { isMobile.value = window.innerWidth < 768; };
-const handleResize = () => { checkMobile(); };
+const isMobile = ref(false)
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 768
+}
+const handleResize = () => {
+  checkMobile()
+}
 
 /** 分类列表（原始数据） */
-const categoryList = ref([]);
+const categoryList = ref([])
 /** 分类树（树形结构，用于 UI 展示） */
-const categoryTree = ref([]);
+const categoryTree = ref([])
 /** 公式列表数据 */
-const formulaList = ref([]);
+const formulaList = ref([])
 /** 总数 */
-const total = ref(0);
+const total = ref(0)
 /** 当前页码 */
-const currentPage = ref(1);
+const currentPage = ref(1)
 /** 每页数量 */
-const pageSize = ref(12);
+const pageSize = ref(12)
 /** 选中的分类 ID */
-const selectedCategory = ref(null);
+const selectedCategory = ref(null)
 /** 选中的难度列表 */
-const selectedDifficulties = ref([]);
+const selectedDifficulties = ref([])
 /** 搜索关键词 */
-const searchKeyword = ref('');
+const searchKeyword = ref('')
 /** 排序方式 */
-const sortBy = ref('default');
+const sortBy = ref('default')
 /** 详情弹窗显示状态 */
-const showDetailDialog = ref(false);
+const showDetailDialog = ref(false)
 /** 选中的公式对象 */
-const selectedFormula = ref(null);
+const selectedFormula = ref(null)
 /** 当前激活的 Tab：collections / my_formulas */
-const activeTab = ref('collections');
+const activeTab = ref('collections')
 /** 编辑器显示状态 */
-const showEditor = ref(false);
+const showEditor = ref(false)
 /** 正在编辑的公式 */
-const editFormula = ref(null);
+const editFormula = ref(null)
 /** 路由实例 */
-const router = useRouter();
+const router = useRouter()
 
 /**
  * 难度等级标签文本
@@ -312,10 +370,10 @@ const router = useRouter();
  * @returns {string} 标签文本
  */
 const difficultyLabel = (level) => {
-  if (level === 1) return '基础';
-  if (level === 2) return '进阶';
-  return '困难';
-};
+  if (level === 1) return '基础'
+  if (level === 2) return '进阶'
+  return '困难'
+}
 
 /**
  * 难度等级标签颜色
@@ -324,10 +382,10 @@ const difficultyLabel = (level) => {
  * @returns {string} Element Plus tag 类型
  */
 const difficultyTagType = (level) => {
-  if (level === 1) return 'success';
-  if (level === 2) return 'warning';
-  return 'danger';
-};
+  if (level === 1) return 'success'
+  if (level === 2) return 'warning'
+  return 'danger'
+}
 
 /**
  * 构建分类树形结构
@@ -339,23 +397,23 @@ const difficultyTagType = (level) => {
  * @returns {Array} 树形结构
  */
 const buildCategoryTree = (categories) => {
-  const methods = {};
-  categories.forEach(cat => {
+  const methods = {}
+  categories.forEach((cat) => {
     if (!methods[cat.method]) {
       methods[cat.method] = {
         id: `method_${cat.method}`,
         name: `${cat.order}阶 - ${cat.method}法`,
-        children: []
-      };
+        children: [],
+      }
     }
     methods[cat.method].children.push({
       id: cat.id,
       name: cat.phase,
-      raw: cat
-    });
-  });
-  return Object.values(methods);
-};
+      raw: cat,
+    })
+  })
+  return Object.values(methods)
+}
 
 /**
  * 分类点击处理
@@ -364,17 +422,17 @@ const buildCategoryTree = (categories) => {
  */
 const handleCategoryClick = (data) => {
   if (data.raw) {
-    selectedCategory.value = data.raw.id;
+    selectedCategory.value = data.raw.id
   } else {
-    selectedCategory.value = null;
+    selectedCategory.value = null
   }
-  currentPage.value = 1;
+  currentPage.value = 1
   if (activeTab.value === 'collections') {
-    loadCollections();
+    loadCollections()
   } else {
-    loadMyFormulas();
+    loadMyFormulas()
   }
-};
+}
 
 /**
  * 公式点击查看详情
@@ -382,9 +440,9 @@ const handleCategoryClick = (data) => {
  * @param {Object} formula - 公式对象
  */
 const handleFormulaClick = (formula) => {
-  selectedFormula.value = formula;
-  showDetailDialog.value = true;
-};
+  selectedFormula.value = formula
+  showDetailDialog.value = true
+}
 
 /**
  * 取消收藏
@@ -393,14 +451,14 @@ const handleFormulaClick = (formula) => {
  */
 const removeCollectionItem = async (formula) => {
   try {
-    await removeCollection(formula.id);
-    formulaList.value = formulaList.value.filter(f => f.id !== formula.id);
-    total.value--;
-    ElMessage.success('取消收藏成功');
+    await removeCollection(formula.id)
+    formulaList.value = formulaList.value.filter((f) => f.id !== formula.id)
+    total.value--
+    ElMessage.success('取消收藏成功')
   } catch (error) {
-    ElMessage.error('取消收藏失败');
+    ElMessage.error('取消收藏失败')
   }
-};
+}
 
 /**
  * 判断是否为公式作者
@@ -409,15 +467,15 @@ const removeCollectionItem = async (formula) => {
  * @returns {boolean} 当前用户是否为作者
  */
 const isFormulaAuthor = (formula) => {
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
-  return user && formula.author && formula.author.id === user.id;
-};
+  const user = JSON.parse(localStorage.getItem('user') || 'null')
+  return user && formula.author && formula.author.id === user.id
+}
 
 /** 打开编辑器编辑公式 */
 const handleEditFormula = (formula) => {
-  editFormula.value = formula;
-  showEditor.value = true;
-};
+  editFormula.value = formula
+  showEditor.value = true
+}
 
 /**
  * 删除自定义公式
@@ -432,66 +490,66 @@ const handleDeleteFormula = async (formula) => {
       `确定要删除公式「${formula.name}」吗？删除后不可恢复。`,
       '删除确认',
       { confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning' }
-    );
-    await deleteFormula(formula.id);
-    ElMessage.success('公式已删除');
-    loadMyFormulas();
+    )
+    await deleteFormula(formula.id)
+    ElMessage.success('公式已删除')
+    loadMyFormulas()
   } catch (err) {
     if (err !== 'cancel') {
-      ElMessage.error('删除失败');
+      ElMessage.error('删除失败')
     }
   }
-};
+}
 
 /** 打开编辑器添加新公式 */
 const handleAddFormula = () => {
-  editFormula.value = null;
-  showEditor.value = true;
-};
+  editFormula.value = null
+  showEditor.value = true
+}
 
 /** 空状态描述文本 */
 const emptyDescription = computed(() => {
-  return activeTab.value === 'collections' ? '暂无收藏的公式' : '暂无创建的公式';
-});
+  return activeTab.value === 'collections' ? '暂无收藏的公式' : '暂无创建的公式'
+})
 
 /** 空状态按钮文字 */
 const emptyButtonText = computed(() => {
-  return activeTab.value === 'collections' ? '去收藏公式' : '去创建公式';
-});
+  return activeTab.value === 'collections' ? '去收藏公式' : '去创建公式'
+})
 
 /** 空状态按钮点击处理 */
 const handleEmptyAction = () => {
   if (activeTab.value === 'collections') {
-    router.push('/formulas');
+    router.push('/formulas')
   } else {
-    handleAddFormula();
+    handleAddFormula()
   }
-};
+}
 
 /** Tab 切换处理 */
 const handleTabChange = () => {
-  currentPage.value = 1;
+  currentPage.value = 1
   if (activeTab.value === 'collections') {
-    loadCollections();
+    loadCollections()
   } else {
-    loadMyFormulas();
+    loadMyFormulas()
   }
-};
+}
 
 /**
  * 加载分类列表
  */
 const loadCategories = async () => {
   try {
-    const res = await getFormulaCategories();
+    const res = await getFormulaCategories()
     if (res.code === 100) {
-      categoryList.value = res.data;
-      categoryTree.value = buildCategoryTree(res.data);
+      categoryList.value = res.data
+      categoryTree.value = buildCategoryTree(res.data)
     }
   } catch (error) {
-    ElMessage.error('加载分类失败');
+    ElMessage.error('加载分类失败')
   }
-};
+}
 
 /**
  * 加载收藏公式列表
@@ -501,38 +559,38 @@ const loadCategories = async () => {
 const loadCollections = async () => {
   const params = {
     page: currentPage.value,
-    page_size: pageSize.value
-  };
+    page_size: pageSize.value,
+  }
   if (selectedCategory.value) {
-    params.category = selectedCategory.value;
+    params.category = selectedCategory.value
   }
   if (selectedDifficulties.value.length > 0) {
-    const difficultyMap = { '基础': [1], '进阶': [2], '困难': [3] };
-    const difficultyValues = selectedDifficulties.value.flatMap(d => difficultyMap[d] || []);
-    params.difficulty = difficultyValues.join(',');
+    const difficultyMap = { 基础: [1], 进阶: [2], 困难: [3] }
+    const difficultyValues = selectedDifficulties.value.flatMap((d) => difficultyMap[d] || [])
+    params.difficulty = difficultyValues.join(',')
   }
   if (searchKeyword.value.trim()) {
-    params.search = searchKeyword.value.trim();
+    params.search = searchKeyword.value.trim()
   }
   if (sortBy.value !== 'default') {
-    params.ordering = sortBy.value === 'difficulty_asc' ? 'difficulty' : '-difficulty';
+    params.ordering = sortBy.value === 'difficulty_asc' ? 'difficulty' : '-difficulty'
   }
 
   try {
-    const res = await getMyCollections(params);
+    const res = await getMyCollections(params)
     if (res.code === 100) {
       if (res.data.results) {
-        formulaList.value = res.data.results;
-        total.value = res.data.count;
+        formulaList.value = res.data.results
+        total.value = res.data.count
       } else {
-        formulaList.value = res.data;
-        total.value = res.data.length;
+        formulaList.value = res.data
+        total.value = res.data.length
       }
     }
   } catch (error) {
-    ElMessage.error('加载收藏列表失败');
+    ElMessage.error('加载收藏列表失败')
   }
-};
+}
 
 /**
  * 加载自创公式列表
@@ -542,78 +600,78 @@ const loadCollections = async () => {
 const loadMyFormulas = async () => {
   const params = {
     page: currentPage.value,
-    page_size: pageSize.value
-  };
+    page_size: pageSize.value,
+  }
   if (selectedCategory.value) {
-    params.category = selectedCategory.value;
+    params.category = selectedCategory.value
   }
   if (selectedDifficulties.value.length > 0) {
-    const difficultyMap = { '基础': [1], '进阶': [2], '困难': [3] };
-    const difficultyValues = selectedDifficulties.value.flatMap(d => difficultyMap[d] || []);
-    params.difficulty = difficultyValues.join(',');
+    const difficultyMap = { 基础: [1], 进阶: [2], 困难: [3] }
+    const difficultyValues = selectedDifficulties.value.flatMap((d) => difficultyMap[d] || [])
+    params.difficulty = difficultyValues.join(',')
   }
   if (searchKeyword.value.trim()) {
-    params.search = searchKeyword.value.trim();
+    params.search = searchKeyword.value.trim()
   }
   if (sortBy.value !== 'default') {
-    params.ordering = sortBy.value === 'difficulty_asc' ? 'difficulty' : '-difficulty';
+    params.ordering = sortBy.value === 'difficulty_asc' ? 'difficulty' : '-difficulty'
   }
 
   try {
-    const res = await getMyCustomFormulas(params);
+    const res = await getMyCustomFormulas(params)
     if (res.code === 100) {
       if (res.data.results) {
-        formulaList.value = res.data.results;
-        total.value = res.data.count;
+        formulaList.value = res.data.results
+        total.value = res.data.count
       } else {
-        formulaList.value = res.data;
-        total.value = res.data.length;
+        formulaList.value = res.data
+        total.value = res.data.length
       }
     }
   } catch (error) {
-    ElMessage.error('加载我的公式失败');
+    ElMessage.error('加载我的公式失败')
   }
-};
+}
 
 /** 筛选变更处理 */
 const handleFilterChange = () => {
-  currentPage.value = 1;
+  currentPage.value = 1
   if (activeTab.value === 'collections') {
-    loadCollections();
+    loadCollections()
   } else {
-    loadMyFormulas();
+    loadMyFormulas()
   }
-};
+}
 
 /** 搜索处理 */
 const handleSearch = () => {
-  currentPage.value = 1;
+  currentPage.value = 1
   if (activeTab.value === 'collections') {
-    loadCollections();
+    loadCollections()
   } else {
-    loadMyFormulas();
+    loadMyFormulas()
   }
-};
+}
 
 /** 排序变更处理 */
 const handleSortChange = () => {
-  currentPage.value = 1;
+  currentPage.value = 1
   if (activeTab.value === 'collections') {
-    loadCollections();
+    loadCollections()
   } else {
-    loadMyFormulas();
+    loadMyFormulas()
   }
-};
+}
 
 /** 分页变更处理 */
 const handlePageChange = (page) => {
-  currentPage.value = page;
+  currentPage.value = page
   if (activeTab.value === 'collections') {
-    loadCollections();
+    loadCollections()
   } else {
-    loadMyFormulas();
+    loadMyFormulas()
   }
-};
+}
 
 /**
  * 公式提交成功回调
@@ -621,23 +679,23 @@ const handlePageChange = (page) => {
  * 显示成功提示并刷新当前列表。
  */
 const handleFormulaSuccess = () => {
-  ElMessage.success('公式提交成功');
-  currentPage.value = 1;
+  ElMessage.success('公式提交成功')
+  currentPage.value = 1
   if (activeTab.value === 'my_formulas') {
-    loadMyFormulas();
+    loadMyFormulas()
   } else {
-    loadCollections();
+    loadCollections()
   }
-};
+}
 
 /** 编辑器关闭回调 */
 const handleEditorClose = () => {
-  showEditor.value = false;
-  editFormula.value = null;
-};
+  showEditor.value = false
+  editFormula.value = null
+}
 
 /** 移动端筛选抽屉可见性 */
-const mobileFilterVisible = ref(false);
+const mobileFilterVisible = ref(false)
 
 /**
  * 移动端分类点击处理
@@ -646,40 +704,40 @@ const mobileFilterVisible = ref(false);
  */
 const handleMobileCategoryClick = (data) => {
   if (data.raw) {
-    selectedCategory.value = data.raw.id;
+    selectedCategory.value = data.raw.id
   } else {
-    selectedCategory.value = null;
+    selectedCategory.value = null
   }
-  currentPage.value = 1;
+  currentPage.value = 1
   if (activeTab.value === 'collections') {
-    loadCollections();
+    loadCollections()
   } else {
-    loadMyFormulas();
+    loadMyFormulas()
   }
-};
+}
 
 /** 重置移动端筛选条件 */
 const resetMobileFilters = () => {
-  selectedCategory.value = null;
-  selectedDifficulties.value = [];
-  currentPage.value = 1;
+  selectedCategory.value = null
+  selectedDifficulties.value = []
+  currentPage.value = 1
   if (activeTab.value === 'collections') {
-    loadCollections();
+    loadCollections()
   } else {
-    loadMyFormulas();
+    loadMyFormulas()
   }
-};
+}
 
 onMounted(() => {
-  checkMobile();
-  window.addEventListener('resize', handleResize);
-  loadCategories();
-  loadCollections();
-});
+  checkMobile()
+  window.addEventListener('resize', handleResize)
+  loadCategories()
+  loadCollections()
+})
 
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', handleResize);
-});
+  window.removeEventListener('resize', handleResize)
+})
 </script>
 
 <style scoped>
@@ -1054,7 +1112,9 @@ onBeforeUnmount(() => {
     padding: 4px 6px;
   }
 
-  .view-count, .category-tag, .author-name {
+  .view-count,
+  .category-tag,
+  .author-name {
     font-size: 11px;
   }
 

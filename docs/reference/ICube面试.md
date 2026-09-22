@@ -95,7 +95,7 @@ from unfold.decorators import display, action
 @admin.register(User)
 class UserAdmin(ModelAdmin):
     list_display = ('avatar_preview', 'email', 'status_badge')
-    
+
     @display(description="状态", boolean=False)
     def status_badge(self, obj):
         if obj.is_active:
@@ -1377,16 +1377,16 @@ from django.db.models.fields.files import FieldFile
 def build_image_url(relative_path, absolute=False):
     if not relative_path:
         return ''
-    
+
     if isinstance(relative_path, FieldFile):
         relative_path = relative_path.name
-    
+
     if not relative_path.startswith('/media/'):
         relative_path = '/media' + relative_path
-    
+
     if absolute:
         return settings.SITE_DOMAIN.rstrip('/') + relative_path
-    
+
     return relative_path
 ```
 
@@ -1511,23 +1511,23 @@ from PIL import Image
 
 def process_image(file, max_width=1200, max_height=1200, quality=85, crop_square=False, convert_webp=False):
     img = Image.open(file)
-    
+
     # 大图片预压缩
     if img.width > 2048 or img.height > 2048:
         ratio = min(2048 / img.width, 2048 / img.height)
         img = img.resize((int(img.width * ratio), int(img.height * ratio)), Image.LANCZOS)
-    
+
     # 1:1比例裁剪
     if crop_square:
         min_side = min(img.width, img.height)
         left = (img.width - min_side) // 2
         top = (img.height - min_side) // 2
         img = img.crop((left, top, left + min_side, top + min_side))
-    
+
     # 格式转换
     if convert_webp:
         output_format = 'WEBP'
-    
+
     return processed_file
 
 def generate_formula_thumbnail(name, notation):
@@ -1575,11 +1575,11 @@ processed_file = InMemoryUploadedFile(
 class FormulaSerializer(serializers.ModelSerializer):
     thumbnail_file = serializers.FileField(write_only=True, required=False)
     thumbnail_path = serializers.CharField(write_only=True, required=False)
-    
+
     def create(self, validated_data):
         thumbnail_file = validated_data.pop('thumbnail_file', None)
         thumbnail_path = validated_data.pop('thumbnail_path', None)
-        
+
         if thumbnail_file:
             # 用户上传：压缩裁剪处理
             processed = process_image(thumbnail_file, crop_square=True, convert_webp=True)
@@ -1587,7 +1587,7 @@ class FormulaSerializer(serializers.ModelSerializer):
         elif thumbnail_path:
             # 公式库选择：直接引用路径
             validated_data['thumbnail'] = thumbnail_path
-        
+
         return super().create(validated_data)
 ```
 
@@ -1623,7 +1623,7 @@ def _bind_target_state(self, formula, category_id):
 class FormulaFilter(django_filters.FilterSet):
     difficulty = django_filters.BaseInFilter(field_name='difficulty', lookup_expr='in')
     created_by = django_filters.NumberInFilter(field_name='created_by', lookup_expr='in')
-    
+
     class Meta:
         model = Formula
         fields = ['category', 'is_custom', 'difficulty', 'created_by']
@@ -4308,23 +4308,23 @@ https://icube.example.com/api/  → Django
 ### 性能优化问题
 
 3. **HotPostService 缺少预加载 + 无缓存**
-   
+
    - **位置**: [forum/services.py#L363-L389](file:///e:\BH\PyStudy\ICube\cube_api\cube_api\apps\forum\services.py#L363-L389)
    - **问题**: 无 `select_related('author')` / `prefetch_related('tags', 'images')`，序列化时 N+1 查询；`order_by('-hot_score')` 走 filesort（计算字段无法建索引），7 天数据量大时性能下降
    - **改进方案**: Redis 缓存 TOP 20 ID 列表（5 分钟 TTL）+ 补全预加载
-   
+
    ```python
    @staticmethod
    def get_hot_posts(days=7, limit=20):
        cache_key = f"hot_posts:{days}:{limit}"
        con = get_redis_connection("default")
-   
+
        # 1. 先查缓存
        cached = con.lrange(cache_key, 0, -1)
        if cached:
            post_ids = [int(id) for id in cached]
            return Post.objects.filter(id__in=post_ids).select_related('author').prefetch_related('tags', 'images')
-   
+
        # 2. 缓存未命中：查 DB + 回写 Redis
        since = timezone.now() - timedelta(days=days)
        posts = list(Post.objects.filter(
@@ -4333,7 +4333,7 @@ https://icube.example.com/api/  → Django
        ).select_related('author').prefetch_related('tags', 'images').annotate(
            hot_score=F('like_count') * 3 + F('comment_count') * 2 + F('view_count')
        ).order_by('-hot_score')[:limit])
-   
+
        # 3. 写入缓存
        if posts:
            pipe = con.pipeline()
@@ -4341,10 +4341,10 @@ https://icube.example.com/api/  → Django
            pipe.rpush(cache_key, *[p.id for p in posts])
            pipe.expire(cache_key, 300)  # 5 分钟 TTL
            pipe.execute()
-   
+
        return posts
    ```
-   
+
 4. **PostViewSet.list 跨表聚合性能差**
    - **位置**: [forum/views.py#L99-L109](file:///e:\BH\PyStudy\ICube\cube_api\cube_api\apps\forum\views.py#L99-L109)
    - **问题**: 3 个 `Count` 触发 3 次 LEFT JOIN + GROUP BY，产生笛卡尔积，必须用 `COUNT(DISTINCT)`；分页时每页都要全量聚合计算，无法利用冗余字段
@@ -4656,7 +4656,7 @@ class Banner(models.Model):
 
 在 DRF 的限流类（如 `get_cache_key`）或认证类（如 `authenticate`）中返回 `None` 代表“当前逻辑不适用或跳过处理”：
 
-- **在限流中**：如果 `get_cache_key` 返回 `None`，意味着该请求**不触发限流检查**（例如在 `LoginRateThrottle` 中，如果当前动作不是 `login` 或者没传邮箱，就会返回 `None`，从而放行）。  
+- **在限流中**：如果 `get_cache_key` 返回 `None`，意味着该请求**不触发限流检查**（例如在 `LoginRateThrottle` 中，如果当前动作不是 `login` 或者没传邮箱，就会返回 `None`，从而放行）。
 - **在认证中**：如果返回 `None`，代表该类无法识别当前用户的身份（例如没有携带 Token），DRF 会交由下一个认证类处理，或者最终判定为匿名用户。
 
 **4. ident是什么，get_ident()方法**
@@ -4682,11 +4682,11 @@ class Banner(models.Model):
 
 - 数据库 Model 里的 `image` 存的是相对路径（如 `avatars/abc.webp`）。
 - 如果直接序列化 Model，前端拿到的只是个短路径，无法直接在 `<img>` 标签中加载。
-- 通过在 Serializer 中定义同名的 `image` 字段并编写 `get_image(self, obj)` 方法，它会调用 `build_image_url()` 自动拼接上域名和 `/media/` 前缀（如 `[http://api.example.com/media/avatars/abc.webp](http://api.example.com/media/avatars/abc.webp)`）后返回给前端。  
+- 通过在 Serializer 中定义同名的 `image` 字段并编写 `get_image(self, obj)` 方法，它会调用 `build_image_url()` 自动拼接上域名和 `/media/` 前缀（如 `[http://api.example.com/media/avatars/abc.webp](http://api.example.com/media/avatars/abc.webp)`）后返回给前端。
 
-**8. authenticate验证逻辑，返回的是user对象吗？** 是的。Django 的 `authenticate()` 函数如果校验邮箱和密码成功，会返回一个完整的 **`User` 模型对象**；如果校验失败（密码错误或用户不存在），则返回 `None`。  
+**8. authenticate验证逻辑，返回的是user对象吗？** 是的。Django 的 `authenticate()` 函数如果校验邮箱和密码成功，会返回一个完整的 **`User` 模型对象**；如果校验失败（密码错误或用户不存在），则返回 `None`。
 
-**9. request.data.get('user', {})得到的是user的字典吗** 是的。在本项目的前端对接规范中（配合 Vue/React 常见请求库习惯），登录、注册等请求体被包裹在了一个名为 `user` 的根对象里（例如 `{"user": {"email": "...", "password": "..."}}`）。因此 `request.data.get('user', {})` 拿到的就是一个包含用户提交表单字段的 **Python 字典**。  
+**9. request.data.get('user', {})得到的是user的字典吗** 是的。在本项目的前端对接规范中（配合 Vue/React 常见请求库习惯），登录、注册等请求体被包裹在了一个名为 `user` 的根对象里（例如 `{"user": {"email": "...", "password": "..."}}`）。因此 `request.data.get('user', {})` 拿到的就是一个包含用户提交表单字段的 **Python 字典**。
 
 **10. Django自带的有登录、注册、退出、限流等操作，只是和我的实现不太一样吗？**
 
@@ -4700,14 +4700,14 @@ class Banner(models.Model):
 `get_serializer` 是 DRF 的 `GenericAPIView`（ViewSet 的父类）提供的一个核心快捷方法。
 
 - **它的作用**：自动帮你把当前视图类中定义的 `serializer_class` 实例化，并**自动把当前的 `request`、`view` 等上下文（context）注入到序列化器中**。
-- **优势**：你不需要手动写 `MySerializer(data=..., context={'request': self.request})`，直接调用 `self.get_serializer(...)` 即可。此外，它还支持你在视图中重写 `get_serializer_class()` 来实现“读写使用不同序列化器”的动态切换。  
+- **优势**：你不需要手动写 `MySerializer(data=..., context={'request': self.request})`，直接调用 `self.get_serializer(...)` 即可。此外，它还支持你在视图中重写 `get_serializer_class()` 来实现“读写使用不同序列化器”的动态切换。
 
 **12. RefreshToken.for_user方法**
 
 这是 `djangorestframework-simplejwt` 库提供的核心方法。
 
 - **它的作用**：传入一个合法的用户对象（`user`），它会自动为该用户生成一对 JWT 凭证（包含 `Refresh Token` 长期票据和 `Access Token` 短期票据）。
-- **底层做了什么**：它会在生成的 Token 载荷（Payload）中自动写入用户的 ID、生成时间、过期时间，并生成一个唯一的唯一标识符（`jti`），用于后续的黑名单校验。  
+- **底层做了什么**：它会在生成的 Token 载荷（Payload）中自动写入用户的 ID、生成时间、过期时间，并生成一个唯一的唯一标识符（`jti`），用于后续的黑名单校验。
 
 
 
@@ -4743,7 +4743,7 @@ class Banner(models.Model):
   posts = Post.objects.all()
   for post in posts:
       author = post.author  # 每次循环都触发查询
-  
+
   # 优化后：1次查询
   posts = Post.objects.select_related('author').prefetch_related('tags').all()
   ```
@@ -5099,10 +5099,10 @@ GET /api/posts/?cursor=eyJpZCI6IDEyMzQ1fQ==
   ```python
   # 惰性求值，此时不执行查询
   posts = Post.objects.filter(status='published')
-  
+
   # 链式调用，仍不执行查询
   posts = posts.order_by('-created_at')[:10]
-  
+
   # 迭代时执行查询，结果缓存
   for post in posts:
       print(post.title)
@@ -5121,7 +5121,7 @@ GET /api/posts/?cursor=eyJpZCI6IDEyMzQ1fQ==
   from django.db.models.signals import post_save
   from django.dispatch import receiver
   from .models import Comment, Post
-  
+
   @receiver(post_save, sender=Comment)
   def update_post_comment_count(sender, instance, created, **kwargs):
       post = instance.post
@@ -5141,15 +5141,15 @@ GET /api/posts/?cursor=eyJpZCI6IDEyMzQ1fQ==
   ```python
   from rest_framework import serializers
   from .models import Post
-  
+
   class PostSerializer(serializers.ModelSerializer):
       author_name = serializers.CharField(source='author.username', read_only=True)
-      
+
       class Meta:
           model = Post
           fields = ['id', 'title', 'content', 'author', 'author_name', 'created_at']
           read_only_fields = ['id', 'author', 'created_at']
-      
+
       def validate_title(self, value):
           if len(value) < 3:
               raise serializers.ValidationError('标题至少3个字符')
@@ -5180,18 +5180,18 @@ GET /api/posts/?cursor=eyJpZCI6IDEyMzQ1fQ==
   ```python
   from rest_framework.authentication import BaseAuthentication
   from rest_framework.exceptions import AuthenticationFailed
-  
+
   class CustomAuthentication(BaseAuthentication):
       def authenticate(self, request):
           token = request.headers.get('Authorization')
           if not token:
               return None
-          
+
           # 验证token逻辑
           user = self.validate_token(token)
           if not user:
               raise AuthenticationFailed('Token无效')
-          
+
           return (user, None)
   ```
 
@@ -5205,13 +5205,13 @@ GET /api/posts/?cursor=eyJpZCI6IDEyMzQ1fQ==
 - **自定义权限**:
   ```python
   from rest_framework.permissions import BasePermission
-  
+
   class IsOwnerOrReadOnly(BasePermission):
       def has_object_permission(self, request, view, obj):
           # 只读请求放行
           if request.method in ['GET', 'HEAD', 'OPTIONS']:
               return True
-          
+
           # 写请求验证所有者
           return obj.author == request.user
   ```
@@ -5225,10 +5225,10 @@ GET /api/posts/?cursor=eyJpZCI6IDEyMzQ1fQ==
 - **自定义限流**:
   ```python
   from rest_framework.throttling import SimpleRateThrottle
-  
+
   class LoginRateThrottle(SimpleRateThrottle):
       scope = 'login'
-      
+
       def get_cache_key(self, request, view):
           email = request.data.get('email', '')
           if email:
@@ -5503,7 +5503,7 @@ GET /api/posts/?cursor=eyJpZCI6IDEyMzQ1fQ==
 - **Django事务用法**:
   ```python
   from django.db import transaction
-  
+
   # 方式1：装饰器
   @transaction.atomic
   def create_order(request):
@@ -5511,12 +5511,12 @@ GET /api/posts/?cursor=eyJpZCI6IDEyMzQ1fQ==
       order = Order.objects.create(...)
       Product.objects.filter(id=pid).update(stock=F('stock') - qty)
       cart.delete()
-  
+
   # 方式2：上下文管理器
   with transaction.atomic():
       # 事务代码块
       pass
-  
+
   # 方式3：保存点（部分回滚）
   with transaction.atomic():
       try:
@@ -5600,10 +5600,10 @@ GET /api/posts/?cursor=eyJpZCI6IDEyMzQ1fQ==
 - **Django实现**:
   ```python
   from django.contrib.auth.hashers import make_password, check_password
-  
+
   # 创建密码哈希
   hashed_password = make_password('password123')
-  
+
   # 验证密码
   is_valid = check_password('password123', hashed_password)
   ```
@@ -5670,14 +5670,14 @@ GET /api/posts/?cursor=eyJpZCI6IDEyMzQ1fQ==
 - **实现方式**:
   ```python
   import redis
-  
+
   client = redis.Redis()
-  
+
   def acquire_lock(key, timeout=10):
       # 设置锁，NX表示不存在才设置，PX表示过期时间（毫秒）
       result = client.set(key, '1', nx=True, px=timeout * 1000)
       return result is not None
-  
+
   def release_lock(key):
       client.delete(key)
   ```
@@ -5725,7 +5725,7 @@ GET /api/posts/?cursor=eyJpZCI6IDEyMzQ1fQ==
   server {
       listen 80;
       server_name _;
-      
+
       location /api/ {
           proxy_pass http://api:8000;
           proxy_set_header Host $host;
@@ -5733,17 +5733,17 @@ GET /api/posts/?cursor=eyJpZCI6IDEyMzQ1fQ==
           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
           proxy_set_header X-Forwarded-Proto $scheme;
       }
-  
+
       location /media/ {
           alias /usr/share/nginx/html/media/;
           expires 30d;
       }
-  
+
       location /static/ {
           alias /usr/share/nginx/html/static/;
           expires 30d;
       }
-      
+
       location / {
           proxy_pass http://front:80;
       }
@@ -5765,16 +5765,16 @@ GET /api/posts/?cursor=eyJpZCI6IDEyMzQ1fQ==
       healthcheck:
         test: ["CMD-SHELL", "MYSQL_PWD=... mysqladmin ping -h localhost -uroot"]
         start_period: 45s
-  
+
     api:
       build: ./cube_api
       depends_on:
         db:
           condition: service_healthy
-  
+
     front:
       build: ./cube_front
-  
+
     nginx:
       image: nginx:1.28-alpine
       ports:
@@ -5872,11 +5872,11 @@ GET /api/posts/?cursor=eyJpZCI6IDEyMzQ1fQ==
           print('After')
           return result
       return wrapper
-  
+
   @my_decorator
   def hello():
       print('Hello')
-  
+
   # 带参数的装饰器
   def repeat(times):
       def decorator(func):
@@ -5887,7 +5887,7 @@ GET /api/posts/?cursor=eyJpZCI6IDEyMzQ1fQ==
               return results
           return wrapper
       return decorator
-  
+
   @repeat(3)
   def say_hi():
       return 'Hi'
@@ -5907,7 +5907,7 @@ GET /api/posts/?cursor=eyJpZCI6IDEyMzQ1fQ==
       while True:
           yield a
           a, b = b, a + b
-  
+
   # 使用生成器
   fib = fibonacci()
   for _ in range(10):
@@ -5920,14 +5920,14 @@ GET /api/posts/?cursor=eyJpZCI6IDEyMzQ1fQ==
 - **实现方式**:
   ```python
   import asyncio
-  
+
   async def fetch_data(url):
       print(f'Start fetching {url}')
       # 模拟网络请求
       await asyncio.sleep(1)
       print(f'Finished fetching {url}')
       return f'Data from {url}'
-  
+
   async def main():
       # 并发执行多个任务
       results = await asyncio.gather(
@@ -5935,7 +5935,7 @@ GET /api/posts/?cursor=eyJpZCI6IDEyMzQ1fQ==
           fetch_data('https://google.com')
       )
       print(results)
-  
+
   asyncio.run(main())
   ```
 - **适用场景**: I/O密集型任务（网络请求、文件读写）
@@ -5947,7 +5947,7 @@ GET /api/posts/?cursor=eyJpZCI6IDEyMzQ1fQ==
   ```python
   # 列表推导式
   squares = [x**2 for x in range(10) if x % 2 == 0]
-  
+
   # 等价于循环
   squares = []
   for x in range(10):
@@ -6007,19 +6007,19 @@ GET /api/posts/?cursor=eyJpZCI6IDEyMzQ1fQ==
 - **模型字段**: 使用`ImageField`
   ```python
   from django.db import models
-  
+
   class Post(models.Model):
       image = models.ImageField(upload_to='forum/posts/%Y/%m/', blank=True, null=True)
   ```
 - **图片处理流水线**: 使用Pillow自动处理
   ```python
   from cube_api.utils.image_processor import process_image
-  
+
   # 压缩、裁剪、WebP转换
   processed = process_image(
-      file, 
-      max_width=1200, 
-      quality=85, 
+      file,
+      max_width=1200,
+      quality=85,
       crop_square=True,  # 1:1比例裁剪
       convert_webp=True  # WebP格式转换
   )
@@ -6050,7 +6050,7 @@ GET /api/posts/?cursor=eyJpZCI6IDEyMzQ1fQ==
 - **原子更新**: 使用`F()`表达式
   ```python
   from django.db.models import F
-  
+
   def retrieve(self, request, pk=None):
       instance = self.get_object()
       instance.view_count = F('view_count') + 1
@@ -6093,7 +6093,7 @@ GET /api/posts/?cursor=eyJpZCI6IDEyMzQ1fQ==
 - **发送邮件**:
   ```python
   from django.core.mail import send_mail
-  
+
   send_mail(
       subject='Welcome to ICube',
       message='Thank you for registering.',
@@ -6106,7 +6106,7 @@ GET /api/posts/?cursor=eyJpZCI6IDEyMzQ1fQ==
   ```python
   from django.core.mail import EmailMultiAlternatives
   from django.template.loader import render_to_string
-  
+
   html_content = render_to_string('email/welcome.html', {'user': user})
   msg = EmailMultiAlternatives(subject, plain_text, from_email, [email])
   msg.attach_alternative(html_content, 'text/html')
@@ -6219,7 +6219,7 @@ def process_image(file, max_width=1200, quality=85, crop_square=False, convert_w
 
 #### Q95: 公式上传功能是如何实现的？
 **回答要点**:
-- **前端公式编辑器**: 
+- **前端公式编辑器**:
   - 点击式键盘输入（R/L/U/D/F/B等所有魔方记号）
   - 支持直接输入字符串
   - 图片来源可选：公式库选择或自己上传
@@ -6290,25 +6290,25 @@ def create(self, validated_data):
 
 ##### **第一次登录阶段**
 
-- **凭证生成**：客户端向 `/api/users/login/` 发送邮箱和密码，`AuthViewSet.login` 通过 Django 的 `authenticate()` 校验成功后，调用 `RefreshToken.for_user(user)` 生成一个包含全新 `jti`（JWT 唯一标识）和过期时间的 Token 对，并将 Access Token 返回给客户端。  
-- **状态记录**：此时系统处于正常登录态，后续请求经过 `CachedJWTAuthentication` 时，会将用户 ID 缓存至 Redis 的 `user_instance_cache_{user_id}` 中，减少数据库查询。  
+- **凭证生成**：客户端向 `/api/users/login/` 发送邮箱和密码，`AuthViewSet.login` 通过 Django 的 `authenticate()` 校验成功后，调用 `RefreshToken.for_user(user)` 生成一个包含全新 `jti`（JWT 唯一标识）和过期时间的 Token 对，并将 Access Token 返回给客户端。
+- **状态记录**：此时系统处于正常登录态，后续请求经过 `CachedJWTAuthentication` 时，会将用户 ID 缓存至 Redis 的 `user_instance_cache_{user_id}` 中，减少数据库查询。
 
 **退出登录阶段**
 
-- **触发黑名单写入**：客户端携带当前 Token 发送 POST 请求到 `/api/users/logout/`。`AuthViewSet.logout` 提取 `request.auth` 中的 Token 载荷（Payload），调用 `JWTCacheService.add_to_blacklist(token_payload)`。  
-- **计算剩余寿命与拉黑**：在 `JWTCacheService.add_to_blacklist` 中，服务会通过 `exp` 和当前时间计算出该 Token 的剩余有效秒数 (`remaining_seconds`)，并在 Redis 中写入一条键名为 `jwt:blacklist:{jti}`、值为 `1` 且 TTL 等于该剩余秒数的记录。  
-- **旧凭证失效**：如果此时再次用这个旧 Token 访问接口，`CachedJWTAuthentication.authenticate` 会通过 `JWTCacheService.is_blacklisted(jti)` 检测到该 `jti` 存在于 Redis 中，从而直接拦截并返回 `None` 导致鉴权失效。  
+- **触发黑名单写入**：客户端携带当前 Token 发送 POST 请求到 `/api/users/logout/`。`AuthViewSet.logout` 提取 `request.auth` 中的 Token 载荷（Payload），调用 `JWTCacheService.add_to_blacklist(token_payload)`。
+- **计算剩余寿命与拉黑**：在 `JWTCacheService.add_to_blacklist` 中，服务会通过 `exp` 和当前时间计算出该 Token 的剩余有效秒数 (`remaining_seconds`)，并在 Redis 中写入一条键名为 `jwt:blacklist:{jti}`、值为 `1` 且 TTL 等于该剩余秒数的记录。
+- **旧凭证失效**：如果此时再次用这个旧 Token 访问接口，`CachedJWTAuthentication.authenticate` 会通过 `JWTCacheService.is_blacklisted(jti)` 检测到该 `jti` 存在于 Redis 中，从而直接拦截并返回 `None` 导致鉴权失效。
 
 **再次登录（第二次登录）阶段**
 
-- **全新 Token 签发**：客户端重新提交账号密码请求 `/api/users/login/`。`AuthViewSet.login` 再次通过 `authenticate` 校验并调用 `RefreshToken.for_user(user)`。  
-- **独立的 `jti` 生成**：由于是一次全新的登录动作，SimpleJWT 会生成一个**完全不同于上一次的全新 `jti`** 以及新的过期时间，并返回给客户端。  
+- **全新 Token 签发**：客户端重新提交账号密码请求 `/api/users/login/`。`AuthViewSet.login` 再次通过 `authenticate` 校验并调用 `RefreshToken.for_user(user)`。
+- **独立的 `jti` 生成**：由于是一次全新的登录动作，SimpleJWT 会生成一个**完全不同于上一次的全新 `jti`** 以及新的过期时间，并返回给客户端。
 - **黑名单互不影响**：旧 Token 的 `jti` 依然独立躺在 Redis 黑名单中（等待其原本的 TTL 倒计时自然耗尽并自动释放），而**新 Token 的 `jti` 并不在黑名单内**。
 - **鉴权流程放行**：当客户端携带新 Token 访问受保护接口时，`CachedJWTAuthentication.authenticate` 依次执行：
-  1. 验证新 Token 合法性。  
-  2. 调用 `JWTCacheService.is_blacklisted(jti)` 检查新 Token 的 `jti`——由于不在黑名单中，返回 `False` 通过。  
-  3. 调用 `get_user(validated_token)` 获取用户实例（此时会优先命中 Redis 中的 `user_instance_cache_{user_id}` 缓存，实现免查库）。  
-  4. 最终返回 `(user, validated_token)` 元组，鉴权成功。  
+  1. 验证新 Token 合法性。
+  2. 调用 `JWTCacheService.is_blacklisted(jti)` 检查新 Token 的 `jti`——由于不在黑名单中，返回 `False` 通过。
+  3. 调用 `get_user(validated_token)` 获取用户实例（此时会优先命中 Redis 中的 `user_instance_cache_{user_id}` 缓存，实现免查库）。
+  4. 最终返回 `(user, validated_token)` 元组，鉴权成功。
 
 
 
@@ -6798,7 +6798,7 @@ Gitleaks 的强大之处在于其高度可定制的配置（`.gitleaks.toml`）�
   regex = '''MY_SECRET_[a-zA-Z0-9]{20}'''
   ```
 
-  
+
 
 - **忽略误报（False Positives）**：可以在全局或在特定规则内添加 `allowlists`，来忽略特定的路径、文件或提交。
 
@@ -6810,7 +6810,7 @@ Gitleaks 的强大之处在于其高度可定制的配置（`.gitleaks.toml`）�
   paths = ['''**/*_test\.go''', '''test/.*\.json''']
   ```
 
-  
+
 
   配置文件的更完整说明可以参考官方默认配置。
 
@@ -7610,4 +7610,3 @@ echo "  后台管理：  ${CYAN}http://$SERVER_IP/admin/${NC}"
 | `docker inspect -f`                      | 查看容器元信息（Go 模板格式）      | `docker inspect -f '{{.State.Health.Status}}'`             |
 | `curl -s -o /dev/null -w '%{http_code}'` | 只获取 HTTP 状态码                 | `curl -s -o /dev/null -w '%{http_code}' http://localhost/` |
 | `cat > file << EOF`                      | Here Document 写入多行文件         | `cat > .env << EOF ... EOF`                                |
-

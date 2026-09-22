@@ -22,7 +22,12 @@
         </template>
 
         <div class="connection-controls">
-          <el-button type="primary" @click="handleConnect" :loading="connecting" :disabled="connected">
+          <el-button
+            type="primary"
+            @click="handleConnect"
+            :loading="connecting"
+            :disabled="connected"
+          >
             连接魔方
           </el-button>
           <el-button @click="handleDisconnect" :disabled="!connected">断开</el-button>
@@ -31,7 +36,9 @@
             <template #content>
               <div class="mac-tooltip">
                 <p>无法自动获取 MAC 地址时，可通过以下方式查看：</p>
-                <p>1. 在地址栏输入 <code>edge://bluetooth-internals/#devices</code>（Chrome 同理）</p>
+                <p>
+                  1. 在地址栏输入 <code>edge://bluetooth-internals/#devices</code>（Chrome 同理）
+                </p>
                 <p>2. 找到你的 GAN 魔方设备，复制其 MAC 地址</p>
                 <p>3. 回到本页面点击「连接魔方」，在弹窗中粘贴 MAC 地址</p>
               </div>
@@ -54,7 +61,8 @@
                 :disabled="!connected"
                 @click="refreshBattery"
                 style="margin-left: 4px"
-              >刷新</el-button>
+                >刷新</el-button
+              >
             </el-descriptions-item>
             <el-descriptions-item label="复原状态">
               <el-tag v-if="faceletsReceived" :type="isSolved ? 'success' : 'warning'" size="small">
@@ -80,7 +88,10 @@
                 <template #content>
                   <div class="mode-tooltip">
                     <p><strong>标准模式</strong>：15 秒观察倒计时，超时判 DNF</p>
-                    <p><strong>不计时模式</strong>：观察时间不限，15 秒后从 0 开始正计时，直至首次转动</p>
+                    <p>
+                      <strong>不计时模式</strong>：观察时间不限，15 秒后从 0
+                      开始正计时，直至首次转动
+                    </p>
                   </div>
                 </template>
                 <el-icon class="mode-hint-icon"><QuestionFilled /></el-icon>
@@ -100,7 +111,9 @@
 
         <!-- 打乱序列 -->
         <div class="scramble-section" v-if="scrambleSequence.length > 0">
-          <div class="scramble-header">打乱序列（{{ scrambleCurrentStep }}/{{ scrambleTotalStep }}）</div>
+          <div class="scramble-header">
+            打乱序列（{{ scrambleCurrentStep }}/{{ scrambleTotalStep }}）
+          </div>
           <div class="scramble-sequence">
             <span
               v-for="(move, i) in scrambleSequence"
@@ -109,11 +122,15 @@
               :class="{
                 'scramble-done': i < scrambleCurrentStep,
                 'scramble-current': i === scrambleCurrentStep,
-                'scramble-pending': i > scrambleCurrentStep
+                'scramble-pending': i > scrambleCurrentStep,
               }"
-            >{{ move }}</span>
+              >{{ move }}</span
+            >
           </div>
-          <div class="scramble-next" v-if="scrambleNextMove && timerState === TimerStates.SCRAMBLING">
+          <div
+            class="scramble-next"
+            v-if="scrambleNextMove && timerState === TimerStates.SCRAMBLING"
+          >
             下一步：<strong>{{ scrambleNextMove }}</strong>
           </div>
         </div>
@@ -124,9 +141,15 @@
             {{ solveResult.dnf ? 'DNF' : '✓ 复原成功' }}
           </div>
           <div class="result-body" v-if="!solveResult.dnf">
-            <span>用时：<strong>{{ solveResult.solveTimeFormatted }}</strong></span>
-            <span>步数：<strong>{{ solveResult.moveCount }}</strong></span>
-            <span>观察：<strong>{{ solveResult.observationTimeFormatted }}</strong></span>
+            <span
+              >用时：<strong>{{ solveResult.solveTimeFormatted }}</strong></span
+            >
+            <span
+              >步数：<strong>{{ solveResult.moveCount }}</strong></span
+            >
+            <span
+              >观察：<strong>{{ solveResult.observationTimeFormatted }}</strong></span
+            >
           </div>
           <div class="result-scramble" v-if="solveResult.scramble?.length">
             <div class="result-label">打乱</div>
@@ -190,7 +213,12 @@
 
         <!-- 经典模式：手动选择 -->
         <div v-else class="orientation-manual">
-          <el-select v-model="manualPreset" placeholder="选择持握方向" style="width: 200px" @change="onManualPresetChange">
+          <el-select
+            v-model="manualPreset"
+            placeholder="选择持握方向"
+            style="width: 200px"
+            @change="onManualPresetChange"
+          >
             <el-option
               v-for="preset in PRESET_ORIENTATIONS"
               :key="preset.key"
@@ -209,7 +237,13 @@
         <template #header>
           <div class="card-header">
             <span>转动序列（{{ moves.length }} 步）</span>
-            <el-button type="danger" link size="small" @click="clearMoves" :disabled="moves.length === 0">
+            <el-button
+              type="danger"
+              link
+              size="small"
+              @click="clearMoves"
+              :disabled="moves.length === 0"
+            >
               清空
             </el-button>
           </div>
@@ -221,7 +255,8 @@
             :key="i"
             class="move-chip"
             :class="getMoveChipClass(move)"
-          >{{ move }}</span>
+            >{{ move }}</span
+          >
         </div>
         <el-empty v-else description="转动魔方以显示动作序列" :image-size="60" />
       </el-card>
@@ -231,7 +266,13 @@
         <template #header>
           <div class="card-header">
             <span>调试日志</span>
-            <el-button type="info" link size="small" @click="logs = []" :disabled="logs.length === 0">
+            <el-button
+              type="info"
+              link
+              size="small"
+              @click="logs = []"
+              :disabled="logs.length === 0"
+            >
               清空
             </el-button>
           </div>
@@ -249,7 +290,12 @@
     </div>
 
     <!-- MAC 地址手动输入对话框 -->
-    <el-dialog v-model="macDialogVisible" title="输入魔方 MAC 地址" width="420px" @close="onMacDialogClose">
+    <el-dialog
+      v-model="macDialogVisible"
+      title="输入魔方 MAC 地址"
+      width="420px"
+      @close="onMacDialogClose"
+    >
       <p class="mac-hint">无法自动获取 MAC 地址，请手动输入。</p>
       <p class="mac-hint">格式：XX:XX:XX:XX:XX:XX（不区分大小写）</p>
       <el-input v-model="macInput" placeholder="例如：A4:CF:12:34:56:78" />
@@ -260,17 +306,30 @@
     </el-dialog>
 
     <!-- 朝前面选择对话框 -->
-    <el-dialog v-model="frontFaceDialogVisible" title="选择朝前的面" width="420px" :close-on-click-modal="false">
-      <p class="mac-hint">陀螺仪检测到 <strong>{{ faceColorName(detectedTopFace) }}</strong> 面朝顶。</p>
+    <el-dialog
+      v-model="frontFaceDialogVisible"
+      title="选择朝前的面"
+      width="420px"
+      :close-on-click-modal="false"
+    >
+      <p class="mac-hint">
+        陀螺仪检测到 <strong>{{ faceColorName(detectedTopFace) }}</strong> 面朝顶。
+      </p>
       <p class="mac-hint">请选择当前朝向你的面（单击选中，双击确认）：</p>
       <div class="front-face-blocks">
         <div
           v-for="face in frontFaceOptions"
           :key="face"
           class="face-block"
-          :class="['face-block-' + face.toLowerCase(), { 'face-block-selected': frontFaceInput === face }]"
+          :class="[
+            'face-block-' + face.toLowerCase(),
+            { 'face-block-selected': frontFaceInput === face },
+          ]"
           @click="frontFaceInput = face"
-          @dblclick="frontFaceInput = face; submitFrontFace()"
+          @dblclick="
+            frontFaceInput = face
+            submitFrontFace()
+          "
         >
           <span class="face-block-color">{{ faceColorName(face) }}</span>
           <span class="face-block-letter">{{ face }}</span>
@@ -278,7 +337,9 @@
       </div>
       <template #footer>
         <el-button @click="frontFaceDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitFrontFace" :disabled="!frontFaceInput">确定</el-button>
+        <el-button type="primary" @click="submitFrontFace" :disabled="!frontFaceInput"
+          >确定</el-button
+        >
       </template>
     </el-dialog>
   </div>
@@ -293,7 +354,7 @@ import {
   PRESET_ORIENTATIONS,
   remapMove,
   FACES,
-  FACE_NORMALS
+  FACE_NORMALS,
 } from '@/utils/cube-orientation'
 import { ElMessage } from 'element-plus'
 import { WarningFilled, QuestionFilled } from '@element-plus/icons-vue'
@@ -444,11 +505,17 @@ const handleEvent = (event) => {
       break
     case 'BATTERY':
       deviceInfo.battery = event.batteryLevel
-      addLog('BATTERY', `${event.batteryLevel}%（dataLen=${event.dataLength}, raw=[${event.raw?.join(',')}]）`)
+      addLog(
+        'BATTERY',
+        `${event.batteryLevel}%（dataLen=${event.dataLength}, raw=[${event.raw?.join(',')}]）`
+      )
       break
     case 'HARDWARE':
       if (event.hardwareName) deviceInfo.name = event.hardwareName
-      addLog('HARDWARE', `name: ${event.hardwareName || '-'}，sw: ${event.softwareVersion || '-'}，hw: ${event.hardwareVersion || '-'}`)
+      addLog(
+        'HARDWARE',
+        `name: ${event.hardwareName || '-'}，sw: ${event.softwareVersion || '-'}，hw: ${event.hardwareVersion || '-'}`
+      )
       break
     case 'DISCONNECT':
       connected.value = false
@@ -468,7 +535,10 @@ const handleEvent = (event) => {
       orientationDetail.value = ''
       initialOrientation.value = ''
       gyroBaseQuat.value = null
-      if (gyroRafId) { cancelAnimationFrame(gyroRafId); gyroRafId = null }
+      if (gyroRafId) {
+        cancelAnimationFrame(gyroRafId)
+        gyroRafId = null
+      }
       pendingGyroQuat = null
       deviceInfo.battery = null
       if (cube3dRef.value) {
@@ -498,8 +568,8 @@ const manualPreset = ref('white-top-green-front')
 const orientationLabel = ref('识别中…')
 const initialOrientation = ref('')
 const gyroBaseQuat = ref(null) // 陀螺仪基准四元数（初始映射确认时记录）
-let gyroRafId = null           // GYRO 事件 rAF 节流
-let pendingGyroQuat = null     // 待应用的陀螺仪四元数
+let gyroRafId = null // GYRO 事件 rAF 节流
+let pendingGyroQuat = null // 待应用的陀螺仪四元数
 const orientationDetail = ref('')
 const initialMapSet = ref(false)
 const detectedTopFace = ref(null)
@@ -511,7 +581,7 @@ const frontFaceOptions = ref([])
 
 let macResolve = null
 let gyroTimer = null
-let batteryTimer = null  // 电量定时查询
+let batteryTimer = null // 电量定时查询
 
 const FACE_COLOR_NAMES = { U: '白', D: '黄', R: '红', L: '橙', F: '绿', B: '蓝' }
 
@@ -532,7 +602,17 @@ const statusTagType = computed(() => {
 })
 
 function logTagType(type) {
-  const types = { MOVE: 'primary', GYRO: 'info', FACELETS: 'success', BATTERY: 'warning', DISCONNECT: 'danger', HARDWARE: 'info', CONNECT: 'info', ROTATION: 'warning', ERROR: 'danger' }
+  const types = {
+    MOVE: 'primary',
+    GYRO: 'info',
+    FACELETS: 'success',
+    BATTERY: 'warning',
+    DISCONNECT: 'danger',
+    HARDWARE: 'info',
+    CONNECT: 'info',
+    ROTATION: 'warning',
+    ERROR: 'danger',
+  }
   return types[type] ?? 'info'
 }
 
@@ -571,7 +651,7 @@ function quatMul(a, b) {
     w: a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z,
     x: a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,
     y: a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x,
-    z: a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w
+    z: a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w,
   }
 }
 
@@ -587,9 +667,12 @@ function updateCubeAttitude(currentQuat) {
   const baseInv = quatConj(base)
   const rel = quatMul(currentQuat, baseInv)
   // 归一化
-  const len = Math.sqrt(rel.w*rel.w + rel.x*rel.x + rel.y*rel.y + rel.z*rel.z)
+  const len = Math.sqrt(rel.w * rel.w + rel.x * rel.x + rel.y * rel.y + rel.z * rel.z)
   if (len > 0) {
-    rel.w /= len; rel.x /= len; rel.y /= len; rel.z /= len
+    rel.w /= len
+    rel.x /= len
+    rel.y /= len
+    rel.z /= len
   }
   cube3dRef.value.setAttitude(rel)
 }
@@ -612,12 +695,12 @@ function enterGyroMode() {
   tracker.onTopFaceDetected((topFace) => {
     detectedTopFace.value = topFace
     // 计算排除顶面和底面的 4 个候选面
-    const topOpposite = FACES.find(f =>
-      Math.abs(
-        FACE_NORMALS[f].reduce((sum, v, i) => sum + v * FACE_NORMALS[topFace][i], 0)
-      ) + 1 < 0.01
+    const topOpposite = FACES.find(
+      (f) =>
+        Math.abs(FACE_NORMALS[f].reduce((sum, v, i) => sum + v * FACE_NORMALS[topFace][i], 0)) + 1 <
+        0.01
     )
-    frontFaceOptions.value = FACES.filter(f => f !== topFace && f !== topOpposite)
+    frontFaceOptions.value = FACES.filter((f) => f !== topFace && f !== topOpposite)
     frontFaceInput.value = ''
     frontFaceDialogVisible.value = true
     addLog('GYRO', `检测到顶面: ${faceColorName(topFace)}（${topFace}）`)
@@ -635,7 +718,7 @@ function enterStaticMode() {
   gyroMode.value = false
   staticOrientation.setPreset(manualPreset.value)
   initialMapSet.value = true
-  const preset = PRESET_ORIENTATIONS.find(p => p.key === manualPreset.value)
+  const preset = PRESET_ORIENTATIONS.find((p) => p.key === manualPreset.value)
   orientationLabel.value = preset?.label || '手动'
   orientationDetail.value = ''
 }
@@ -653,7 +736,7 @@ function onModeSwitch(val) {
 
 function onManualPresetChange(key) {
   staticOrientation.setPreset(key)
-  const preset = PRESET_ORIENTATIONS.find(p => p.key === key)
+  const preset = PRESET_ORIENTATIONS.find((p) => p.key === key)
   if (preset) {
     orientationLabel.value = preset.label
     initialOrientation.value = preset.label
@@ -719,12 +802,12 @@ async function handleConnect() {
   try {
     await client.connect({
       onMacAddressRequired: async () => {
-        return new Promise(resolve => {
+        return new Promise((resolve) => {
           macResolve = resolve
           macInput.value = ''
           macDialogVisible.value = true
         })
-      }
+      },
     })
     connected.value = true
     deviceInfo.name = client.deviceName
@@ -762,7 +845,7 @@ async function handleConnect() {
 function refreshBattery() {
   if (!client.connected) return
   addLog('BATTERY', '手动请求电量…')
-  client.requestBattery().catch(err => addLog('ERROR', '电量请求失败: ' + err.message))
+  client.requestBattery().catch((err) => addLog('ERROR', '电量请求失败: ' + err.message))
 }
 
 async function handleReset() {
@@ -784,7 +867,10 @@ async function handleReset() {
     orientationDetail.value = ''
     initialOrientation.value = ''
     gyroBaseQuat.value = null
-    if (gyroRafId) { cancelAnimationFrame(gyroRafId); gyroRafId = null }
+    if (gyroRafId) {
+      cancelAnimationFrame(gyroRafId)
+      gyroRafId = null
+    }
     pendingGyroQuat = null
     // 3D 魔方复位 + 姿态复位
     if (cube3dRef.value) {
@@ -803,7 +889,10 @@ async function handleReset() {
 }
 
 async function handleDisconnect() {
-  if (gyroTimer) { clearTimeout(gyroTimer); gyroTimer = null }
+  if (gyroTimer) {
+    clearTimeout(gyroTimer)
+    gyroTimer = null
+  }
   await client.disconnect()
   clearSavedDevice()
   connected.value = false
@@ -819,7 +908,10 @@ async function handleDisconnect() {
   orientationDetail.value = ''
   initialOrientation.value = ''
   tracker.reset()
-  if (batteryTimer) { clearInterval(batteryTimer); batteryTimer = null }
+  if (batteryTimer) {
+    clearInterval(batteryTimer)
+    batteryTimer = null
+  }
 }
 
 function submitMac() {
@@ -872,7 +964,10 @@ onBeforeUnmount(() => {
   window.removeEventListener('beforeunload', beforeUnloadHandler)
   if (gyroTimer) clearTimeout(gyroTimer)
   if (gyroRafId) cancelAnimationFrame(gyroRafId)
-  if (batteryTimer) { clearInterval(batteryTimer); batteryTimer = null }
+  if (batteryTimer) {
+    clearInterval(batteryTimer)
+    batteryTimer = null
+  }
   // 单例模式：组件销毁不主动断开 BLE 连接，保持连接到其他页面
 })
 </script>
@@ -1159,13 +1254,28 @@ onBeforeUnmount(() => {
   background: #909399;
 }
 
-.face-u { background: #e6a700; }
-.face-r { background: #f56c6c; }
-.face-f { background: #67c23a; }
-.face-d { background: #e6e6e6; color: #303030; }
-.face-l { background: #e8923c; }
-.face-b { background: #409eff; }
-.move-rotation { background: #722ed1; }
+.face-u {
+  background: #e6a700;
+}
+.face-r {
+  background: #f56c6c;
+}
+.face-f {
+  background: #67c23a;
+}
+.face-d {
+  background: #e6e6e6;
+  color: #303030;
+}
+.face-l {
+  background: #e8923c;
+}
+.face-b {
+  background: #409eff;
+}
+.move-rotation {
+  background: #722ed1;
+}
 
 .debug-log {
   max-height: 300px;
@@ -1238,7 +1348,9 @@ onBeforeUnmount(() => {
   border-radius: 12px;
   cursor: pointer;
   border: 4px solid transparent;
-  transition: border-color 0.2s, transform 0.15s;
+  transition:
+    border-color 0.2s,
+    transform 0.15s;
   user-select: none;
 }
 
@@ -1263,14 +1375,28 @@ onBeforeUnmount(() => {
   margin-top: 2px;
 }
 
-.face-block-u { background: #e6a700; }
-.face-block-r { background: #f56c6c; }
-.face-block-f { background: #67c23a; }
-.face-block-d { background: #e6e6e6; }
+.face-block-u {
+  background: #e6a700;
+}
+.face-block-r {
+  background: #f56c6c;
+}
+.face-block-f {
+  background: #67c23a;
+}
+.face-block-d {
+  background: #e6e6e6;
+}
 .face-block-d .face-block-color,
-.face-block-d .face-block-letter { color: #303030; }
-.face-block-l { background: #e8923c; }
-.face-block-b { background: #409eff; }
+.face-block-d .face-block-letter {
+  color: #303030;
+}
+.face-block-l {
+  background: #e8923c;
+}
+.face-block-b {
+  background: #409eff;
+}
 
 /* 移动端适配 */
 @media (max-width: 900px) {

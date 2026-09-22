@@ -15,7 +15,7 @@
               v-for="address in addresses"
               :key="address.id"
               class="address-option"
-              :class="{ 'selected': selectedAddressId === address.id }"
+              :class="{ selected: selectedAddressId === address.id }"
               @click="selectAddress(address)"
             >
               <el-radio :value="address.id" v-model="selectedAddressId" />
@@ -34,7 +34,7 @@
             </div>
           </div>
 
-          <el-divider v-if="addresses.length > 0" style="margin: 16px 0;" />
+          <el-divider v-if="addresses.length > 0" style="margin: 16px 0" />
 
           <el-form :model="addressForm" label-position="top" class="address-form">
             <el-row :gutter="20">
@@ -79,7 +79,11 @@
           <div v-if="cartList.length > 0" class="order-items">
             <div v-for="item in cartList" :key="item.id" class="order-item">
               <div class="item-image">
-                <img v-if="item.product_info.thumbnail" :src="item.product_info.thumbnail" :alt="item.product_info.name" />
+                <img
+                  v-if="item.product_info.thumbnail"
+                  :src="item.product_info.thumbnail"
+                  :alt="item.product_info.name"
+                />
                 <div v-else class="placeholder">
                   <el-icon size="24" color="#ccc">
                     <ShoppingBag />
@@ -88,13 +92,18 @@
               </div>
               <div class="item-info">
                 <h4 class="item-name">{{ item.product_info.name }}</h4>
-                <span class="item-spec" v-if="item.selected_spec && Object.keys(item.selected_spec).length">
+                <span
+                  class="item-spec"
+                  v-if="item.selected_spec && Object.keys(item.selected_spec).length"
+                >
                   {{ formatSpec(item.selected_spec) }}
                 </span>
               </div>
               <div class="item-price">¥{{ item.product_info.price }}</div>
               <div class="item-quantity">x{{ item.quantity }}</div>
-              <div class="item-total">¥{{ (item.product_info.price * item.quantity).toFixed(2) }}</div>
+              <div class="item-total">
+                ¥{{ (item.product_info.price * item.quantity).toFixed(2) }}
+              </div>
             </div>
           </div>
         </el-card>
@@ -118,7 +127,7 @@
               <span class="label">运费:</span>
               <span class="value">¥0.00</span>
             </div>
-            <el-divider style="margin: 12px 0;" />
+            <el-divider style="margin: 12px 0" />
             <div class="summary-row total">
               <span class="label">实付款:</span>
               <span class="value">¥{{ totalPrice.toFixed(2) }}</span>
@@ -171,7 +180,7 @@ const addressForm = reactive({
   province: '',
   city: '',
   district: '',
-  detail: ''
+  detail: '',
 })
 
 const totalQuantity = computed(() => {
@@ -185,7 +194,9 @@ const totalPrice = computed(() => {
 })
 
 const formatSpec = (spec) => {
-  return Object.entries(spec).map(([k, v]) => `${k}: ${v}`).join(' / ')
+  return Object.entries(spec)
+    .map(([k, v]) => `${k}: ${v}`)
+    .join(' / ')
 }
 
 const selectAddress = (address) => {
@@ -208,7 +219,7 @@ const handleSubmit = async () => {
     return
   }
 
-  const cartIds = cartList.value.map(item => item.id)
+  const cartIds = cartList.value.map((item) => item.id)
   if (cartIds.length === 0) {
     ElMessage.error('购物车为空')
     return
@@ -217,7 +228,7 @@ const handleSubmit = async () => {
   try {
     const res = await createOrder({
       cart_ids: cartIds,
-      address: { ...addressForm }
+      address: { ...addressForm },
     })
     if (res.code === 100) {
       ElMessage.success('下单成功')
@@ -244,7 +255,7 @@ const loadAddresses = async () => {
     const res = await getAddresses()
     if (res.code === 100) {
       addresses.value = res.data || []
-      const defaultAddress = addresses.value.find(a => a.is_default)
+      const defaultAddress = addresses.value.find((a) => a.is_default)
       if (defaultAddress) {
         selectAddress(defaultAddress)
       }

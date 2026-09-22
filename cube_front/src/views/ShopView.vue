@@ -2,8 +2,15 @@
   <div class="shop-view">
     <!-- 移动端：顶部搜索筛选栏 -->
     <div class="mobile-search-bar">
-      <el-input v-model="searchKeyword" placeholder="搜索商品" prefix-icon="Search" clearable
-        @keyup.enter="handleSearch" @clear="handleSearch" @input="handleSearch" />
+      <el-input
+        v-model="searchKeyword"
+        placeholder="搜索商品"
+        prefix-icon="Search"
+        clearable
+        @keyup.enter="handleSearch"
+        @clear="handleSearch"
+        @input="handleSearch"
+      />
       <el-button type="primary" plain @click="mobileFilterVisible = true" icon="Filter">
         筛选
       </el-button>
@@ -16,17 +23,29 @@
             <template #header>
               <span>搜索商品</span>
             </template>
-            <el-input v-model="searchKeyword" placeholder="输入商品名称" prefix-icon="Search" clearable
-              @keyup.enter="handleSearch" @clear="handleSearch" @input="handleSearch" />
+            <el-input
+              v-model="searchKeyword"
+              placeholder="输入商品名称"
+              prefix-icon="Search"
+              clearable
+              @keyup.enter="handleSearch"
+              @clear="handleSearch"
+              @input="handleSearch"
+            />
           </el-card>
 
           <el-card shadow="never" class="category-card">
             <template #header>
               <span>商品分类</span>
             </template>
-            <el-tree :data="categoryTree" :props="{ label: 'name', children: 'children' }"
-              :expand-on-click-node="false" :highlight-current="true"
-              @node-click="handleCategoryClick" default-expand-all />
+            <el-tree
+              :data="categoryTree"
+              :props="{ label: 'name', children: 'children' }"
+              :expand-on-click-node="false"
+              :highlight-current="true"
+              @node-click="handleCategoryClick"
+              default-expand-all
+            />
           </el-card>
 
           <el-card shadow="never" class="price-card">
@@ -57,11 +76,10 @@
                 :type="selectedPriceTag === tag.key ? 'primary' : 'info'"
                 :effect="selectedPriceTag === tag.key ? 'dark' : 'light'"
                 @click="selectPriceTag(tag)"
-              >{{ tag.label }}</el-tag>
+                >{{ tag.label }}</el-tag
+              >
             </div>
           </el-card>
-
-          
         </div>
       </el-col>
 
@@ -78,8 +96,13 @@
           </div>
 
           <div class="product-grid">
-            <el-card v-for="product in productList" :key="product.id" class="product-card"
-              @click="handleProductClick(product)" hover>
+            <el-card
+              v-for="product in productList"
+              :key="product.id"
+              class="product-card"
+              @click="handleProductClick(product)"
+              hover
+            >
               <div class="product-image">
                 <img v-if="product.thumbnail" :src="product.thumbnail" :alt="product.name" />
                 <div v-else class="placeholder">
@@ -93,7 +116,9 @@
                 <p class="product-desc">{{ product.description }}</p>
                 <div class="product-price">
                   <span class="current-price">¥{{ product.price }}</span>
-                  <span v-if="product.original_price" class="original-price">¥{{ product.original_price }}</span>
+                  <span v-if="product.original_price" class="original-price"
+                    >¥{{ product.original_price }}</span
+                  >
                 </div>
                 <div class="product-meta">
                   <span class="sales">销量: {{ product.sales_count }}</span>
@@ -101,9 +126,14 @@
                 </div>
               </div>
               <div class="product-actions">
-                <el-button type="primary" size="small" @click.stop="handleAddToCart(product)" title="加入购物车">
+                <el-button
+                  type="primary"
+                  size="small"
+                  @click.stop="handleAddToCart(product)"
+                  title="加入购物车"
+                >
                   <el-icon><ShoppingCart /></el-icon>
-                  <span style="margin-left: 2px;">+</span>
+                  <span style="margin-left: 2px">+</span>
                 </el-button>
                 <el-button type="warning" size="small" @click.stop="handleBuyNow(product)">
                   立即购买
@@ -113,8 +143,13 @@
           </div>
 
           <div v-if="total > pageSize" class="pagination-wrapper">
-            <el-pagination v-model:current-page="currentPage" :page-size="pageSize" :total="total"
-              layout="total, prev, pager, next" @current-change="handlePageChange" />
+            <el-pagination
+              v-model:current-page="currentPage"
+              :page-size="pageSize"
+              :total="total"
+              layout="total, prev, pager, next"
+              @current-change="handlePageChange"
+            />
           </div>
         </div>
       </el-col>
@@ -133,9 +168,14 @@
           <template #header>
             <span>商品分类</span>
           </template>
-          <el-tree :data="categoryTree" :props="{ label: 'name', children: 'children' }"
-            :expand-on-click-node="false" :highlight-current="true"
-            @node-click="handleMobileCategoryClick" default-expand-all />
+          <el-tree
+            :data="categoryTree"
+            :props="{ label: 'name', children: 'children' }"
+            :expand-on-click-node="false"
+            :highlight-current="true"
+            @node-click="handleMobileCategoryClick"
+            default-expand-all
+          />
         </el-card>
 
         <el-card shadow="never" class="price-card">
@@ -152,7 +192,9 @@
                 <el-input v-model="priceMax" placeholder="最高价" size="small" type="number" />
               </el-form-item>
               <el-form-item>
-                <el-button type="primary" size="small" @click="handleMobilePriceFilter">筛选</el-button>
+                <el-button type="primary" size="small" @click="handleMobilePriceFilter"
+                  >筛选</el-button
+                >
               </el-form-item>
             </div>
           </el-form>
@@ -163,7 +205,8 @@
               :type="selectedPriceTag === tag.key ? 'primary' : 'info'"
               :effect="selectedPriceTag === tag.key ? 'dark' : 'light'"
               @click="selectPriceTag(tag)"
-            >{{ tag.label }}</el-tag>
+              >{{ tag.label }}</el-tag
+            >
           </div>
         </el-card>
 
@@ -174,7 +217,12 @@
       </div>
     </el-drawer>
 
-    <el-dialog v-model="showDetailDialog" :title="selectedProduct?.name" :width="isMobile ? '95%' : '800px'" class="product-detail-dialog">
+    <el-dialog
+      v-model="showDetailDialog"
+      :title="selectedProduct?.name"
+      :width="isMobile ? '95%' : '800px'"
+      class="product-detail-dialog"
+    >
       <div v-if="selectedProduct" class="product-detail">
         <el-row :gutter="20">
           <el-col :xs="24" :sm="10">
@@ -190,13 +238,18 @@
             <div class="detail-info">
               <div class="detail-price">
                 <span class="current">¥{{ selectedProduct.price }}</span>
-                <span v-if="selectedProduct.original_price" class="original">¥{{ selectedProduct.original_price }}</span>
+                <span v-if="selectedProduct.original_price" class="original"
+                  >¥{{ selectedProduct.original_price }}</span
+                >
               </div>
               <div class="detail-stats">
                 <span>销量: {{ selectedProduct.sales_count }}</span>
                 <span>库存: {{ selectedProduct.stock }}</span>
               </div>
-              <div v-if="selectedProduct.specs && Object.keys(selectedProduct.specs).length" class="detail-specs">
+              <div
+                v-if="selectedProduct.specs && Object.keys(selectedProduct.specs).length"
+                class="detail-specs"
+              >
                 <span class="spec-label">规格:</span>
                 <div v-for="(values, key) in selectedProduct.specs" :key="key" class="spec-row">
                   <span class="spec-name">{{ key }}:</span>
@@ -207,7 +260,8 @@
                       :type="selectedSpec[key] === val ? 'primary' : 'default'"
                       size="small"
                       @click="selectedSpec[key] = val"
-                    >{{ val }}</el-button>
+                      >{{ val }}</el-button
+                    >
                   </el-button-group>
                 </div>
               </div>
@@ -233,9 +287,7 @@
           <el-icon><ShoppingCart /></el-icon>
           加入购物车
         </el-button>
-        <el-button type="warning" @click="handleBuyNow(selectedProduct)">
-          立即购买
-        </el-button>
+        <el-button type="warning" @click="handleBuyNow(selectedProduct)"> 立即购买 </el-button>
       </template>
     </el-dialog>
   </div>
@@ -336,7 +388,7 @@ const productImages = computed(() => {
   if (thumbnail && !images.includes(thumbnail)) {
     return [thumbnail, ...images]
   }
-  return images.length ? images : (thumbnail ? [thumbnail] : [])
+  return images.length ? images : thumbnail ? [thumbnail] : []
 })
 
 const handleCategoryClick = (data) => {
@@ -392,9 +444,9 @@ const handleProductClick = async (product) => {
     if (res.code === 100) {
       selectedProduct.value = res.data
       quantity.value = 1
-      Object.keys(selectedSpec).forEach(key => delete selectedSpec[key])
+      Object.keys(selectedSpec).forEach((key) => delete selectedSpec[key])
       if (selectedProduct.value.specs) {
-        Object.keys(selectedProduct.value.specs).forEach(key => {
+        Object.keys(selectedProduct.value.specs).forEach((key) => {
           const values = selectedProduct.value.specs[key]
           if (values && values.length) {
             selectedSpec[key] = values[0]
@@ -418,7 +470,7 @@ const handleAddToCart = async (product) => {
     const data = {
       product: product.id,
       quantity: quantity.value,
-      selected_spec: { ...selectedSpec }
+      selected_spec: { ...selectedSpec },
     }
     const res = await addToCart(data)
     if (res.code === 100) {
@@ -442,7 +494,7 @@ const handleBuyNow = async (product) => {
     const data = {
       product: product.id,
       quantity: quantity.value,
-      selected_spec: { ...selectedSpec }
+      selected_spec: { ...selectedSpec },
     }
     const res = await addToCart(data)
     if (res.code === 100) {
@@ -451,11 +503,11 @@ const handleBuyNow = async (product) => {
       const cartRes = await getCart()
       if (cartRes.code === 100) {
         const items = cartRes.data.results || cartRes.data
-        const cartItem = items.find(item => item.product_info?.id === product.id)
+        const cartItem = items.find((item) => item.product_info?.id === product.id)
         if (cartItem) {
           router.push({
             path: '/shop/checkout',
-            query: { cart_ids: cartItem.id }
+            query: { cart_ids: cartItem.id },
           })
         }
       }
@@ -479,7 +531,7 @@ const loadCategories = async () => {
 const loadProducts = async () => {
   const params = {
     page: currentPage.value,
-    page_size: pageSize.value
+    page_size: pageSize.value,
   }
   if (selectedCategory.value) {
     params.category = selectedCategory.value

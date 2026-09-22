@@ -49,4 +49,5 @@ class BannerSerializer(serializers.ModelSerializer):
 
     def get_image(self, obj):
         from cube_api.utils.image_url import build_image_url
+
         return build_image_url(obj.image)

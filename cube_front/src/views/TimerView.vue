@@ -1,5 +1,11 @@
 <template>
-  <div class="timer-container" ref="timerPage" tabindex="0" @keydown="handleKeyDown" @keyup="handleKeyUp">
+  <div
+    class="timer-container"
+    ref="timerPage"
+    tabindex="0"
+    @keydown="handleKeyDown"
+    @keyup="handleKeyUp"
+  >
     <!-- 顶部工具栏 -->
     <div class="top-bar">
       <div class="top-bar-center">
@@ -22,7 +28,9 @@
         <!-- 紧凑连接区 -->
         <div class="connect-mini" v-if="timingMode === 'smart'">
           <template v-if="!connected">
-            <el-button size="small" type="primary" @click="handleConnect" :loading="connecting">连接</el-button>
+            <el-button size="small" type="primary" @click="handleConnect" :loading="connecting"
+              >连接</el-button
+            >
             <el-tooltip placement="bottom" effect="light">
               <template #content>
                 <div class="mac-tooltip">
@@ -36,8 +44,12 @@
             </el-tooltip>
           </template>
           <template v-else>
-            <el-tag type="success" size="small" effect="plain">{{ deviceInfo.name || '已连接' }}</el-tag>
-            <el-tag v-if="deviceInfo.battery !== null" size="small" type="info" effect="plain">{{ deviceInfo.battery }}%</el-tag>
+            <el-tag type="success" size="small" effect="plain">{{
+              deviceInfo.name || '已连接'
+            }}</el-tag>
+            <el-tag v-if="deviceInfo.battery !== null" size="small" type="info" effect="plain"
+              >{{ deviceInfo.battery }}%</el-tag
+            >
             <el-dropdown @command="onDeviceCmd" trigger="click">
               <el-icon class="device-menu-icon"><ArrowDown /></el-icon>
               <template #dropdown>
@@ -81,7 +93,8 @@
             :key="i"
             class="scramble-chip"
             :class="scrambleChipClass(i)"
-          >{{ move }}</span>
+            >{{ move }}</span
+          >
         </div>
         <div class="scramble-empty" v-else>
           <span v-if="timingMode === 'manual'">点击「刷新打乱」生成</span>
@@ -93,12 +106,24 @@
           <div class="center-left" :class="{ 'manual-center': timingMode === 'manual' }">
             <!-- 手动模式：大计时器 -->
             <template v-if="timingMode === 'manual'">
-              <div class="status-hint" :class="{ 'ready': manualTimerState === 'ready', 'running': manualTimerState === 'running' }">
+              <div
+                class="status-hint"
+                :class="{
+                  ready: manualTimerState === 'ready',
+                  running: manualTimerState === 'running',
+                }"
+              >
                 {{ manualStatusText }}
               </div>
-              <div class="time-banner" :class="manualTimerState"
-                   @mousedown="handleManualTouchStart" @mouseup="handleManualTouchEnd"
-                   @mouseleave="handleManualTouchEnd" @touchstart.prevent="handleManualTouchStart" @touchend.prevent="handleManualTouchEnd">
+              <div
+                class="time-banner"
+                :class="manualTimerState"
+                @mousedown="handleManualTouchStart"
+                @mouseup="handleManualTouchEnd"
+                @mouseleave="handleManualTouchEnd"
+                @touchstart.prevent="handleManualTouchStart"
+                @touchend.prevent="handleManualTouchEnd"
+              >
                 {{ manualTimeDisplay }}
               </div>
               <div class="manual-hint">长按空格键开始 / 轻按停止</div>
@@ -113,8 +138,12 @@
                   <Cube3D ref="cube3dRef" :animation-speed="120" />
                 </div>
                 <div class="smart-timer-block" v-if="connected">
-                  <div class="timer-main" :style="{ color: smartTimerColor }">{{ smartTimerDisplay }}</div>
-                  <div class="timer-sub" :style="{ color: smartTimerColor }">{{ smartTimerStateText }} · {{ smartTimerSubText }}</div>
+                  <div class="timer-main" :style="{ color: smartTimerColor }">
+                    {{ smartTimerDisplay }}
+                  </div>
+                  <div class="timer-sub" :style="{ color: smartTimerColor }">
+                    {{ smartTimerStateText }} · {{ smartTimerSubText }}
+                  </div>
                   <div class="smart-controls" v-if="cubeTimerState !== TimerStates.IDLE">
                     <el-button type="danger" size="small" @click="handleStopTimer">停止</el-button>
                   </div>
@@ -140,23 +169,45 @@
             <div class="card-header">
               <span>数据统计（今日）</span>
               <div class="card-header-actions">
-                <el-button v-if="timingMode === 'manual'" type="danger" link size="small" @click="clearHistory">清空</el-button>
-                <el-button type="primary" link size="small" @click="goToProfileData">查看全部</el-button>
+                <el-button
+                  v-if="timingMode === 'manual'"
+                  type="danger"
+                  link
+                  size="small"
+                  @click="clearHistory"
+                  >清空</el-button
+                >
+                <el-button type="primary" link size="small" @click="goToProfileData"
+                  >查看全部</el-button
+                >
               </div>
             </div>
           </template>
           <div class="summary-stats">
-            <p>次数: <strong>{{ todayHistory.length }}</strong></p>
-            <p>最佳: <span class="best-time">{{ bestTimeDisplay }}</span></p>
-            <p>Ao5: <strong>{{ ao5Display }}</strong></p>
-            <p>Ao12: <strong>{{ ao12Display }}</strong></p>
+            <p>
+              次数: <strong>{{ todayHistory.length }}</strong>
+            </p>
+            <p>
+              最佳: <span class="best-time">{{ bestTimeDisplay }}</span>
+            </p>
+            <p>
+              Ao5: <strong>{{ ao5Display }}</strong>
+            </p>
+            <p>
+              Ao12: <strong>{{ ao12Display }}</strong>
+            </p>
           </div>
         </el-card>
 
         <el-card shadow="never" class="history-card">
           <template #header><span>今日练习记录</span></template>
           <div class="history-list">
-            <div v-for="(item, index) in todayHistory" :key="item.id" class="history-item" :class="{ 'is-dnf': item.isDnf }">
+            <div
+              v-for="(item, index) in todayHistory"
+              :key="item.id"
+              class="history-item"
+              :class="{ 'is-dnf': item.isDnf }"
+            >
               <span class="hi-index">#{{ todayHistory.length - index }}</span>
               <span class="hi-time">{{ formatTime(item.time) }}</span>
               <template v-if="timingMode === 'smart'">
@@ -166,7 +217,14 @@
                   <span class="hi-tps" v-if="item.tps">TPS {{ item.tps }}</span>
                 </template>
               </template>
-              <el-button type="danger" icon="Delete" circle size="small" link @click="deleteRecord(item.id)" />
+              <el-button
+                type="danger"
+                icon="Delete"
+                circle
+                size="small"
+                link
+                @click="deleteRecord(item.id)"
+              />
             </div>
             <div v-if="todayHistory.length === 0" class="empty-tip">今日暂无成绩</div>
           </div>
@@ -175,7 +233,12 @@
     </div>
 
     <!-- MAC 地址输入对话框 -->
-    <el-dialog v-model="macDialogVisible" title="输入 MAC 地址" width="400px" @close="onMacDialogClose">
+    <el-dialog
+      v-model="macDialogVisible"
+      title="输入 MAC 地址"
+      width="400px"
+      @close="onMacDialogClose"
+    >
       <p class="mac-hint">格式：XX:XX:XX:XX:XX:XX（不区分大小写）</p>
       <el-input v-model="macInput" placeholder="例如：A4:CF:12:34:56:78" />
       <template #footer>
@@ -185,16 +248,29 @@
     </el-dialog>
 
     <!-- 朝前面选择对话框 -->
-    <el-dialog v-model="frontFaceDialogVisible" title="选择朝前的面" width="400px" :close-on-click-modal="false">
-      <p class="mac-hint">检测到 <strong>{{ faceColorName(detectedTopFace) }}</strong> 面朝顶。请选择朝向你的面：</p>
+    <el-dialog
+      v-model="frontFaceDialogVisible"
+      title="选择朝前的面"
+      width="400px"
+      :close-on-click-modal="false"
+    >
+      <p class="mac-hint">
+        检测到 <strong>{{ faceColorName(detectedTopFace) }}</strong> 面朝顶。请选择朝向你的面：
+      </p>
       <div class="front-face-blocks">
         <div
           v-for="face in frontFaceOptions"
           :key="face"
           class="face-block"
-          :class="['face-block-' + face.toLowerCase(), { 'face-block-selected': frontFaceInput === face }]"
+          :class="[
+            'face-block-' + face.toLowerCase(),
+            { 'face-block-selected': frontFaceInput === face },
+          ]"
           @click="frontFaceInput = face"
-          @dblclick="frontFaceInput = face; submitFrontFace()"
+          @dblclick="
+            frontFaceInput = face
+            submitFrontFace()
+          "
         >
           <span class="face-block-color">{{ faceColorName(face) }}</span>
           <span class="face-block-letter">{{ face }}</span>
@@ -202,7 +278,9 @@
       </div>
       <template #footer>
         <el-button @click="frontFaceDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitFrontFace" :disabled="!frontFaceInput">确定</el-button>
+        <el-button type="primary" @click="submitFrontFace" :disabled="!frontFaceInput"
+          >确定</el-button
+        >
       </template>
     </el-dialog>
   </div>
@@ -226,7 +304,7 @@ import {
   PRESET_ORIENTATIONS,
   remapMove,
   FACES,
-  FACE_NORMALS
+  FACE_NORMALS,
 } from '@/utils/cube-orientation'
 import { CubeTimer, TimerStates } from '@/utils/cube-timer'
 
@@ -240,16 +318,19 @@ const method = ref('cfop')
 const currentScramble = ref('')
 
 if (route.query.mode === 'smart') timingMode.value = 'smart'
-watch(() => route.query.mode, (val) => {
-  if (val === 'smart' || val === 'manual') timingMode.value = val
-})
+watch(
+  () => route.query.mode,
+  (val) => {
+    if (val === 'smart' || val === 'manual') timingMode.value = val
+  }
+)
 
 // ===== 统一历史记录 =====
 const allHistory = ref([])
 // 从 localStorage 加载手动记录
 function loadManualHistory() {
   const raw = JSON.parse(localStorage.getItem('icube_timer_history') || '[]')
-  return raw.map(r => ({ ...r, timingMode: 'manual', isDnf: false }))
+  return raw.map((r) => ({ ...r, timingMode: 'manual', isDnf: false }))
 }
 allHistory.value = loadManualHistory()
 
@@ -280,18 +361,18 @@ function isToday(record) {
   }
   return true
 }
-const todayHistory = computed(() => allHistory.value.filter(r => isToday(r)))
+const todayHistory = computed(() => allHistory.value.filter((r) => isToday(r)))
 
 const bestTimeDisplay = computed(() => {
-  const valid = todayHistory.value.filter(r => !r.isDnf)
+  const valid = todayHistory.value.filter((r) => !r.isDnf)
   if (valid.length === 0) return '-'
-  return formatTime(Math.min(...valid.map(r => r.time)))
+  return formatTime(Math.min(...valid.map((r) => r.time)))
 })
 
 function calcAoN(n) {
-  const valid = todayHistory.value.filter(r => !r.isDnf)
+  const valid = todayHistory.value.filter((r) => !r.isDnf)
   if (valid.length < n) return '-'
-  const recent = valid.slice(0, n).map(r => r.time)
+  const recent = valid.slice(0, n).map((r) => r.time)
   recent.sort((a, b) => a - b)
   const mid = recent.slice(1, n - 1)
   return formatTime(mid.reduce((a, b) => a + b, 0) / (n - 2))
@@ -300,12 +381,13 @@ const ao5Display = computed(() => calcAoN(5))
 const ao12Display = computed(() => calcAoN(12))
 
 function deleteRecord(id) {
-  const idx = allHistory.value.findIndex(r => r.id === id)
+  const idx = allHistory.value.findIndex((r) => r.id === id)
   if (idx !== -1) allHistory.value.splice(idx, 1)
   if (timingMode.value === 'manual') {
-    localStorage.setItem('icube_timer_history', JSON.stringify(
-      allHistory.value.map(({ timingMode, isDnf, ...rest }) => rest)
-    ))
+    localStorage.setItem(
+      'icube_timer_history',
+      JSON.stringify(allHistory.value.map(({ timingMode, isDnf, ...rest }) => rest))
+    )
   }
 }
 
@@ -325,7 +407,8 @@ const scrambleChips = computed(() => {
 function scrambleChipClass(i) {
   if (timingMode.value !== 'smart') return ''
   if (i < scrambleCurrentStep.value) return 'chip-done'
-  if (i === scrambleCurrentStep.value && cubeTimerState.value === TimerStates.SCRAMBLING) return 'chip-current'
+  if (i === scrambleCurrentStep.value && cubeTimerState.value === TimerStates.SCRAMBLING)
+    return 'chip-current'
   return 'chip-pending'
 }
 
@@ -356,8 +439,49 @@ const holdTimer = ref(null)
 const generateScramble = () => {
   const moves = {
     '2x2': ['U', "U'", 'U2', 'R', "R'", 'R2', 'F', "F'", 'F2'],
-    '3x3': ['U', "U'", 'U2', 'D', "D'", 'D2', 'R', "R'", 'R2', 'L', "L'", 'L2', 'F', "F'", 'F2', 'B', "B'", 'B2'],
-    '4x4': ['U', "U'", 'U2', 'D', "D'", 'D2', 'R', "R'", 'R2', 'L', "L'", 'L2', 'F', "F'", 'F2', 'B', "B'", 'B2', 'Uw', 'Rw', 'Fw']
+    '3x3': [
+      'U',
+      "U'",
+      'U2',
+      'D',
+      "D'",
+      'D2',
+      'R',
+      "R'",
+      'R2',
+      'L',
+      "L'",
+      'L2',
+      'F',
+      "F'",
+      'F2',
+      'B',
+      "B'",
+      'B2',
+    ],
+    '4x4': [
+      'U',
+      "U'",
+      'U2',
+      'D',
+      "D'",
+      'D2',
+      'R',
+      "R'",
+      'R2',
+      'L',
+      "L'",
+      'L2',
+      'F',
+      "F'",
+      'F2',
+      'B',
+      "B'",
+      'B2',
+      'Uw',
+      'Rw',
+      'Fw',
+    ],
   }
   const currentMoves = moves[cubeType.value]
   const length = cubeType.value === '2x2' ? 11 : cubeType.value === '4x4' ? 40 : 21
@@ -392,7 +516,9 @@ const handleKeyDown = (e) => {
     manualTimerState.value = 'holding'
     elapsedTime.value = 0
     clearTimeout(holdTimer.value)
-    holdTimer.value = setTimeout(() => { manualTimerState.value = 'ready' }, 500)
+    holdTimer.value = setTimeout(() => {
+      manualTimerState.value = 'ready'
+    }, 500)
   }
 }
 
@@ -410,12 +536,17 @@ const handleKeyUp = (e) => {
 
 const handleManualTouchStart = () => {
   if (timingMode.value !== 'manual') return
-  if (manualTimerState.value === 'running') { stopManualTimer(); return }
+  if (manualTimerState.value === 'running') {
+    stopManualTimer()
+    return
+  }
   if (manualTimerState.value === 'idle') {
     manualTimerState.value = 'holding'
     elapsedTime.value = 0
     clearTimeout(holdTimer.value)
-    holdTimer.value = setTimeout(() => { manualTimerState.value = 'ready' }, 500)
+    holdTimer.value = setTimeout(() => {
+      manualTimerState.value = 'ready'
+    }, 500)
   }
 }
 const handleManualTouchEnd = () => {
@@ -437,7 +568,10 @@ function startManualTimer() {
 
 function stopManualTimer() {
   if (timerInterval.value) clearInterval(timerInterval.value)
-  if (elapsedTime.value === 0) { manualTimerState.value = 'idle'; return }
+  if (elapsedTime.value === 0) {
+    manualTimerState.value = 'idle'
+    return
+  }
   const wasRunning = manualTimerState.value === 'running'
   manualTimerState.value = 'idle'
   if (!wasRunning) return
@@ -448,17 +582,20 @@ function stopManualTimer() {
     scramble: currentScramble.value,
     date: new Date().toLocaleDateString(),
     timingMode: 'manual',
-    isDnf: false
+    isDnf: false,
   }
   allHistory.value.unshift(record)
-  localStorage.setItem('icube_timer_history', JSON.stringify(
-    allHistory.value.map(({ timingMode, isDnf, ...rest }) => rest)
-  ))
+  localStorage.setItem(
+    'icube_timer_history',
+    JSON.stringify(allHistory.value.map(({ timingMode, isDnf, ...rest }) => rest))
+  )
 
   createTimerRecord({
-    cube_type: cubeType.value, method: method.value,
-    time_ms: Math.round(elapsedTime.value), scramble: currentScramble.value,
-    timing_mode: 'manual'
+    cube_type: cubeType.value,
+    method: method.value,
+    time_ms: Math.round(elapsedTime.value),
+    scramble: currentScramble.value,
+    timing_mode: 'manual',
   }).catch(() => {})
 
   generateScramble()
@@ -472,12 +609,16 @@ function cancelManualTimer() {
 
 function clearHistory() {
   ElMessageBox.confirm('确定清空所有历史记录？', '警告', {
-    confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'
-  }).then(() => {
-    allHistory.value = []
-    localStorage.removeItem('icube_timer_history')
-    ElMessage.success('已清空')
-  }).catch(() => {})
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  })
+    .then(() => {
+      allHistory.value = []
+      localStorage.removeItem('icube_timer_history')
+      ElMessage.success('已清空')
+    })
+    .catch(() => {})
 }
 
 // ============================================================
@@ -501,8 +642,12 @@ const currentDeviceId = ref(null)
 
 const cubeTimer = new CubeTimer({
   mode: 'practice',
-  onStateChange: (state) => { cubeTimerState.value = state },
-  onTimeUpdate: ({ display }) => { smartTimerDisplay.value = display },
+  onStateChange: (state) => {
+    cubeTimerState.value = state
+  },
+  onTimeUpdate: ({ display }) => {
+    smartTimerDisplay.value = display
+  },
   onScrambleGenerated: (seq) => {
     scrambleSequence.value = seq
     scrambleCurrentStep.value = 0
@@ -514,7 +659,9 @@ const cubeTimer = new CubeTimer({
   },
   onCorrection: (move) => ElMessage.info(`已撤销 ${move}`),
   onWarning: (msg) => ElMessage.warning(msg),
-  onSolveComplete: (result) => { onSmartSolveComplete(result) },
+  onSolveComplete: (result) => {
+    onSmartSolveComplete(result)
+  },
 })
 const cubeTimerState = ref(TimerStates.IDLE)
 const smartTimerDisplay = ref('0.00')
@@ -526,28 +673,38 @@ const cubeTimerMode = ref('practice')
 
 const smartTimerStateText = computed(() => {
   const texts = {
-    [TimerStates.IDLE]: '等待开始', [TimerStates.SCRAMBLING]: '打乱中',
-    [TimerStates.OBSERVATION]: '观察中', [TimerStates.SOLVING]: '计时中',
+    [TimerStates.IDLE]: '等待开始',
+    [TimerStates.SCRAMBLING]: '打乱中',
+    [TimerStates.OBSERVATION]: '观察中',
+    [TimerStates.SOLVING]: '计时中',
     [TimerStates.SOLVED]: '已复原',
   }
   return texts[cubeTimerState.value] || ''
 })
 const smartTimerColor = computed(() => {
   const colors = {
-    [TimerStates.IDLE]: '#909399', [TimerStates.SCRAMBLING]: '#e6a23c',
-    [TimerStates.OBSERVATION]: '#e6a23c', [TimerStates.SOLVING]: '#67c23a',
+    [TimerStates.IDLE]: '#909399',
+    [TimerStates.SCRAMBLING]: '#e6a23c',
+    [TimerStates.OBSERVATION]: '#e6a23c',
+    [TimerStates.SOLVING]: '#67c23a',
     [TimerStates.SOLVED]: '#409eff',
   }
   return colors[cubeTimerState.value] || '#909399'
 })
 const smartTimerSubText = computed(() => {
   switch (cubeTimerState.value) {
-    case TimerStates.IDLE: return '请回到初始持握开始打乱'
-    case TimerStates.SCRAMBLING: return `${scrambleCurrentStep.value}/${scrambleTotalStep.value} 步`
-    case TimerStates.OBSERVATION: return cubeTimerMode.value === 'practice' ? '15s 倒计时' : '不限时观察'
-    case TimerStates.SOLVING: return '复原中…'
-    case TimerStates.SOLVED: return solveResult.value?.dnf ? '观察超时' : `${solveResult.value?.moveCount || 0} 步`
-    default: return ''
+    case TimerStates.IDLE:
+      return '请回到初始持握开始打乱'
+    case TimerStates.SCRAMBLING:
+      return `${scrambleCurrentStep.value}/${scrambleTotalStep.value} 步`
+    case TimerStates.OBSERVATION:
+      return cubeTimerMode.value === 'practice' ? '15s 倒计时' : '不限时观察'
+    case TimerStates.SOLVING:
+      return '复原中…'
+    case TimerStates.SOLVED:
+      return solveResult.value?.dnf ? '观察超时' : `${solveResult.value?.moveCount || 0} 步`
+    default:
+      return ''
   }
 })
 
@@ -579,27 +736,36 @@ const frontFaceOptions = ref([])
 const solveResult = ref(null)
 
 const FACE_COLOR_NAMES = { U: '白', D: '黄', R: '红', L: '橙', F: '绿', B: '蓝' }
-function faceColorName(face) { return FACE_COLOR_NAMES[face] || face }
+function faceColorName(face) {
+  return FACE_COLOR_NAMES[face] || face
+}
 
 function currentMap() {
   return gyroMode.value ? tracker.currentMap : staticOrientation.currentMap
 }
 
-function quatConj(q) { return { w: q.w, x: -q.x, y: -q.y, z: -q.z } }
+function quatConj(q) {
+  return { w: q.w, x: -q.x, y: -q.y, z: -q.z }
+}
 function quatMul(a, b) {
   return {
     w: a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z,
     x: a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,
     y: a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x,
-    z: a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w
+    z: a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w,
   }
 }
 function updateCubeAttitude(currentQuat) {
   if (!cube3dRef.value || !gyroBaseQuat.value) return
   const baseInv = quatConj(gyroBaseQuat.value)
   const rel = quatMul(currentQuat, baseInv)
-  const len = Math.sqrt(rel.w*rel.w + rel.x*rel.x + rel.y*rel.y + rel.z*rel.z)
-  if (len > 0) { rel.w /= len; rel.x /= len; rel.y /= len; rel.z /= len }
+  const len = Math.sqrt(rel.w * rel.w + rel.x * rel.x + rel.y * rel.y + rel.z * rel.z)
+  if (len > 0) {
+    rel.w /= len
+    rel.x /= len
+    rel.y /= len
+    rel.z /= len
+  }
   cube3dRef.value.setAttitude(rel)
 }
 
@@ -610,10 +776,12 @@ function enterGyroMode() {
   detectedTopFace.value = null
   tracker.onTopFaceDetected((topFace) => {
     detectedTopFace.value = topFace
-    const topOpposite = FACES.find(f =>
-      Math.abs(FACE_NORMALS[f].reduce((s, v, i) => s + v * FACE_NORMALS[topFace][i], 0)) + 1 < 0.01
+    const topOpposite = FACES.find(
+      (f) =>
+        Math.abs(FACE_NORMALS[f].reduce((s, v, i) => s + v * FACE_NORMALS[topFace][i], 0)) + 1 <
+        0.01
     )
-    frontFaceOptions.value = FACES.filter(f => f !== topFace && f !== topOpposite)
+    frontFaceOptions.value = FACES.filter((f) => f !== topFace && f !== topOpposite)
     frontFaceInput.value = ''
     frontFaceDialogVisible.value = true
   })
@@ -625,10 +793,17 @@ function enterStaticMode() {
   initialOrientation.value = '白顶绿前'
 }
 function onModeSwitch(val) {
-  if (val) { enterStaticMode() } else if (gyroSupported.value) { enterGyroMode() }
+  if (val) {
+    enterStaticMode()
+  } else if (gyroSupported.value) {
+    enterGyroMode()
+  }
 }
 function submitFrontFace() {
-  if (!frontFaceInput.value) { ElMessage.warning('请选择'); return }
+  if (!frontFaceInput.value) {
+    ElMessage.warning('请选择')
+    return
+  }
   frontFaceDialogVisible.value = false
   const top = detectedTopFace.value
   const front = frontFaceInput.value
@@ -664,7 +839,10 @@ const handleEvent = (event) => {
         if (!gyroRafId) {
           gyroRafId = requestAnimationFrame(() => {
             gyroRafId = null
-            if (pendingGyroQuat) { updateCubeAttitude(pendingGyroQuat); pendingGyroQuat = null }
+            if (pendingGyroQuat) {
+              updateCubeAttitude(pendingGyroQuat)
+              pendingGyroQuat = null
+            }
           })
         }
       }
@@ -696,7 +874,10 @@ const handleEvent = (event) => {
       detectedTopFace.value = null
       initialOrientation.value = ''
       gyroBaseQuat.value = null
-      if (gyroRafId) { cancelAnimationFrame(gyroRafId); gyroRafId = null }
+      if (gyroRafId) {
+        cancelAnimationFrame(gyroRafId)
+        gyroRafId = null
+      }
       pendingGyroQuat = null
       deviceInfo.battery = null
       if (cube3dRef.value) cube3dRef.value.resetAttitude()
@@ -711,13 +892,13 @@ function onSmartSolveComplete(result) {
   const isDnf = result.dnf
   const record = {
     id: Date.now(),
-    time: isDnf ? 0 : (result.solveTime || 0),
+    time: isDnf ? 0 : result.solveTime || 0,
     scramble: result.scramble ? result.scramble.join(' ') : '',
     solveSequence: result.solve ? result.solve.join(' ') : '',
     moveCount: result.moveCount || 0,
     tps: isDnf ? null : calcTPS(result.moveCount, result.solveTime),
     isDnf,
-    timingMode: 'smart'
+    timingMode: 'smart',
   }
   allHistory.value.unshift(record)
 
@@ -731,12 +912,14 @@ function onSmartSolveComplete(result) {
     move_count: result.moveCount || 0,
     is_dnf: isDnf,
     timing_mode: 'smart',
-    device_id: currentDeviceId.value || undefined
-  }).then(() => {
-    ElMessage.success(isDnf ? 'DNF 记录已保存' : '记录已保存')
-  }).catch(() => {
-    ElMessage.error('保存失败')
+    device_id: currentDeviceId.value || undefined,
   })
+    .then(() => {
+      ElMessage.success(isDnf ? 'DNF 记录已保存' : '记录已保存')
+    })
+    .catch(() => {
+      ElMessage.error('保存失败')
+    })
 }
 
 // --- 连接 ---
@@ -775,12 +958,12 @@ async function handleConnect() {
   try {
     await client.connect({
       onMacAddressRequired: async () => {
-        return new Promise(resolve => {
+        return new Promise((resolve) => {
           macResolve = resolve
           macInput.value = ''
           macDialogVisible.value = true
         })
-      }
+      },
     })
     connected.value = true
     deviceInfo.name = client.deviceName
@@ -788,7 +971,10 @@ async function handleConnect() {
     saveDeviceInfo(deviceInfo.name, deviceInfo.mac)
     ElMessage.success('连接成功')
     try {
-      const res = await registerSmartCubeDevice({ mac_address: deviceInfo.mac, name: deviceInfo.name })
+      const res = await registerSmartCubeDevice({
+        mac_address: deviceInfo.mac,
+        name: deviceInfo.name,
+      })
       if (res.code === 100 && res.data) currentDeviceId.value = res.data.id
     } catch {}
     gyroTimer = setTimeout(() => {
@@ -826,9 +1012,15 @@ async function handleReset() {
     detectedTopFace.value = null
     initialOrientation.value = ''
     gyroBaseQuat.value = null
-    if (gyroRafId) { cancelAnimationFrame(gyroRafId); gyroRafId = null }
+    if (gyroRafId) {
+      cancelAnimationFrame(gyroRafId)
+      gyroRafId = null
+    }
     pendingGyroQuat = null
-    if (cube3dRef.value) { cube3dRef.value.reset(); cube3dRef.value.resetAttitude() }
+    if (cube3dRef.value) {
+      cube3dRef.value.reset()
+      cube3dRef.value.resetAttitude()
+    }
     if (gyroMode.value) tracker.reset()
   } catch (err) {
     ElMessage.error('复位失败: ' + err.message)
@@ -836,7 +1028,10 @@ async function handleReset() {
 }
 
 async function handleDisconnect() {
-  if (gyroTimer) { clearTimeout(gyroTimer); gyroTimer = null }
+  if (gyroTimer) {
+    clearTimeout(gyroTimer)
+    gyroTimer = null
+  }
   await client.disconnect()
   clearSavedDevice()
   connected.value = false
@@ -857,10 +1052,16 @@ function submitMac() {
     return
   }
   macDialogVisible.value = false
-  if (macResolve) { macResolve(mac); macResolve = null }
+  if (macResolve) {
+    macResolve(mac)
+    macResolve = null
+  }
 }
 function onMacDialogClose() {
-  if (macResolve) { macResolve(null); macResolve = null }
+  if (macResolve) {
+    macResolve(null)
+    macResolve = null
+  }
 }
 
 // ===== 生命周期 =====
@@ -965,11 +1166,26 @@ onBeforeUnmount(() => {
 .history-item.is-dnf .hi-time {
   color: #f56c6c;
 }
-.hi-index { color: #909399; width: 30px; }
-.hi-time { font-weight: bold; flex-grow: 1; }
-.hi-moves { color: #409eff; font-size: 12px; }
-.hi-tps { color: #e6a23c; font-size: 12px; }
-.hi-dnf { color: #f56c6c; font-weight: bold; }
+.hi-index {
+  color: #909399;
+  width: 30px;
+}
+.hi-time {
+  font-weight: bold;
+  flex-grow: 1;
+}
+.hi-moves {
+  color: #409eff;
+  font-size: 12px;
+}
+.hi-tps {
+  color: #e6a23c;
+  font-size: 12px;
+}
+.hi-dnf {
+  color: #f56c6c;
+  font-weight: bold;
+}
 .empty-tip {
   text-align: center;
   color: #909399;
@@ -1039,8 +1255,14 @@ onBeforeUnmount(() => {
   color: #fff;
   background: #909399;
 }
-.chip-done { background: #67c23a; opacity: 0.5; }
-.chip-current { background: #e6a23c; box-shadow: 0 0 0 2px rgba(230,162,60,0.3); }
+.chip-done {
+  background: #67c23a;
+  opacity: 0.5;
+}
+.chip-current {
+  background: #e6a23c;
+  box-shadow: 0 0 0 2px rgba(230, 162, 60, 0.3);
+}
 .scramble-empty {
   text-align: center;
   color: #c0c4cc;
@@ -1068,8 +1290,13 @@ onBeforeUnmount(() => {
   color: #909399;
   margin-bottom: 8px;
 }
-.status-hint.ready { color: #67c23a; font-weight: bold; }
-.status-hint.running { color: #f56c6c; }
+.status-hint.ready {
+  color: #67c23a;
+  font-weight: bold;
+}
+.status-hint.running {
+  color: #f56c6c;
+}
 .time-banner {
   font-family: 'Impact', 'Arial Black', sans-serif;
   font-size: 64px;
@@ -1079,9 +1306,15 @@ onBeforeUnmount(() => {
   user-select: none;
   transition: color 0.1s ease;
 }
-.time-banner.holding { color: #f56c6c; }
-.time-banner.ready { color: #67c23a; }
-.time-banner.running { color: #409eff; }
+.time-banner.holding {
+  color: #f56c6c;
+}
+.time-banner.ready {
+  color: #67c23a;
+}
+.time-banner.running {
+  color: #409eff;
+}
 .manual-hint {
   font-size: 13px;
   color: #909399;
@@ -1152,7 +1385,10 @@ onBeforeUnmount(() => {
 .mac-tooltip {
   max-width: 340px;
 }
-.mac-tooltip p { margin: 4px 0; font-size: 13px; }
+.mac-tooltip p {
+  margin: 4px 0;
+  font-size: 13px;
+}
 .mac-tooltip code {
   background: var(--el-fill-color-light);
   padding: 2px 6px;
@@ -1175,27 +1411,66 @@ onBeforeUnmount(() => {
   border-radius: 10px;
   cursor: pointer;
   border: 3px solid transparent;
-  transition: border-color 0.2s, transform 0.15s;
+  transition:
+    border-color 0.2s,
+    transform 0.15s;
   user-select: none;
 }
-.face-block:hover { transform: scale(1.05); }
-.face-block-selected { border-color: #303030; transform: scale(1.05); }
-.face-block-color { font-size: 18px; font-weight: 700; color: #fff; }
-.face-block-letter { font-size: 12px; color: rgba(255,255,255,0.8); }
-.face-block-u { background: #e6a700; }
-.face-block-r { background: #f56c6c; }
-.face-block-f { background: #67c23a; }
-.face-block-d { background: #e6e6e6; }
-.face-block-d .face-block-color, .face-block-d .face-block-letter { color: #303030; }
-.face-block-l { background: #e8923c; }
-.face-block-b { background: #409eff; }
+.face-block:hover {
+  transform: scale(1.05);
+}
+.face-block-selected {
+  border-color: #303030;
+  transform: scale(1.05);
+}
+.face-block-color {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+}
+.face-block-letter {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+}
+.face-block-u {
+  background: #e6a700;
+}
+.face-block-r {
+  background: #f56c6c;
+}
+.face-block-f {
+  background: #67c23a;
+}
+.face-block-d {
+  background: #e6e6e6;
+}
+.face-block-d .face-block-color,
+.face-block-d .face-block-letter {
+  color: #303030;
+}
+.face-block-l {
+  background: #e8923c;
+}
+.face-block-b {
+  background: #409eff;
+}
 
 /* 响应式 */
 @media (max-width: 768px) {
   /* 1. 打乱序列与魔方间距缩小 */
-  .scramble-chips { margin-bottom: 6px; gap: 2px; }
-  .scramble-chip { font-size: 11px; padding: 2px 6px; min-width: 24px; height: 20px; }
-  .scramble-empty { margin-bottom: 6px; }
+  .scramble-chips {
+    margin-bottom: 6px;
+    gap: 2px;
+  }
+  .scramble-chip {
+    font-size: 11px;
+    padding: 2px 6px;
+    min-width: 24px;
+    height: 20px;
+  }
+  .scramble-empty {
+    margin-bottom: 6px;
+  }
 
   /* 2. 中心区域紧凑，魔方整体上移 */
   .center-area {
@@ -1246,10 +1521,18 @@ onBeforeUnmount(() => {
   }
 
   /* 6. 整体紧凑 */
-  .main-card { min-height: auto; }
-  .main-card :deep(.el-card__body) { min-height: auto; }
-  .timing-method-bar { margin-bottom: 8px; }
+  .main-card {
+    min-height: auto;
+  }
+  .main-card :deep(.el-card__body) {
+    min-height: auto;
+  }
+  .timing-method-bar {
+    margin-bottom: 8px;
+  }
 
-  .time-banner { font-size: 48px; }
+  .time-banner {
+    font-size: 48px;
+  }
 }
 </style>

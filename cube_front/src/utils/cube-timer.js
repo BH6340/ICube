@@ -88,8 +88,13 @@ export class CubeTimer {
     this._mode = mode
     this._state = STATES.IDLE
     this._callbacks = {
-      onStateChange, onTimeUpdate, onScrambleProgress,
-      onCorrection, onWarning, onSolveComplete, onScrambleGenerated,
+      onStateChange,
+      onTimeUpdate,
+      onScrambleProgress,
+      onCorrection,
+      onWarning,
+      onSolveComplete,
+      onScrambleGenerated,
     }
 
     this._scrambleSequence = []
@@ -105,11 +110,21 @@ export class CubeTimer {
     this._lastResult = null
   }
 
-  get state() { return this._state }
-  get mode() { return this._mode }
-  get scrambleSequence() { return this._scrambleSequence }
-  get scrambleStep() { return this._scrambleStep }
-  get lastResult() { return this._lastResult }
+  get state() {
+    return this._state
+  }
+  get mode() {
+    return this._mode
+  }
+  get scrambleSequence() {
+    return this._scrambleSequence
+  }
+  get scrambleStep() {
+    return this._scrambleStep
+  }
+  get lastResult() {
+    return this._lastResult
+  }
 
   setMode(mode) {
     this._mode = mode
@@ -211,7 +226,10 @@ export class CubeTimer {
         if (this._scrambleStep >= this._scrambleSequence.length) {
           this._enterObservation()
         }
-      } else if (this._scrambleStack.length > 0 && move === inverseMove(this._scrambleStack[this._scrambleStack.length - 1])) {
+      } else if (
+        this._scrambleStack.length > 0 &&
+        move === inverseMove(this._scrambleStack[this._scrambleStack.length - 1])
+      ) {
         // 分支回退：做上一步的逆 → 出栈
         const undone = this._scrambleStack.pop()
         this._scrambleStep--
@@ -225,7 +243,11 @@ export class CubeTimer {
         const invMove = inverseMove(move)
         this._scrambleSequence.splice(this._scrambleStep, 0, invMove)
         this._callbacks.onWarning(`步骤错误：${move}，请做 ${invMove} 回退`)
-        this._callbacks.onScrambleProgress(this._scrambleStep, this._scrambleSequence.length, invMove)
+        this._callbacks.onScrambleProgress(
+          this._scrambleStep,
+          this._scrambleSequence.length,
+          invMove
+        )
       }
     }
   }
@@ -256,8 +278,8 @@ export class CubeTimer {
     const moves = this._solveMoves
     if (moves.length > 0) {
       const last = moves[moves.length - 1]
-      if (last === move && !last.includes("2")) {
-        moves[moves.length - 1] = last.replace("'", "") + "2"
+      if (last === move && !last.includes('2')) {
+        moves[moves.length - 1] = last.replace("'", '') + '2'
         if (isSolved) {
           this._onSolved()
         }
@@ -334,9 +356,10 @@ export class CubeTimer {
         } else {
           this._callbacks.onTimeUpdate({
             state: STATES.OBSERVATION,
-            display: this._mode === 'practice'
-              ? Math.max(0, remaining / 1000).toFixed(2)
-              : (this._observationElapsed / 1000).toFixed(2),
+            display:
+              this._mode === 'practice'
+                ? Math.max(0, remaining / 1000).toFixed(2)
+                : (this._observationElapsed / 1000).toFixed(2),
             elapsed: this._observationElapsed,
             remaining: Math.max(0, remaining),
           })

@@ -9,7 +9,11 @@
         <div v-for="item in cartList" :key="item.id" class="cart-item">
           <el-checkbox v-model="selectedCartIds" :value="item.id" />
           <div class="item-image" @click="goToProduct(item.product_info)">
-            <img v-if="item.product_info.thumbnail" :src="item.product_info.thumbnail" :alt="item.product_info.name" />
+            <img
+              v-if="item.product_info.thumbnail"
+              :src="item.product_info.thumbnail"
+              :alt="item.product_info.name"
+            />
             <div v-else class="placeholder">
               <el-icon size="24" color="#ccc">
                 <ShoppingBag />
@@ -18,7 +22,10 @@
           </div>
           <div class="item-info">
             <h4 class="item-name">{{ item.product_info.name }}</h4>
-            <span class="item-spec" v-if="item.selected_spec && Object.keys(item.selected_spec).length">
+            <span
+              class="item-spec"
+              v-if="item.selected_spec && Object.keys(item.selected_spec).length"
+            >
               {{ formatSpec(item.selected_spec) }}
             </span>
           </div>
@@ -91,20 +98,23 @@ const selectedCartIds = ref([])
 
 const selectAll = computed({
   get() {
-    return cartList.value.length > 0 && cartList.value.every(item => selectedCartIds.value.includes(item.id))
+    return (
+      cartList.value.length > 0 &&
+      cartList.value.every((item) => selectedCartIds.value.includes(item.id))
+    )
   },
   set(val) {
     if (val) {
-      selectedCartIds.value = cartList.value.map(item => item.id)
+      selectedCartIds.value = cartList.value.map((item) => item.id)
     } else {
       selectedCartIds.value = []
     }
-  }
+  },
 })
 
 const totalPrice = computed(() => {
   return selectedCartIds.value.reduce((total, cartId) => {
-    const item = cartList.value.find(c => c.id === cartId)
+    const item = cartList.value.find((c) => c.id === cartId)
     if (item) {
       return total + item.product_info.price * item.quantity
     }
@@ -113,7 +123,9 @@ const totalPrice = computed(() => {
 })
 
 const formatSpec = (spec) => {
-  return Object.entries(spec).map(([k, v]) => `${k}: ${v}`).join(' / ')
+  return Object.entries(spec)
+    .map(([k, v]) => `${k}: ${v}`)
+    .join(' / ')
 }
 
 const handleQuantityChange = async (item) => {
@@ -128,8 +140,8 @@ const handleQuantityChange = async (item) => {
 const handleDelete = async (item) => {
   try {
     await deleteCartItem(item.id)
-    cartList.value = cartList.value.filter(c => c.id !== item.id)
-    selectedCartIds.value = selectedCartIds.value.filter(id => id !== item.id)
+    cartList.value = cartList.value.filter((c) => c.id !== item.id)
+    selectedCartIds.value = selectedCartIds.value.filter((id) => id !== item.id)
     bumpCartVersion()
     ElMessage.success('删除成功')
   } catch (error) {
@@ -146,7 +158,7 @@ const goToProduct = (product) => {
 const goToCheckout = () => {
   router.push({
     path: '/shop/checkout',
-    query: { cart_ids: selectedCartIds.value.join(',') }
+    query: { cart_ids: selectedCartIds.value.join(',') },
   })
 }
 
