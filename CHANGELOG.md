@@ -203,6 +203,8 @@
 - docs: 自动更新 CHANGELOG (e26a3de)
 - docs: 删除废弃的 Admin 后台优化计划文档和蓝绿部署文档 (0f54de0)
 - docs: 更新跨端文档添加双 Token 与多端登录机制说明 (d09788b)
+- docs: 自动生成 CHANGELOG (16122d3)
+- docs: 更新文档记录双 Token 架构、多端登录及监控系统 (6082f65)
 
 
 ## refactor - 重构
@@ -243,6 +245,7 @@
 - ci(cicd): 为dev分支添加[deploy]标记跳过CI检查的逻辑 (292da47)
 - ci(cicd): 避免重复执行生产部署 (2ce11f7)
 - ci(monitor): Kuma 改为独立端口访问[deploy] (7d45e48)
+- ci: 在 CI 流程中添加拉取 rebase 步骤避免推送冲突[deploy] (7a38481)
 
 
 ## build - 构建
