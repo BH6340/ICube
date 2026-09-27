@@ -34,8 +34,8 @@
   - [日志查看指南](guides/日志查看指南.md)
 
 - Reference — 参考资料
-  - [ICube 项目总结](reference/ICube%20魔方学习网站项目总结.md)
-  - [ICube 面试](reference/ICube面试.md)
+  - [ICube项目总结](reference/ICube%20魔方学习网站项目总结.md)
+  - [ICube面试](reference/ICube面试.md)
 
 - 其他
   - [修改日志](修改日志.md)

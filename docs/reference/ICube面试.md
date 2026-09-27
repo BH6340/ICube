@@ -62,12 +62,12 @@
 
 | 模块         | 功能                           | 关键技术点                   |
 | ------------ | ------------------------------ | ---------------------------- |
-| **accounts** | 用户认证、JWT、关注系统        | 自定义JWT、Redis缓存、黑名单 |
+| **accounts** | 用户认证、JWT双Token、关注系统、多端登录管理 | 自定义JWT、Redis缓存、双Token黑名单、ZSet会话管理 |
 | **forum**    | 帖子、评论、点赞、收藏、举报、图片上传与预览   | 软删除、多表关联、全量同步、独立上传接口   |
 | **formula**  | 公式库、浏览量统计、3D可视化、用户上传、作者筛选、自定义分类、公式卡片优化   | JSON状态定义、逆公式计算、F表达式原子更新、图片压缩裁剪、权限控制、分类权限过滤 |
 | **shop**     | 商品、购物车、订单、支付宝支付 | 事务、库存扣减、异步回调     |
 | **home**     | 首页菜单、轮播图、精选公式、教程入口   | 基础CRUD、浏览量排序、图片预览、状态管理         |
-| **timer**    | 计时记录、成绩统计             | 毫秒级计时、数据库存储       |
+| **timer**    | 计时记录、成绩统计、GAN智能魔方蓝牙连接、陀螺仪朝向跟踪 | 毫秒级计时、Web Bluetooth、AES-128-CBC、DCM姿态解算、智能自动计时 |
 
 ---
 
@@ -414,16 +414,43 @@ def is_blacklisted(cls, jti: str) -> bool:
 ```python
 @action(detail=False, methods=['POST'], permission_classes=[IsAuthenticated])
 def logout(self, request):
-    """用户退出登录"""
+    """用户退出登录（双 Token 拉黑 + 移除会话）"""
     try:
-        token = request.auth  # SimpleJWT 自动解析的 token 对象
-        if token:
-            JWTCacheService.add_to_blacklist(token.payload)
+        # 拉黑 access_token
+        if request.auth:
+            JWTCacheService.add_to_blacklist(request.auth.payload)
+        # 拉黑 refresh_token
+        refresh = request.data.get('refresh')
+        if refresh:
+            JWTCacheService.add_token_to_blacklist(refresh)
+        # 移除会话记录
+        jti = request.payload.get('jti') if request.auth else None
+        if jti:
+            SessionService.remove_session(request.user.id, jti)
     except Exception:
         pass  # 即使失败也返回成功（前端已退出）
 
     return APIResponse(msg="退出成功")
 ```
+
+**双 Token 架构 + 多端登录管理**
+
+项目采用 **Access Token + Refresh Token** 双 Token 架构，并在此基础上实现了多设备登录限制：
+
+| 维度 | Access Token | Refresh Token |
+| --- | --- | --- |
+| 用途 | 接口认证（Authorization 头） | 续期新 Token |
+| 有效期 | 短（1 小时） | 长（7 天） |
+| 存储位置 | 内存 / Pinia | localStorage（HttpOnly 不可行，纯前端 SPA） |
+| 刷新策略 | ROTATE_REFRESH_TOKENS：每次刷新返回新双 Token | 旧 refresh 立即入黑名单 |
+
+**多端登录（SessionService + Redis ZSet）**：
+
+- **缓存键**：`user:{user_id}:sessions` → ZSet，`member=jti`，`score=最后活跃时间戳（秒）`
+- **限制策略**：每个用户最多 `MAX_SESSIONS` 个活跃会话（默认 2）
+- **踢人规则**：新登录超限时，踢掉最久未活跃的会话（score 最小的 jti），对应 jti 入黑名单
+- **刷新 Token 时**：更新 score 为当前时间，并注册新 jti、移除旧 jti
+- **面试要点**：ZSet 适合"按时间排序 + 范围删除"的场景，比 List 更适合会话管理；用 score 存时间戳天然支持排序和过期清理
 
 **对比其他 Token 失效方案**：
 
@@ -3955,15 +3982,17 @@ preview: {
       └─ /*        → front:80（前端 Nginx → Vue dist）
 ```
 
-**5个服务详解**:
+**7个服务详解**（5 核心 + 2 辅助）：
 
 | 服务 | 镜像 | 端口 | 作用 |
 |------|------|------|------|
 | **db** | `mysql:8.0` | `127.0.0.1:3306` | 主数据库；远程管理通过 SSH 隧道 |
-| **redis** | `redis:7-alpine` | `6379` | JWT 黑名单、缓存和登录限流 |
+| **redis** | `redis:7-alpine` | `6379` | JWT 黑名单、缓存、会话管理、登录限流 |
 | **api** | 后端多阶段构建 | 容器内 `8000` | Django + Gunicorn API |
 | **front** | 前端多阶段构建 | 容器内 `80` | 前端 Nginx 提供镜像内的 Vue `dist` |
-| **nginx** | `nginx:1.28-alpine` | `80/443` | 统一网关；当前站点配置实际监听 HTTP 80 |
+| **nginx** | `nginx:1.28-alpine` | `80/443/8443` | 统一网关；HTTPS 证书、DuckDNS 域名 |
+| **cloudflared** | `cloudflare/cloudflared` | - | Cloudflare Tunnel：免备案 HTTPS 接入 |
+| **uptime-kuma** | `louislam/uptime-kuma:1` | 容器内 `3001` | 可用性监控面板，Nginx `/monitor/` 反代访问 |
 
 **关键配置**:
 - **MySQL 健康检查**: `start_period: 45s` 为首次初始化预留时间，API 通过 `condition: service_healthy` 等待数据库可用
@@ -3988,6 +4017,22 @@ bash deploy.sh full   # 首次部署、Docker 配置变更或全量更新
 bash deploy.sh api    # 仅构建后端、执行 migration、重启 Nginx
 bash deploy.sh front  # 仅构建前端、重启 Nginx
 ```
+
+#### 1.5 监控系统
+
+**三层监控方案**（容器层 + 应用层 + 脚本层）：
+
+| 层级 | 组件 | 作用 |
+| --- | --- | --- |
+| 容器可用性 | Uptime Kuma | HTTP/TCP/Ping 监控，响应时间图表，多渠道告警 |
+| 应用指标 | MonitoringMiddleware | Django 中间件，记录所有 `/api/` 请求的方法/路径/状态码/耗时到 Loguru |
+| 系统/服务检查 | `scripts/monitoring/` 脚本集 | 磁盘/MySQL/Redis/API 错误率检查 + 邮箱告警 + 每日日报 |
+
+**面试要点**：
+- **为什么用 Uptime Kuma 而非 Prometheus + Grafana？**：项目规模小、服务器资源有限（1~2核 2G），Uptime Kuma 仅 160MB 内存占用，开箱即用、带 UI、支持多告警渠道，性价比更高；后续用户量上来再迁移到 Prometheus 体系
+- **MonitoringMiddleware 实现思路**：基于 `time.time()` 计算耗时，在 `process_response` 阶段记录，仅处理 `/api/` 前缀的请求（静态资源/文档不计），零额外依赖
+- **告警防抖**：同一类问题 30 分钟内只发一次邮件，避免告警风暴；用 Redis 或文件记录上次告警时间
+- **为什么不直接用 Sentry/阿里云监控？**：个人项目成本敏感，自建方案零成本且可控，同时也是对运维能力的锻炼
 
 #### 2. 后端Dockerfile详解
 **文件**: [Dockerfile](/code/cube_api/Dockerfile)
@@ -4294,6 +4339,11 @@ https://icube.example.com/api/  → Django
 23. **前端缺少路由守卫** → 已添加全局 router.beforeEach 守卫，根据 requiresAuth 和 Token 状态拦截未登录访问并跳转登录页。
 24. **公式库匿名访问触发收藏接口 401** → 已增加登录态判断，未登录可正常浏览公式，仅点击收藏时提示“请先登录”。
 25. **页面路由切换缺少加载反馈** → 已新增全局路由加载动画与错误兜底，加载时显示进度条和遮罩，失败时显示错误卡片并支持重新加载，避免等待生硬或页面白屏。
+26. **前端缺少错误边界** → 已实现 ErrorBoundary.vue（全局错误边界）+ RouteErrorState.vue（路由懒加载失败兜底），捕获渲染错误并展示友好错误页 + 重试按钮，防止白屏
+27. **单 Token 安全性与体验矛盾** → 已升级为 Access + Refresh 双 Token 架构（ROTATE_REFRESH_TOKENS），access 短（1h）+ refresh 长（7 天），每次刷新返回新双 Token，旧 refresh 立即入黑名单
+28. **无多端登录限制** → 已实现 SessionService（Redis ZSet），默认最多 2 设备同时在线，超限时自动踢掉最久未活跃的设备，对应 jti 入黑名单
+29. **无主动监控** → 已搭建三层监控体系：Uptime Kuma（容器可用性）+ MonitoringMiddleware（API 请求日志）+ 监控脚本集（磁盘/MySQL/Redis/错误率 + 邮箱告警 + 每日日报）
+30. **计时器无智能魔方支持** → 已实现 GAN Gen4 蓝牙协议（Web Bluetooth + AES-128-CBC），支持全自动计时（打乱→观察→复原→停表）、陀螺仪朝向跟踪、3D 实时同步
 
 ---
 
@@ -4301,9 +4351,12 @@ https://icube.example.com/api/  → Django
 
 ### 严重问题（面试必问）
 
-1. **前端缺少错误边界**
+> 注：以下"前端错误边界"已修复，见「已优化项」第 26 条。此处保留供了解优化思路。
+
+1. **前端缺少错误边界** ✅ 已修复
    - 组件异常未处理，可能导致白屏
    - **改进方案**: 使用 Vue 3 的 `errorCaptured` 生命周期或 `onErrorCaptured` 组合式 API
+   - **当前状态**: 已实现 ErrorBoundary.vue + RouteErrorState.vue
 
 ### 性能优化问题
 
@@ -4465,15 +4518,15 @@ https://icube.example.com/api/  → Django
 
 ### 项目亮点总结
 
-> "这个项目最让我满意的是**自定义JWT认证**、**图片处理流水线**和**公式库系统**。认证方面实现了 Redis 缓存用户实例和 JWT 黑名单机制；图片处理方面使用 Pillow 实现了压缩、1:1裁剪、WebP格式转换、自动缩略图生成的完整流水线，前端配合Canvas裁剪组件提供良好的交互体验；公式库系统支持用户自定义上传公式、按作者筛选、多重筛选（分类/难度/作者）、自定义公式分类创建与管理，并能自动根据分类绑定目标状态，编辑时逆公式同步更新。此外，浏览量统计使用 F 表达式实现原子更新，公式跳转联动通过路由参数实现无缝衔接，3D演示重置时通过Tween动画平滑恢复视角，公式卡片经过样式优化后展示更加统一美观。"
+> "这个项目最让我满意的是**双 Token 架构+多端登录管理**、**智能魔方蓝牙协议实现**和**公式库系统**。认证方面实现了 Access + Refresh 双 Token 机制（ROTATE_REFRESH_TOKENS），配合 Redis ZSet 做多端会话管理，默认 2 设备上限，超限时踢掉最久未活跃的设备；智能魔方方面纯前端实现了 GAN Gen4 BLE 协议（Web Bluetooth API + AES-128-CBC 加密），支持全自动计时（打乱→观察→复原→停表）和陀螺仪朝向跟踪；公式库系统支持用户自定义上传公式、按作者筛选、多重筛选、自定义分类创建与管理，并能自动根据分类绑定目标状态，编辑时逆公式同步更新。此外，浏览量统计使用 F 表达式实现原子更新，图片处理有完整的压缩裁剪 WebP 流水线，三层监控体系（Uptime Kuma + MonitoringMiddleware + 监控脚本）保障线上可用性。"
 
 ### 被问到"技术难点"时的回答模板
 
-> "最大的挑战是**并发库存扣减**、**图片处理流水线**和**3D魔方旋转算法**。库存扣减方面，使用了 Django 的 `F()` 表达式保证原子性，避免了并发下单时的超卖问题；图片处理方面，需要实现完整的流水线——大图预压缩、1:1裁剪、WebP格式转换、自动缩略图生成，还要区分用户上传和公式库选择两种图片来源，通过双字段设计解决了这个问题；魔方旋转方面，需要解析标准魔方记号（如 R/U/F/B 等），计算旋转轴和参与旋转的方块，使用 Tween.js 实现平滑动画。此外，还需要解决从公网IP访问时的CORS和PNA问题，通过修改URL生成函数返回相对路径解决。"
+> "最大的挑战是**智能魔方蓝牙协议实现**、**并发库存扣减**和**3D魔方旋转算法**。蓝牙协议方面，纯前端用 Web Bluetooth API 对接 GAN Gen4 智能魔方，需要自己实现 AES-128-CBC 加解密（MAC 地址 salt）、解析 MOVE/FACELETS/BATTERY 等多种消息，还要处理陀螺仪四元数转方向余弦矩阵做姿态解算，跟踪魔方空间朝向；库存扣减方面，使用 Django 的 F() 表达式保证原子性，避免了并发下单时的超卖问题；魔方旋转方面，需要解析标准魔方记号，计算旋转轴和参与旋转的方块，使用 Tween.js 实现平滑动画。此外，多端登录用 Redis ZSet 管理会话，三层监控体系（Uptime Kuma + 中间件 + 脚本）保障可用性，这些都是从实际问题出发一步步摸索出来的。"
 
 ### 被问到"生产环境部署"时的回答模板
 
-> "使用 Docker Compose 编排了 5 个服务：MySQL、Redis、Django API、Vue 前端、Nginx。Nginx 作为反向代理，处理 API 请求转发、静态文件服务和 SPA 路由回退。生产环境通过 `.env` 文件配置服务器 IP、域名等信息，MySQL 配置了健康检查确保启动顺序正确。媒体文件通过 Nginx 的 alias 配置直接访问。部署时只需在服务器上创建 `.env` 文件，执行 `docker compose up -d --build` 即可完成。"
+> "使用 Docker Compose 编排了 7 个服务（5 核心 + 2 辅助）：MySQL、Redis、Django API、Vue 前端、Nginx、Cloudflared、Uptime Kuma。Nginx 作为反向代理，处理 API 请求转发、静态文件服务、SPA 路由回退和监控面板反代。生产环境通过 .env 文件配置服务器 IP、域名、支付宝密钥等信息，MySQL 配置了健康检查确保启动顺序正确。监控方面搭建了三层体系：Uptime Kuma 做可用性监控，MonitoringMiddleware 记录 API 请求日志，监控脚本集做磁盘/MySQL/Redis/错误率检查并通过邮箱告警，30 分钟防抖避免告警风暴。部署时只需在服务器上创建 .env 文件，执行 docker compose up -d --build 即可完成。"
 
 ---
 
