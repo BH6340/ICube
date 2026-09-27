@@ -1,12 +1,15 @@
 """
 用户认证模块缓存服务
 
-该模块提供两个核心缓存服务：
+该模块提供以下核心服务：
     1. JWTCacheService：JWT Token 黑名单管理
-    2. ProfileCacheService：用户资料与社交关系的 Redis 缓存管理
+    2. SessionService：多端登录会话管理（ZSet，限制同时在线设备数）
+    3. EmailCodeService：邮箱验证码生成、存储与验证
+    4. ProfileCacheService：用户资料与社交关系的 Redis 缓存管理
 
 设计特点：
     - 使用 Redis Set 存储关注/粉丝关系，支持 O(1) 复杂度的存在性检查
+    - 使用 Redis ZSet 管理登录会话，按活跃时间排序，支持踢掉最久未活跃的会话
     - 支持懒加载重建：缓存未命中时从数据库查询并回写 Redis
     - 使用 -1 占位符防止缓存穿透（空集合场景）
     - 使用 Pipeline 批量操作，减少网络往返
@@ -140,6 +143,111 @@ class JWTCacheService:
             )
             exc.args = ("Redis 黑名单查询失败",)
             raise
+
+
+class SessionService:
+    """
+    多端登录会话管理服务
+
+    使用 Redis ZSet 管理用户活跃会话，限制同时在线设备数。
+
+    Redis 键设计：
+        user:{user_id}:sessions  — ZSet，member=jti, score=最后活跃时间戳(秒)
+
+    规则：
+        - 每个用户最多 MAX_SESSIONS 个活跃会话
+        - 新登录超限时，踢掉最久未活跃的会话（score 最小）
+        - 刷新 Token 时更新 score 为当前时间
+        - 登出时移除对应会话
+    """
+
+    MAX_SESSIONS = 2
+    KEY_PREFIX = "user"
+    KEY_SUFFIX = "sessions"
+
+    @staticmethod
+    def _get_con():
+        from django_redis import get_redis_connection
+
+        con = get_redis_connection("default")
+        if hasattr(con, "client") and hasattr(con.client, "get_client"):
+            return con.client.get_client()
+        return con
+
+    @classmethod
+    def _key(cls, user_id: int) -> str:
+        return f"{cls.KEY_PREFIX}:{user_id}:{cls.KEY_SUFFIX}"
+
+    @classmethod
+    def add_session(cls, user_id: int, jti: str) -> list:
+        """
+        添加新会话，超限时踢掉最久未活跃的会话
+
+        Args:
+            user_id: 用户 ID
+            jti: refresh_token 的 jti（会话唯一标识）
+
+        Returns:
+            被踢掉的会话 jti 列表（可能为空）
+        """
+        con = cls._get_con()
+        key = cls._key(user_id)
+        now = time.time()
+
+        # 添加新会话
+        con.zadd(key, {jti: now})
+
+        # 检查数量，超限则移除 score 最小的
+        kicked = []
+        count = con.zcard(key)
+        if count > cls.MAX_SESSIONS:
+            # zrange 返回按 score 升序排列的 member 列表，第一个是最久的
+            oldest = con.zrange(key, 0, 0)
+            if oldest:
+                kicked_jti = oldest[0]
+                if isinstance(kicked_jti, bytes):
+                    kicked_jti = kicked_jti.decode()
+                con.zrem(key, kicked_jti)
+                kicked.append(kicked_jti)
+        logger.debug(
+            "添加会话: user_id={}, jti={}, kicked={}",
+            user_id,
+            jti[:8] + "..." if jti else None,
+            len(kicked),
+        )
+        return kicked
+
+    @classmethod
+    def touch_session(cls, user_id: int, jti: str) -> None:
+        """更新会话最后活跃时间"""
+        con = cls._get_con()
+        key = cls._key(user_id)
+        now = time.time()
+        # 先检查是否存在，再更新（兼容 mock redis 不支持 xx 标志）
+        if con.zscore(key, jti) is not None:
+            con.zadd(key, {jti: now})
+
+    @classmethod
+    def remove_session(cls, user_id: int, jti: str) -> None:
+        """移除指定会话"""
+        con = cls._get_con()
+        key = cls._key(user_id)
+        con.zrem(key, jti)
+        logger.debug("移除会话: user_id={}, jti={}", user_id, jti[:8] + "..." if jti else None)
+
+    @classmethod
+    def is_session_active(cls, user_id: int, jti: str) -> bool:
+        """检查会话是否活跃（在 ZSet 中）"""
+        con = cls._get_con()
+        key = cls._key(user_id)
+        return con.zscore(key, jti) is not None
+
+    @classmethod
+    def get_session_count(cls, user_id: int) -> int:
+        """获取活跃会话数量"""
+        con = cls._get_con()
+        key = cls._key(user_id)
+        return con.zcard(key)
 
 
 class EmailCodeService:

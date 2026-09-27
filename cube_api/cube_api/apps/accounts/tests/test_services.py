@@ -12,7 +12,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from apps.accounts.authentication import CachedJWTAuthentication
-from apps.accounts.services import JWTCacheService, ProfileCacheService
+from apps.accounts.services import JWTCacheService, ProfileCacheService, SessionService
 from django.contrib.auth import get_user_model
 from django.test import SimpleTestCase, TestCase
 from loguru import logger
@@ -402,3 +402,63 @@ class ProfileCacheServiceTest(TestCase):
         """测试初始收藏数量为 0"""
         count = ProfileCacheService.get_collection_count(self.user1.id)
         self.assertEqual(count, 0)
+
+
+class SessionServiceTest(TestCase):
+    """多端登录会话管理测试"""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email="session@example.com",
+            password="testpass123",
+            username="sessiontester",
+        )
+        self.redis = SessionService._get_con()
+        self.addCleanup(self._clear_sessions)
+
+    def _clear_sessions(self):
+        self.redis.delete(f"user:{self.user.id}:sessions")
+
+    def test_add_session_within_limit(self):
+        """未超限时添加会话正常"""
+        SessionService.add_session(self.user.id, "jti_aaa")
+        SessionService.add_session(self.user.id, "jti_bbb")
+        self.assertEqual(SessionService.get_session_count(self.user.id), 2)
+        self.assertTrue(SessionService.is_session_active(self.user.id, "jti_aaa"))
+        self.assertTrue(SessionService.is_session_active(self.user.id, "jti_bbb"))
+
+    def test_add_session_exceeds_limit_kicks_oldest(self):
+        """超过上限时踢掉最早的会话"""
+        SessionService.add_session(self.user.id, "jti_oldest")
+        time.sleep(0.1)
+        SessionService.add_session(self.user.id, "jti_middle")
+        time.sleep(0.1)
+        SessionService.add_session(self.user.id, "jti_newest")
+        # 最多 2 个，最老的被踢
+        self.assertEqual(SessionService.get_session_count(self.user.id), 2)
+        self.assertFalse(SessionService.is_session_active(self.user.id, "jti_oldest"))
+        self.assertTrue(SessionService.is_session_active(self.user.id, "jti_middle"))
+        self.assertTrue(SessionService.is_session_active(self.user.id, "jti_newest"))
+
+    def test_touch_session_updates_score(self):
+        """活跃会话更新 score"""
+        SessionService.add_session(self.user.id, "jti_a")
+        time.sleep(0.1)
+        SessionService.add_session(self.user.id, "jti_b")
+        # 此时 jti_a 更早，再活跃一次 jti_a
+        time.sleep(0.1)
+        SessionService.touch_session(self.user.id, "jti_a")
+        # 再加一个，应该踢掉 jti_b（因为 jti_a 刚活跃过）
+        SessionService.add_session(self.user.id, "jti_c")
+        self.assertTrue(SessionService.is_session_active(self.user.id, "jti_a"))
+        self.assertFalse(SessionService.is_session_active(self.user.id, "jti_b"))
+        self.assertTrue(SessionService.is_session_active(self.user.id, "jti_c"))
+
+    def test_remove_session(self):
+        """移除指定会话"""
+        SessionService.add_session(self.user.id, "jti_a")
+        SessionService.add_session(self.user.id, "jti_b")
+        SessionService.remove_session(self.user.id, "jti_a")
+        self.assertEqual(SessionService.get_session_count(self.user.id), 1)
+        self.assertFalse(SessionService.is_session_active(self.user.id, "jti_a"))
+        self.assertTrue(SessionService.is_session_active(self.user.id, "jti_b"))
