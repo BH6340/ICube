@@ -102,16 +102,37 @@ export function resetPasswordApi(data) {
 }
 
 /**
+ * 刷新 Token
+ *
+ * 使用 refresh_token 换取新的 access_token 和 refresh_token。
+ * 标记 skipAuthRefresh 避免刷新请求本身触发 401 自动刷新（防死循环）。
+ *
+ * @param {string} refreshToken - 当前持有的 refresh_token
+ * @returns {Promise<Object>} 响应数据，包含新的 token 和 refresh_token
+ */
+export function refreshTokenApi(refreshToken) {
+  return request({
+    url: '/api/users/refresh/',
+    method: 'post',
+    data: { refresh: refreshToken },
+    skipAuthRefresh: true,
+  })
+}
+
+/**
  * 用户退出登录
  *
  * 清除服务端 Token（加入黑名单），前端需配合清除 localStorage。
+ * 传入 refresh_token 以便后端同时拉黑双 Token 并移除会话。
  *
+ * @param {string} [refreshToken] - 当前持有的 refresh_token
  * @returns {Promise<Object>} 响应数据
  */
-export function logoutApi() {
+export function logoutApi(refreshToken) {
   return request({
     url: '/api/users/logout/',
     method: 'post',
+    data: { refresh_token: refreshToken || '' },
   })
 }
 

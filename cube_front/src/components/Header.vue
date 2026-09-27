@@ -399,7 +399,7 @@ const handleMenuSelect = (index) => {
 const handleDropdownCommand = async (command) => {
   if (command === 'logout') {
     try {
-      await logoutApi()
+      await logoutApi(userStore.refreshToken)
     } catch (err) {
     } finally {
       userStore.clearInfo()
@@ -438,7 +438,7 @@ const goToLogin = () => {
 const handleMobileLogout = async () => {
   mobileMenuVisible.value = false
   try {
-    await logoutApi()
+    await logoutApi(userStore.refreshToken)
   } catch (err) {
   } finally {
     userStore.clearInfo()
