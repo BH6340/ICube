@@ -76,6 +76,9 @@
 - feat(monitor): 新增完整的轻量级项目监控告警系统[deploy] (0a6dab3)
 - feat(timer): 新增 TimerStatsCacheService 缓存服务 (387ba1f)
 - feat(timer): 新增今日计时记录接口及相关功能[deploy] (76ac90f)
+- feat(accounts): 新增多端登录会话管理服务及测试 (250f88b)
+- feat(accounts): 新增将JWT token加入黑名单的方法 (9b44a04)
+- feat: 实现无感刷新 Token 机制 (167dd2f)
 
 
 ## fix - 修复
@@ -197,6 +200,9 @@
 - docs: 自动生成 CHANGELOG (341ba54)
 - docs: 自动更新 CHANGELOG (d1cf8c7)
 - docs: 自动更新 CHANGELOG (54f1a63)
+- docs: 自动更新 CHANGELOG (e26a3de)
+- docs: 删除废弃的 Admin 后台优化计划文档和蓝绿部署文档 (0f54de0)
+- docs: 更新跨端文档添加双 Token 与多端登录机制说明 (d09788b)
 
 
 ## refactor - 重构
