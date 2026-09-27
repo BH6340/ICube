@@ -74,6 +74,8 @@
 - feat: 新增订单删除功能，完善多模块移动端适配与页面细节优化  (#68) (a57584f)
 - feat(home,front): 添加APP下载入口并完善下载链接处理 (1e455b7)
 - feat(monitor): 新增完整的轻量级项目监控告警系统[deploy] (0a6dab3)
+- feat(timer): 新增 TimerStatsCacheService 缓存服务 (387ba1f)
+- feat(timer): 新增今日计时记录接口及相关功能[deploy] (76ac90f)
 
 
 ## fix - 修复
@@ -194,6 +196,7 @@
 - docs: 自动更新 CHANGELOG (9d5f7c5)
 - docs: 自动生成 CHANGELOG (341ba54)
 - docs: 自动更新 CHANGELOG (d1cf8c7)
+- docs: 自动更新 CHANGELOG (54f1a63)
 
 
 ## refactor - 重构
