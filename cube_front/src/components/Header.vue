@@ -7,7 +7,7 @@
     <!-- 移动端独立 header bar（脱离 el-menu，确保标题正确显示） -->
     <div class="mobile-header-bar">
       <div class="mobile-left" @click="$router.push('/')">
-        <img src="@/assets/cube.svg" alt="ICube Logo" class="logo-img" />
+        <img src="@/assets/logo.png" alt="ICube Logo" class="logo-img" />
         <span class="site-name">ICube</span>
       </div>
       <div class="mobile-title">{{ route.meta.title || 'ICube' }}</div>
@@ -50,7 +50,7 @@
     >
       <!-- Logo 区域 -->
       <el-menu-item index="logo" class="logo-section">
-        <img src="@/assets/cube.svg" alt="ICube Logo" class="logo-img" />
+        <img src="@/assets/logo.png" alt="ICube Logo" class="logo-img" />
         <span class="site-name">ICube</span>
       </el-menu-item>
 
