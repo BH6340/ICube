@@ -20,7 +20,7 @@
       <!-- 统计面板 -->
       <div class="stats-panel">
         <div class="stat-item">
-          <span class="stat-value">{{ history.length }}</span>
+          <span class="stat-value">{{ todayHistory.length }}</span>
           <span class="stat-label">次数</span>
         </div>
         <div class="stat-item">
@@ -37,10 +37,10 @@
         </div>
       </div>
 
-      <!-- 本地历史记录 -->
+      <!-- 本地今日记录 -->
       <div class="history-section">
         <div class="history-header">
-          <span class="history-title">历史记录</span>
+          <span class="history-title">今日记录</span>
           <van-button
             v-if="history.length > 0"
             size="mini"
@@ -51,11 +51,11 @@
         </div>
         <div class="history-list">
           <van-swipe-cell
-            v-for="(record, index) in displayHistory"
+            v-for="(record, index) in displayTodayHistory"
             :key="record.id"
           >
             <div class="history-item" @click="showDetail(record)">
-              <span class="history-index">#{{ history.length - index }}</span>
+              <span class="history-index">#{{ todayHistory.length - index }}</span>
               <span class="history-time">{{ formatTime(record.time_ms) }}</span>
               <span class="history-type">{{ record.cube_type }} · {{ methodLabel(record.method) }}</span>
               <van-icon name="arrow" size="12" color="#c8c9cc" />
@@ -70,14 +70,14 @@
               />
             </template>
           </van-swipe-cell>
-          <van-empty v-if="history.length === 0" description="暂无记录" image-size="80" />
+          <van-empty v-if="todayHistory.length === 0" description="今日暂无记录" image-size="80" />
         </div>
       </div>
 
-      <!-- 数据记录（合并到历史记录下方） -->
+      <!-- 历史记录（后端 / 本地降级） -->
       <div ref="recordsSection" class="records-section">
         <div class="records-header">
-          <span class="records-title">数据记录</span>
+          <span class="records-title">历史记录</span>
           <van-dropdown-menu class="records-filter">
             <van-dropdown-item v-model="recordCubeType" :options="recordCubeOptions" @change="onRecordFilterChange" />
           </van-dropdown-menu>
@@ -101,9 +101,8 @@
                   <van-tag v-else plain size="mini">手动</van-tag>
                   <span class="record-method">{{ methodLabel(record.method) }}</span>
                   <span v-if="record.move_count" class="record-moves">{{ record.move_count }}步</span>
-                  <span class="record-date">{{ formatDateTime(record.created_at) }}</span>
+                  <span class="record-date">{{ formatDate(record.created_at) }}</span>
                 </div>
-                <van-icon name="arrow" size="12" color="#c8c9cc" />
               </div>
               <template #right>
                 <van-button square type="danger" text="删除" class="delete-btn" @click="confirmDeleteRecord(record, index)" />
@@ -140,11 +139,24 @@
         </div>
         <div class="detail-section">
           <div class="detail-label">打乱公式</div>
-          <div class="detail-scramble">{{ detailRecord.scramble || '未记录' }}</div>
+          <div class="detail-chips">
+            <span
+              v-for="(move, i) in detailScrambleChips"
+              :key="'s' + i"
+              class="detail-chip"
+            >{{ move }}</span>
+            <span v-if="detailScrambleChips.length === 0" class="detail-empty">未记录</span>
+          </div>
         </div>
-        <div v-if="detailRecord.solve_sequence" class="detail-section">
+        <div v-if="detailSolveChips.length > 0" class="detail-section">
           <div class="detail-label">复原步骤</div>
-          <div class="detail-scramble">{{ detailRecord.solve_sequence }}</div>
+          <div class="detail-chips">
+            <span
+              v-for="(move, i) in detailSolveChips"
+              :key="'v' + i"
+              class="detail-chip solve-chip"
+            >{{ move }}</span>
+          </div>
         </div>
       </div>
     </van-popup>
@@ -232,6 +244,17 @@ const history = ref([])
 
 const detailShow = ref(false)
 const detailRecord = ref(null)
+
+// 详情弹窗的步骤拆分
+const detailScrambleChips = computed(() => {
+  if (!detailRecord.value?.scramble) return []
+  return detailRecord.value.scramble.split(' ').filter(Boolean)
+})
+const detailSolveChips = computed(() => {
+  const seq = detailRecord.value?.solve_sequence || detailRecord.value?.solveSequence
+  if (!seq) return []
+  return seq.split(' ').filter(Boolean)
+})
 
 let startTime = 0
 let timerInterval = null
@@ -349,25 +372,36 @@ function stopTimer() {
   generateScramble()
 }
 
-// ─── 统计计算 ────────────────────────────────────────
+// ─── 统计计算（基于今日记录）──────────────────────────
 const bestTime = computed(() => {
-  if (history.value.length === 0) return null
-  return Math.min(...history.value.map(r => r.time_ms))
+  if (todayHistory.value.length === 0) return null
+  return Math.min(...todayHistory.value.map(r => r.time_ms))
 })
 
 const ao5 = computed(() => calculateAoN(5))
 const ao12 = computed(() => calculateAoN(12))
 
 function calculateAoN(n) {
-  if (history.value.length < n) return null
-  const recent = history.value.slice(0, n).map(r => r.time_ms)
+  if (todayHistory.value.length < n) return null
+  const recent = todayHistory.value.slice(0, n).map(r => r.time_ms)
   recent.sort((a, b) => a - b)
   const trimmed = recent.slice(1, -1)
   return Math.round(trimmed.reduce((a, b) => a + b, 0) / trimmed.length)
 }
 
-// ─── 本地历史记录管理 ────────────────────────────────
-const displayHistory = computed(() => history.value.slice(0, 50))
+// ─── 今日记录过滤 ────────────────────────────────────
+function isToday(record) {
+  const dateStr = record.date || record.created_at
+  if (!dateStr) return true
+  const today = new Date()
+  const d = new Date(dateStr)
+  return d.getFullYear() === today.getFullYear()
+    && d.getMonth() === today.getMonth()
+    && d.getDate() === today.getDate()
+}
+
+const todayHistory = computed(() => history.value.filter(r => isToday(r)))
+const displayTodayHistory = computed(() => todayHistory.value.slice(0, 50))
 
 function showDetail(record) {
   detailRecord.value = record
@@ -394,8 +428,8 @@ function deleteRecord(index) {
 
 function confirmClear() {
   showConfirm({
-    title: '清空记录',
-    message: `确认清空全部 ${history.value.length} 条本地记录？此操作不可撤销。`,
+    title: '清空本地记录',
+    message: `确认清空全部 ${history.value.length} 条本地记录？仅清除本机保存的数据，不影响已同步到服务器的记录。此操作不可撤销。`,
     confirmText: '清空',
     icon: 'delete',
     onConfirm: () => {
@@ -534,6 +568,14 @@ function formatDateTime(dateStr) {
   const h = String(d.getHours()).padStart(2, '0')
   const m = String(d.getMinutes()).padStart(2, '0')
   return `${month}-${day} ${h}:${m}`
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${month}-${day}`
 }
 
 function methodLabel(m) {
@@ -696,36 +738,49 @@ onBeforeUnmount(() => {
 .record-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
+  gap: 6px;
+  padding: 10px 14px;
   background: var(--van-background-2);
   border-bottom: 1px solid var(--van-border-color);
   cursor: pointer;
 }
 
 .record-time {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--van-text-color);
-  min-width: 80px;
+  min-width: 64px;
+  flex-shrink: 0;
 }
 
 .record-meta {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.75rem;
+  gap: 4px;
+  font-size: 0.7rem;
   color: var(--van-text-color-2);
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 
 .record-method {
-  margin-left: 4px;
+  margin-left: 2px;
+  flex-shrink: 0;
+}
+
+.record-moves {
+  color: var(--van-primary-color);
+  font-weight: 500;
+  flex-shrink: 0;
 }
 
 .record-date {
   margin-left: auto;
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  color: var(--van-text-color-3);
 }
 
 /* 详情弹窗 */
@@ -765,12 +820,34 @@ onBeforeUnmount(() => {
   margin-bottom: 6px;
 }
 
-.detail-scramble {
-  font-size: 0.9rem;
+.detail-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.detail-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 26px;
+  padding: 0 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
   font-family: "Cascadia Code", "Consolas", monospace;
-  line-height: 1.6;
-  color: var(--van-text-color);
-  word-break: break-all;
+  color: #fff;
+  background: #909399;
+}
+
+.solve-chip {
+  background: #409eff;
+}
+
+.detail-empty {
+  font-size: 0.85rem;
+  color: var(--van-text-color-3);
 }
 
 .dnf-time {

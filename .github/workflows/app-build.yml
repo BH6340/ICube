@@ -16,6 +16,10 @@ on:
         description: '版本号（如 1.0.1）'
         required: true
         default: ''
+      update_info:
+        description: '更新说明（支持多行，每行一条；留空用默认格式）'
+        required: false
+        default: ''
 
 # 全局环境变量，所有步骤共享
 env:
@@ -33,9 +37,11 @@ jobs:
       # 环境准备阶段
       # ================================================================
 
-      # 拉取代码
+      # 拉取代码（fetch-depth:0 确保能获取 tag 注解）
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # 安装 Node.js 22（与本地开发一致）
       - name: Setup Node.js
@@ -86,6 +92,45 @@ jobs:
           PATCH=${PATCH:-0}
           CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))
           echo "version_code=$CODE" >> $GITHUB_OUTPUT
+
+      # 确定更新说明
+      # - workflow_dispatch 触发：用输入的 update_info
+      # - tag 触发：读 annotated tag 的 message
+      # - 都没有时：默认 "ICube vX.X.X"
+      - name: Determine update info
+        id: update_info
+        run: |
+          if [ -n "${{ inputs.update_info }}" ]; then
+            INFO="${{ inputs.update_info }}"
+            echo "source=manual_input" >> $GITHUB_OUTPUT
+          elif [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            # 从 annotated tag 读取 message
+            TAG_MSG=$(git tag -l --format='%(contents)' "$GITHUB_REF_NAME")
+            # 去除首尾空白后判断是否为空
+            TRIMMED=$(echo "$TAG_MSG" | sed '/^$/d; /^[[:space:]]*$/d')
+            if [ -n "$TRIMMED" ]; then
+              INFO="$TAG_MSG"
+              echo "source=tag_message" >> $GITHUB_OUTPUT
+            else
+              INFO="ICube v${{ steps.version.outputs.version }}"
+              echo "source=default" >> $GITHUB_OUTPUT
+            fi
+          else
+            INFO="ICube v${{ steps.version.outputs.version }}"
+            echo "source=default" >> $GITHUB_OUTPUT
+          fi
+          # 多行内容写入 GITHUB_OUTPUT（heredoc 方式）
+          {
+            echo 'update_info<<EOF_UPDATE_INFO'
+            echo "$INFO"
+            echo 'EOF_UPDATE_INFO'
+          } >> $GITHUB_OUTPUT
+          # base64 编码（单行），方便后续 SSH 远程传递
+          INFO_B64=$(printf '%s' "$INFO" | base64 -w 0)
+          echo "update_info_b64=$INFO_B64" >> $GITHUB_OUTPUT
+          echo "--- update_info preview ---"
+          echo "$INFO"
+          echo "--- end ---"
 
       # ================================================================
       # Web 资源构建阶段
@@ -185,14 +230,15 @@ jobs:
           # 上传 APK 到服务器 downloads 目录
           scp -i ~/.ssh/deploy_key "icube-v${{ steps.version.outputs.version }}.apk" "$SERVER_USER@$SERVER_HOST:~/ICube/downloads/"
           # 更新 app_version.json（版本号、下载路径、更新说明）
+          # update_info 通过 base64 传递，避免多行/特殊字符问题
           ssh -i ~/.ssh/deploy_key "$SERVER_USER@$SERVER_HOST" "cd ~/ICube && python3 -c \"
-          import json, os
+          import json, os, base64
           f = 'cube_api/cube_api/apps/home/app_version.json'
           os.makedirs(os.path.dirname(f), exist_ok=True)
           d = json.load(open(f)) if os.path.exists(f) else {}
           d['version'] = '${{ steps.version.outputs.version }}'
           d['download_url'] = '/apk/icube-v${{ steps.version.outputs.version }}.apk'
-          d['update_info'] = f'ICube v${{ steps.version.outputs.version }}'
+          d['update_info'] = base64.b64decode('${{ steps.update_info.outputs.update_info_b64 }}').decode('utf-8')
           d['force_update'] = d.get('force_update', False)
           json.dump(d, open(f, 'w'), ensure_ascii=False, indent=2)
           print('app_version.json updated')

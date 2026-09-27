@@ -79,6 +79,7 @@
 - feat(accounts): 新增多端登录会话管理服务及测试 (250f88b)
 - feat(accounts): 新增将JWT token加入黑名单的方法 (9b44a04)
 - feat: 实现无感刷新 Token 机制 (167dd2f)
+- feat: 更新应用图标资源及配置 (9ba612b)
 
 
 ## fix - 修复
@@ -205,6 +206,9 @@
 - docs: 更新跨端文档添加双 Token 与多端登录机制说明 (d09788b)
 - docs: 自动生成 CHANGELOG (16122d3)
 - docs: 更新文档记录双 Token 架构、多端登录及监控系统 (6082f65)
+- docs: 自动更新 CHANGELOG (c293d33)
+- docs: 更新项目文档，补充双Token、多端登录及智能魔方功能说明 (061fec5)
+- docs: 优化文档页面移动端适配 (f0ae83b)
 
 
 ## refactor - 重构
