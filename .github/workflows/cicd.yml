@@ -472,4 +472,5 @@ jobs:
           git checkout dev
           git add CHANGELOG.md
           git diff --staged --quiet || git commit -m "docs: 自动更新 CHANGELOG"
+          git pull --rebase origin dev
           git push origin dev

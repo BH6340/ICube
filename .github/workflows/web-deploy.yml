@@ -218,7 +218,7 @@ jobs:
             done
           } > CHANGELOG.md
           git add CHANGELOG.md
-          git diff --staged --quiet || (git commit -m "docs: 自动生成 CHANGELOG" && git push https://${{ secrets.WEB_DEPLOY_TOKEN }}@github.com/${{ github.repository }}.git dev)
+          git diff --staged --quiet || (git commit -m "docs: 自动生成 CHANGELOG" && git pull --rebase https://${{ secrets.WEB_DEPLOY_TOKEN }}@github.com/${{ github.repository }}.git dev && git push https://${{ secrets.WEB_DEPLOY_TOKEN }}@github.com/${{ github.repository }}.git dev)
 
       # - name: 通知 - Web 发版成功
       #   if: success() && steps.diff.outputs.ahead != '0'
