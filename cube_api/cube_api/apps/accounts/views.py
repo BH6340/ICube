@@ -1,10 +1,10 @@
 """
 用户认证模块视图
 
-该模块定义了用户认证相关的视图类，处理登录、注册、退出、用户资料管理和关注逻辑。
+该模块定义了用户认证相关的视图类，处理登录、注册、退出、Token 刷新和用户资料管理。
 
 核心视图：
-    - AuthViewSet：登录、注册、退出
+    - AuthViewSet：登录、注册、退出、Token 刷新
     - UserView：当前用户资料获取和更新
     - ProfileDetailView：用户资料详情、关注列表、粉丝列表、关注操作
 
@@ -12,6 +12,7 @@
     - 使用 extend_schema 装饰器生成 OpenAPI 文档
     - 动态选择序列化器，优化不同场景的数据返回
     - 使用自定义限流类防止暴力破解
+    - 登录/注册同时返回 access_token 和 refresh_token
     - 关注操作同时更新数据库和 Redis 缓存
 """
 
@@ -41,7 +42,7 @@ from .serializers import (
     UserSerializer,
     UserUpdateSerializer,
 )
-from .services import EmailCodeService, JWTCacheService, ProfileCacheService
+from .services import EmailCodeService, JWTCacheService, ProfileCacheService, SessionService
 from .throttles import LoginRateThrottle, SendCodeRateThrottle
 
 
@@ -49,11 +50,16 @@ class AuthViewSet(viewsets.GenericViewSet):
     """
     认证视图集
 
-    处理用户登录、注册和退出操作。
+    处理用户登录、注册、退出和 Token 刷新操作。
 
     动作列表：
         - register: 用户注册
         - login: 用户登录
+        - send_code: 发送邮箱验证码
+        - register_with_code: 验证码注册
+        - login_with_code: 验证码登录
+        - reset_password: 重置密码
+        - refresh: 刷新 Token
         - logout: 用户退出（需登录）
     """
 
@@ -207,6 +213,10 @@ class AuthViewSet(viewsets.GenericViewSet):
         # 将 Token 添加到返回数据中
         res_data = serializer.data
         res_data["token"] = str(token.access_token)
+        res_data["refresh_token"] = str(token)
+
+        # 注册会话（多端登录管理）
+        SessionService.add_session(user.id, str(token["jti"]))
 
         return APIResponse(user=res_data)
 
@@ -282,6 +292,8 @@ class AuthViewSet(viewsets.GenericViewSet):
         token = RefreshToken.for_user(user)
         res_data = user_serializer.data
         res_data["token"] = str(token.access_token)
+        res_data["refresh_token"] = str(token)
+        SessionService.add_session(user.id, str(token["jti"]))
         return APIResponse(user=res_data, status=status.HTTP_201_CREATED)
 
     @extend_schema(
@@ -311,6 +323,8 @@ class AuthViewSet(viewsets.GenericViewSet):
         token = RefreshToken.for_user(user)
         res_data = user_serializer.data
         res_data["token"] = str(token.access_token)
+        res_data["refresh_token"] = str(token)
+        SessionService.add_session(user.id, str(token["jti"]))
         return APIResponse(user=res_data)
 
     @extend_schema(
@@ -347,31 +361,102 @@ class AuthViewSet(viewsets.GenericViewSet):
 
         return APIResponse(msg="密码重置成功，请重新登录")
 
+    @extend_schema(
+        summary="刷新 Token",
+        description="使用 refresh_token 换取新的 access_token 和 refresh_token",
+        request={
+            "application/json": {
+                "type": "object",
+                "properties": {
+                    "refresh": {"type": "string", "description": "Refresh Token"},
+                },
+                "required": ["refresh"],
+            }
+        },
+        responses={
+            200: OpenApiResponse(
+                description="刷新成功",
+                response={
+                    "type": "object",
+                    "properties": {
+                        "token": {"type": "string"},
+                        "refresh_token": {"type": "string"},
+                    },
+                },
+            ),
+            401: OpenApiResponse(description="Refresh Token 无效或已过期"),
+        },
+    )
+    @action(detail=False, methods=["POST"], permission_classes=[AllowAny])
+    def refresh(self, request):
+        """
+        刷新 Access Token
+
+        使用 ROTATE_REFRESH_TOKENS 策略：每次刷新签发新的 refresh_token，
+        旧 refresh_token 进入黑名单。同时更新会话活跃时间。
+        """
+        refresh_str = request.data.get("refresh")
+        if not refresh_str:
+            return APIResponse(code=107, msg="缺少 refresh_token", status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            refresh = RefreshToken(refresh_str)
+        except Exception:
+            return APIResponse(code=108, msg="Refresh Token 无效或已过期", status=status.HTTP_401_UNAUTHORIZED)
+
+        user_id = refresh.get("user_id")
+        jti = refresh.get("jti")
+
+        # 检查是否在黑名单
+        if JWTCacheService.is_blacklisted(jti):
+            return APIResponse(code=108, msg="Refresh Token 已失效", status=status.HTTP_401_UNAUTHORIZED)
+
+        # 检查会话是否活跃（是否被踢下线）
+        if not SessionService.is_session_active(user_id, jti):
+            return APIResponse(code=109, msg="登录已在其他设备失效", status=status.HTTP_401_UNAUTHORIZED)
+
+        # 旧 refresh_token 入黑名单并移除会话
+        JWTCacheService.add_to_blacklist(refresh.payload)
+        SessionService.remove_session(user_id, jti)
+
+        # 生成新的 token 对
+        new_refresh = RefreshToken.for_user(User.objects.get(id=user_id))
+        new_access = str(new_refresh.access_token)
+
+        # 注册新会话
+        SessionService.add_session(user_id, str(new_refresh["jti"]))
+
+        return APIResponse(token=new_access, refresh_token=str(new_refresh))
+
     @action(detail=False, methods=["POST"], permission_classes=[IsAuthenticated])
     def logout(self, request):
         """
         用户退出登录
 
-        实现原理：
-            将当前使用的 JWT Token 添加到 Redis 黑名单，使其提前失效。
-            黑名单的 TTL 设置为 Token 的剩余有效期。
-
-        注意：
-            JWT 本身是无状态的，无法主动使 Token 失效。
-            通过黑名单机制，在每次认证时检查 Token 是否被拉黑。
-
-        Args:
-            request: HTTP 请求对象
-
-        Returns:
-            APIResponse: 退出成功响应
+        将当前 access_token 和传入的 refresh_token 都加入黑名单，
+        并从会话列表中移除。
         """
-        # request.auth 会在通过认证后，自动存放当前请求解密后的临时 token 字典对象
+        # access token 入黑名单
         token_payload = request.auth
-
         if token_payload:
-            # 调用服务层，将该 Token 添加到黑名单
             JWTCacheService.add_to_blacklist(token_payload)
+
+        # refresh token 入黑名单 + 移除会话
+        refresh_str = request.data.get("refresh_token")
+        if refresh_str:
+            JWTCacheService.add_token_to_blacklist(refresh_str)
+            try:
+                refresh = RefreshToken(refresh_str)
+                user_id = refresh.get("user_id")
+                jti = refresh.get("jti")
+                SessionService.remove_session(user_id, jti)
+            except Exception:
+                pass
+
+        # 清理用户实例缓存
+        from django.core.cache import cache
+
+        cache.delete(f"user_instance_cache_{request.user.id}")
 
         return APIResponse(msg="退出登录成功")
 

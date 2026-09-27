@@ -144,6 +144,34 @@ class JWTCacheService:
             exc.args = ("Redis 黑名单查询失败",)
             raise
 
+    @classmethod
+    def add_token_to_blacklist(cls, token_str: str):
+        """
+        将原始 Token 字符串加入黑名单
+
+        自动识别 access/refresh 类型，解析 payload 后调用 add_to_blacklist。
+
+        Args:
+            token_str: JWT Token 字符串
+        """
+        from rest_framework_simplejwt.exceptions import TokenError
+        from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
+
+        # 先尝试作为 access token 解析
+        try:
+            token = AccessToken(token_str)
+            cls.add_to_blacklist(token.payload)
+            return
+        except TokenError:
+            pass
+
+        # 再尝试作为 refresh token 解析
+        try:
+            token = RefreshToken(token_str)
+            cls.add_to_blacklist(token.payload)
+        except TokenError:
+            pass
+
 
 class SessionService:
     """

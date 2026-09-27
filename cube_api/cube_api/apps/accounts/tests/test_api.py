@@ -366,3 +366,57 @@ class ProfileDetailAPITest(AccountsBaseTestCase):
         client = APIClient()
         response = client.post(f"/api/profiles/{self.user2.username}/follow/")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class TokenRefreshTest(AccountsBaseTestCase):
+    """Token 刷新机制测试"""
+
+    def test_login_returns_refresh_token(self):
+        """登录返回 refresh_token"""
+        res = self.client.post(
+            "/api/users/login/",
+            {"user": {"email": self.user.email, "password": "test123456"}},
+            format="json",
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn("refresh_token", res.data["user"])
+        self.assertTrue(res.data["user"]["refresh_token"])
+
+    def test_refresh_token_success(self):
+        """refresh_token 刷新成功并轮换"""
+        login_res = self.client.post(
+            "/api/users/login/",
+            {"user": {"email": self.user.email, "password": "test123456"}},
+            format="json",
+        )
+        refresh = login_res.data["user"]["refresh_token"]
+
+        res = self.client.post("/api/users/refresh/", {"refresh": refresh}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn("token", res.data)
+        self.assertIn("refresh_token", res.data)
+        self.assertNotEqual(res.data["refresh_token"], refresh)
+
+    def test_refresh_with_invalid_token(self):
+        """无效 refresh_token 返回 401"""
+        res = self.client.post("/api/users/refresh/", {"refresh": "invalid_token"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_refresh_after_logout_fails(self):
+        """登出后 refresh_token 失效"""
+        login_res = self.client.post(
+            "/api/users/login/",
+            {"user": {"email": self.user.email, "password": "test123456"}},
+            format="json",
+        )
+        token = login_res.data["user"]["token"]
+        refresh = login_res.data["user"]["refresh_token"]
+
+        # 登出
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token}")
+        self.client.post("/api/users/logout/", {"refresh_token": refresh}, format="json")
+
+        # 登出后刷新应失败
+        self.client.credentials()
+        res = self.client.post("/api/users/refresh/", {"refresh": refresh}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
