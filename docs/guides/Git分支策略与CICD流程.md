@@ -309,9 +309,29 @@ push tag web-v1.1.0
 
 > **为什么用 PAT 而非默认 Token？** `web-deploy.yml` 需要把代码 push 到 `main`（受保护分支），默认的 `GITHUB_TOKEN` 可能无法触发其他 workflow，因此需要配置 `WEB_DEPLOY_TOKEN`（个人访问令牌 PAT）来鉴权推送。
 
-### 4. 日常/文档部署（不发版但需更新服务器）
+### 4. 快速部署：`[deploy]` 模式
 
-不打 tag、但希望把 main 最新代码同步到服务器（如小修小补、文档更新）时，可在 Actions 页面手动运行 `cicd.yml` 的 `workflow_dispatch`（手动触发），部署 main 当前代码。
+小修小补、文档更新等**不需要发版、不需要 merge 到 main**，但想立刻更新服务器时，在 commit message 里加 `[deploy]` 直接推 dev：
+
+```bash
+git commit -m "fix: 修复登录验证码显示 [deploy]"
+git push origin dev
+```
+
+push 到 dev 后，`web-deploy.yml` 检测到 commit message 含 `[deploy]`，自动走**快速部署流程**：
+
+- 跑 CI 检查（backend/frontend/docker）
+- 全绿后直接部署（走同一套 `deploy_update.sh`）
+- **不打 tag、不 merge main、不 sync-dev、不生成 changelog**
+- commit message 前缀为 `deploy: 快速部署` + 时间戳
+
+> **注意**：多 commit push 时检查所有 commit message，任意一条含 `[deploy]` 即触发。
+
+同时 `cicd.yml` 会检测到 dev push 含 `[deploy]` 后**自动跳过 CI**，避免重复跑检查；main 分支收到 `release: Web` 或 `deploy: 快速部署` 开头的 commit 也会跳过部署，防止重复。
+
+### 5. 日常/文档部署（不发版但需更新服务器）
+
+不打 tag、也不需要走 `[deploy]` 快速部署时，可在 Actions 页面手动运行 `cicd.yml` 的 `workflow_dispatch`（手动触发），部署 main 当前代码。
 
 ---
 
@@ -393,8 +413,9 @@ git push origin --delete hotfix/fix-xxx
 | 维度 | 现方案：Tag 发版（`web-deploy.yml`） | 原方案：PR 合并（`cicd.yml`） |
 |------|-----------------------------------|------------------------------|
 | **工作流文件** | `.github/workflows/web-deploy.yml` | `.github/workflows/cicd.yml` |
-| **触发方式** | 打 `web-v*` tag | 发 PR 合并到 main / push 到 main |
+| **触发方式** | 打 `web-v*` tag；或 dev push 含 `[deploy]` 快速部署 | 发 PR 合并到 main / push 到 main |
 | **发版命令** | `git tag web-v1.1.0 && git push origin web-v1.1.0` | 手动创建 PR → 网页上点 Merge |
+| **快速部署（不发版）** | ✅ commit 加 `[deploy]` 直接推 dev 即部署 | ❌（需手动触发 workflow_dispatch） |
 | **合并 main 的方式** | 自动 merge（冲突自动采用 dev 版本） | 手动在 GitHub 上合并 |
 | **代码评审** | 无需评审，一条命令发版 | 可走评审（Require review） |
 | **通知** | ✅（仅失败时通知） | ✅（仅失败时通知） |
@@ -532,16 +553,21 @@ README.md
 | 事件 | 后端检查 | 前端构建 | Docker 构建 | 部署 |
 |------|:-------:|:-------:|:----------:|:----:|
 | push 到 `dev` | ✅ | ✅ | ✅ | - |
+| push 到 `dev`（commit 含 `[deploy]`） | ⏭ | ⏭ | ⏭ | - |
 | PR: `dev` → `main` | ✅ | ✅ | ✅ | - |
 | push 到 `main`（合并） | ✅ | ✅ | ✅ | ✅ |
+| push 到 `main`（`release: Web` / `deploy: 快速部署`） | ✅ | ✅ | ✅ | ⏭ |
 | 手动触发 `workflow_dispatch` | ✅ | ✅ | ✅ | ✅ |
 | 纯文档变更 | ⏭ | ⏭ | ⏭ | ✅ |
+
+> dev push 含 `[deploy]` 时 cicd.yml 主动跳过，由 `web-deploy.yml` 接管 CI+部署，避免重复。main 收到 release/deploy commit 也跳过部署，防止 web-deploy 合并后重复触发。
 
 **现方案（`web-deploy.yml`）触发**：
 
 | 事件 | 动作 |
 |------|------|
 | 打 `web-v*` tag | 自动 merge dev → main + 部署 + sync-dev + changelog |
+| push 到 `dev`（commit 含 `[deploy]`） | CI 检查 + 快速部署（不发版、不 merge、不 changelog） |
 
 ### Job 内部路径过滤
 

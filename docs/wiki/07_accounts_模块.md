@@ -92,7 +92,8 @@
 | `/users/register_with_code/`     | AuthViewSet\@register_with_code | POST       | AllowAny                     | 验证码注册       |
 | `/users/login_with_code/`        | AuthViewSet\@login_with_code | POST          | AllowAny                     | 验证码登录       |
 | `/users/reset_password/`         | AuthViewSet\@reset_password   | POST          | AllowAny                     | 验证码重置密码     |
-| `/users/logout/`                 | AuthViewSet\@logout          | POST          | IsAuthenticated              | 注销（jti 入黑名单） |
+| `/users/logout/`                 | AuthViewSet\@logout          | POST          | IsAuthenticated              | 注销（双 Token 入黑名单） |
+| `/users/refresh/`                | AuthViewSet\@refresh         | POST          | AllowAny                     | 刷新 Token（返回新双 Token） |
 | `/profiles/`                     | ProfileDetailView            | GET           | IsAuthenticatedOrReadOnly    | 用户列表         |
 | `/profiles/{username}/`           | ProfileDetailView            | GET           | IsAuthenticatedOrReadOnly    | 用户详情         |
 | `/profiles/{username}/follow/`    | ProfileDetailView\@follow    | POST/DELETE   | IsAuthenticated              | 关注/取关        |
@@ -101,17 +102,19 @@
 
 ### 7.4 视图说明（[views.py](/code/cube_api/cube_api/apps/accounts/views.py)）
 
-#### AuthViewSet（[L33-L230](/code/cube_api/cube_api/apps/accounts/views.py#L33-L230)）
+#### AuthViewSet（[views.py](/code/cube_api/cube_api/apps/accounts/views.py)）
 
 - 继承 `GenericViewSet`，permission=`AllowAny`
 - `get_throttles()`：`action=='login'` 追加 `LoginRateThrottle`；`action=='send_code'` 追加 `SendCodeRateThrottle`
-- `register`（[L89-L122](/code/cube_api/cube_api/apps/accounts/views.py#L89-L122)）：用户名重名自动加 `_N` 后缀
-- `login`（[L164-L202](/code/cube_api/cube_api/apps/accounts/views.py#L164-L202)）：`authenticate(email, password)` 校验，失败 `code=102, 401`；成功 `RefreshToken.for_user` 生成 token
+- **双 Token 机制**：登录/注册/验证码登录均返回 `access_token` + `refresh_token`；access 用于接口认证，refresh 用于续期
+- `register`：用户名重名自动加 `_N` 后缀；注册成功后调 `SessionService.add_session` 注册会话
+- `login`：`authenticate(email, password)` 校验，失败 `code=102, 401`；成功 `RefreshToken.for_user` 生成双 Token + 注册会话
 - `send_code`：参数 `email` + `action`（register/login/reset）；register 检查邮箱未注册，login/reset 检查已注册；调用 `EmailCodeService.send_code`
-- `register_with_code`：验证码校验通过 → 创建用户 → 生成 JWT
-- `login_with_code`：验证码校验通过 → 查找用户 → 生成 JWT
+- `register_with_code`：验证码校验通过 → 创建用户 → 生成双 Token + 注册会话
+- `login_with_code`：验证码校验通过 → 查找用户 → 生成双 Token + 注册会话
 - `reset_password`：验证码校验通过 → `set_password` → 清理 JWT 缓存
-- `logout`（[L204-L230](/code/cube_api/cube_api/apps/accounts/views.py#L204-L230)）：`JWTCacheService.add_to_blacklist(request.auth)`
+- `refresh`：接收 `refresh` 参数 → 解析 RefreshToken → 旧 refresh 入黑名单 → 生成新双 Token → 注册新会话（ROTATE_REFRESH_TOKENS 策略）
+- `logout`：access_token 走 `add_to_blacklist`；refresh_token 走 `add_token_to_blacklist` 识别类型后入黑名单；同时移除会话
 
 #### UserView（[L233-L307](/code/cube_api/cube_api/apps/accounts/views.py#L233-L307)）
 
@@ -153,9 +156,31 @@ JWT Token 黑名单管理（无状态 JWT + 黑名单注销机制）。
 | --------------------------- | -------------------------------------------------------------------------- |
 | `add_to_blacklist(payload)` | 提取 `jti`/`exp` → 计算剩余秒数 → `setex(jwt:blacklist:{jti}, remaining, 1)`；已过期不入 |
 | `is_blacklisted(jti)`       | jti 为空返回 True；否则 `exists(jwt:blacklist:{jti}) == 1`                        |
+| `add_token_to_blacklist(token_str)` | 便捷方法：自动识别 access/refresh 类型，解析后调用 `add_to_blacklist`            |
 | `_get_con()`                | 兼容测试环境：Django 代理层穿透 `con.client.get_client()`                              |
 
-#### ProfileCacheService（[L108-L333](/code/cube_api/cube_api/apps/accounts/services.py#L108-L333)）
+#### SessionService（[services.py](/code/cube_api/cube_api/apps/accounts/services.py)）
+
+多端登录会话管理（Redis ZSet），限制用户同时在线设备数。
+
+**缓存键**：`user:{user_id}:sessions` → ZSet，`member=jti`，`score=最后活跃时间戳（秒）`
+
+**核心规则**：
+
+- 每个用户最多 `MAX_SESSIONS` 个活跃会话（默认 2）
+- 新登录超限时，**踢掉最久未活跃的会话**（score 最小的 jti）
+- 刷新 Token 时更新 score 为当前时间，并注册新 jti、移除旧 jti
+- 登出时移除对应会话
+- 认证时检查当前 jti 是否在会话集合中，不在则视为已过期（被踢下线）
+
+| 方法 | 逻辑 |
+| --- | --- |
+| `add_session(user_id, jti)` | `zadd` 加入会话 → 超限则 `zremrangebyrank` 踢掉最旧的 + 对应 jti 入黑名单 |
+| `remove_session(user_id, jti)` | `zrem` 移除会话 |
+| `is_session_valid(user_id, jti)` | `zscore` 判断 jti 是否在会话集合中 |
+| `update_activity(user_id, jti)` | `zadd` 更新 score 为当前时间戳 |
+
+#### ProfileCacheService（[services.py](/code/cube_api/cube_api/apps/accounts/services.py)）
 
 用户资料与社交关系缓存。
 
@@ -215,6 +240,17 @@ JWT Token 黑名单管理（无状态 JWT + 黑名单注销机制）。
 - `python manage.py test` 环境下所有邮箱均为假邮箱
 
 ### 7.7 认证与权限
+
+#### 双 Token 机制
+
+项目采用 **Access Token + Refresh Token** 双 Token 架构：
+
+| Token 类型 | 用途 | 有效期 | 返回时机 |
+| --- | --- | --- | --- |
+| `access_token` | 接口认证（Authorization 头） | 短（1 小时） | 登录/注册/验证码登录/刷新 |
+| `refresh_token` | 续期新 Token | 长（7 天） | 同上 |
+
+**刷新策略**（ROTATE_REFRESH_TOKENS）：每次刷新都返回新的 refresh_token，旧 refresh 立即入黑名单，防止复用。刷新接口为 `/users/refresh/`（POST，传 `refresh` 参数）。
 
 #### CachedJWTAuthentication（[authentication.py](/code/cube_api/cube_api/apps/accounts/authentication.py)）
 

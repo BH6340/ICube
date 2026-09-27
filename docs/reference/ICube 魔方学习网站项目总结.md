@@ -346,7 +346,7 @@ ICube/
 | 接口 | 方法 | 说明 |
 |------|------|------|
 | `/api/users/register/` | POST | 用户注册 |
-| `/api/users/login/` | POST | 用户登录（返回 Token） |
+| `/api/users/login/` | POST | 用户登录（返回 access_token + refresh_token） |
 | `/api/users/logout/` | POST | 用户退出登录（JWT 黑名单机制） |
 | `/api/users/info/` | GET | 获取当前登录用户信息 |
 | `/api/users/` | GET | 获取用户列表 |
