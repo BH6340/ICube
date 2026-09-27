@@ -98,6 +98,7 @@ export class CubeTimer {
     }
 
     this._scrambleSequence = []
+    this._originalScramble = []
     this._scrambleStep = 0
     this._scrambleStack = []
     this._recentMoves = []
@@ -134,6 +135,7 @@ export class CubeTimer {
     this._stopTimer()
     this._state = STATES.IDLE
     this._scrambleSequence = []
+    this._originalScramble = []
     this._scrambleStep = 0
     this._scrambleStack = []
     this._recentMoves = []
@@ -142,6 +144,7 @@ export class CubeTimer {
     this._solveStart = null
     this._solveElapsed = 0
     this._solveMoves = []
+    this._timerInterval = null
     this._lastResult = null
     this._callbacks.onStateChange(STATES.IDLE)
   }
@@ -200,7 +203,9 @@ export class CubeTimer {
   }
 
   _startScramble() {
-    this._scrambleSequence = generateScramble()
+    const generated = generateScramble()
+    this._originalScramble = [...generated]
+    this._scrambleSequence = generated
     this._scrambleStep = 0
     this._scrambleStack = []
     this._state = STATES.SCRAMBLING
@@ -303,7 +308,8 @@ export class CubeTimer {
       observationTime: this._observationElapsed,
       observationTimeFormatted: formatTime(this._observationElapsed),
       moveCount: this._solveMoves.length,
-      scramble: [...this._scrambleSequence],
+      scramble: [...this._originalScramble],
+      scrambleDisplay: [...this._scrambleSequence],
       solve: [...this._solveMoves],
     }
 
@@ -347,7 +353,8 @@ export class CubeTimer {
             observationTime: this._observationElapsed,
             observationTimeFormatted: formatTime(this._observationElapsed),
             moveCount: 0,
-            scramble: [...this._scrambleSequence],
+            scramble: [...this._originalScramble],
+            scrambleDisplay: [...this._scrambleSequence],
             solve: [],
             dnf: true,
           }

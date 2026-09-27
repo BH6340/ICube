@@ -170,7 +170,7 @@ function moveL(state) {
 
 /**
  * 执行 U 转动（上面顺时针）
- * 影响的边贴纸：F 的顶行(0,1,2) → R 的顶行(0,1,2) → B 的顶行(0,1,2) → L 的顶行(0,1,2) → F 的顶行
+ * 影响的边贴纸：F 的顶行(0,1,2) → L 的顶行(0,1,2) → B 的顶行(0,1,2) → R 的顶行(0,1,2) → F 的顶行
  */
 function moveU(state) {
   state[U] = rotateFaceCW(state[U])
@@ -180,27 +180,27 @@ function moveU(state) {
   const bRow = [state[B][0], state[B][1], state[B][2]]
   const lRow = [state[L][0], state[L][1], state[L][2]]
 
-  // F → R → B → L → F
-  state[R][0] = fRow[0]
-  state[R][1] = fRow[1]
-  state[R][2] = fRow[2]
+  // F → L → B → R → F
+  state[L][0] = fRow[0]
+  state[L][1] = fRow[1]
+  state[L][2] = fRow[2]
 
-  state[B][0] = rRow[0]
-  state[B][1] = rRow[1]
-  state[B][2] = rRow[2]
+  state[B][0] = lRow[0]
+  state[B][1] = lRow[1]
+  state[B][2] = lRow[2]
 
-  state[L][0] = bRow[0]
-  state[L][1] = bRow[1]
-  state[L][2] = bRow[2]
+  state[R][0] = bRow[0]
+  state[R][1] = bRow[1]
+  state[R][2] = bRow[2]
 
-  state[F][0] = lRow[0]
-  state[F][1] = lRow[1]
-  state[F][2] = lRow[2]
+  state[F][0] = rRow[0]
+  state[F][1] = rRow[1]
+  state[F][2] = rRow[2]
 }
 
 /**
  * 执行 D 转动（下面顺时针）
- * 影响的边贴纸：F 的底行(6,7,8) → L 的底行(6,7,8) → B 的底行(6,7,8) → R 的底行(6,7,8) → F 的底行
+ * 影响的边贴纸：F 的底行(6,7,8) → R 的底行(6,7,8) → B 的底行(6,7,8) → L 的底行(6,7,8) → F 的底行
  */
 function moveD(state) {
   state[D] = rotateFaceCW(state[D])
@@ -210,22 +210,22 @@ function moveD(state) {
   const bRow = [state[B][6], state[B][7], state[B][8]]
   const lRow = [state[L][6], state[L][7], state[L][8]]
 
-  // F → L → B → R → F
-  state[L][6] = fRow[0]
-  state[L][7] = fRow[1]
-  state[L][8] = fRow[2]
+  // F → R → B → L → F
+  state[R][6] = fRow[0]
+  state[R][7] = fRow[1]
+  state[R][8] = fRow[2]
 
-  state[B][6] = lRow[0]
-  state[B][7] = lRow[1]
-  state[B][8] = lRow[2]
+  state[B][6] = rRow[0]
+  state[B][7] = rRow[1]
+  state[B][8] = rRow[2]
 
-  state[R][6] = bRow[0]
-  state[R][7] = bRow[1]
-  state[R][8] = bRow[2]
+  state[L][6] = bRow[0]
+  state[L][7] = bRow[1]
+  state[L][8] = bRow[2]
 
-  state[F][6] = rRow[0]
-  state[F][7] = rRow[1]
-  state[F][8] = rRow[2]
+  state[F][6] = lRow[0]
+  state[F][7] = lRow[1]
+  state[F][8] = lRow[2]
 }
 
 /**

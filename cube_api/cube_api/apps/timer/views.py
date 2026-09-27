@@ -14,6 +14,7 @@ from cube_api.utils.common_response import APIResponse
 
 from .models import SmartCubeDevice, TimerRecord
 from .serializers import SmartCubeDeviceSerializer, TimerRecordSerializer
+from .services import TimerStatsCacheService
 
 
 class SmartCubeDeviceViewSet(viewsets.ModelViewSet):
@@ -117,6 +118,11 @@ class TimerRecordViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return APIResponse(data=serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        TimerStatsCacheService.invalidate_user_cache(self.request.user.id)
+        return instance
+
     def destroy(self, request, *args, **kwargs):
         """删除计时记录，验证权限"""
         instance = self.get_object()
@@ -124,6 +130,56 @@ class TimerRecordViewSet(viewsets.ModelViewSet):
             return APIResponse(code=403, msg="无权删除该记录", status=status.HTTP_403_FORBIDDEN)
         self.perform_destroy(instance)
         return APIResponse(msg="删除成功")
+
+    def perform_destroy(self, instance):
+        super().perform_destroy(instance)
+        TimerStatsCacheService.invalidate_user_cache(self.request.user.id)
+
+    @action(detail=False, methods=["get"])
+    def today(self, request):
+        """
+        获取今日计时记录列表
+
+        走 Redis 缓存，缓存未命中时查库并回填。
+        新增/删除记录时失效缓存。
+
+        参数：
+            - cube_type: 魔方类型（默认 3x3）
+            - method: 还原方法（默认 layer）
+        """
+        cube_type = request.query_params.get("cube_type", "3x3")
+        method = request.query_params.get("method", "layer")
+
+        cached = TimerStatsCacheService.get_today_records(request.user.id, cube_type, method)
+        if cached is not None:
+            return APIResponse(data=cached)
+
+        today = timezone.now().date()
+        queryset = self.get_queryset().filter(
+            created_at__date=today,
+            is_dnf=False,
+        )
+        if cube_type:
+            queryset = queryset.filter(cube_type=cube_type)
+        if method:
+            queryset = queryset.filter(method=method)
+
+        records = list(
+            queryset.values(
+                "id",
+                "time_ms",
+                "scramble",
+                "solve_sequence",
+                "move_count",
+                "is_dnf",
+                "timing_mode",
+                "created_at",
+            ).order_by("-created_at")
+        )
+
+        TimerStatsCacheService.set_today_records(request.user.id, cube_type, method, records)
+
+        return APIResponse(data=records)
 
     @action(detail=False, methods=["get"])
     def stats(self, request):

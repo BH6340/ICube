@@ -162,10 +162,28 @@
                 {{ calcTPS(scope.row) }}
               </template>
             </el-table-column>
-            <el-table-column prop="scramble" label="打乱公式" show-overflow-tooltip />
-            <el-table-column prop="solve_sequence" label="复原步骤" show-overflow-tooltip>
+            <el-table-column label="打乱公式" width="100">
               <template #default="scope">
-                {{ scope.row.solve_sequence || '-' }}
+                <StepTooltip
+                  v-if="scope.row.scramble"
+                  :steps="scope.row.scramble.split(' ').filter(Boolean)"
+                  title="打乱公式"
+                >
+                  <span class="scramble-text">查看</span>
+                </StepTooltip>
+                <span v-else>-</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="复原步骤" width="100">
+              <template #default="scope">
+                <StepTooltip
+                  v-if="scope.row.solve_sequence"
+                  :steps="scope.row.solve_sequence.split(' ').filter(Boolean)"
+                  title="复原步骤"
+                >
+                  <span class="solve-text">{{ scope.row.move_count || '-' }}步</span>
+                </StepTooltip>
+                <span v-else>-</span>
               </template>
             </el-table-column>
             <el-table-column label="操作" width="80">
@@ -214,6 +232,7 @@ import { ref, reactive, onMounted, onBeforeUnmount, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import * as echarts from 'echarts'
 import { getTimerRecords, getTimerStats, getTimerTrend, deleteTimerRecord } from '@/api/timer'
+import StepTooltip from '@/components/cube/StepTooltip.vue'
 
 const chartRef = ref(null)
 let chartInstance = null
@@ -493,6 +512,13 @@ watch(
 </script>
 
 <style scoped>
+.scramble-text,
+.solve-text {
+  color: #409eff;
+  cursor: default;
+  font-size: 13px;
+}
+
 .my-data-container {
   padding: 20px 10px;
   max-width: 1200px;

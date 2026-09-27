@@ -124,7 +124,14 @@
                 @touchstart.prevent="handleManualTouchStart"
                 @touchend.prevent="handleManualTouchEnd"
               >
-                {{ manualTimeDisplay }}
+                <span class="time-banner-main">{{ manualTimeDisplay }}</span>
+                <span
+                  v-if="manualTimerState === 'idle' && timeDiff !== null && todayHistory[0]?.timingMode === 'manual'"
+                  class="time-banner-diff"
+                  :class="{ faster: isTimeFaster, slower: !isTimeFaster }"
+                >
+                  {{ isTimeFaster ? '-' : '+' }}{{ timeDiffDisplay }}
+                </span>
               </div>
               <div class="manual-hint">长按空格键开始 / 轻按停止</div>
               <div class="manual-cancel-wrap" v-if="manualTimerState === 'running'">
@@ -138,11 +145,28 @@
                   <Cube3D ref="cube3dRef" :animation-speed="120" />
                 </div>
                 <div class="smart-timer-block" v-if="connected">
-                  <div class="timer-main" :style="{ color: smartTimerColor }">
-                    {{ smartTimerDisplay }}
+                  <div class="timer-main-row">
+                    <div class="timer-main" :style="{ color: smartTimerColor }">
+                      {{ smartTimerDisplay }}
+                    </div>
+                    <div
+                      v-if="cubeTimerState === TimerStates.SOLVED && !solveResult?.dnf && timeDiff !== null"
+                      class="timer-diff"
+                      :class="{ faster: isTimeFaster, slower: !isTimeFaster }"
+                    >
+                      {{ isTimeFaster ? '-' : '+' }}{{ timeDiffDisplay }}
+                    </div>
                   </div>
                   <div class="timer-sub" :style="{ color: smartTimerColor }">
-                    {{ smartTimerStateText }} · {{ smartTimerSubText }}
+                    {{ smartTimerStateText }}
+                    <template v-if="cubeTimerState === TimerStates.SOLVED && !solveResult?.dnf && solveResult?.moveCount">
+                      <span class="timer-sub-divider">·</span>
+                      <StepTooltip :steps="solveResult.solve" title="复原步骤">
+                        <span class="timer-sub-stat">{{ solveResult.moveCount }}步</span>
+                      </StepTooltip>
+                      <span class="timer-sub-divider">·</span>
+                      <span class="timer-sub-stat">TPS {{ calcTPS(solveResult.moveCount, solveResult.solveTime) }}</span>
+                    </template>
                   </div>
                   <div class="smart-controls" v-if="cubeTimerState !== TimerStates.IDLE">
                     <el-button type="danger" size="small" @click="handleStopTimer">停止</el-button>
@@ -169,14 +193,6 @@
             <div class="card-header">
               <span>数据统计（今日）</span>
               <div class="card-header-actions">
-                <el-button
-                  v-if="timingMode === 'manual'"
-                  type="danger"
-                  link
-                  size="small"
-                  @click="clearHistory"
-                  >清空</el-button
-                >
                 <el-button type="primary" link size="small" @click="goToProfileData"
                   >查看全部</el-button
                 >
@@ -209,14 +225,24 @@
               :class="{ 'is-dnf': item.isDnf }"
             >
               <span class="hi-index">#{{ todayHistory.length - index }}</span>
-              <span class="hi-time">{{ formatTime(item.time) }}</span>
-              <template v-if="timingMode === 'smart'">
-                <span v-if="item.isDnf" class="hi-dnf">DNF</span>
-                <template v-else>
-                  <span class="hi-moves" v-if="item.moveCount">{{ item.moveCount }}步</span>
-                  <span class="hi-tps" v-if="item.tps">TPS {{ item.tps }}</span>
-                </template>
+              <span class="hi-time">{{ item.isDnf ? 'DNF' : formatTime(item.time) }}</span>
+              <template v-if="item.timingMode === 'smart' && !item.isDnf">
+                <StepTooltip
+                  v-if="item.solveSequence"
+                  :steps="item.solveSequence.split(' ').filter(Boolean)"
+                  title="复原步骤"
+                >
+                  <span class="hi-moves">{{ item.moveCount }}步</span>
+                </StepTooltip>
+                <span class="hi-tps" v-if="item.tps">TPS {{ item.tps }}</span>
               </template>
+              <StepTooltip
+                v-if="item.scramble"
+                :steps="item.scramble.split(' ').filter(Boolean)"
+                title="打乱公式"
+              >
+                <span class="hi-scramble">打乱</span>
+              </StepTooltip>
               <el-button
                 type="danger"
                 icon="Delete"
@@ -292,11 +318,12 @@
  */
 import { ref, computed, reactive, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessageBox, ElMessage } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { WarningFilled, ArrowDown, QuestionFilled } from '@element-plus/icons-vue'
-import { createTimerRecord, getSmartCubeDevices, registerSmartCubeDevice } from '@/api/timer'
+import { createTimerRecord, getSmartCubeDevices, registerSmartCubeDevice, getTodayTimerRecords, deleteTimerRecord } from '@/api/timer'
 import CubeNet from '@/components/cube/CubeNet.vue'
 import Cube3D from '@/components/cube/Cube3D.vue'
+import StepTooltip from '@/components/cube/StepTooltip.vue'
 import { getCubeClient, tryAutoReconnect, saveDeviceInfo, clearSavedDevice } from '@/utils/gan-ble'
 import {
   CubeOrientationTracker,
@@ -325,14 +352,40 @@ watch(
   }
 )
 
-// ===== 统一历史记录 =====
+// ===== 统一历史记录（从后端加载） =====
 const allHistory = ref([])
-// 从 localStorage 加载手动记录
-function loadManualHistory() {
-  const raw = JSON.parse(localStorage.getItem('icube_timer_history') || '[]')
-  return raw.map((r) => ({ ...r, timingMode: 'manual', isDnf: false }))
+const historyLoading = ref(false)
+
+/**
+ * 从后端加载今日记录
+ */
+async function loadTodayRecords() {
+  historyLoading.value = true
+  try {
+    const res = await getTodayTimerRecords({
+      cube_type: cubeType.value,
+      method: method.value,
+    })
+    if (res.code === 100 && res.data) {
+      allHistory.value = res.data.map((r) => ({
+        id: r.id,
+        time: r.time_ms,
+        scramble: r.scramble || '',
+        solveSequence: r.solve_sequence || '',
+        moveCount: r.move_count || 0,
+        tps: r.move_count && r.time_ms ? calcTPS(r.move_count, r.time_ms) : null,
+        isDnf: r.is_dnf,
+        timingMode: r.timing_mode,
+        createdAt: r.created_at,
+        _pending: false,
+      }))
+    }
+  } catch (e) {
+    ElMessage.error('加载今日记录失败')
+  } finally {
+    historyLoading.value = false
+  }
 }
-allHistory.value = loadManualHistory()
 
 function formatTime(ms) {
   if (!ms || ms === 0) return '0.00'
@@ -347,19 +400,16 @@ function calcTPS(moves, ms) {
   return (moves / (ms / 1000)).toFixed(2)
 }
 
-// ===== 今日记录过滤 =====
+// ===== 今日记录 =====
 function isToday(record) {
+  if (!record.createdAt) return true
   const today = new Date()
-  const todayStr = today.toLocaleDateString()
-  // 优先用 date 字段（手动模式），否则用 id（时间戳）
-  if (record.date) {
-    return record.date === todayStr
-  }
-  if (record.id) {
-    const recordDate = new Date(record.id)
-    return recordDate.toLocaleDateString() === todayStr
-  }
-  return true
+  const recordDate = new Date(record.createdAt)
+  return (
+    recordDate.getFullYear() === today.getFullYear() &&
+    recordDate.getMonth() === today.getMonth() &&
+    recordDate.getDate() === today.getDate()
+  )
 }
 const todayHistory = computed(() => allHistory.value.filter((r) => isToday(r)))
 
@@ -380,14 +430,46 @@ function calcAoN(n) {
 const ao5Display = computed(() => calcAoN(5))
 const ao12Display = computed(() => calcAoN(12))
 
+// ===== 时间差值计算 =====
+const lastValidTime = computed(() => {
+  const validRecords = todayHistory.value.filter((r) => !r.isDnf)
+  if (validRecords.length < 2) return null
+  return validRecords[1].time
+})
+
+const timeDiff = computed(() => {
+  const latest = todayHistory.value[0]
+  if (!latest || latest.isDnf) return null
+  const prev = lastValidTime.value
+  if (prev === null || prev === undefined) return null
+  return latest.time - prev
+})
+
+const timeDiffDisplay = computed(() => {
+  const diff = timeDiff.value
+  if (diff === null) return ''
+  const seconds = Math.abs(diff) / 1000
+  return seconds.toFixed(2)
+})
+
+const isTimeFaster = computed(() => {
+  const diff = timeDiff.value
+  if (diff === null) return null
+  return diff < 0
+})
+
 function deleteRecord(id) {
   const idx = allHistory.value.findIndex((r) => r.id === id)
-  if (idx !== -1) allHistory.value.splice(idx, 1)
-  if (timingMode.value === 'manual') {
-    localStorage.setItem(
-      'icube_timer_history',
-      JSON.stringify(allHistory.value.map(({ timingMode, isDnf, ...rest }) => rest))
-    )
+  if (idx === -1) return
+  const removed = allHistory.value.splice(idx, 1)[0]
+
+  // 乐观更新：本地先删，再异步同步
+  if (!removed._pending) {
+    deleteTimerRecord(id).catch(() => {
+      // 失败回滚
+      allHistory.value.splice(idx, 0, removed)
+      ElMessage.error('删除失败')
+    })
   }
 }
 
@@ -416,13 +498,11 @@ function scrambleChipClass(i) {
 function onTimingModeChange(val) {
   if (val === 'manual') {
     if (cubeTimer) cubeTimer.stop()
-    allHistory.value = loadManualHistory()
     if (timerPage.value) timerPage.value.focus({ preventScroll: true })
   } else {
     stopManualTimer()
     manualTimerState.value = 'idle'
     elapsedTime.value = 0
-    allHistory.value = [] // 智能模式从后端/新记录开始
     loadSavedDevices()
   }
 }
@@ -576,27 +656,53 @@ function stopManualTimer() {
   manualTimerState.value = 'idle'
   if (!wasRunning) return
 
+  const tempId = Date.now()
   const record = {
-    id: Date.now(),
-    time: elapsedTime.value,
+    id: tempId,
+    time: Math.round(elapsedTime.value),
     scramble: currentScramble.value,
-    date: new Date().toLocaleDateString(),
-    timingMode: 'manual',
+    solveSequence: '',
+    moveCount: 0,
+    tps: null,
     isDnf: false,
+    timingMode: 'manual',
+    createdAt: new Date().toISOString(),
+    _pending: true,
   }
   allHistory.value.unshift(record)
-  localStorage.setItem(
-    'icube_timer_history',
-    JSON.stringify(allHistory.value.map(({ timingMode, isDnf, ...rest }) => rest))
-  )
 
+  // 异步保存到后端
   createTimerRecord({
     cube_type: cubeType.value,
     method: method.value,
     time_ms: Math.round(elapsedTime.value),
     scramble: currentScramble.value,
     timing_mode: 'manual',
-  }).catch(() => {})
+  })
+    .then((res) => {
+      if (res.code === 100 && res.data) {
+        const idx = allHistory.value.findIndex((r) => r.id === tempId)
+        if (idx !== -1) {
+          allHistory.value[idx] = {
+            id: res.data.id,
+            time: res.data.time_ms,
+            scramble: res.data.scramble || '',
+            solveSequence: res.data.solve_sequence || '',
+            moveCount: res.data.move_count || 0,
+            tps: null,
+            isDnf: res.data.is_dnf,
+            timingMode: res.data.timing_mode,
+            createdAt: res.data.created_at,
+            _pending: false,
+          }
+        }
+      }
+    })
+    .catch(() => {
+      const idx = allHistory.value.findIndex((r) => r.id === tempId)
+      if (idx !== -1) allHistory.value.splice(idx, 1)
+      ElMessage.error('保存失败')
+    })
 
   generateScramble()
 }
@@ -605,20 +711,6 @@ function cancelManualTimer() {
   if (timerInterval.value) clearInterval(timerInterval.value)
   manualTimerState.value = 'idle'
   elapsedTime.value = 0
-}
-
-function clearHistory() {
-  ElMessageBox.confirm('确定清空所有历史记录？', '警告', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning',
-  })
-    .then(() => {
-      allHistory.value = []
-      localStorage.removeItem('icube_timer_history')
-      ElMessage.success('已清空')
-    })
-    .catch(() => {})
 }
 
 // ============================================================
@@ -890,8 +982,10 @@ client.onEvent(handleEvent)
 function onSmartSolveComplete(result) {
   solveResult.value = result
   const isDnf = result.dnf
+  const tempId = Date.now()
+
   const record = {
-    id: Date.now(),
+    id: tempId,
     time: isDnf ? 0 : result.solveTime || 0,
     scramble: result.scramble ? result.scramble.join(' ') : '',
     solveSequence: result.solve ? result.solve.join(' ') : '',
@@ -899,25 +993,53 @@ function onSmartSolveComplete(result) {
     tps: isDnf ? null : calcTPS(result.moveCount, result.solveTime),
     isDnf,
     timingMode: 'smart',
+    createdAt: new Date().toISOString(),
+    _pending: !isDnf,
   }
   allHistory.value.unshift(record)
 
+  // DNF 时显示 DNF 文字，且不存后端
+  if (isDnf) {
+    smartTimerDisplay.value = 'DNF'
+    return
+  }
+
+  // 异步保存到后端
   createTimerRecord({
     cube_type: cubeType.value,
     method: method.value,
-    time_ms: isDnf ? 0 : Math.round(result.solveTime || 0),
+    time_ms: Math.round(result.solveTime || 0),
     scramble: result.scramble ? result.scramble.join(' ') : '',
     solve_sequence: result.solve ? result.solve.join(' ') : '',
     observation_time_ms: result.observationTime || 0,
     move_count: result.moveCount || 0,
-    is_dnf: isDnf,
+    is_dnf: false,
     timing_mode: 'smart',
     device_id: currentDeviceId.value || undefined,
   })
-    .then(() => {
-      ElMessage.success(isDnf ? 'DNF 记录已保存' : '记录已保存')
+    .then((res) => {
+      if (res.code === 100 && res.data) {
+        const idx = allHistory.value.findIndex((r) => r.id === tempId)
+        if (idx !== -1) {
+          allHistory.value[idx] = {
+            id: res.data.id,
+            time: res.data.time_ms,
+            scramble: res.data.scramble || '',
+            solveSequence: res.data.solve_sequence || '',
+            moveCount: res.data.move_count || 0,
+            tps: calcTPS(res.data.move_count, res.data.time_ms),
+            isDnf: res.data.is_dnf,
+            timingMode: res.data.timing_mode,
+            createdAt: res.data.created_at,
+            _pending: false,
+          }
+        }
+        ElMessage.success('记录已保存')
+      }
     })
     .catch(() => {
+      const idx = allHistory.value.findIndex((r) => r.id === tempId)
+      if (idx !== -1) allHistory.value.splice(idx, 1)
       ElMessage.error('保存失败')
     })
 }
@@ -1072,7 +1194,13 @@ onMounted(() => {
   generateScramble()
   if (timerPage.value) timerPage.value.focus({ preventScroll: true })
   window.addEventListener('beforeunload', beforeUnloadHandler)
+  loadTodayRecords()
   if (timingMode.value === 'smart') loadSavedDevices()
+})
+
+// 魔方类型或方法变化时重新加载今日记录
+watch([cubeType, method], () => {
+  loadTodayRecords()
 })
 onBeforeUnmount(() => {
   window.removeEventListener('beforeunload', beforeUnloadHandler)
@@ -1185,6 +1313,14 @@ onBeforeUnmount(() => {
 .hi-dnf {
   color: #f56c6c;
   font-weight: bold;
+}
+.hi-scramble {
+  font-size: 12px;
+  color: #909399;
+  cursor: default;
+  padding: 2px 6px;
+  background: #f5f7fa;
+  border-radius: 4px;
 }
 .empty-tip {
   text-align: center;
@@ -1305,6 +1441,23 @@ onBeforeUnmount(() => {
   cursor: pointer;
   user-select: none;
   transition: color 0.1s ease;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 10px;
+}
+.time-banner-main {
+  display: inline;
+}
+.time-banner-diff {
+  font-size: 0.45em;
+  font-weight: 500;
+}
+.time-banner-diff.faster {
+  color: #67c23a;
+}
+.time-banner-diff.slower {
+  color: #f56c6c;
 }
 .time-banner.holding {
   color: #f56c6c;
@@ -1348,9 +1501,47 @@ onBeforeUnmount(() => {
   font-family: 'Courier New', monospace;
   line-height: 1.2;
 }
+.timer-main-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 12px;
+}
+.timer-diff {
+  font-size: 16px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.timer-diff.faster {
+  color: #67c23a;
+}
+.timer-diff.slower {
+  color: #f56c6c;
+}
+.solve-stats-row {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  justify-content: center;
+}
+.solve-stat-item {
+  font-size: 14px;
+  color: #909399;
+  cursor: default;
+}
+.timer-sub-divider {
+  margin: 0 4px;
+}
+.timer-sub-stat {
+  font-weight: 500;
+}
 .timer-sub {
   font-size: 13px;
   margin-top: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 .smart-controls {
   display: flex;
@@ -1489,6 +1680,18 @@ onBeforeUnmount(() => {
   }
   .timer-main {
     font-size: 32px;
+  }
+  .timer-sub {
+    font-size: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2px 6px;
+  }
+  .timer-sub-divider {
+    display: none;
+  }
+  .timer-sub-stat {
+    font-size: 11px;
   }
 
   /* 3. 魔方尺寸缩小，确保完整显示在容器内 */

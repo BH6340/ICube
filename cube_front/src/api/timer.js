@@ -99,6 +99,22 @@ export function getTimerTrend(params) {
   })
 }
 
+/**
+ * 获取今日计时记录
+ *
+ * @param {Object} [params] - 查询参数
+ * @param {string} [params.cube_type] - 魔方类型过滤
+ * @param {string} [params.method] - 还原方法过滤
+ * @returns {Promise<Object>} 响应数据，包含今日记录列表
+ */
+export function getTodayTimerRecords(params) {
+  return request({
+    url: '/api/timer/records/today/',
+    method: 'get',
+    params
+  })
+}
+
 // ===== 智能魔方设备 =====
 
 /**

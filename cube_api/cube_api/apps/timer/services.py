@@ -68,7 +68,7 @@ class TimerStatsCacheService:
         """
         按通配符删除缓存键
 
-        Redis 后端使用原生 delete_pattern，LocMemCache 等后端遍历删除。
+        Redis 后端使用原生 delete_pattern，LocMemCache 等后端遍历删除（测试用）。
         """
         if hasattr(cache, "delete_pattern"):
             cache.delete_pattern(pattern)
