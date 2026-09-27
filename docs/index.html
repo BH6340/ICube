@@ -365,9 +365,136 @@
       /* 代码面板折叠时，TOC按钮位置在平板上也调整 */
       body.code-panel-collapsed.toc-collapsed .toc-toggle-btn { top: 52px; }
     }
-    @media (max-width: 600px) {
+
+    /* ===== 手机端适配（< 768px） ===== */
+    @media (max-width: 768px) {
       :root { --sidebar-w: 260px; --toc-w: 200px; }
-      .markdown-section { padding: 1.5rem 1rem 3rem; }
+
+      /* 内容区：取消左右 margin，占满宽度 */
+      .content { margin-left: 0 !important; margin-right: 0 !important; }
+      .markdown-section { padding: 1rem 0.9rem 3rem; font-size: 14px; line-height: 1.7; }
+
+      /* 标题字号缩小 */
+      .markdown-section h1 { font-size: 1.5rem; }
+      .markdown-section h2 { font-size: 1.25rem; }
+      .markdown-section h3 { font-size: 1.1rem; }
+      .markdown-section h4 { font-size: 1rem; }
+
+      /* 侧边栏：浮层模式（覆盖内容，不挤压），带阴影 */
+      .sidebar {
+        box-shadow: 2px 0 12px rgba(0,0,0,0.12);
+        transition: transform 0.25s ease;
+      }
+      body.nav-collapsed .sidebar {
+        transform: translateX(-100%);
+        margin-left: 0 !important;
+      }
+      body:not(.nav-collapsed) .sidebar {
+        transform: translateX(0);
+      }
+
+      /* 侧边栏遮罩：展开时点击空白关闭 */
+      .sidebar-mask {
+        display: none;
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.35); z-index: 99;
+      }
+      body:not(.nav-collapsed) .sidebar-mask { display: block; }
+
+      /* TOC：浮层模式，手机端默认隐藏 */
+      .toc-sidebar {
+        box-shadow: -2px 0 12px rgba(0,0,0,0.12);
+        transition: transform 0.25s ease;
+      }
+
+      /* 折叠按钮：手机端顶部左右分布，不重叠 */
+      .nav-toggle-btn {
+        top: 10px; left: 10px !important;
+        width: 32px; height: 32px; font-size: 16px;
+        background: var(--bg);
+        box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        border-radius: 6px;
+      }
+      .toc-toggle-btn {
+        top: 10px; right: 10px !important;
+        width: 32px; height: 32px; font-size: 14px;
+        background: var(--bg);
+        box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        border-radius: 6px;
+      }
+
+      /* 拖拽条：手机端隐藏 */
+      .sidebar-resizer, .toc-resizer { display: none !important; }
+
+      /* 表格：横向滚动 */
+      .markdown-section table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        font-size: 13px;
+      }
+      .markdown-section table th,
+      .markdown-section table td {
+        padding: 0.4rem 0.6rem;
+        white-space: nowrap;
+      }
+
+      /* 代码块：横向滚动 + 缩小字号 */
+      .markdown-section pre {
+        font-size: 12px;
+        line-height: 1.5;
+        padding: 0.8rem;
+        border-radius: 6px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .markdown-section code {
+        font-size: 12px;
+        padding: 0.15em 0.35em;
+      }
+
+      /* 图片：最大宽度 100% */
+      .markdown-section img {
+        max-width: 100%;
+        height: auto;
+      }
+
+      /* 引用块 */
+      .markdown-section blockquote {
+        margin: 1rem 0;
+        padding: 0.5rem 0.8rem;
+        font-size: 13px;
+      }
+
+      /* 列表间距缩小 */
+      .markdown-section ul,
+      .markdown-section ol {
+        padding-left: 1.2rem;
+      }
+      .markdown-section li {
+        margin: 0.2rem 0;
+      }
+
+      /* 搜索框适配 */
+      .search input { font-size: 14px; padding: 0.55rem 0.75rem; }
+
+      /* 代码面板：手机端底部固定，高度自适应 */
+      .code-panel {
+        width: 100%;
+        max-width: none;
+        min-width: 0;
+      }
+    }
+
+    /* ===== 小屏手机（< 480px） ===== */
+    @media (max-width: 480px) {
+      .markdown-section { padding: 0.8rem 0.7rem 2.5rem; font-size: 13.5px; }
+      .markdown-section h1 { font-size: 1.35rem; }
+      .markdown-section h2 { font-size: 1.15rem; }
+      .markdown-section pre { font-size: 11.5px; padding: 0.6rem; }
+      .markdown-section code { font-size: 11.5px; }
+      :root { --sidebar-w: 240px; --toc-w: 180px; }
     }
   </style>
 </head>
@@ -376,6 +503,7 @@
   <div class="sidebar-resizer" id="sidebarResizer"></div>
   <button class="toc-toggle-btn" id="tocToggleBtn">☰</button>
   <div class="toc-resizer" id="tocResizer"></div>
+  <div class="sidebar-mask" id="sidebarMask"></div>
   <div id="app"></div>
 
   <!-- 右侧代码面板 -->
@@ -395,6 +523,42 @@
     document.getElementById('tocToggleBtn').addEventListener('click', function() {
       document.body.classList.toggle('toc-collapsed');
     });
+
+    // ===== 移动端适配 =====
+    (function() {
+      var MOBILE_BREAKPOINT = 768;
+      var isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
+
+      function applyMobileState() {
+        isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
+        if (isMobile) {
+          // 手机端：侧边栏和 TOC 默认折叠
+          if (!document.body.classList.contains('nav-collapsed')) {
+            document.body.classList.add('nav-collapsed');
+          }
+          if (!document.body.classList.contains('toc-collapsed')) {
+            document.body.classList.add('toc-collapsed');
+          }
+        }
+      }
+
+      // 初始化
+      applyMobileState();
+
+      // 窗口尺寸变化时重新检测（防抖）
+      var resizeTimer;
+      window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(applyMobileState, 150);
+      });
+
+      // 遮罩点击关闭侧边栏（仅手机端有效）
+      document.getElementById('sidebarMask').addEventListener('click', function() {
+        if (isMobile) {
+          document.body.classList.add('nav-collapsed');
+        }
+      });
+    })();
 
     // ===== 拖拽调整左侧边栏宽度 =====
     (function() {
