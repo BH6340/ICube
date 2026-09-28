@@ -80,6 +80,8 @@
 - feat(accounts): 新增将JWT token加入黑名单的方法 (9b44a04)
 - feat: 实现无感刷新 Token 机制 (167dd2f)
 - feat: 更新应用图标资源及配置 (9ba612b)
+- feat(timer): 拆分历史记录为今日记录并优化详情展示 (912d592)
+- feat(timer): 拆分历史记录为今日记录并优化详情展示  &  ci(app-build): 新增更新说明输入及自动获取逻辑 (#76) (af1e596)
 
 
 ## fix - 修复
@@ -209,6 +211,7 @@
 - docs: 自动更新 CHANGELOG (c293d33)
 - docs: 更新项目文档，补充双Token、多端登录及智能魔方功能说明 (061fec5)
 - docs: 优化文档页面移动端适配 (f0ae83b)
+- docs: 自动更新 CHANGELOG (611a557)
 
 
 ## refactor - 重构
@@ -250,6 +253,8 @@
 - ci(cicd): 避免重复执行生产部署 (2ce11f7)
 - ci(monitor): Kuma 改为独立端口访问[deploy] (7d45e48)
 - ci: 在 CI 流程中添加拉取 rebase 步骤避免推送冲突[deploy] (7a38481)
+- ci(app-build): 新增更新说明输入及自动获取逻辑 (fc698ff)
+- ci: 新增dev合并main及自动部署流程 (c3eddf3)
 
 
 ## build - 构建
@@ -265,6 +270,7 @@
 - build(scripts): add restart action to dev-local.ps1 (dc7f4d2)
 - build(settings): 新增HTTPS非标准端口配置支持 (#59) (844f54a)
 - build(ci/deploy): 修复生产环境域名与下载链接问题，更新APP版本 (#63) (c478a72)
+- build(docker): 添加 app_version.json 挂载到容器[deploy] (7596c72)
 
 
 ## style - 样式
