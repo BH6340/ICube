@@ -92,6 +92,8 @@ services:
       - collected_static:/app/collected_static
       # 支付宝密钥文件（.gitignore 排除，需手动上传到宿主机）
       - ./cube_api/cube_api/apps/shop/keys:/app/cube_api/apps/shop/keys:ro
+      # APP 版本信息（CI 通过 SSH 更新宿主机文件，容器实时读取）
+      - ./cube_api/cube_api/apps/home/app_version.json:/app/cube_api/apps/home/app_version.json
     depends_on:
       # 等待 MySQL 健康检查通过后再启动
       db:
