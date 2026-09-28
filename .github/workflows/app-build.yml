@@ -260,3 +260,54 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ================================================================
+      # 代码同步与部署阶段
+      # ================================================================
+      # 将 dev 合并到 main 并部署到服务器，确保 docker-compose.yml
+      # 等基础设施变更也同步生效。复用 WEB_DEPLOY_TOKEN（PAT）推送。
+      # ================================================================
+
+      # Merge dev → main
+      - name: Merge dev to main
+        env:
+          WEB_DEPLOY_TOKEN: ${{ secrets.WEB_DEPLOY_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main dev
+          AHEAD=$(git rev-list --count origin/main..origin/dev)
+          if [ "$AHEAD" = "0" ]; then
+            echo "dev 和 main 无差异，跳过 merge"
+          else
+            echo "dev 领先 main $AHEAD 个 commit，开始 merge"
+            git checkout main
+            git pull origin main
+            git merge origin/dev --no-edit -X theirs -m "release: APP v${{ steps.version.outputs.version }}"
+            git push https://$WEB_DEPLOY_TOKEN@github.com/${{ github.repository }}.git main
+            echo "✅ 已合并 dev 到 main"
+          fi
+
+      # SSH 部署：调用现有 deploy_update.sh，自动 git pull + 重建容器 + migrate
+      - name: SSH 部署
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ secrets.DEPLOY_PATH }}
+            bash ./scripts/deploy/deploy_update.sh --non-interactive --force-sync
+
+      # 同步 dev → main（部署成功后，保持 dev 和 main 一致）
+      - name: 同步 dev 到 main
+        env:
+          WEB_DEPLOY_TOKEN: ${{ secrets.WEB_DEPLOY_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin
+          git checkout dev
+          git reset --hard origin/main
+          git push https://$WEB_DEPLOY_TOKEN@github.com/${{ github.repository }}.git dev --force
+          echo "✅ dev 已同步到 main"
