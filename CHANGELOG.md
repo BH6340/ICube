@@ -212,6 +212,7 @@
 - docs: 更新项目文档，补充双Token、多端登录及智能魔方功能说明 (061fec5)
 - docs: 优化文档页面移动端适配 (f0ae83b)
 - docs: 自动更新 CHANGELOG (611a557)
+- docs: 自动生成 CHANGELOG (585e1f5)
 
 
 ## refactor - 重构
@@ -255,6 +256,7 @@
 - ci: 在 CI 流程中添加拉取 rebase 步骤避免推送冲突[deploy] (7a38481)
 - ci(app-build): 新增更新说明输入及自动获取逻辑 (fc698ff)
 - ci: 新增dev合并main及自动部署流程 (c3eddf3)
+- ci(app-build): 拆分上传 APK 和更新版本文件步骤[deploy] (077c12f)
 
 
 ## build - 构建
