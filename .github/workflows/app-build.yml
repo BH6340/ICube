@@ -209,40 +209,20 @@ jobs:
       # 部署阶段
       # ================================================================
 
-      # 通过 SCP 上传 APK 到服务器，并更新 app_version.json
-      # 必须配置的 Secrets：
-      #   SSH_PRIVATE_KEY — 服务器 SSH 私钥（OpenSSH 格式，非 PPK）
-      #   SERVER_HOST     — 服务器 IP 或域名
-      #   SERVER_USER     — SSH 登录用户名
-      - name: Upload to server
+      # SCP 上传 APK 到服务器 downloads 目录
+      - name: Upload APK to server
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
         run: |
           mkdir -p ~/.ssh
-          # 使用 printf 写入，避免 echo 丢失换行
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          # 验证 key 格式
           ssh-keygen -y -f ~/.ssh/deploy_key > /dev/null 2>&1 && echo "SSH key is valid" || echo "WARNING: SSH key format may be invalid"
           ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          # 上传 APK 到服务器 downloads 目录
           scp -i ~/.ssh/deploy_key "icube-v${{ steps.version.outputs.version }}.apk" "$SERVER_USER@$SERVER_HOST:~/ICube/downloads/"
-          # 更新 app_version.json（版本号、下载路径、更新说明）
-          # update_info 通过 base64 传递，避免多行/特殊字符问题
-          ssh -i ~/.ssh/deploy_key "$SERVER_USER@$SERVER_HOST" "cd ~/ICube && python3 -c \"
-          import json, os, base64
-          f = 'cube_api/cube_api/apps/home/app_version.json'
-          os.makedirs(os.path.dirname(f), exist_ok=True)
-          d = json.load(open(f)) if os.path.exists(f) else {}
-          d['version'] = '${{ steps.version.outputs.version }}'
-          d['download_url'] = '/apk/icube-v${{ steps.version.outputs.version }}.apk'
-          d['update_info'] = base64.b64decode('${{ steps.update_info.outputs.update_info_b64 }}').decode('utf-8')
-          d['force_update'] = d.get('force_update', False)
-          json.dump(d, open(f, 'w'), ensure_ascii=False, indent=2)
-          print('app_version.json updated')
-          \""
+          echo "✅ APK 已上传"
 
       # ================================================================
       # GitHub Release 阶段（可选，失败不影响主流程）
@@ -298,6 +278,29 @@ jobs:
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
             bash ./scripts/deploy/deploy_update.sh --non-interactive --force-sync
+
+      # 更新 app_version.json（必须在 SSH 部署之后，否则 git pull 会覆盖回旧版本）
+      - name: Update app_version.json
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+        run: |
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -i ~/.ssh/deploy_key "$SERVER_USER@$SERVER_HOST" "cd ~/ICube && python3 -c \"
+          import json, os, base64
+          f = 'cube_api/cube_api/apps/home/app_version.json'
+          os.makedirs(os.path.dirname(f), exist_ok=True)
+          d = json.load(open(f)) if os.path.exists(f) else {}
+          d['version'] = '${{ steps.version.outputs.version }}'
+          d['download_url'] = '/apk/icube-v${{ steps.version.outputs.version }}.apk'
+          d['update_info'] = base64.b64decode('${{ steps.update_info.outputs.update_info_b64 }}').decode('utf-8')
+          d['force_update'] = d.get('force_update', False)
+          json.dump(d, open(f, 'w'), ensure_ascii=False, indent=2)
+          print('app_version.json updated to ${{ steps.version.outputs.version }}')
+          \""
 
       # 同步 dev → main（部署成功后，保持 dev 和 main 一致）
       - name: 同步 dev 到 main
