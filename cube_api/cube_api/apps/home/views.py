@@ -75,8 +75,17 @@ class AppVersionView(APIView):
 
     def get(self, request):
         version_file = os.path.join(os.path.dirname(__file__), "app_version.json")
-        with open(version_file, encoding="utf-8") as f:
-            data = json.load(f)
+        # 文件不存在时返回默认值，避免开发环境/首次部署报错
+        if not os.path.exists(version_file):
+            data = {
+                "version": "1.0.0",
+                "download_url": "/apk/icube-v1.0.0.apk",
+                "update_info": "ICube v1.0.0",
+                "force_update": False,
+            }
+        else:
+            with open(version_file, encoding="utf-8") as f:
+                data = json.load(f)
         download_url = data.get("download_url", "")
         if download_url and not download_url.startswith("http"):
             scheme = "https" if request.is_secure() else "http"
