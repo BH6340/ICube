@@ -146,6 +146,7 @@
 - fix(nginx): 移除多余的text/html类型的sub_filter配置  (#73) (1298db9)
 - fix(nginx): 简化代理重写规则统一跳转至monitor前缀 (a3d2b0f)
 - fix(nginx): 简化代理重写规则统一跳转至monitor前缀 (#74) (29017a7)
+- fix(home): 修复版本文件不存在时的报错并优化数据库备份脚本的git stash逻辑 (#77) (3c22b44)
 
 
 ## docs - 文档
@@ -213,6 +214,7 @@
 - docs: 优化文档页面移动端适配 (f0ae83b)
 - docs: 自动更新 CHANGELOG (611a557)
 - docs: 自动生成 CHANGELOG (585e1f5)
+- docs: 自动生成 CHANGELOG (8a54422)
 
 
 ## refactor - 重构
