@@ -359,13 +359,20 @@ def git_push():
             with open(out_path, "r", encoding="utf-8") as f:
                 saved_content = f.read()
 
-        # 丢弃工作区对已跟踪文件的修改，避免 checkout 时因文件差异被拒绝
-        # 内容已保存到内存，切到目标分支后会恢复
-        r = _run(["git", "checkout", "--", OUTPUT_FILE])
-        if r.returncode != 0:
-            logger.warning(f"丢弃工作区修改失败: {r.stderr.strip()}")
+        # stash 所有本地改动（含未跟踪文件），避免 checkout 时因文件差异被拒绝
+        # 比逐个 checkout -- 更稳妥，防止 app_version.json 等运行时文件产生的修改
+        stash_name = f"backup-stash-{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        r = _run(["git", "stash", "push", "-u", "-m", stash_name])
+        stash_applied = False
+        if r.returncode == 0:
+            logger.info("本地改动已 stash")
+        else:
+            # stash 失败（通常是无改动），不阻塞
+            logger.warning(f"git stash 跳过: {r.stderr.strip() or r.stdout.strip()}")
 
         if not _ensure_backup_branch():
+            # 切分支失败，尝试恢复 stash
+            _run(["git", "stash", "pop"])
             logger.error("切换备份分支失败，终止推送")
             return False
 
@@ -454,6 +461,12 @@ def git_push():
     if not on_backup_branch:
         logger.info(f"切回原引用: {orig_ref}")
         _restore_ref(orig_ref_type, orig_ref)
+        # 恢复 stash 的本地改动（如 app_version.json 等运行时文件）
+        sr = _run(["git", "stash", "pop"])
+        if sr.returncode == 0:
+            logger.info("本地改动已从 stash 恢复")
+        else:
+            logger.warning(f"stash pop 跳过（可能无 stash）: {sr.stderr.strip() or sr.stdout.strip()}")
 
     return pr is not None and pr.returncode == 0
 
