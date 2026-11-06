@@ -2,9 +2,9 @@
 # ICube CI/CD 工作流
 # ============================================================================
 # 触发条件：
-#   - PR 到 main：CI 检查（不部署）— 由 web-deploy.yml 自动创建 PR 触发
-#   - push 到 dev：CI 检查（不部署）；含 [deploy] 时跳过（由 web-deploy.yml 接管）
-#   - push 到 main（PR 合并后）：仅 CI 检查，不自动部署
+#   - PR 到 main：CI 检查（不部署）
+#   - push 到 dev：CI 检查 → 通过后自动合并到 main（[deploy] 提交跳过，由 web-deploy.yml 接管）
+#   - push 到 main：仅 CI 检查，不自动部署
 #   - workflow_dispatch：手动触发 → CI 检查 + 部署 + sync-dev + changelog
 #   - 纯文档变更：CI 检查自动 skip
 #
@@ -12,8 +12,8 @@
 #   - 云服务器部署：手动运行本 workflow（Actions → Run workflow）
 #   - web-deploy.yml（tag / [deploy]）：独立流程，不受影响
 #
-# 发版流程：
-#   1. 日常开发：push 到 dev → 本 workflow 跑 CI 检查
+# 开发流程：
+#   1. 日常开发：push 到 dev → CI 检查 → 自动合并到 main
 #   2. Web 发版：打 web-v* tag → web-deploy.yml 全流程
 #   3. APP 发版：打 app-v* tag → app-build.yml 构建 APK
 #   4. 手动部署云服务器：Actions 页面 Run workflow → 选择 main 分支
@@ -321,7 +321,59 @@ jobs:
         run: docker compose config -q
 
   # ===========================================================================
-  # CD Job：自动部署（仅 push 到 main 时触发）
+  # 前置 Job：自动合并 dev → main
+  # ===========================================================================
+  # 职责：CI 通过后自动将 dev 合并到 main，保持 main 与 dev 同步
+  # 触发：push 到 dev，且 4 个 CI 检查全部通过
+  # 跳过：含 [deploy] 的提交（由 web-deploy.yml 负责 merge）
+  # 注意：使用 WEB_DEPLOY_TOKEN（PAT）push，确保触发后续 workflow
+  # ===========================================================================
+  auto-merge:
+    name: 自动合并 dev → main
+    needs: [backend-check, frontend-check, docker-build-api, docker-build-front]
+    if: |
+      github.event_name == 'push' && github.ref == 'refs/heads/dev' &&
+      !contains(toJSON(github.event.commits), '[deploy]') &&
+      needs.backend-check.result == 'success' &&
+      needs.frontend-check.result == 'success' &&
+      needs.docker-build-api.result == 'success' &&
+      needs.docker-build-front.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.WEB_DEPLOY_TOKEN }}
+
+      - name: 合并 dev 到 main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # 切换到 main
+          git checkout main
+
+          # 尝试 fast-forward 合并，不行则 merge commit
+          if git merge --ff-only origin/dev; then
+            echo "✅ Fast-forward 合并成功"
+          else
+            echo "⚠️  无法 fast-forward，尝试 merge commit"
+            git merge origin/dev -m "merge: dev → main（CI 通过自动合并）" || {
+              echo "❌ 合并失败，可能有冲突，跳过合并"
+              git merge --abort 2>/dev/null || true
+              exit 0
+            }
+            echo "✅ Merge commit 合并成功"
+          fi
+
+          # 推送到 main
+          git push origin main
+          echo "✅ 已推送到 main 分支"
+
+  # ===========================================================================
+  # CD Job：部署到生产服务器（仅手动触发）
   # ===========================================================================
   # 职责：SSH 到服务器执行部署，含强制同步、迁移检查、健康检查、自动回滚
   # 依赖：backend-check + frontend-check + docker-build-api + docker-build-front 全部通过或跳过
