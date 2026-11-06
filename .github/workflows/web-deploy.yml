@@ -1,40 +1,22 @@
 # ====================================================================
-# Web 发版与快速部署工作流
+# Web 发版与快速部署工作流（已停用）
 # ====================================================================
-# 触发条件：
-#   1. push tag web-v*（如 web-v1.0.2）→ CI 检查 → 发版部署
-#   2. push 到 dev 且 commit message 含 [deploy] → CI 检查 → 快速部署（不发版）
+# 已整合到 cicd.yml 中，功能由 cicd.yml 统一接管：
+#   - push tag web-v* → cicd.yml 发版部署
+#   - push dev 含 [deploy] → cicd.yml 快速部署
+#   - workflow_dispatch → 手动部署
 #
-# 完整流程：
-#   1. CI 检查（后端 pytest + 前端 vite build）—— 必须通过才继续
-#   2. 将 dev 分支 merge 到 main 并 push
-#   3. SSH 到服务器执行部署（deploy_update.sh）
-#   4. 同步 dev 到 main
-#   5. 生成 CHANGELOG
-#
-# 不依赖 cicd.yml 的 push 触发，因为 GITHUB_TOKEN/PAT push 到 main
-# 可能不触发其他 workflow。部署逻辑直接内置于此 workflow。
-#
-# 快速部署用法：
-#   git commit -m "feat: 修复登录问题 [deploy]"
-#   git push origin dev
-#
-# 注意：多 commit push 时检查所有 commit message，任意一条含 [deploy] 即触发
-#
-# 版本命名建议（仅 tag 触发）：
-#   - 新功能：minor+1（如 web-v1.1.0）
-#   - 修复补丁：patch+1（如 web-v1.0.2）
-#   - 大版本：major+1（如 web-v2.0.0）
+# 如需恢复，取消下方 on: 部分的注释即可。
 # ====================================================================
 
 name: Web Deploy
 
-on:
-  push:
-    tags:
-      - 'web-v*'
-    branches:
-      - dev
+# on:
+#   push:
+#     tags:
+#       - 'web-v*'
+#     branches:
+#       - dev
 
 # ============================== 全局环境变量 ==============================
 env:
