@@ -183,12 +183,12 @@ EMAIL_DISPLAY_NAME=ICube魔方平台
 
 ## CI/CD
 
-项目通过 GitHub Actions 实现持续集成与持续部署。Web 上线演进过两套方案，**两套工作流文件目前都保存在仓库**：
+项目通过 GitHub Actions 实现持续集成与持续部署。Web 上线演进过两套方案，**当前主力方案整合在 `cicd.yml` 中**，原 web-deploy.yml 已停用归档：
 
 | 方案 | 工作流 | 触发上线方式 | 状态 |
 |------|--------|-------------|------|
-| 现方案：Tag 发版 | `.github/workflows/web-deploy.yml` | 打 `web-v*` tag，自动 merge dev→main 并部署 | 当前主力 |
-| 原方案：PR 流程 | `.github/workflows/cicd.yml` | 发 PR 合并到 main 后自动部署 | 历史路径保留 |
+| 现方案：cicd.yml 统一管理 | `.github/workflows/cicd.yml` | 三种触发：tag `web-v*` / dev push 含 `[deploy]` / 手动触发 | 当前主力 |
+| 原方案：PR 流程（历史） | `.github/workflows/cicd.yml`（历史模式） | 发 PR 合并到 main 后自动部署 | 历史路径保留 |
 
 CI 检查部分两套共用同一套 Job（后端测试、前端构建、Docker 构建），差异只在"如何触发上线"。
 
@@ -198,26 +198,28 @@ CI 检查部分两套共用同一套 Job（后端测试、前端构建、Docker 
 
 | 分支 | 用途 | 保护 | CI | 部署 |
 |------|------|------|-----|------|
-| `main` | 生产环境 | 禁止直接 push，只接受 PR | ✅ | ✅ |
-| `dev` | 日常开发 | 不保护 | ✅ | - |
+| `main` | 生产环境 | auto-merge 自动同步 | ✅ | 仅 tag/[deploy]/手动触发 |
+| `dev` | 日常开发 | 不保护 | ✅ | `[deploy]` 触发 |
 
-### 现方案：Tag 发版（主推）
+### 现方案：cicd.yml 统一管理（主推）
+
+日常开发 push 到 dev → CI 检查通过 → **auto-merge 自动合并到 main**（不部署）。需要部署时有三种方式：
 
 ```bash
-git push origin dev          # 开发推送到 dev
-git tag web-v1.1.0           # CI 全绿后打版本 tag
-git push origin web-v1.1.0   # 推送 tag → 自动 merge + 部署
+git push origin dev                      # 日常推送 → CI + auto-merge（不部署）
+git tag web-v1.1.0 && git push origin web-v1.1.0  # 发版部署
+git commit -m "feat: xxx [deploy]" && git push origin dev  # 快速部署
+# Actions 页面 Run workflow → 手动部署
 ```
 
-推送 `web-v*` tag 后，`web-deploy.yml` 自动：合并 dev 到 main → SSH 部署 → 同步 dev 到 main → 生成 CHANGELOG → 微信通知。
+部署流水线统一在 `cicd.yml` 中：CI 检查 → merge dev→main → SSH 部署 → 同步 dev → 生成 CHANGELOG → 失败微信通知。
 
 ### 原方案：PR 流程（历史保留）
 
-- **push 到 dev**：触发 CI 检查（不部署）
+- **push 到 dev**：触发 CI 检查 → 原方案不自动合并
 - **PR: dev → main**：触发 CI 检查（不部署）
-- **push 到 main**（合并后）：触发 CI 检查 + 自动部署 + sync-dev + changelog
-- **纯文档变更**（`docs/**`、`*.md`）：不触发任何 Job
-- **手动触发**：Actions 页面 `workflow_dispatch`，部署 main 当前代码（不发版但需更新服务器时用）
+- **push 到 main**（合并后）：历史模式下会自动部署（现方案已不自动部署）
+- **手动触发**：Actions 页面 `workflow_dispatch`
 
 ### Path Filter 智能跳过
 
@@ -240,7 +242,8 @@ git push origin web-v1.1.0   # 推送 tag → 自动 merge + 部署
 ### CD 自动部署
 
 ```
-触发上线（打 web-v* tag / PR 合并 main / 手动触发）
+触发上线（打 web-v* tag / [deploy] / 手动触发）
+  → CI 检查通过 → merge dev→main
   → 自动部署流水线（deploy_update.sh）
   → 强制同步代码（git reset --hard origin/main）
   → 数据库迁移检查（有迁移则 mysqldump 备份 + migrate）
@@ -261,7 +264,7 @@ git push origin web-v1.1.0   # 推送 tag → 自动 merge + 部署
 | `SSH_PRIVATE_KEY` | 部署专用 SSH 私钥 |
 | `DEPLOY_PATH` | 服务器项目路径 |
 | `SERVERCHAN_KEY` | Server酱微信通知密钥 |
-| `WEB_DEPLOY_TOKEN` | 个人访问令牌 PAT，供 Tag 发版推送受保护 main（现方案必需） |
+| `WEB_DEPLOY_TOKEN` | 个人访问令牌 PAT，供 cicd.yml 推送受保护 main（auto-merge + 部署必需） |
 
 > 详细的测试环境配置、测试方法见 [测试文档](docs/guides/测试文档.md)。
 
