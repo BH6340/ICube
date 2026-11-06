@@ -351,6 +351,7 @@ jobs:
           token: ${{ secrets.WEB_DEPLOY_TOKEN }}
 
       - name: 合并 dev 到 main
+        id: merge
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -361,19 +362,38 @@ jobs:
           # 尝试 fast-forward 合并，不行则 merge commit
           if git merge --ff-only origin/dev; then
             echo "✅ Fast-forward 合并成功"
+            echo "merged=true" >> $GITHUB_OUTPUT
+            echo "ff=true" >> $GITHUB_OUTPUT
           else
             echo "⚠️  无法 fast-forward，尝试 merge commit"
             git merge origin/dev -m "merge: dev → main（CI 通过自动合并）" || {
               echo "❌ 合并失败，可能有冲突，跳过合并"
               git merge --abort 2>/dev/null || true
+              echo "merged=false" >> $GITHUB_OUTPUT
               exit 0
             }
             echo "✅ Merge commit 合并成功"
+            echo "merged=true" >> $GITHUB_OUTPUT
+            echo "ff=false" >> $GITHUB_OUTPUT
           fi
 
           # 推送到 main
           git push origin main
           echo "✅ 已推送到 main 分支"
+
+      # 合并成功后同步 dev 到 main，避免分叉
+      # ff 合并时 dev 和 main 本来就一致，可省；merge commit 时必须 sync
+      # 这里统一都 sync 一次，确保两边永远一致
+      - name: 同步 dev 到 main（避免分叉）
+        if: steps.merge.outputs.merged == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main dev
+          git checkout dev
+          git reset --hard origin/main
+          git push origin dev --force
+          echo "✅ dev 已同步到 main，两分支一致"
 
   # ===========================================================================
   # CD Job：部署到生产服务器
