@@ -22,6 +22,7 @@
   - [18 智能魔方功能实现详解](wiki/18_智能魔方功能实现详解.md)
   - [19 DuckDNS HTTPS 反向代理服务](wiki/19_DuckDNS_HTTPS反向代理服务.md)
   - [20 SSH 隧道连接数据库](wiki/20_SSH隧道连接数据库.md)
+  - [21 数据库备份与 Redis 持久化](wiki/21_数据库备份与Redis持久化.md)
   - [99 附录 模块依赖关系图](wiki/99_附录_模块依赖关系图.md)
 
 - Guides — 操作指南

@@ -220,14 +220,14 @@ RUN pip install -r requirements.txt  # 每次都要重新装，白瞎了缓存
 
 ## 两套发版方案：一句话看懂
 
-ICube 的 Web 上线演进过两套方案，**两套工作流文件目前都保留在仓库**，随时可切换：
+ICube 的 Web 上线演进过两套方案，**当前主力方案整合在 `cicd.yml` 中**，原 web-deploy.yml 已停用并归档到 `disabled/` 目录：
 
 | 方案 | 工作流文件 | 怎么触发上线 | 一句话描述 |
 |------|-----------|------------|-----------|
-| **现方案（Tag 发版）** | `web-deploy.yml` | 打一个 `web-v*` 的 tag | "打个版本号标签，自动合并 dev 到 main 并部署" |
-| **原方案（PR 流程）** | `cicd.yml` | 发一个 PR 合并到 main | "提交代码 → 手动发 PR 合并 → 合并后自动部署" |
+| **现方案（`cicd.yml` 统一管理）** | `.github/workflows/cicd.yml` | 三种触发：打 `web-v*` tag / dev push 含 `[deploy]` / 手动触发 | "CI 检查 + 自动合并 dev→main + 部署 + sync-dev + changelog 全在一个 workflow" |
+| **原方案（PR 合并流程）** | `.github/workflows/cicd.yml`（历史模式） | 发一个 PR 合并到 main，push 到 main 后自动部署 | "提交代码 → 手动发 PR 合并 → 合并后自动部署" |
 
-**当前主力是现方案（Tag 发版）**，日常发版走打 tag 一条命令即可；原方案（PR 流程）作为历史路径保留，遇到需要走代码评审、或想精确控制合并时机的场景仍可用。
+**当前主力是现方案**：日常开发 push 到 dev → CI 检查通过 → 自动合并到 main（不部署）；需要部署时打 tag 或加 `[deploy]`。原方案（PR 流程）作为历史路径保留，需要走代码评审时仍可用。
 
 > **CI（检查）部分两套共用同一套 Job**：`backend-check`、`frontend-check`、`docker-build-api`、`docker-build-front`。差异只在"如何触发上线（CD）"。本文后续会分开讲两套 CD 流程，并在 [两套方案对比](#两套方案对比) 给出详细对照表。
 
@@ -240,8 +240,13 @@ feature/xxx（可选）     dev               main
     │                   │                  │
     └── 合并到 dev ────→│                  │
                         │                  │
-   【现方案】Tag 发版    │  打 web-v* tag ─→│ → 自动 merge + 部署 → sync-dev → changelog
-   【原方案】PR 发版     └── PR 到 main ───→│ → 自动部署 → sync-dev → changelog
+   【日常】push dev     │ CI 通过后         │
+                        │ auto-merge ─────→│ （不部署，保持 main 最新）
+                        │                  │
+   【发版】Tag 发版     │  打 web-v* tag ─→│ → merge + 部署 → sync-dev → changelog
+   【快速】[deploy]     │  push 含 [deploy] →│ → merge + 部署 → sync-dev → changelog
+   【手动】Actions 页面  │                  │ → 手动触发部署 → sync-dev → changelog
+   【原方案】PR 发版     └── PR 到 main ───→│ → （历史模式，push main 不自动部署）
                         hotfix/xxx ───────→│ → 合并到 main
                               │             │
                               └── 反合并 → dev
@@ -249,18 +254,18 @@ feature/xxx（可选）     dev               main
 
 | 分支 | 用途 | 保护 | CI | 部署 |
 |------|------|------|-----|------|
-| `main` | 生产环境代码 | 禁止直接 push，只接受 PR | ✅ | ✅ |
-| `dev` | 日常开发 | 不保护 | ✅ | - |
+| `main` | 生产环境代码 | 禁止直接 push，auto-merge 自动同步 | ✅ | 仅 tag/[deploy]/手动触发 |
+| `dev` | 日常开发 | 不保护 | ✅ | `[deploy]` 触发 |
 | `feature/*` | 临时功能分支（可选） | 不保护 | - | - |
 | `hotfix/*` | 紧急修复（可选） | 不保护 | - | - |
 
 ---
 
-## 现方案：Tag 发版流程
+## 现方案：`cicd.yml` 统一管理 + 三种部署触发
 
-> 工作流文件：`.github/workflows/web-deploy.yml`。**当前主力发版方式**，一条命令发版。
+> 工作流文件：`.github/workflows/cicd.yml`。**当前主力方案**，CI 检查 + auto-merge + 部署全在一个 workflow 里，部署有三种触发方式。
 
-### 1. 切换到 dev 分支开发
+### 1. 日常开发（push dev → CI → 自动合并到 main）
 
 ```bash
 git checkout dev
@@ -272,7 +277,20 @@ git commit -m "feat: xxx"
 git push origin dev
 ```
 
-push 到 dev 后，CI 自动触发检查（后端测试 + 前端构建 + Docker 构建），**不会部署**。
+push 到 dev 后，自动执行以下流程：
+
+```
+push dev
+  │
+  ├─ CI 检查（后端测试 + 前端构建 + Docker 构建）
+  │
+  └─ 检查通过 → auto-merge Job 自动合并 dev → main
+     （含 [deploy] 的提交跳过 auto-merge，走部署流程）
+     （纯文档变更 CI 跳过，但仍执行 auto-merge）
+     （合并失败自动跳过，不阻塞）
+```
+
+> **为什么日常开发也要合并到 main？** main 分支始终保持最新代码，确保想部署时随时可以从 main 直接部署，不需要等合并。auto-merge 只合并不部署，不影响线上环境。
 
 ### 2. 打 tag 发版
 
@@ -292,22 +310,24 @@ git push origin web-v1.1.0
 
 ### 3. 自动发版流水线
 
-推送 tag 后，`web-deploy.yml` 自动执行（全自动，无需人工介入）：
+推送 tag 后，`cicd.yml` 的 deploy Job 自动执行（全自动，无需人工介入）：
 
 ```
 push tag web-v1.1.0
   │
-  ├─ 提取版本号（web-v1.1.0 → 1.1.0）
+  ├─ CI 检查（后端测试 + 前端构建 + Docker 构建）
+  │
+  ├─ 部署模式判定：发版模式（tag 触发）
   ├─ 检查 dev 与 main 是否有差异
-  │    └─ 无差异 → 直接跳过（不通知）
-  ├─ 合并 dev 到 main（冲突自动采用 dev 版本）→ push main
+  │    └─ 无差异 → 跳过 merge
+  ├─ 合并 dev 到 main（release 模式 merge commit）→ push main
   ├─ SSH 部署到服务器（deploy_update.sh）
   ├─ 同步 dev 到 main（git reset --hard + force push）
   ├─ 生成 CHANGELOG → 推到 dev
   └─ 微信通知（失败时通知）
 ```
 
-> **为什么用 PAT 而非默认 Token？** `web-deploy.yml` 需要把代码 push 到 `main`（受保护分支），默认的 `GITHUB_TOKEN` 可能无法触发其他 workflow，因此需要配置 `WEB_DEPLOY_TOKEN`（个人访问令牌 PAT）来鉴权推送。
+> **为什么用 PAT 而非默认 Token？** `cicd.yml` 需要把代码 push 到 `main`（受保护分支）并触发后续操作，默认的 `GITHUB_TOKEN` push 到受保护分支可能受限，也无法触发其他 workflow，因此需要配置 `WEB_DEPLOY_TOKEN`（个人访问令牌 PAT）来鉴权推送。
 
 ### 4. 快速部署：`[deploy]` 模式
 
@@ -322,16 +342,17 @@ push 到 dev 后，`web-deploy.yml` 检测到 commit message 含 `[deploy]`，�
 
 - 跑 CI 检查（backend/frontend/docker）
 - 全绿后直接部署（走同一套 `deploy_update.sh`）
-- **不打 tag、不 merge main、不 sync-dev、不生成 changelog**
-- commit message 前缀为 `deploy: 快速部署` + 时间戳
+- **不打 tag、merge main、sync-dev、生成 changelog 全都走**
+- commit message 含 `[deploy]` 即触发（检查所有 commit）
+- 合并到 main 的 commit 消息前缀为 `deploy: 快速部署` + 时间戳
 
-> **注意**：多 commit push 时检查所有 commit message，任意一条含 `[deploy]` 即触发。
+> **注意**：多 commit push 时检查所有 commit message，任意一条含 `[deploy]` 即触发。`[deploy]` 提交会跳过 auto-merge（因为 deploy Job 内部会做 merge）。
 
-同时 `cicd.yml` 会检测到 dev push 含 `[deploy]` 后**自动跳过 CI**，避免重复跑检查；main 分支收到 `release: Web` 或 `deploy: 快速部署` 开头的 commit 也会跳过部署，防止重复。
+### 5. 手动部署（workflow_dispatch）
 
-### 5. 日常/文档部署（不发版但需更新服务器）
+不打 tag、也不需要走 `[deploy]` 快速部署时，可在 Actions 页面手动运行 `cicd.yml` 的 `workflow_dispatch`，部署 main 当前代码。手动触发**不做 merge**，直接部署当前分支。
 
-不打 tag、也不需要走 `[deploy]` 快速部署时，可在 Actions 页面手动运行 `cicd.yml` 的 `workflow_dispatch`（手动触发），部署 main 当前代码。
+> 纯文档变更等小更新想同步到服务器，用手动部署最方便。
 
 ---
 
@@ -410,19 +431,21 @@ git push origin --delete hotfix/fix-xxx
 
 ## 两套方案对比
 
-| 维度 | 现方案：Tag 发版（`web-deploy.yml`） | 原方案：PR 合并（`cicd.yml`） |
-|------|-----------------------------------|------------------------------|
-| **工作流文件** | `.github/workflows/web-deploy.yml` | `.github/workflows/cicd.yml` |
-| **触发方式** | 打 `web-v*` tag；或 dev push 含 `[deploy]` 快速部署 | 发 PR 合并到 main / push 到 main |
+| 维度 | 现方案：`cicd.yml` 统一管理 | 原方案：PR 合并（历史模式） |
+|------|---------------------------|---------------------------|
+| **工作流文件** | `.github/workflows/cicd.yml`（web-deploy.yml 已归档到 `disabled/`） | `.github/workflows/cicd.yml` |
+| **触发方式** | 三种：打 `web-v*` tag / dev push 含 `[deploy]` / workflow_dispatch 手动 | push 到 main（PR 合并后自动触发） |
+| **日常开发合并** | ✅ auto-merge：CI 通过后自动合并 dev→main（不部署） | ❌ 需手动发 PR |
 | **发版命令** | `git tag web-v1.1.0 && git push origin web-v1.1.0` | 手动创建 PR → 网页上点 Merge |
-| **快速部署（不发版）** | ✅ commit 加 `[deploy]` 直接推 dev 即部署 | ❌（需手动触发 workflow_dispatch） |
-| **合并 main 的方式** | 自动 merge（冲突自动采用 dev 版本） | 手动在 GitHub 上合并 |
+| **快速部署（不发版）** | ✅ commit 加 `[deploy]` 推 dev → merge + 部署 + changelog | ❌（需手动触发 workflow_dispatch） |
+| **手动部署** | ✅ workflow_dispatch → 直接部署 main | ✅ workflow_dispatch |
+| **合并 main 的方式** | 自动 merge（tag 走 release commit，[deploy] 走快速部署 commit） | 手动在 GitHub 上合并 |
 | **代码评审** | 无需评审，一条命令发版 | 可走评审（Require review） |
 | **通知** | ✅（仅失败时通知） | ✅（仅失败时通知） |
-| **部署脚本** | `deploy_update.sh`（同一样式） | `deploy_update.sh`（同一样式） |
-| **同步 dev 到 main** | ✅ 内置于 workflow | ✅ sync-dev Job |
-| **自动 CHANGELOG** | ✅ 内置于 workflow | ✅ changelog Job |
-| **适合场景** | 个人开发、快速迭代、一条命令上线 | 需要人工把控合并、团队评审 |
+| **部署脚本** | `deploy_update.sh`（同一套） | `deploy_update.sh`（同一套） |
+| **同步 dev 到 main** | ✅ sync-dev Job | ✅ sync-dev Job |
+| **自动 CHANGELOG** | ✅ changelog Job | ✅ changelog Job |
+| **适合场景** | 个人开发、快速迭代、main 始终保持最新 | 需要人工把控合并、团队评审 |
 
 ### 发版命令对比（最常用到的差异）
 
@@ -487,7 +510,7 @@ Squash merge 把 PR 的所有 commit 压成一个，main 历史干净整洁。
 | `SSH_PRIVATE_KEY` | SSH 私钥 |
 | `DEPLOY_PATH` | 服务器项目路径 |
 | `SERVERCHAN_KEY` | Server酱微信通知密钥 |
-| `WEB_DEPLOY_TOKEN` | 个人访问令牌 PAT，供 `web-deploy.yml` 推送受保护的 main 分支（现方案 Tag 发版必需） |
+| `WEB_DEPLOY_TOKEN` | 个人访问令牌 PAT，供 `cicd.yml` 推送受保护的 main 分支（auto-merge + 部署 merge 都需要） |
 
 > Secrets 是什么？就是存密码的地方。你不想把服务器密码写进代码里吧？那就存在 GitHub 的 Secrets 里，CI 运行时才能读取到，代码里看不到明文。
 
@@ -544,30 +567,24 @@ docs/**        文档（触发部署，CI Job 自动跳过）
 README.md
 ```
 
-> **为什么文档变更也触发？** 因为文档变更需要部署到服务器上让用户能看到，但不需要跑测试和构建。所以 workflow 会触发，但每个 CI Job 内部会判断：如果只是文档变了，我就跳过。
+> **为什么文档变更不再触发部署？** 现方案中日常开发 auto-merge 会把文档变更也同步到 main，但 push 到 main 不再自动部署。想同步文档到服务器，走手动部署（workflow_dispatch）或加 `[deploy]` 触发。
 
 ### 触发矩阵
 
-**原方案（`cicd.yml`）触发**：
+**现方案（`cicd.yml` 统一管理）触发**：
 
-| 事件 | 后端检查 | 前端构建 | Docker 构建 | 部署 |
-|------|:-------:|:-------:|:----------:|:----:|
-| push 到 `dev` | ✅ | ✅ | ✅ | - |
-| push 到 `dev`（commit 含 `[deploy]`） | ⏭ | ⏭ | ⏭ | - |
-| PR: `dev` → `main` | ✅ | ✅ | ✅ | - |
-| push 到 `main`（合并） | ✅ | ✅ | ✅ | ✅ |
-| push 到 `main`（`release: Web` / `deploy: 快速部署`） | ✅ | ✅ | ✅ | ⏭ |
-| 手动触发 `workflow_dispatch` | ✅ | ✅ | ✅ | ✅ |
-| 纯文档变更 | ⏭ | ⏭ | ⏭ | ✅ |
+| 事件 | 后端检查 | 前端构建 | Docker 构建 | auto-merge | 部署 |
+|------|:-------:|:-------:|:----------:|:----------:|:----:|
+| push 到 `dev`（普通提交） | ✅ | ✅ | ✅ | ✅ | - |
+| push 到 `dev`（含 `[deploy]`） | ✅ | ✅ | ✅ | ⏭（跳过，deploy 内做 merge） | ✅ |
+| push 到 `main`（auto-merge 合并） | ✅ | ✅ | ✅ | - | -（不自动部署） |
+| 打 `web-v*` tag | ✅ | ✅ | ✅ | - | ✅ |
+| PR: `dev` → `main` | ✅ | ✅ | ✅ | - | - |
+| 手动触发 `workflow_dispatch` | ✅ | ✅ | ✅ | - | ✅ |
+| 纯文档变更（push dev） | ⏭ | ⏭ | ⏭ | ✅ | - |
+| 纯文档变更（tag / [deploy] / 手动） | ⏭ | ⏭ | ⏭ | - | ✅ |
 
-> dev push 含 `[deploy]` 时 cicd.yml 主动跳过，由 `web-deploy.yml` 接管 CI+部署，避免重复。main 收到 release/deploy commit 也跳过部署，防止 web-deploy 合并后重复触发。
-
-**现方案（`web-deploy.yml`）触发**：
-
-| 事件 | 动作 |
-|------|------|
-| 打 `web-v*` tag | 自动 merge dev → main + 部署 + sync-dev + changelog |
-| push 到 `dev`（commit 含 `[deploy]`） | CI 检查 + 快速部署（不发版、不 merge、不 changelog） |
+> push 到 main 不再自动部署（避免 auto-merge 每次都触发部署），部署统一由 tag / [deploy] / workflow_dispatch 三种方式触发。
 
 ### Job 内部路径过滤
 
@@ -637,17 +654,27 @@ README.md
 
 ### 触发条件
 
-两套方案的 CD 部署最终调用同一个部署脚本 `deploy_update.sh`，只是"谁去触发它"不同：
+现方案的部署逻辑整合在 `cicd.yml` 的 deploy Job 中，有三种触发方式：
 
-- **现方案（Tag 发版）**：`web-deploy.yml` 在打 `web-v*` tag 后先自动合并 dev→main，再在其 job 内部直接 SSH 部署
-- **原方案（PR 合并）**：`cicd.yml` 在 push 到 `main` 时触发，条件为：
+| 触发方式 | 场景 | merge dev→main |
+|---------|------|:--------------:|
+| **tag `web-v*`** | 正式发版 | ✅（release commit） |
+| **push dev 含 `[deploy]`** | 快速部署 | ✅（快速部署 commit） |
+| **workflow_dispatch** | 手动部署 | ❌（直接部署当前分支） |
+
+触发条件的核心逻辑：
 
 ```
-github.event_name == 'push' && github.ref == 'refs/heads/main'
-&& 所有 CI Job 全部通过（或被跳过）
+!cancelled()
+&& CI Job 全部通过（或被跳过）
+&& (
+     workflow_dispatch
+     || startsWith(github.ref, 'refs/tags/web-v')
+     || (github.ref == 'refs/heads/dev' && commits contain '[deploy]')
+   )
 ```
 
-无论哪套触发，落地到服务器上的部署步骤完全一致（都由 `deploy_update.sh` 执行）：
+无论哪种方式触发，落地到服务器上的部署步骤完全一致（都由 `deploy_update.sh` 执行）：
 
 ### 部署流程（5 步）
 
