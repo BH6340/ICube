@@ -330,13 +330,17 @@ jobs:
   auto-merge:
     name: 自动合并 dev → main
     needs: [backend-check, frontend-check, docker-build-api, docker-build-front]
+    # push dev 且不含 [deploy] 时触发
+    # CI Job 可以是 success 或 skipped（纯文档/配置变更时会 skip）
+    # 只要没有失败就算通过
     if: |
       github.event_name == 'push' && github.ref == 'refs/heads/dev' &&
       !contains(toJSON(github.event.commits), '[deploy]') &&
-      needs.backend-check.result == 'success' &&
-      needs.frontend-check.result == 'success' &&
-      needs.docker-build-api.result == 'success' &&
-      needs.docker-build-front.result == 'success'
+      needs.backend-check.result != 'failure' &&
+      needs.frontend-check.result != 'failure' &&
+      needs.docker-build-api.result != 'failure' &&
+      needs.docker-build-front.result != 'failure' &&
+      !cancelled()
     runs-on: ubuntu-latest
     permissions:
       contents: write
