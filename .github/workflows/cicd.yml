@@ -3,20 +3,24 @@
 # ============================================================================
 # 触发条件：
 #   - PR 到 main：CI 检查（不部署）
-#   - push 到 dev：CI 检查 → 通过后自动合并到 main（[deploy] 提交跳过，由 web-deploy.yml 接管）
+#   - push 到 dev：CI 检查 → 通过后自动合并到 main（[deploy] 提交走部署流程）
 #   - push 到 main：仅 CI 检查，不自动部署
+#   - push tag web-v*：CI 检查 → merge dev→main → 部署 → sync-dev → changelog（发版）
+#   - push 到 dev 含 [deploy]：CI 检查 → merge dev→main → 部署 → sync-dev → changelog（快速部署）
 #   - workflow_dispatch：手动触发 → CI 检查 + 部署 + sync-dev + changelog
 #   - 纯文档变更：CI 检查自动 skip
 #
-# 部署方式：
-#   - 云服务器部署：手动运行本 workflow（Actions → Run workflow）
-#   - web-deploy.yml（tag / [deploy]）：独立流程，不受影响
+# 部署触发方式：
+#   1. 打 tag web-v* → 发版部署
+#   2. commit message 含 [deploy] 并 push dev → 快速部署
+#   3. Actions 页面 Run workflow → 手动部署
 #
 # 开发流程：
-#   1. 日常开发：push 到 dev → CI 检查 → 自动合并到 main
-#   2. Web 发版：打 web-v* tag → web-deploy.yml 全流程
-#   3. APP 发版：打 app-v* tag → app-build.yml 构建 APK
-#   4. 手动部署云服务器：Actions 页面 Run workflow → 选择 main 分支
+#   1. 日常开发：push 到 dev → CI 检查 → 自动合并到 main（不部署）
+#   2. 快速部署：commit 加 [deploy] push dev → merge + 部署 + changelog
+#   3. Web 发版：打 web-v* tag → merge + 部署 + changelog
+#   4. APP 发版：打 app-v* tag → app-build.yml 构建 APK
+#   5. 手动部署：Actions 页面 Run workflow → 选择 main 分支
 #
 # 完整流程文档：docs/guides/Git分支策略与CICD流程.md
 # ============================================================================
@@ -40,15 +44,10 @@ on:
       - 'README.md'                # 项目说明
   push:
     branches: [main, dev]          # main=部署，dev=仅检查
-    paths:
-      - 'cube_api/**'
-      - 'cube_front/**'
-      - 'docker-compose.yml'
-      - '**/Dockerfile'
-      - 'scripts/**'
-      - '.github/workflows/cicd.yml'
-      - 'docs/**'                  # 文档（触发部署，CI 自动 skip）
-      - 'README.md'
+    tags:
+      - 'web-v*'                   # Web 发版 tag
+    # 注意：tag 触发时不走 paths 过滤（tag 本身不涉及文件变更）
+    # 纯文档变更的 skip 逻辑由各 CI Job 内部的 paths-filter 控制
   # 手动触发部署：用于不发版但需要更新服务器（如小修小补、文档更新、配置调整）
   # 在 Actions 页面 → CI/CD → Run workflow 触发，部署 main 分支当前代码
   workflow_dispatch:
@@ -373,27 +372,91 @@ jobs:
           echo "✅ 已推送到 main 分支"
 
   # ===========================================================================
-  # CD Job：部署到生产服务器（仅手动触发）
+  # CD Job：部署到生产服务器
   # ===========================================================================
-  # 职责：SSH 到服务器执行部署，含强制同步、迁移检查、健康检查、自动回滚
+  # 职责：合并 dev→main → SSH 部署，含强制同步、迁移检查、健康检查、自动回滚
   # 依赖：backend-check + frontend-check + docker-build-api + docker-build-front 全部通过或跳过
+  # 触发：
+  #   - tag web-v*（发版）
+  #   - push dev 含 [deploy]（快速部署）
+  #   - workflow_dispatch（手动部署，不做 merge）
   # 后续：deploy → sync-dev → changelog
   # ===========================================================================
   deploy:
     name: 部署到生产服务器
     needs: [backend-check, frontend-check, docker-build-api, docker-build-front]
-    # 仅手动触发（workflow_dispatch）时部署；CI Job 可以是 success 或 skipped
-    # push 到 main 时不自动部署，避免云服务器关机时报错
+    # 三种触发方式：tag 发版 / [deploy] 快速部署 / 手动触发
+    # CI Job 可以是 success 或 skipped（纯文档变更时）
     if: |
-      github.event_name == 'workflow_dispatch' &&
       !cancelled() &&
       (needs.backend-check.result == 'success' || needs.backend-check.result == 'skipped') &&
       (needs.frontend-check.result == 'success' || needs.frontend-check.result == 'skipped') &&
       (needs.docker-build-api.result == 'success' || needs.docker-build-api.result == 'skipped') &&
-      (needs.docker-build-front.result == 'success' || needs.docker-build-front.result == 'skipped')
+      (needs.docker-build-front.result == 'success' || needs.docker-build-front.result == 'skipped') &&
+      (
+        github.event_name == 'workflow_dispatch' ||
+        startsWith(github.ref, 'refs/tags/web-v') ||
+        (github.ref == 'refs/heads/dev' && contains(toJSON(github.event.commits), '[deploy]'))
+      )
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.WEB_DEPLOY_TOKEN }}
+
+      # ======================================================================
+      # 合并 dev → main（tag 发版 / [deploy] 快速部署时执行）
+      # ======================================================================
+      # workflow_dispatch 手动触发时不做 merge，直接部署当前分支
+      - name: 判断部署模式
+        id: mode
+        run: |
+          if [[ "${{ startsWith(github.ref, 'refs/tags/web-v') }}" == "true" ]]; then
+            VERSION="${GITHUB_REF_NAME#web-v}"
+            echo "mode=release" >> $GITHUB_OUTPUT
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "部署模式：发版（tag ${{ github.ref_name }}，版本 $VERSION）"
+          elif [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
+            echo "mode=quick" >> $GITHUB_OUTPUT
+            echo "version=" >> $GITHUB_OUTPUT
+            echo "部署模式：快速部署（[deploy] 触发）"
+          else
+            echo "mode=manual" >> $GITHUB_OUTPUT
+            echo "version=" >> $GITHUB_OUTPUT
+            echo "部署模式：手动部署（workflow_dispatch）"
+          fi
+
+      - name: 检查 dev 与 main 差异
+        id: diff
+        if: steps.mode.outputs.mode != 'manual'
+        run: |
+          git fetch origin main dev
+          AHEAD=$(git rev-list --count origin/main..origin/dev)
+          echo "ahead=$AHEAD" >> $GITHUB_OUTPUT
+          if [ "$AHEAD" = "0" ]; then
+            echo "⚠️ dev 和 main 之间没有差异，跳过 merge"
+          else
+            echo "dev 领先 main $AHEAD 个 commit"
+          fi
+
+      - name: 合并 dev 到 main
+        id: merge
+        if: steps.mode.outputs.mode != 'manual' && steps.diff.outputs.ahead != '0'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout main
+          git pull origin main
+          if [[ "${{ steps.mode.outputs.mode }}" == "release" ]]; then
+            git merge origin/dev --no-edit -X theirs -m "release: Web v${{ steps.mode.outputs.version }}"
+          else
+            git merge origin/dev --no-edit -X theirs -m "deploy: 快速部署 $(date -u -d '+8 hours' '+%Y-%m-%d %H:%M:%S')"
+          fi
+          git push origin main
+          echo "✅ 已合并 dev 到 main"
 
       # ======================================================================
       # SSH 部署（核心步骤）
@@ -449,12 +512,19 @@ jobs:
   # 后置 Job 1/2：同步 dev 到 main
   # ===========================================================================
   # 职责：部署成功后将 dev 分支强制同步到 main 最新 commit
-  # 原因：Squash merge 后 dev 与 main 分叉，强制同步确保下次 PR 只含新提交
+  # 原因：merge commit 后 dev 与 main 分叉，强制同步确保下次提交从最新代码开始
   # 依赖：deploy 成功
+  # 触发：与 deploy 一致（tag 发版 / [deploy] 快速部署 / 手动触发）
   # ===========================================================================
   sync-dev:
     name: 同步 dev 到 main
-    if: github.event_name == 'workflow_dispatch'
+    if: |
+      !cancelled() &&
+      (
+        github.event_name == 'workflow_dispatch' ||
+        startsWith(github.ref, 'refs/tags/web-v') ||
+        (github.ref == 'refs/heads/dev' && contains(toJSON(github.event.commits), '[deploy]'))
+      )
     runs-on: ubuntu-latest
     needs: deploy
     permissions:
@@ -463,13 +533,14 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0           # 完整历史，确保 dev 分支存在
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.WEB_DEPLOY_TOKEN }}
 
       # 将 dev 重置到 main 最新 commit 并 force push
       - name: 同步 dev 分支
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main dev
           git checkout dev
           git reset --hard origin/main
           git push origin dev --force
@@ -480,10 +551,17 @@ jobs:
   # 职责：从 git log 按 conventional commit 类型分组生成 CHANGELOG.md
   # 提交目标：推送到 dev 分支（main 受保护无法直接 push），随下次 PR 进入 main
   # 依赖：sync-dev 成功
+  # 触发：与 deploy 一致（tag 发版 / [deploy] 快速部署 / 手动触发）
   # ===========================================================================
   changelog:
     name: 生成 CHANGELOG
-    if: github.event_name == 'workflow_dispatch'
+    if: |
+      !cancelled() &&
+      (
+        github.event_name == 'workflow_dispatch' ||
+        startsWith(github.ref, 'refs/tags/web-v') ||
+        (github.ref == 'refs/heads/dev' && contains(toJSON(github.event.commits), '[deploy]'))
+      )
     runs-on: ubuntu-latest
     needs: sync-dev
     permissions:
@@ -492,7 +570,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0           # 需要完整 git log
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.WEB_DEPLOY_TOKEN }}
 
       # 按 conventional commit 类型分组生成 CHANGELOG.md
       # 遍历 feat/fix/docs/refactor/perf/test/ci/build/style/chore
@@ -525,6 +603,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin dev
           git checkout dev
           git add CHANGELOG.md
           git diff --staged --quiet || git commit -m "docs: 自动更新 CHANGELOG"
