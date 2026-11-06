@@ -4,13 +4,19 @@
 # 触发条件：
 #   - PR 到 main：CI 检查（不部署）— 由 web-deploy.yml 自动创建 PR 触发
 #   - push 到 dev：CI 检查（不部署）；含 [deploy] 时跳过（由 web-deploy.yml 接管）
-#   - push 到 main（PR 合并后）：CI 检查 + 自动部署 + sync-dev + changelog
-#   - 纯文档变更：触发部署（CI 检查自动 skip），确保服务器 docs 同步
+#   - push 到 main（PR 合并后）：仅 CI 检查，不自动部署
+#   - workflow_dispatch：手动触发 → CI 检查 + 部署 + sync-dev + changelog
+#   - 纯文档变更：CI 检查自动 skip
+#
+# 部署方式：
+#   - 云服务器部署：手动运行本 workflow（Actions → Run workflow）
+#   - web-deploy.yml（tag / [deploy]）：独立流程，不受影响
 #
 # 发版流程：
 #   1. 日常开发：push 到 dev → 本 workflow 跑 CI 检查
-#   2. Web 发版：打 web-v* tag → web-deploy.yml 创建 PR → CI 检查 → auto merge → 本 workflow 部署
+#   2. Web 发版：打 web-v* tag → web-deploy.yml 全流程
 #   3. APP 发版：打 app-v* tag → app-build.yml 构建 APK
+#   4. 手动部署云服务器：Actions 页面 Run workflow → 选择 main 分支
 #
 # 完整流程文档：docs/guides/Git分支策略与CICD流程.md
 # ============================================================================
@@ -324,12 +330,10 @@ jobs:
   deploy:
     name: 部署到生产服务器
     needs: [backend-check, frontend-check, docker-build-api, docker-build-front]
-    # 仅 push 到 main 时部署；CI Job 可以是 success 或 skipped（路径过滤跳过）
-    # 跳过 web-deploy.yml 的 merge commit（release: Web 或 deploy: 快速部署），避免重复部署
+    # 仅手动触发（workflow_dispatch）时部署；CI Job 可以是 success 或 skipped
+    # push 到 main 时不自动部署，避免云服务器关机时报错
     if: |
-      github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-      !contains(github.event.head_commit.message, 'release: Web') &&
-      !contains(github.event.head_commit.message, 'deploy: 快速部署') &&
+      github.event_name == 'workflow_dispatch' &&
       !cancelled() &&
       (needs.backend-check.result == 'success' || needs.backend-check.result == 'skipped') &&
       (needs.frontend-check.result == 'success' || needs.frontend-check.result == 'skipped') &&
@@ -398,7 +402,7 @@ jobs:
   # ===========================================================================
   sync-dev:
     name: 同步 dev 到 main
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     needs: deploy
     permissions:
@@ -427,7 +431,7 @@ jobs:
   # ===========================================================================
   changelog:
     name: 生成 CHANGELOG
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     needs: sync-dev
     permissions:
