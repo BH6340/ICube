@@ -7,9 +7,10 @@ ICube Redis 备份脚本
 打包 AOF 文件到本地备份目录，并按保留天数清理过期备份。
 
 AOF 备份说明：
-  Redis 7.x 使用 multi-part AOF（多个文件 + manifest），
-  本脚本将所有 appendonly.aof* 文件打包为 aof_YYYYMMDD_HHMMSS.tar.gz。
-  恢复时解压到 Redis 数据目录即可。
+  Redis 7.x 使用 multi-part AOF，文件存放在 appendonlydir/ 子目录
+  （含 manifest + base.rdb + incr.aof），本脚本将整个目录
+  打包为 aof_YYYYMMDD_HHMMSS.tar.gz。恢复时解压到 /data/ 即可。
+  兼容旧版单文件 appendonly.aof 格式。
 
 用法：
   python scripts/redis_backup.py                 # 执行备份
@@ -112,34 +113,52 @@ def copy_from_container(container, container_path, local_path):
 def backup_aof_files(container, backup_dir, timestamp):
     """备份 AOF 文件（兼容单文件和 multi-part 格式）。
 
-    Redis 7.x 使用 multi-part AOF，文件包括：
+    Redis 7.x 使用 multi-part AOF，文件存放在 appendonlydir/ 子目录下，包括：
       - appendonly.aof.manifest       清单文件
       - appendonly.aof.N.base.rdb     base 文件（RDB 格式）
       - appendonly.aof.N.incr.aof     增量文件
 
-    备份方式：在容器内用 tar 打包所有 appendonly.aof.* 文件，
+    备份方式：在容器内用 tar 打包整个 appendonlydir/ 目录，
     再 docker cp 出来，保证恢复时文件完整一致。
 
     返回 True 表示备份了至少一个文件。
     """
-    # 先检查是否有 AOF 相关文件
+    # 先检查 AOF 目录是否存在
     result = _run(
-        ["docker", "exec", container, "sh", "-c",
-         "ls /data/appendonly.aof* 2>/dev/null | wc -l"],
+        ["docker", "exec", container, "test", "-d", "/data/appendonlydir"],
         check=False,
         capture=True,
     )
-    count = result.stdout.strip()
-    if not count or count == "0":
-        logger.warning("容器内未找到 AOF 文件，跳过 AOF 备份")
-        return False
+    if result.returncode != 0:
+        # 旧版单文件格式，尝试直接找 appendonly.aof
+        result2 = _run(
+            ["docker", "exec", container, "test", "-f", "/data/appendonly.aof"],
+            check=False,
+            capture=True,
+        )
+        if result2.returncode != 0:
+            logger.warning("容器内未找到 AOF 文件，跳过 AOF 备份")
+            return False
+        # 单文件格式，直接复制
+        local_path = backup_dir / f"appendonly_{timestamp}.aof"
+        _run(["docker", "cp", f"{container}:/data/appendonly.aof", str(local_path)])
+        size_mb = local_path.stat().st_size / 1024 / 1024
+        logger.info("AOF 备份完成: appendonly_{}.aof ({:.2f} MB)", timestamp, size_mb)
+        return True
 
-    # 在容器内打包
+    # multi-part 格式：统计文件数 + 打包
+    count_result = _run(
+        ["docker", "exec", container, "sh", "-c",
+         "ls /data/appendonlydir/ | wc -l"],
+    )
+    count = count_result.stdout.strip()
+
+    # 在容器内打包整个 appendonlydir 目录
     tar_name = f"aof_{timestamp}.tar.gz"
     container_tar = f"/tmp/{tar_name}"
     _run(
         ["docker", "exec", container, "sh", "-c",
-         f"cd /data && tar czf {container_tar} appendonly.aof*"],
+         f"cd /data && tar czf {container_tar} appendonlydir"],
     )
 
     # 复制到本地
