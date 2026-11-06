@@ -3,8 +3,13 @@
 """
 ICube Redis 备份脚本
 
-通过 docker exec 触发 BGSAVE，等待完成后复制 RDB/AOF 文件
-到本地备份目录，并按保留天数清理过期备份。
+通过 docker exec 触发 BGSAVE，等待完成后复制 RDB 文件、
+打包 AOF 文件到本地备份目录，并按保留天数清理过期备份。
+
+AOF 备份说明：
+  Redis 7.x 使用 multi-part AOF（多个文件 + manifest），
+  本脚本将所有 appendonly.aof* 文件打包为 aof_YYYYMMDD_HHMMSS.tar.gz。
+  恢复时解压到 Redis 数据目录即可。
 
 用法：
   python scripts/redis_backup.py                 # 执行备份
@@ -104,6 +109,55 @@ def copy_from_container(container, container_path, local_path):
     return True
 
 
+def backup_aof_files(container, backup_dir, timestamp):
+    """备份 AOF 文件（兼容单文件和 multi-part 格式）。
+
+    Redis 7.x 使用 multi-part AOF，文件包括：
+      - appendonly.aof.manifest       清单文件
+      - appendonly.aof.N.base.rdb     base 文件（RDB 格式）
+      - appendonly.aof.N.incr.aof     增量文件
+
+    备份方式：在容器内用 tar 打包所有 appendonly.aof.* 文件，
+    再 docker cp 出来，保证恢复时文件完整一致。
+
+    返回 True 表示备份了至少一个文件。
+    """
+    # 先检查是否有 AOF 相关文件
+    result = _run(
+        ["docker", "exec", container, "sh", "-c",
+         "ls /data/appendonly.aof* 2>/dev/null | wc -l"],
+        check=False,
+        capture=True,
+    )
+    count = result.stdout.strip()
+    if not count or count == "0":
+        logger.warning("容器内未找到 AOF 文件，跳过 AOF 备份")
+        return False
+
+    # 在容器内打包
+    tar_name = f"aof_{timestamp}.tar.gz"
+    container_tar = f"/tmp/{tar_name}"
+    _run(
+        ["docker", "exec", container, "sh", "-c",
+         f"cd /data && tar czf {container_tar} appendonly.aof*"],
+    )
+
+    # 复制到本地
+    local_tar = backup_dir / tar_name
+    _run(["docker", "cp", f"{container}:{container_tar}", str(local_tar)])
+
+    # 清理容器内临时文件
+    _run(
+        ["docker", "exec", container, "rm", "-f", container_tar],
+        check=False,
+    )
+
+    size_mb = local_tar.stat().st_size / 1024 / 1024
+    logger.info("AOF 备份完成: {} ({:.2f} MB, {} 个文件)",
+                tar_name, size_mb, count)
+    return True
+
+
 def cleanup_old_backups(backup_dir, keep_days):
     """清理超过保留天数的备份文件，返回删除数量"""
     cutoff = time.time() - keep_days * 86400
@@ -111,13 +165,15 @@ def cleanup_old_backups(backup_dir, keep_days):
     for f in backup_dir.iterdir():
         if not f.is_file():
             continue
-        # 只清理匹配备份命名格式的文件
-        if not (f.name.startswith("dump_") and f.name.endswith(".rdb")) and \
-           not (f.name.startswith("appendonly_") and f.name.endswith(".aof")):
+        name = f.name
+        # 匹配备份命名格式：dump_*.rdb / aof_*.tar.gz
+        is_rdb = name.startswith("dump_") and name.endswith(".rdb")
+        is_aof = name.startswith("aof_") and name.endswith(".tar.gz")
+        if not is_rdb and not is_aof:
             continue
         if f.stat().st_mtime < cutoff:
             f.unlink()
-            logger.info("清理过期备份: {}", f.name)
+            logger.info("清理过期备份: {}", name)
             deleted += 1
     return deleted
 
@@ -172,12 +228,8 @@ def main():
         backup_dir / f"dump_{timestamp}.rdb",
     )
 
-    # 4. 复制 AOF 文件
-    aof_backed = copy_from_container(
-        container,
-        "/data/appendonly.aof",
-        backup_dir / f"appendonly_{timestamp}.aof",
-    )
+    # 4. 备份 AOF 文件（打包为 tar.gz，兼容 multi-part 格式）
+    aof_backed = backup_aof_files(container, backup_dir, timestamp)
 
     if not rdb_backed and not aof_backed:
         logger.error("没有备份任何文件，备份失败")
