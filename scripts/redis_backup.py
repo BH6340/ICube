@@ -55,7 +55,7 @@ DEFAULT_BGSAVE_TIMEOUT = 60
 
 def _run(cmd, check=True, capture=True, text=True):
     """运行 shell 命令，返回 CompletedProcess"""
-    logger.debug("执行命令: {}", " ".join(cmd))
+    logger.debug("执行命令: %s" % " ".join(cmd))
     return subprocess.run(
         cmd,
         check=check,
@@ -76,7 +76,7 @@ def trigger_bgsave(container):
     if "Background saving started" in output:
         logger.info("BGSAVE 已触发")
     else:
-        raise RuntimeError(f"BGSAVE 触发失败: {output}")
+        raise RuntimeError("BGSAVE 触发失败: %s" % output)
 
 
 def wait_bgsave_done(container, timeout):
@@ -91,7 +91,7 @@ def wait_bgsave_done(container, timeout):
                     logger.info("BGSAVE 完成")
                     return
         time.sleep(1)
-    raise TimeoutError(f"BGSAVE 等待超时（{timeout}s）")
+    raise TimeoutError("BGSAVE 等待超时（%ss）" % timeout)
 
 
 def copy_from_container(container, container_path, local_path):
@@ -102,11 +102,11 @@ def copy_from_container(container, container_path, local_path):
         capture=True,
     )
     if result.returncode != 0:
-        logger.warning("容器内文件不存在，跳过: {}", container_path)
+        logger.warning("容器内文件不存在，跳过: %s" % container_path)
         return False
 
-    _run(["docker", "cp", f"{container}:{container_path}", str(local_path)])
-    logger.info("已复制: {} → {}", container_path, local_path.name)
+    _run(["docker", "cp", "%s:%s" % (container, container_path), str(local_path)])
+    logger.info("已复制: %s → %s" % (container_path, local_path.name))
     return True
 
 
@@ -141,9 +141,9 @@ def backup_aof_files(container, backup_dir, timestamp):
             return False
         # 单文件格式，直接复制
         local_path = backup_dir / f"appendonly_{timestamp}.aof"
-        _run(["docker", "cp", f"{container}:/data/appendonly.aof", str(local_path)])
+        _run(["docker", "cp", "%s:/data/appendonly.aof" % container, str(local_path)])
         size_mb = local_path.stat().st_size / 1024 / 1024
-        logger.info("AOF 备份完成: appendonly_{}.aof ({:.2f} MB)", timestamp, size_mb)
+        logger.info("AOF 备份完成: appendonly_%s.aof (%.2f MB)" % (timestamp, size_mb))
         return True
 
     # multi-part 格式：统计文件数 + 打包
@@ -158,12 +158,12 @@ def backup_aof_files(container, backup_dir, timestamp):
     container_tar = f"/tmp/{tar_name}"
     _run(
         ["docker", "exec", container, "sh", "-c",
-         f"cd /data && tar czf {container_tar} appendonlydir"],
+         "cd /data && tar czf %s appendonlydir" % container_tar],
     )
 
     # 复制到本地
     local_tar = backup_dir / tar_name
-    _run(["docker", "cp", f"{container}:{container_tar}", str(local_tar)])
+    _run(["docker", "cp", "%s:%s" % (container, container_tar), str(local_tar)])
 
     # 清理容器内临时文件
     _run(
@@ -172,8 +172,7 @@ def backup_aof_files(container, backup_dir, timestamp):
     )
 
     size_mb = local_tar.stat().st_size / 1024 / 1024
-    logger.info("AOF 备份完成: {} ({:.2f} MB, {} 个文件)",
-                tar_name, size_mb, count)
+    logger.info("AOF 备份完成: %s (%.2f MB, %s 个文件)" % (tar_name, size_mb, count))
     return True
 
 
@@ -192,7 +191,7 @@ def cleanup_old_backups(backup_dir, keep_days):
             continue
         if f.stat().st_mtime < cutoff:
             f.unlink()
-            logger.info("清理过期备份: {}", name)
+            logger.info("清理过期备份: %s" % name)
             deleted += 1
     return deleted
 
@@ -201,7 +200,7 @@ def main():
     parser = argparse.ArgumentParser(description="ICube Redis 备份脚本")
     parser.add_argument("--dry-run", action="store_true", help="预览模式，不执行实际操作")
     parser.add_argument("--keep-days", type=int, default=DEFAULT_KEEP_DAYS,
-                        help=f"备份保留天数（默认 {DEFAULT_KEEP_DAYS}）")
+                        help="备份保留天数（默认 %d）" % DEFAULT_KEEP_DAYS)
     args = parser.parse_args()
 
     # 从环境变量读取（如通过 .env 加载）
@@ -215,16 +214,16 @@ def main():
 
     logger.info("=" * 60)
     logger.info("Redis 备份开始")
-    logger.info("  项目根目录: {}", project_root)
-    logger.info("  Redis 容器: {}", container)
-    logger.info("  备份目录:   {}/{}", project_root.name, backup_subdir)
-    logger.info("  保留天数:   {}", args.keep_days)
-    logger.info("  预览模式:   {}", args.dry_run)
+    logger.info("  项目根目录: %s" % project_root)
+    logger.info("  Redis 容器: %s" % container)
+    logger.info("  备份目录:   %s/%s" % (project_root.name, backup_subdir))
+    logger.info("  保留天数:   %s" % args.keep_days)
+    logger.info("  预览模式:   %s" % args.dry_run)
     logger.info("=" * 60)
 
     if args.dry_run:
-        logger.info("[dry-run] 将执行: BGSAVE → 复制 RDB/AOF → 清理 {} 天前的备份",
-                    args.keep_days)
+        logger.info("[dry-run] 将执行: BGSAVE → 复制 RDB/AOF → 清理 %d 天前的备份"
+                    % args.keep_days)
         return 0
 
     # 1. 触发 BGSAVE
@@ -232,7 +231,7 @@ def main():
         trigger_bgsave(container)
         wait_bgsave_done(container, bgsave_timeout)
     except Exception as exc:
-        logger.error("BGSAVE 失败: {}", exc)
+        logger.error("BGSAVE 失败: %s" % exc)
         return 1
 
     # 2. 准备备份目录和时间戳
@@ -244,7 +243,7 @@ def main():
     rdb_backed = copy_from_container(
         container,
         "/data/dump.rdb",
-        backup_dir / f"dump_{timestamp}.rdb",
+        backup_dir / ("dump_%s.rdb" % timestamp),
     )
 
     # 4. 备份 AOF 文件（打包为 tar.gz，兼容 multi-part 格式）
@@ -257,13 +256,13 @@ def main():
     # 5. 清理过期备份
     deleted = cleanup_old_backups(backup_dir, args.keep_days)
     if deleted > 0:
-        logger.info("已清理 {} 个过期备份文件", deleted)
+        logger.info("已清理 %d 个过期备份文件" % deleted)
 
     # 6. 统计
     backup_files = [f for f in backup_dir.iterdir() if f.is_file()]
     total_size = sum(f.stat().st_size for f in backup_files)
-    logger.info("备份完成: {} 个文件，共 {:.2f} MB",
-                len(backup_files), total_size / 1024 / 1024)
+    logger.info("备份完成: %d 个文件，共 %.2f MB" %
+                (len(backup_files), total_size / 1024 / 1024))
 
     return 0
 
