@@ -42,6 +42,14 @@ services:
     image: redis:7-alpine
     container_name: icube_redis
     restart: always
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --save 3600 1 300 100 60 10000
+      --aof-use-rdb-preamble yes
+      --auto-aof-rewrite-percentage 100
+      --auto-aof-rewrite-min-size 64mb
     volumes:
       # 持久化 Redis 数据，避免容器重建后缓存数据立即丢失
       - redis_data:/data
