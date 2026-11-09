@@ -138,3 +138,4 @@ icube-interview-prep/icube-interview-prep.html
 interview/
 ruff_detail.txt
 ruff_report.txt
+.env.backup
