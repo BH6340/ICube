@@ -1,3 +1,18 @@
+    # FastAPI 打乱公式服务
+    location /api/scramble/ {
+        proxy_pass http://fastapi:8001;
+
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $http_host;
+        proxy_set_header X-Forwarded-Port $server_port;
+
+        proxy_connect_timeout 10s;
+        proxy_read_timeout 10s;
+    }
+
     # 保留 /api/ 前缀并转发给 Compose 中的 api 服务
     location /api/ {
         proxy_pass http://api:8000;

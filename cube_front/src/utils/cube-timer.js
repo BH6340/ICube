@@ -99,6 +99,7 @@ export class CubeTimer {
 
     this._scrambleSequence = []
     this._originalScramble = []
+    this._presetScramble = null
     this._scrambleStep = 0
     this._scrambleStack = []
     this._recentMoves = []
@@ -131,6 +132,16 @@ export class CubeTimer {
     this._mode = mode
   }
 
+  /**
+   * 预设打乱序列（IDLE 状态下使用，开始打乱时自动套用）
+   * @param {string[]} sequence - 打乱步骤数组
+   */
+  presetScramble(sequence) {
+    if (this._state === STATES.IDLE) {
+      this._presetScramble = Array.isArray(sequence) ? [...sequence] : null
+    }
+  }
+
   reset() {
     this._stopTimer()
     this._state = STATES.IDLE
@@ -151,6 +162,32 @@ export class CubeTimer {
 
   stop() {
     this.reset()
+  }
+
+  /**
+   * 手动设置打乱序列（用于前后切换打乱）
+   * @param {string[]} sequence - 打乱步骤数组，如 ['R', 'U', "R'", ...]
+   */
+  setScramble(sequence) {
+    if (!Array.isArray(sequence) || sequence.length === 0) {
+      this._scrambleSequence = []
+      this._originalScramble = []
+      this._scrambleStep = 0
+      this._scrambleStack = []
+      this._state = STATES.IDLE
+      this._callbacks.onStateChange(STATES.IDLE)
+      this._callbacks.onScrambleGenerated([])
+      this._callbacks.onScrambleProgress(0, 0, null)
+      return
+    }
+    this._originalScramble = [...sequence]
+    this._scrambleSequence = [...sequence]
+    this._scrambleStep = 0
+    this._scrambleStack = []
+    this._state = STATES.SCRAMBLING
+    this._callbacks.onStateChange(STATES.SCRAMBLING)
+    this._callbacks.onScrambleGenerated(this._scrambleSequence)
+    this._callbacks.onScrambleProgress(0, this._scrambleSequence.length, this._scrambleSequence[0])
   }
 
   /**
@@ -203,7 +240,13 @@ export class CubeTimer {
   }
 
   _startScramble() {
-    const generated = generateScramble()
+    let generated
+    if (this._presetScramble && this._presetScramble.length > 0) {
+      generated = [...this._presetScramble]
+      this._presetScramble = null
+    } else {
+      generated = generateScramble()
+    }
     this._originalScramble = [...generated]
     this._scrambleSequence = generated
     this._scrambleStep = 0

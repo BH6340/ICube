@@ -64,6 +64,21 @@ $services = @(
         ErrorLog = Join-Path $runtimeDir 'backend.err.log'
     },
     [PSCustomObject]@{
+        Name = 'fastapi'
+        Port = 8001
+        FilePath = $pythonPath
+        Arguments = @(
+            '-m', 'uvicorn',
+            'main:app',
+            '--host', '127.0.0.1',
+            '--port', '8001'
+        )
+        WorkingDirectory = Join-Path $root 'cube_fastapi'
+        PidFile = Join-Path $runtimeDir 'fastapi.json'
+        OutputLog = Join-Path $runtimeDir 'fastapi.out.log'
+        ErrorLog = Join-Path $runtimeDir 'fastapi.err.log'
+    },
+    [PSCustomObject]@{
         Name = 'frontend'
         Port = 5173
         FilePath = $(if ($npmCommand) { $npmCommand.Source } else { $null })
@@ -220,6 +235,7 @@ function Start-All {
     }
 
     Write-Output 'Backend:  http://127.0.0.1:8000'
+    Write-Output 'FastAPI:  http://127.0.0.1:8001'
     Write-Output 'Frontend: http://localhost:5173'
     Write-Output 'App:      http://localhost:5174'
 }

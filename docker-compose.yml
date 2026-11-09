@@ -115,6 +115,32 @@ services:
     networks:
       - icube_network
 
+  fastapi:
+    # FastAPI 微服务：打乱公式生成器、后续 AI Agent 等
+    build:
+      context: ./cube_fastapi
+      dockerfile: Dockerfile
+    container_name: icube_fastapi
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+      - FASTAPI_ENV=prod
+      - FASTAPI_REDIS_HOST=redis
+      - FASTAPI_REDIS_PORT=6379
+      - FASTAPI_REDIS_DB=1
+      - FASTAPI_CACHE_ENABLED=true
+      - FASTAPI_CACHE_BATCH_SIZE=50
+      - FASTAPI_CACHE_TTL=3600
+      # JWT 密钥（与 Django 共用，从外部 .env 传入）
+      - FASTAPI_JWT_SECRET_KEY=${JWT_SECRET_KEY:-django-insecure-change-me}
+      - FASTAPI_JWT_ALGORITHM=HS256
+      - FASTAPI_JWT_AUTH_HEADER_TYPE=Token
+    depends_on:
+      redis:
+        condition: service_started
+    networks:
+      - icube_network
+
   front:
     # 多阶段构建 Vue，并由容器内 Nginx 在 80 端口提供 dist
     build:
@@ -154,6 +180,7 @@ services:
     depends_on:
       # 仅控制启动顺序；运行状态由各服务的 restart 策略保障
       - api
+      - fastapi
       - front
     networks:
       - icube_network

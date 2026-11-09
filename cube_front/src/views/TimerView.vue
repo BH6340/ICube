@@ -87,18 +87,36 @@
         </div>
 
         <!-- 打乱序列 chip（两种模式共用） -->
-        <div class="scramble-chips" v-if="scrambleChips.length > 0">
-          <span
-            v-for="(move, i) in scrambleChips"
-            :key="i"
-            class="scramble-chip"
-            :class="scrambleChipClass(i)"
-            >{{ move }}</span
+        <div class="scramble-wrapper">
+          <button
+            class="scramble-nav-btn"
+            :disabled="scrambleIndex <= 0"
+            @click="prevScramble"
+            title="上一个"
           >
-        </div>
-        <div class="scramble-empty" v-else>
-          <span v-if="timingMode === 'manual'">点击「刷新打乱」生成</span>
-          <span v-else>连接魔方后，来回拨动任意面开始打乱</span>
+            <el-icon><ArrowLeft /></el-icon>
+          </button>
+          <div class="scramble-chips" v-if="scrambleChips.length > 0">
+            <span
+              v-for="(move, i) in scrambleChips"
+              :key="i"
+              class="scramble-chip"
+              :class="scrambleChipClass(i)"
+              >{{ move }}</span
+            >
+          </div>
+          <div class="scramble-empty" v-else>
+            <span v-if="timingMode === 'manual'">点击「刷新打乱」生成</span>
+            <span v-else>连接魔方后，来回拨动任意面开始打乱</span>
+          </div>
+          <button
+            class="scramble-nav-btn"
+            :disabled="scrambleLoading && scrambleIndex >= scrambleHistory.length - 1"
+            @click="nextScramble"
+            title="下一个"
+          >
+            <el-icon><ArrowRight /></el-icon>
+          </button>
         </div>
 
         <!-- 中间区域：计时器/3D（居中） -->
@@ -319,8 +337,9 @@
 import { ref, computed, reactive, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { WarningFilled, ArrowDown, QuestionFilled } from '@element-plus/icons-vue'
+import { WarningFilled, ArrowDown, QuestionFilled, ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 import { createTimerRecord, getSmartCubeDevices, registerSmartCubeDevice, getTodayTimerRecords, deleteTimerRecord } from '@/api/timer'
+import { generateScramble as fetchScrambleApi, generateScrambleBatch } from '@/api/scramble'
 import CubeNet from '@/components/cube/CubeNet.vue'
 import Cube3D from '@/components/cube/Cube3D.vue'
 import StepTooltip from '@/components/cube/StepTooltip.vue'
@@ -343,6 +362,11 @@ const timingMode = ref('manual')
 const cubeType = ref('3x3')
 const method = ref('cfop')
 const currentScramble = ref('')
+const scrambleId = ref('')
+const scrambleLoading = ref(false)
+const scrambleHistory = ref([])
+const scrambleIndex = ref(-1)
+const BATCH_SIZE = 10
 
 if (route.query.mode === 'smart') timingMode.value = 'smart'
 watch(
@@ -516,7 +540,136 @@ const elapsedTime = ref(0)
 const timerInterval = ref(null)
 const holdTimer = ref(null)
 
-const generateScramble = () => {
+const generateScramble = async () => {
+  if (scrambleLoading.value) return
+  scrambleLoading.value = true
+  try {
+    const res = await fetchScrambleApi(cubeType.value)
+    if (res.code === 100 && res.data) {
+      const item = { scramble: res.data.scramble, scramble_id: res.data.scramble_id }
+      scrambleHistory.value.push(item)
+      scrambleIndex.value = scrambleHistory.value.length - 1
+      currentScramble.value = item.scramble
+      scrambleId.value = item.scramble_id
+      syncSmartScramble()
+      return
+    }
+  } catch (e) {
+    // API 失败时降级到本地生成
+  } finally {
+    scrambleLoading.value = false
+  }
+  fallbackGenerateScramble()
+}
+
+// 同步智能模式的打乱序列
+function syncSmartScramble() {
+  if (timingMode.value !== 'smart') return
+  // cubeTimer 在智能模块部分定义，需做安全判断
+  const timer = typeof cubeTimer !== 'undefined' ? cubeTimer : null
+  if (!timer) return
+  const moves = currentScramble.value ? currentScramble.value.split(' ').filter(Boolean) : []
+  if (cubeTimerState.value === TimerStates.IDLE) {
+    timer.presetScramble(moves)
+  } else {
+    timer.setScramble(moves)
+  }
+}
+
+// 批量加载打乱公式
+const loadScrambleBatch = async () => {
+  if (scrambleLoading.value) return
+  scrambleLoading.value = true
+  try {
+    const res = await generateScrambleBatch(cubeType.value, BATCH_SIZE)
+    if (res.code === 100 && res.data) {
+      let list = []
+      // 兼容 fastapi 返回格式：{ scrambles: ["...", "..."], count, from_cache }
+      if (Array.isArray(res.data.scrambles)) {
+        list = res.data.scrambles
+      } else if (Array.isArray(res.data)) {
+        list = res.data
+      } else if (Array.isArray(res.data.items)) {
+        list = res.data.items
+      } else if (Array.isArray(res.data.list)) {
+        list = res.data.list
+      }
+      if (list.length > 0) {
+        const items = list.map((d) => {
+          if (typeof d === 'string') {
+            return { scramble: d, scramble_id: '' }
+          }
+          return {
+            scramble: d.scramble,
+            scramble_id: d.scramble_id || d.id || '',
+          }
+        }).filter((d) => d.scramble)
+        if (items.length > 0) {
+          scrambleHistory.value.push(...items)
+          if (scrambleIndex.value === -1) {
+            scrambleIndex.value = 0
+            currentScramble.value = items[0].scramble
+            scrambleId.value = items[0].scramble_id
+            syncSmartScramble()
+          }
+          return true
+        }
+      }
+    }
+  } catch (e) {
+    // 批量接口失败降级
+  } finally {
+    scrambleLoading.value = false
+  }
+  // 批量失败时用单条接口兜底
+  if (scrambleIndex.value === -1) {
+    await generateScramble()
+  }
+  return false
+}
+
+// 上一个打乱
+const prevScramble = () => {
+  if (scrambleIndex.value <= 0) return
+  scrambleIndex.value--
+  const item = scrambleHistory.value[scrambleIndex.value]
+  currentScramble.value = item.scramble
+  scrambleId.value = item.scramble_id
+  syncSmartScramble()
+}
+
+// 下一个打乱
+const nextScramble = async () => {
+  if (scrambleIndex.value < scrambleHistory.value.length - 1) {
+    scrambleIndex.value++
+    const item = scrambleHistory.value[scrambleIndex.value]
+    currentScramble.value = item.scramble
+    scrambleId.value = item.scramble_id
+    syncSmartScramble()
+    return
+  }
+  // 已经到末尾，再加载一批
+  const ok = await loadScrambleBatch()
+  if (ok && scrambleIndex.value < scrambleHistory.value.length - 1) {
+    scrambleIndex.value++
+    const item = scrambleHistory.value[scrambleIndex.value]
+    currentScramble.value = item.scramble
+    scrambleId.value = item.scramble_id
+    syncSmartScramble()
+  }
+}
+
+// 切换魔方类型时清空历史
+watch(cubeType, () => {
+  scrambleHistory.value = []
+  scrambleIndex.value = -1
+  currentScramble.value = ''
+  scrambleId.value = ''
+  loadScrambleBatch()
+})
+
+// 降级方案：本地生成（API 不可用时使用）
+const fallbackGenerateScramble = () => {
   const moves = {
     '2x2': ['U', "U'", 'U2', 'R', "R'", 'R2', 'F', "F'", 'F2'],
     '3x3': [
@@ -576,6 +729,12 @@ const generateScramble = () => {
     lastAxis = move[0]
   }
   currentScramble.value = scramble.join(' ')
+  scrambleId.value = ''
+  // 加入历史队列
+  const item = { scramble: scramble.join(' '), scramble_id: '' }
+  scrambleHistory.value.push(item)
+  scrambleIndex.value = scrambleHistory.value.length - 1
+  syncSmartScramble()
 }
 
 const manualTimeDisplay = computed(() => formatTime(elapsedTime.value))
@@ -1191,7 +1350,7 @@ function beforeUnloadHandler() {
   if (connected.value) client.disconnectSync()
 }
 onMounted(() => {
-  generateScramble()
+  loadScrambleBatch()
   if (timerPage.value) timerPage.value.focus({ preventScroll: true })
   window.addEventListener('beforeunload', beforeUnloadHandler)
   loadTodayRecords()
@@ -1370,6 +1529,44 @@ onBeforeUnmount(() => {
 }
 
 /* 打乱 chip */
+.scramble-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.scramble-wrapper .scramble-chips {
+  flex: 1;
+  margin-bottom: 0;
+}
+.scramble-wrapper .scramble-empty {
+  flex: 1;
+  margin-bottom: 0;
+  text-align: center;
+}
+.scramble-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #dcdfe6;
+  border-radius: 50%;
+  background: #fff;
+  color: #606266;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  transition: all 0.2s;
+}
+.scramble-nav-btn:hover:not(:disabled) {
+  border-color: #409eff;
+  color: #409eff;
+}
+.scramble-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
 .scramble-chips {
   display: flex;
   flex-wrap: wrap;
@@ -1661,6 +1858,15 @@ onBeforeUnmount(() => {
   }
   .scramble-empty {
     margin-bottom: 6px;
+  }
+  .scramble-wrapper {
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+  .scramble-nav-btn {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
   }
 
   /* 2. 中心区域紧凑，魔方整体上移 */
