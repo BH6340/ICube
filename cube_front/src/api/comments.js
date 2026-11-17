@@ -86,4 +86,3 @@ export const dislikeComment = (id) => {
     data: {}
   })
 }
-test
