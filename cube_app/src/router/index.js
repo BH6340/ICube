@@ -95,6 +95,12 @@ const routes = [
     path: '/timer-records',
     redirect: '/timer?tab=records',
   },
+  {
+    path: '/ble-test',
+    name: 'BleTest',
+    component: () => import('@/views/BleTestView.vue'),
+    meta: { title: '蓝牙测试', noTabbar: true },
+  },
 ]
 
 const router = createRouter({

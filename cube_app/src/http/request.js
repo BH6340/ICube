@@ -37,7 +37,7 @@ function showErrorMsg(message) {
  * 生产环境后端地址（APP WebView 中使用）
  * 不依赖环境变量，直接硬编码，确保构建产物中一定有正确地址
  */
-const PROD_API_BASE = 'http://8.136.100.251'
+const PROD_API_BASE = 'https://bh6340.me'
 
 /**
  * 运行时确定 baseURL：

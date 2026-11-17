@@ -3,7 +3,66 @@
     <van-pull-refresh v-model="pageRefreshing" @refresh="onPageRefresh">
     <div class="timer-tab">
       <van-nav-bar title="计时" placeholder />
-      <ScrambleText :scramble="scramble" @refresh="generateScramble" />
+
+      <!-- 模式切换 -->
+      <van-tabs v-model:active="timingMode" line-width="20px" class="mode-tabs">
+        <van-tab title="手动" name="manual" />
+        <van-tab title="智能" name="smart" />
+      </van-tabs>
+
+      <!-- 智能模式：连接状态条 -->
+      <div v-if="timingMode === 'smart'" class="connect-bar" @click="onConnectTap">
+        <div class="connect-status">
+          <span :class="['connect-dot', smartConnected ? 'dot-connected' : 'dot-disconnected']"></span>
+          <span class="connect-text">{{ smartConnected ? smartDeviceName : '未连接' }}</span>
+        </div>
+        <div class="connect-right">
+          <span v-if="smartConnected && smartBatteryLevel !== null" class="battery-info">
+            <van-icon name="battery-o" size="14" color="#07c160" />
+            <span class="battery-text">{{ smartBatteryLevel }}%</span>
+          </span>
+          <van-icon name="arrow" size="14" color="#c8c9cc" />
+        </div>
+      </div>
+
+      <!-- 智能模式：3D 魔方 -->
+      <div v-if="timingMode === 'smart'" class="cube-3d-wrap">
+        <Cube3D ref="cube3dRef" :size="180" />
+        <div class="cube-toolbar">
+          <button v-if="smartConnected" class="cube-tool-btn" @click="resetCubeView" title="重置视角">
+            <van-icon name="replay" size="14" />
+          </button>
+          <button
+            v-if="smartConnected"
+            class="cube-tool-btn"
+            :class="{ active: gyroEnabled }"
+            @click="toggleGyro"
+            title="陀螺仪跟随"
+          >
+            <van-icon name="aim" size="14" />
+          </button>
+        </div>
+      </div>
+
+      <div class="scramble-nav">
+        <button
+          class="scramble-nav-btn"
+          :class="{ disabled: !canPrevScramble }"
+          @click="prevScramble"
+          :disabled="!canPrevScramble"
+        >
+          <van-icon name="arrow-left" size="16" />
+        </button>
+        <ScrambleText :scramble="scramble" @refresh="generateScramble" />
+        <button
+          class="scramble-nav-btn"
+          :class="{ disabled: !canNextScramble }"
+          @click="nextScramble"
+          :disabled="!canNextScramble"
+        >
+          <van-icon name="arrow" size="16" />
+        </button>
+      </div>
 
       <van-dropdown-menu class="type-selector">
         <van-dropdown-item v-model="cubeType" :options="cubeOptions" @change="onTypeChange" />
@@ -11,11 +70,113 @@
       </van-dropdown-menu>
 
       <TimerDisplay
+        v-if="timingMode === 'manual'"
         :state="timerState"
         :elapsed="elapsed"
         @touchstart="onTouchStart"
         @touchend="onTouchEnd"
       />
+
+      <!-- 智能模式：计时显示 -->
+      <div v-else class="smart-timer-display">
+        <!-- DNF 标识 -->
+        <div v-if="smartIsDNF" class="dnf-badge">DNF</div>
+
+        <div :class="['smart-time', {
+          'smart-time-scrambling': smartTimerState === 'scrambling',
+          'smart-time-ready': smartTimerState === 'ready',
+          'smart-time-observation': smartTimerState === 'observation',
+          'smart-time-solving': smartTimerState === 'solving',
+          'smart-time-solved': smartTimerState === 'solved',
+          'smart-time-dnf': smartIsDNF,
+        }]">
+          <template v-if="smartTimerState === 'observation'">
+            {{ formatObservationTime(smartObservationTime) }}
+          </template>
+          <template v-else-if="smartTimerState === 'idle' || smartTimerState === 'scrambling'">
+            --:--:--
+          </template>
+          <template v-else-if="smartIsDNF">
+            DNF
+          </template>
+          <template v-else>
+            {{ formatTime(smartElapsed) }}
+          </template>
+        </div>
+
+        <!-- 实时数据栏：步数 / TPS -->
+        <div v-if="smartConnected && (smartTimerState === 'solving' || smartTimerState === 'solved' || smartTimerState === 'scrambling' || smartTimerState === 'observation')" class="smart-stats-row">
+          <div class="smart-stat-item">
+            <span class="smart-stat-value">{{ smartMoveCount }}</span>
+            <span class="smart-stat-label">步</span>
+          </div>
+          <div v-if="(smartTimerState === 'solving' || smartTimerState === 'solved') && smartElapsed > 0" class="smart-stat-item">
+            <span class="smart-stat-value">{{ smartTps }}</span>
+            <span class="smart-stat-label">TPS</span>
+          </div>
+        </div>
+
+        <div class="smart-timer-hint">
+          <template v-if="!smartConnected">请先连接智能魔方</template>
+          <template v-else-if="smartTimerState === 'idle'">转动魔方开始打乱</template>
+          <template v-else-if="smartTimerState === 'scrambling'">打乱中... 完成后点下方按钮</template>
+          <template v-else-if="smartTimerState === 'ready'">准备好了，点按钮进入观察期</template>
+          <template v-else-if="smartTimerState === 'observation'">观察期... 转动即开始</template>
+          <template v-else-if="smartTimerState === 'solving'">计时中...</template>
+          <template v-else-if="smartIsDNF">未完成</template>
+          <template v-else>🎉 完成！</template>
+        </div>
+
+        <!-- 打乱完成按钮 -->
+        <van-button
+          v-if="smartConnected && smartTimerState === 'scrambling'"
+          type="success"
+          round
+          size="large"
+          @click="smartMarkReady"
+          style="margin-top: 16px;"
+        >
+          打乱完成
+        </van-button>
+
+        <!-- 开始观察按钮：ready 状态下点击进入观察期 -->
+        <van-button
+          v-if="smartConnected && smartTimerState === 'ready'"
+          type="primary"
+          round
+          size="large"
+          @click="smartStartObservation"
+          style="margin-top: 16px;"
+        >
+          开始观察（15s）
+        </van-button>
+
+        <!-- 跳过观察按钮：observation 状态下可直接开始计时 -->
+        <van-button
+          v-if="smartConnected && smartTimerState === 'observation'"
+          type="primary"
+          plain
+          round
+          size="small"
+          @click="smartStartSolving"
+          style="margin-top: 12px;"
+        >
+          直接开始
+        </van-button>
+
+        <!-- 下一把按钮 -->
+        <van-button
+          v-if="smartConnected && (smartTimerState === 'solved' || smartTimerState === 'solved-dnf' || smartIsDNF)"
+          type="primary"
+          plain
+          round
+          size="small"
+          @click="smartReset"
+          style="margin-top: 12px;"
+        >
+          下一把
+        </van-button>
+      </div>
 
       <!-- 统计面板 -->
       <div class="stats-panel">
@@ -56,7 +217,9 @@
           >
             <div class="history-item" @click="showDetail(record)">
               <span class="history-index">#{{ todayHistory.length - index }}</span>
-              <span class="history-time">{{ formatTime(record.time_ms) }}</span>
+              <span class="history-time" :class="{ 'dnf-time': record.penalty === 'dnf' || record.is_dnf }">
+                {{ record.penalty === 'dnf' || record.is_dnf ? 'DNF' : formatTime(record.time_ms) }}
+              </span>
               <span class="history-type">{{ record.cube_type }} · {{ methodLabel(record.method) }}</span>
               <van-icon name="arrow" size="12" color="#c8c9cc" />
             </div>
@@ -124,8 +287,9 @@
     >
       <div v-if="detailRecord" class="detail-card">
         <div class="detail-header">
-          <span class="detail-time" :class="{ 'dnf-time': detailRecord.is_dnf }">
-            {{ detailRecord.is_dnf ? 'DNF' : formatTime(detailRecord.time_ms) }}
+          <span class="detail-time" :class="{ 'dnf-time': detailRecord.is_dnf || detailRecord.penalty === 'dnf' }">
+            {{ detailRecord.is_dnf || detailRecord.penalty === 'dnf' ? 'DNF' : formatTime(detailRecord.time_ms) }}
+            <span v-if="detailRecord.penalty === 'plus2'" class="plus2-suffix">+2</span>
           </span>
           <van-tag type="primary" size="medium">{{ detailRecord.cube_type }}</van-tag>
           <van-tag plain type="primary" size="medium">{{ methodLabel(detailRecord.method) }}</van-tag>
@@ -158,6 +322,26 @@
             >{{ move }}</span>
           </div>
         </div>
+
+        <!-- 判罚操作 -->
+        <div class="detail-penalty-actions">
+          <van-button
+            size="small"
+            :type="detailRecord?.penalty === 'plus2' ? 'warning' : 'default'"
+            plain
+            @click="togglePlus2"
+          >
+            {{ detailRecord?.penalty === 'plus2' ? '取消 +2' : '+2 判罚' }}
+          </van-button>
+          <van-button
+            size="small"
+            :type="(detailRecord?.penalty === 'dnf' || detailRecord?.is_dnf) ? 'danger' : 'default'"
+            plain
+            @click="toggleDNF"
+          >
+            {{ detailRecord?.penalty === 'dnf' || detailRecord?.is_dnf ? '取消 DNF' : 'DNF' }}
+          </van-button>
+        </div>
       </div>
     </van-popup>
 
@@ -183,11 +367,14 @@
  */
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
-import { showToast } from 'vant'
+import { showToast, showDialog } from 'vant'
 import ScrambleText from '@/components/timer/ScrambleText.vue'
 import TimerDisplay from '@/components/timer/TimerDisplay.vue'
+import Cube3D from '@/components/cube/Cube3D.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { createTimerRecord, getTimerRecords, deleteTimerRecord } from '@/api/timer'
+import { requestGanDevice, connectGanCube, startNotifications, disconnect } from '@/utils/ble'
+import { Gen4ProtocolDriver } from '@/utils/gan-ble'
 
 const route = useRoute()
 
@@ -238,9 +425,35 @@ const methodOptions = [
 const timerState = ref('idle')
 const elapsed = ref(0)
 const scramble = ref('')
+const scrambleHistory = ref([]) // 打乱历史
+const scrambleIndex = ref(-1) // 当前打乱在历史中的索引
+const MAX_SCRAMBLE_HISTORY = 20
 const cubeType = ref('3x3')
 const method = ref('cfop')
 const history = ref([])
+
+// ─── 智能模式状态 ────────────────────────────────────
+const timingMode = ref('manual') // manual / smart
+const smartConnected = ref(false)
+const smartDeviceName = ref('')
+const smartTimerState = ref('idle') // idle / scrambling / ready / observation / solving / solved
+const smartObservationTime = ref(0) // 观察时间剩余（毫秒）
+const smartIsDNF = ref(false) // 是否 DNF
+
+let smartObservationInterval = null
+const OBSERVATION_DURATION = 15000 // 15 秒观察期
+const smartElapsed = ref(0)
+const cube3dRef = ref(null)
+const smartIsSolved = ref(true) // 魔方当前是否复原
+const smartMoveCount = ref(0) // 实时步数
+const smartBatteryLevel = ref(null) // 电量
+const gyroEnabled = ref(false) // 陀螺仪跟随
+
+let smartConnectionInfo = null
+let smartProtocolDriver = null
+let smartStartTime = 0
+let smartTimerInterval = null
+let smartSolveMoves = []
 
 const detailShow = ref(false)
 const detailRecord = ref(null)
@@ -297,7 +510,345 @@ function generateScramble() {
     const variant = config.variants[Math.floor(Math.random() * config.variants.length)]
     result.push(move + variant)
   }
-  scramble.value = result.join(' ')
+  const newScramble = result.join(' ')
+  scramble.value = newScramble
+
+  // 加入历史（如果不在看历史记录的话）
+  if (scrambleIndex.value === scrambleHistory.value.length - 1 || scrambleHistory.value.length === 0) {
+    scrambleHistory.value.push(newScramble)
+    if (scrambleHistory.value.length > MAX_SCRAMBLE_HISTORY) {
+      scrambleHistory.value.shift()
+    }
+    scrambleIndex.value = scrambleHistory.value.length - 1
+  } else {
+    // 当前在看历史，新加的追加到末尾
+    scrambleHistory.value.push(newScramble)
+    scrambleIndex.value = scrambleHistory.value.length - 1
+  }
+}
+
+// 上一把打乱
+function prevScramble() {
+  if (scrambleIndex.value > 0) {
+    scrambleIndex.value--
+    scramble.value = scrambleHistory.value[scrambleIndex.value]
+  }
+}
+
+// 下一把打乱
+function nextScramble() {
+  if (scrambleIndex.value < scrambleHistory.value.length - 1) {
+    scrambleIndex.value++
+    scramble.value = scrambleHistory.value[scrambleIndex.value]
+  }
+}
+
+const canPrevScramble = computed(() => scrambleIndex.value > 0)
+const canNextScramble = computed(() => scrambleIndex.value < scrambleHistory.value.length - 1)
+
+// ─── 智能模式：连接管理 ────────────────────────────────────
+async function onConnectTap() {
+    if (smartConnected.value) {
+        // 已连接：显示设备信息，确认断开
+        showDialog({
+            title: '已连接',
+            message: smartDeviceName.value + '\n确定要断开连接吗？',
+            showCancelButton: true,
+            confirmButtonText: '断开',
+            cancelButtonText: '取消',
+        }).then(() => {
+            smartDisconnect()
+        }).catch(() => {})
+        return
+    }
+
+    // 未连接：弹出设备选择器
+    try {
+        const device = await requestGanDevice()
+        await smartConnect(device)
+    } catch (err) {
+        const msg = err?.message || String(err)
+        if (!msg.includes('cancel') && !msg.includes('取消')) {
+            showToast('连接失败：' + msg)
+        }
+    }
+}
+
+async function smartConnect(device) {
+    // 建立连接
+    smartConnectionInfo = await connectGanCube(device.deviceId, {
+        onDisconnect: smartHandleDisconnect,
+    })
+
+    // 初始化协议解析器
+    smartProtocolDriver = new Gen4ProtocolDriver(device.deviceId)
+    smartProtocolDriver.onMove = smartHandleMove
+    smartProtocolDriver.onFacelets = smartHandleFacelets
+    smartProtocolDriver.onBattery = (event) => {
+        smartBatteryLevel.value = event.batteryLevel
+    }
+    smartProtocolDriver.onHardware = () => {}
+
+    // 启动通知监听
+    await startNotifications(
+        smartConnectionInfo.deviceId,
+        smartConnectionInfo.serviceUuid,
+        smartConnectionInfo.stateUuid,
+        (data) => {
+            smartProtocolDriver.handleStateNotification(data)
+        },
+    )
+
+    smartConnected.value = true
+    smartDeviceName.value = device.name
+    showToast('连接成功')
+
+    // 保存 MAC 方便下次重连
+    localStorage.setItem('gan_cube_mac', device.deviceId)
+
+    // 重置 3D 魔方到复原状态
+    if (cube3dRef.value) {
+        cube3dRef.value.reset()
+    }
+}
+
+async function smartDisconnect() {
+    if (smartConnectionInfo) {
+        try {
+            await disconnect(smartConnectionInfo.deviceId)
+        } catch (e) {}
+    }
+    smartHandleDisconnect()
+}
+
+function smartHandleDisconnect() {
+    smartConnected.value = false
+    smartDeviceName.value = ''
+    smartBatteryLevel.value = null
+    smartConnectionInfo = null
+    smartProtocolDriver = null
+    // 如果正在计时/观察中，重置状态
+    if (smartTimerState.value === 'solving' || smartTimerState.value === 'observation') {
+        clearInterval(smartTimerInterval)
+        clearInterval(smartObservationInterval)
+        smartTimerInterval = null
+        smartObservationInterval = null
+        smartTimerState.value = 'idle'
+        smartElapsed.value = 0
+        smartIsDNF.value = false
+    }
+    showToast('已断开连接')
+}
+
+// ─── 智能模式：转动处理 & 计时状态机 ────────────────────────────────────
+function smartHandleMove(moveInfo) {
+    // 同步 3D 魔方
+    if (cube3dRef.value) {
+        cube3dRef.value.rotate(moveInfo.move)
+    }
+
+    // 状态机逻辑
+    switch (smartTimerState.value) {
+        case 'idle':
+            // 第一次转动 → 进入打乱状态
+            smartTimerState.value = 'scrambling'
+            break
+
+        case 'observation':
+            // 观察期内转动 → 开始计时
+            clearInterval(smartObservationInterval)
+            smartObservationInterval = null
+            smartStartSolving()
+            smartSolveMoves = [moveInfo.move]
+            smartMoveCount.value = 1
+            break
+
+        case 'solving':
+            // 计时中，记录步骤
+            smartSolveMoves.push(moveInfo.move)
+            smartMoveCount.value++
+            break
+    }
+}
+
+// 面块状态回调（检测是否复原）
+function smartHandleFacelets(event) {
+    smartIsSolved.value = event.isSolved
+
+    // 复原中 & 魔方复原 → 停止计时
+    if (smartTimerState.value === 'solving' && event.isSolved) {
+        smartStopTimer()
+    }
+}
+
+// 用户确认打乱完成
+function smartMarkReady() {
+    smartTimerState.value = 'ready'
+}
+
+// 开始观察期
+function smartStartObservation() {
+    smartTimerState.value = 'observation'
+    smartObservationTime.value = OBSERVATION_DURATION
+    smartMoveCount.value = 0
+
+    const startTime = performance.now()
+    smartObservationInterval = setInterval(() => {
+        const elapsed = performance.now() - startTime
+        const remaining = OBSERVATION_DURATION - elapsed
+
+        if (remaining <= 0) {
+            // 观察超时 → DNF
+            clearInterval(smartObservationInterval)
+            smartObservationInterval = null
+            smartMarkDNF()
+        } else {
+            smartObservationTime.value = remaining
+        }
+    }, 10)
+}
+
+// 开始复原计时
+function smartStartSolving() {
+    smartTimerState.value = 'solving'
+    smartStartTime = performance.now()
+    smartElapsed.value = 0
+    smartTimerInterval = setInterval(() => {
+        smartElapsed.value = performance.now() - smartStartTime
+    }, 10)
+}
+
+// 标记 DNF
+function smartMarkDNF() {
+    smartIsDNF.value = true
+    smartTimerState.value = 'solved'
+    smartElapsed.value = 0
+
+    const record = {
+        id: Date.now(),
+        time_ms: 0,
+        scramble: scramble.value,
+        cube_type: cubeType.value,
+        method: method.value,
+        timing_mode: 'smart',
+        move_count: smartMoveCount.value,
+        solve_sequence: smartSolveMoves.join(' '),
+        penalty: 'dnf',
+        date: new Date().toISOString(),
+    }
+
+    history.value.unshift(record)
+    saveToStorage()
+
+    if (localStorage.getItem('token')) {
+        createTimerRecord({
+            cube_type: record.cube_type,
+            method: record.method,
+            time_ms: 0,
+            scramble: record.scramble,
+            timing_mode: 'smart',
+            move_count: record.move_count,
+            solve_sequence: record.solve_sequence,
+            penalty: 'dnf',
+        }).then(() => {
+            if (recordsLoaded) loadRecords(true)
+        }).catch(() => {})
+    } else {
+        if (recordsLoaded) loadRecords(true)
+    }
+
+    generateScramble()
+}
+
+function smartStopTimer() {
+    clearInterval(smartTimerInterval)
+    smartTimerInterval = null
+    smartTimerState.value = 'solved'
+
+    // 3D 魔方复位 + 高亮闪烁
+    if (cube3dRef.value) {
+        cube3dRef.value.reset()
+        cube3dRef.value.flashHighlight?.()
+    }
+
+    const record = {
+        id: Date.now(),
+        time_ms: Math.round(smartElapsed.value),
+        scramble: scramble.value,
+        cube_type: cubeType.value,
+        method: method.value,
+        timing_mode: 'smart',
+        move_count: smartMoveCount.value,
+        solve_sequence: smartSolveMoves.join(' '),
+        date: new Date().toISOString(),
+    }
+
+    history.value.unshift(record)
+    saveToStorage()
+
+    // 同步后端
+    if (localStorage.getItem('token')) {
+        createTimerRecord({
+            cube_type: record.cube_type,
+            method: record.method,
+            time_ms: record.time_ms,
+            scramble: record.scramble,
+            timing_mode: 'smart',
+            move_count: record.move_count,
+            solve_sequence: record.solve_sequence,
+        }).then(() => {
+            if (recordsLoaded) loadRecords(true)
+        }).catch(() => {})
+    } else {
+        if (recordsLoaded) loadRecords(true)
+    }
+
+    // 生成新打乱
+    generateScramble()
+}
+
+// 重置到下一把
+function smartReset() {
+    clearInterval(smartObservationInterval)
+    smartObservationInterval = null
+    smartTimerState.value = 'idle'
+    smartElapsed.value = 0
+    smartIsDNF.value = false
+    smartObservationTime.value = 0
+    smartSolveMoves = []
+    smartMoveCount.value = 0
+    if (cube3dRef.value) {
+        cube3dRef.value.reset()
+    }
+}
+
+// 观察时间格式化
+function formatObservationTime(ms) {
+    const totalSeconds = Math.ceil(ms / 1000)
+    return totalSeconds.toString().padStart(2, '0') + '.00'
+}
+
+// 重置 3D 魔方视角
+function resetCubeView() {
+    cube3dRef.value?.resetView?.()
+}
+
+// 切换陀螺仪跟随
+async function toggleGyro() {
+    if (!cube3dRef.value) return
+    if (gyroEnabled.value) {
+        await cube3dRef.value.setGyroEnabled(false)
+        gyroEnabled.value = false
+        showToast('陀螺仪已关闭')
+    } else {
+        const ok = await cube3dRef.value.setGyroEnabled(true)
+        if (ok) {
+            gyroEnabled.value = true
+            showToast('陀螺仪已开启')
+        } else {
+            showToast('陀螺仪不可用')
+        }
+    }
 }
 
 function onTypeChange() {
@@ -372,18 +923,30 @@ function stopTimer() {
   generateScramble()
 }
 
-// ─── 统计计算（基于今日记录）──────────────────────────
+// ─── 智能模式计算属性 ────────────────────────────────────
+const smartTps = computed(() => {
+    if (smartElapsed.value <= 0 || smartMoveCount.value <= 0) return '0.00'
+    const tps = smartMoveCount.value / (smartElapsed.value / 1000)
+    return tps.toFixed(2)
+})
+
+// ─── 统计计算（基于今日记录，排除 DNF）──────────────────────────
+const validTodayRecords = computed(() =>
+  todayHistory.value.filter(r => r.penalty !== 'dnf' && !r.is_dnf && r.time_ms > 0)
+)
+
 const bestTime = computed(() => {
-  if (todayHistory.value.length === 0) return null
-  return Math.min(...todayHistory.value.map(r => r.time_ms))
+  if (validTodayRecords.value.length === 0) return null
+  return Math.min(...validTodayRecords.value.map(r => r.time_ms))
 })
 
 const ao5 = computed(() => calculateAoN(5))
 const ao12 = computed(() => calculateAoN(12))
 
 function calculateAoN(n) {
-  if (todayHistory.value.length < n) return null
-  const recent = todayHistory.value.slice(0, n).map(r => r.time_ms)
+  if (validTodayRecords.value.length < n) return null
+  const recent = validTodayRecords.value.slice(0, n).map(r => r.time_ms)
+  if (recent.length < 3) return null
   recent.sort((a, b) => a - b)
   const trimmed = recent.slice(1, -1)
   return Math.round(trimmed.reduce((a, b) => a + b, 0) / trimmed.length)
@@ -406,6 +969,63 @@ const displayTodayHistory = computed(() => todayHistory.value.slice(0, 50))
 function showDetail(record) {
   detailRecord.value = record
   detailShow.value = true
+}
+
+// 切换 +2 判罚
+function togglePlus2() {
+  if (!detailRecord.value) return
+  const r = detailRecord.value
+  const isPlus2 = r.penalty === 'plus2'
+
+  if (isPlus2) {
+    // 取消 +2
+    r.penalty = null
+    r.time_ms -= 2000
+    if (r.time_ms < 0) r.time_ms = 0
+  } else {
+    // 加 +2（先取消 DNF 如果有的话）
+    if (r.penalty === 'dnf' || r.is_dnf) {
+      r.penalty = 'plus2'
+      r.is_dnf = false
+      if (r.time_ms === 0) r.time_ms = 2000
+      else r.time_ms += 2000
+    } else {
+      r.penalty = 'plus2'
+      r.time_ms += 2000
+    }
+  }
+
+  saveToStorage()
+  // 同步后端
+  if (r.server_id) {
+    // TODO: 后端更新判罚接口
+  }
+  // 强制触发响应式更新
+  detailRecord.value = { ...r }
+}
+
+// 切换 DNF 判罚
+function toggleDNF() {
+  if (!detailRecord.value) return
+  const r = detailRecord.value
+  const isDNF = r.penalty === 'dnf' || r.is_dnf
+
+  if (isDNF) {
+    // 取消 DNF，恢复时间
+    r.penalty = null
+    r.is_dnf = false
+    // 从 solve_sequence 估算时间？暂时保留原 time_ms（如果之前存了的话）
+    if (!r.original_time_ms) r.original_time_ms = r.time_ms
+    r.time_ms = r.original_time_ms || r.time_ms
+  } else {
+    // 标记 DNF
+    r.original_time_ms = r.time_ms
+    r.penalty = 'dnf'
+    r.is_dnf = true
+  }
+
+  saveToStorage()
+  detailRecord.value = { ...r }
 }
 
 function deleteRecord(index) {
@@ -596,9 +1216,22 @@ onMounted(() => {
   generateScramble()
 })
 
+// 智能模式：打乱公式变化时，3D 魔方执行打乱动画
+watch(scramble, (newScramble) => {
+    if (timingMode.value === 'smart' && cube3dRef.value && newScramble) {
+        // 先重置到复原状态，再执行打乱动画
+        cube3dRef.value.reset()
+        nextTick(() => {
+            cube3dRef.value.rotateSequence(newScramble)
+        })
+    }
+})
+
 onBeforeUnmount(() => {
   if (timerInterval) clearInterval(timerInterval)
   if (holdTimer) clearTimeout(holdTimer)
+  if (smartTimerInterval) clearInterval(smartTimerInterval)
+  if (smartObservationInterval) clearInterval(smartObservationInterval)
 })
 </script>
 
@@ -612,6 +1245,224 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   padding-bottom: 16px;
+}
+
+/* 模式切换 */
+.mode-tabs {
+  margin: 0 12px;
+}
+
+/* 打乱导航 */
+.scramble-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+}
+
+.scramble-nav-btn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: var(--van-background-2);
+  color: var(--van-text-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.scramble-nav-btn:active {
+  background: var(--van-active-color);
+}
+
+.scramble-nav-btn.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* 连接状态条 */
+.connect-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  margin: 8px 12px;
+  background: var(--van-background-2);
+  border-radius: 8px;
+}
+
+.connect-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.connect-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.dot-connected {
+  background: #07c160;
+  box-shadow: 0 0 6px #07c160;
+}
+
+.dot-disconnected {
+  background: #c8c9cc;
+}
+
+.connect-text {
+  font-size: 0.85rem;
+  color: var(--van-text-color);
+}
+
+.connect-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.battery-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--van-text-color-2);
+}
+
+.battery-text {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 3D 魔方容器 */
+.cube-3d-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 4px;
+  position: relative;
+}
+
+.cube-toolbar {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 10;
+}
+
+.cube-tool-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.cube-tool-btn:active {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.cube-tool-btn.active {
+  background: #1989fa;
+}
+
+/* 智能模式计时显示 */
+.smart-timer-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 16px 28px;
+}
+
+.smart-time {
+  font-size: 3rem;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 2px;
+  color: var(--van-text-color);
+  transition: color 0.3s;
+}
+
+.smart-time-scrambling {
+  color: #ff976a;
+}
+
+.smart-time-ready {
+  color: #07c160;
+}
+
+.smart-time-observation {
+  color: #ff976a;
+  font-size: 2.5rem;
+}
+
+.smart-time-solving {
+  color: #1989fa;
+}
+
+.smart-time-solved {
+  color: #07c160;
+  font-weight: 500;
+}
+
+.smart-time-dnf {
+  color: #ee0a24;
+  font-size: 2.5rem;
+}
+
+/* DNF 徽章 */
+.dnf-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  background: #ee0a24;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.smart-timer-hint {
+  font-size: 0.85rem;
+  color: var(--van-text-color-2);
+  margin-top: 8px;
+}
+
+/* 智能模式实时数据栏 */
+.smart-stats-row {
+  display: flex;
+  gap: 24px;
+  margin-top: 12px;
+}
+
+.smart-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.smart-stat-value {
+  font-size: 1.3rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--van-text-color);
+}
+
+.smart-stat-label {
+  font-size: 0.7rem;
+  color: var(--van-text-color-2);
+  margin-top: 2px;
 }
 
 .type-selector {
@@ -695,6 +1546,10 @@ onBeforeUnmount(() => {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--van-text-color);
+}
+
+.dnf-time {
+  color: #ee0a24 !important;
 }
 
 .history-type {
@@ -800,6 +1655,19 @@ onBeforeUnmount(() => {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--van-text-color);
+}
+
+.plus2-suffix {
+  font-size: 1rem;
+  color: #ff976a;
+  margin-left: 4px;
+}
+
+.detail-penalty-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  padding: 12px 0 4px;
 }
 
 .detail-date {

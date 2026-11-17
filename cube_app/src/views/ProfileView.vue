@@ -356,6 +356,7 @@ async function onRefresh() {
           <van-cell title="搜索魔友" icon="search" is-link @click="router.push({ name: 'UserSearch' })" />
           <van-cell title="编辑资料" icon="edit" is-link @click="openEdit" />
           <van-cell title="检查更新" icon="upgrade" is-link @click="checkUpdate" :value="`v${appVersion}`" />
+          <van-cell title="蓝牙测试" icon="o" is-link @click="router.push('/ble-test')" />
           <van-cell title="退出登录" icon="cross" is-link @click="confirmLogout" class="logout-cell" />
         </van-cell-group>
       </template>
